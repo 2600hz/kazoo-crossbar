@@ -3,3 +3,5 @@
 *.app
 
 /priv/couchdb/schemas/port_requests.to_scheduled.json
+/.deps.rules
+/.test.deps
