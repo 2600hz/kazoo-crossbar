@@ -114,16 +114,6 @@
   'required': true
   'schema':
     'type': string
-'CCCP_ID':
-  'description': request CCCP_ID parameter
-  'in': path
-  'name': CCCP_ID
-  'required': true
-  'schema':
-    'maxLength': 32
-    'minLength': 32
-    'pattern': '^[0-9a-f]+$'
-    'type': string
 'CDR_ID':
   'description': request CDR_ID parameter
   'in': path
@@ -489,16 +479,6 @@
   'name': PROVIDER_ID
   'required': true
   'schema':
-    'type': string
-'QUEUE_ID':
-  'description': request QUEUE_ID parameter
-  'in': path
-  'name': QUEUE_ID
-  'required': true
-  'schema':
-    'maxLength': 32
-    'minLength': 32
-    'pattern': '^[0-9a-f]+$'
     'type': string
 'RATE_ID':
   'description': request RATE_ID parameter
