@@ -20,11 +20,11 @@ workflows:
       - kazoo/build:
           requires:
             - kazoo/build-deps
-      - kazoo/eunit_tests:
+      - kazoo/eunit-tests:
           is-app: true
           requires:
             - kazoo/build-deps
-      - kazoo/code_checks:
+      - kazoo/code-checks:
           requires:
             - kazoo/build
       - kazoo/docs:
@@ -33,7 +33,7 @@ workflows:
       - kazoo/analyze:
           requires:
             - kazoo/build
-      - kazoo/ci-release-run:
+      - kazoo/integration-test:
           requires:
             - kazoo/build
       # - build_centos7:
