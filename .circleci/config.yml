@@ -2,11 +2,6 @@
 version: 2.1
 
 orbs:
-  # num num
-  # num num
-  # num num
-  # num num
-  # num num
   kazoo: official-2600hz/kazoo@dev:alpha
 
 workflows:
@@ -14,18 +9,18 @@ workflows:
   build_branch:
     jobs:
       - kazoo/setup:
-          app-name: crossbar
+          target-type: kapps
+          target-name: crossbar
           base-branch: origin/master
-      - kazoo/build-deps:
+      - kazoo/build-preparation:
           requires:
             - kazoo/setup
       - kazoo/build:
           requires:
-            - kazoo/build-deps
+            - kazoo/build-preparation
       - kazoo/eunit-tests:
-          is-app: true
           requires:
-            - kazoo/build-deps
+            - kazoo/build-preparation
       - kazoo/code-checks:
           requires:
             - kazoo/build
