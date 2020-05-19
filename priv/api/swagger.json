@@ -2218,6 +2218,36 @@
             },
             "type": "object"
         },
+        "callflows.detect_speech": {
+            "description": "Validator for the detect_speech callflow data object",
+            "properties": {
+                "action": {
+                    "description": "action",
+                    "enum": [
+                        "start",
+                        "stop"
+                    ],
+                    "type": "string"
+                },
+                "asr_engine": {
+                    "description": "asr engine name",
+                    "type": "string"
+                },
+                "asr_params": {
+                    "description": "asr engine params",
+                    "type": "object"
+                },
+                "asr_settings": {
+                    "description": "asr engine settings",
+                    "type": "object"
+                },
+                "skip_module": {
+                    "description": "When set to true this callflow action is skipped, advancing to the wildcard branch (if any)",
+                    "type": "boolean"
+                }
+            },
+            "type": "object"
+        },
         "callflows.device": {
             "properties": {
                 "can_call_self": {
