@@ -11,6 +11,7 @@
 .deps.mk
 .deps.rules
 .test.deps
+.apps.mk.*
 *.beam
 *.so
 *.o
