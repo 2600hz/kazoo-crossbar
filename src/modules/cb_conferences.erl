@@ -499,16 +499,16 @@ exec_dial_endpoints(Context, ConferenceId, Data, ToDial) ->
               ,{<<"Conference-ID">>, ConferenceId}
               ,{<<"Custom-Application-Vars">>, CAVs}
               ,{<<"Endpoints">>, ToDial}
-              ,{<<"Participant-Flags">>, kz_json:get_list_value(<<"participant_flags">>, Data)}
-              ,{<<"Profile-Name">>, kz_json:get_ne_binary_value(<<"profile_name">>, Data)}
               ,{<<"Msg-ID">>, cb_context:req_id(Context)}
               ,{<<"Outbound-Call-ID">>, kz_json:get_ne_binary_value(<<"outbound_call_id">>, Data)}
+              ,{<<"Participant-Flags">>, kz_json:get_list_value(<<"participant_flags">>, Data)}
+              ,{<<"Profile-Name">>, kz_json:get_ne_binary_value(<<"profile_name">>, Data)}
               ,{<<"Target-Call-ID">>, TargetCallId}
               ,{<<"Timeout">>, Timeout}
-               | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+              | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
               ],
 
-    Zone = zone(TargetCallId),
+    Zone = zone(ConferenceId, TargetCallId),
     case kz_amqp_worker:call(Command
                             ,fun(P) -> kapi_conference:publish_dial(Zone, P) end
                             ,fun kapi_conference:dial_resp_v/1
@@ -528,14 +528,14 @@ exec_dial_endpoints(Context, ConferenceId, Data, ToDial) ->
                               ])
     end.
 
--spec zone(kz_term:api_ne_binary()) -> kz_term:ne_binary().
-zone('undefined') ->
-    kz_config:zone('binary');
-zone(TargetCallId) ->
+-spec zone(kz_term:ne_binary(), kz_term:api_ne_binary()) -> kz_term:ne_binary().
+zone(ConferenceId, 'undefined') ->
+    discover_conference_zone(ConferenceId);
+zone(ConferenceId, TargetCallId) ->
     Req = [{<<"Call-ID">>, TargetCallId}
           ,{<<"Fields">>, <<"all">>}
           ,{<<"Active-Only">>, 'true'}
-           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+          | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
 
     case kz_amqp_worker:call_collect(Req
@@ -549,10 +549,22 @@ zone(TargetCallId) ->
             lager:info("got back channel resp, using target ~s zone ~s", [TargetCallId, Zone]),
             Zone;
         _E ->
-            lager:info("target ~s not found (~p), using local zone: ~p"
-                      ,[TargetCallId, _E, kz_config:zone('binary')]
+            lager:info("target ~s not found (~p), checking conference id ~s"
+                      ,[TargetCallId, _E, ConferenceId]
                       ),
-            kz_config:zone('binary')
+            discover_conference_zone(ConferenceId)
+    end.
+
+-spec discover_conference_zone(kz_term:ne_binary()) -> kz_term:ne_binary().
+discover_conference_zone(ConferenceId) ->
+    case kapps_conference_command:search(ConferenceId, ?APP_NAME, ?APP_VERSION) of
+        {'error', _E} ->
+            lager:debug("failed to search for ~s: ~p", [ConferenceId, _E]),
+            kz_config:zone('binary');
+        {'ok', SearchResp} ->
+            Zone = kz_json:get_ne_binary_value(<<"Zone">>, SearchResp, kz_config:zone('binary')),
+            lager:debug("found conference ~s in zone ~s", [ConferenceId, Zone]),
+            Zone
     end.
 
 -record(build_acc, {endpoints = [] :: kz_json:objects()
@@ -919,7 +931,7 @@ conference_realtime_data(ConferenceId) ->
 -spec request_conference_details(kz_term:ne_binary()) -> kz_json:object().
 request_conference_details(ConferenceId) ->
     Req = [{<<"Conference-ID">>, ConferenceId}
-           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+          | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
     case kz_amqp_worker:call_collect(Req, fun kapi_conference:publish_search_req/1, {'ecallmgr', 'true'}) of
         {'error', _E} ->
@@ -997,7 +1009,7 @@ partition_participants(Participants, Fun) ->
 search_conferences(Context) ->
     AccountId = cb_context:account_id(Context),
     Req = [{<<"Account-ID">>, AccountId}
-           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+          | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
     case kz_amqp_worker:call_collect(Req, fun kapi_conference:publish_search_req/1, {'ecallmgr', 'true'}) of
         {'error', _E} ->
