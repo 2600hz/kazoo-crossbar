@@ -23,7 +23,6 @@
 
 -include("crossbar.hrl").
 
--define(VIEW_FILE, <<"views/hotdesks.json">>).
 -define(CB_LIST, <<"hotdesks/crossbar_listing">>).
 
 %%%=============================================================================

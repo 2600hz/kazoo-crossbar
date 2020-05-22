@@ -12,8 +12,6 @@
 -module(crossbar_maintenance).
 
 -export([migrate/0
-        ,migrate_accounts_data/0
-        ,migrate_account_data/1
         ,refresh/0, refresh/1
         ,register_views/0
         ,flush/0
@@ -85,12 +83,6 @@
 %%------------------------------------------------------------------------------
 -spec migrate() -> 'no_return'.
 migrate() ->
-    migrate(kapps_util:get_all_accounts()).
-
--spec migrate(kz_term:ne_binaries()) -> 'no_return'.
-migrate(Accounts) ->
-    _ = migrate_accounts_data(Accounts),
-
     CurrentModules =
         [kz_term:to_atom(Module, 'true')
          || Module <- crossbar_config:autoload_modules()
@@ -113,24 +105,6 @@ remove_deprecated_modules(Modules, Deprecated) ->
             {'ok', _} = crossbar_config:set_autoload_modules(Ms),
             Ms
     end.
-
--spec migrate_accounts_data() -> 'no_return'.
-migrate_accounts_data() ->
-    migrate_accounts_data(kapps_util:get_all_accounts()).
-
--spec migrate_accounts_data(kz_term:ne_binaries()) -> 'no_return'.
-migrate_accounts_data([]) -> 'no_return';
-migrate_accounts_data([Account|Accounts]) ->
-    _ = migrate_account_data(Account),
-    migrate_accounts_data(Accounts).
-
--spec migrate_account_data(kz_term:ne_binary()) -> 'no_return'.
-migrate_account_data(Account) ->
-    _ = cb_clicktocall:maybe_migrate_history(Account),
-    _ = cb_vmboxes:migrate(Account),
-    _ = cb_lists:maybe_migrate(Account),
-    _ = cb_apps_maintenance:migrate(Account),
-    'no_return'.
 
 -spec add_missing_modules(kz_term:atoms(), kz_term:atoms()) -> 'no_return'.
 add_missing_modules(_, []) -> 'no_return';

@@ -35,7 +35,6 @@
 -define(MOD_CONFIG_CAT, <<(?CONFIG_CAT)/binary, ".users">>).
 
 -define(CB_LIST, <<"users/crossbar_listing">>).
--define(LIST_BY_HOTDESK_ID, <<"users/list_by_hotdesk_id">>).
 -define(LIST_BY_PRESENCE_ID, <<"devices/listing_by_presence_id">>).
 
 -define(VCARD, <<"vcard">>).

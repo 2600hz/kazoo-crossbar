@@ -28,7 +28,6 @@
         ,post/2, post/3
         ,patch/2
         ,delete/2
-        ,maybe_migrate_history/1
         ]).
 
 -include("crossbar.hrl").
@@ -260,49 +259,6 @@ establish_c2c(C2CId, Context) ->
         'success' -> originate_call(C2CId, Context1);
         _Status -> Context1
     end.
-
--spec maybe_migrate_history(kz_term:ne_binary()) -> 'ok'.
-maybe_migrate_history(Account) ->
-    AccountId = kzs_util:format_account_id(Account),
-    AccountDb = kzs_util:format_account_db(Account),
-
-    case kz_datamgr:get_results(AccountDb, ?CB_LIST, ['include_docs']) of
-        {'ok', []} -> 'ok';
-        {'ok', C2Cs} -> migrate_histories(AccountId, AccountDb, C2Cs);
-        {'error', _} -> 'ok'
-    end.
-
--spec migrate_histories(kz_term:ne_binary(), kz_term:ne_binary(), kz_json:objects()) -> 'ok'.
-migrate_histories(AccountId, AccountDb, C2Cs) ->
-    _ = [migrate_history(AccountId, AccountDb, kz_json:get_json_value(<<"doc">>, C2C)) || C2C <- C2Cs],
-    'ok'.
-
--spec migrate_history(kz_term:ne_binary(), kz_term:ne_binary(), kz_json:object()) -> 'ok'.
-migrate_history(AccountId, AccountDb, C2C) ->
-    case kzd_clicktocall:history(C2C, []) of
-        [] -> 'ok';
-        History ->
-            C2CId = kz_doc:id(C2C),
-            _ = [save_history_item(AccountId, HistoryItem, C2CId) || HistoryItem <- History],
-            Update = [{kzd_clicktocall:path_history(), 'null'}],
-            UpdateOptions = [{'update', Update}],
-            _Resp = kz_datamgr:update_doc(AccountDb, C2CId, UpdateOptions),
-            lager:debug("removed history from c2c ~s in ~s: ~p"
-                       ,[C2CId, AccountId, _Resp]
-                       )
-    end.
-
--spec save_history_item(kz_term:ne_binary(), kz_json:object(), kz_term:ne_binary()) -> any().
-save_history_item(AccountId, HistoryItem, C2CId) ->
-    Timestamp = kz_json:get_integer_value(<<"timestamp">>, HistoryItem, kz_time:now_s()),
-    AccountModb = kzs_util:format_account_mod_id(AccountId, Timestamp),
-    JObj = kz_doc:update_pvt_parameters(kz_json:set_value(<<"pvt_clicktocall_id">>, C2CId, HistoryItem)
-                                       ,AccountModb
-                                       ,[{'type', <<"c2c_history">>}
-                                        ,{'account_id', AccountId}
-                                        ,{'created', Timestamp}
-                                        ]),
-    kz_datamgr:save_doc(AccountModb, JObj).
 
 -spec clear_history_set_type(cb_context:context()) -> cb_context:context().
 clear_history_set_type(Context) ->

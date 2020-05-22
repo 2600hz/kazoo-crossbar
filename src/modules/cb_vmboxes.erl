@@ -27,7 +27,6 @@
         ,patch/2
         ,delete/2, delete/3, delete/4
 
-        ,migrate/1
         ,acceptable_content_types/0
         ]).
 
@@ -716,9 +715,8 @@ validate_unique_vmbox(VMBoxId, Context, _AccountDb) ->
 %%------------------------------------------------------------------------------
 -spec check_vmbox_schema(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
 check_vmbox_schema(VMBoxId, Context) ->
-    Context1 = maybe_migrate_notification_emails(Context),
     OnSuccess = fun(C) -> validate_media_extension(VMBoxId, C) end,
-    cb_context:validate_request_data(find_schema(), Context1, OnSuccess).
+    cb_context:validate_request_data(find_schema(), Context, OnSuccess).
 
 -spec find_schema() -> kz_json:api_object().
 find_schema() ->
@@ -730,26 +728,6 @@ find_schema() ->
                     ],
             kz_json:set_values(Props, SchemaJObj);
         {'error', _E} -> 'undefined'
-    end.
-
-%%------------------------------------------------------------------------------
-%% @doc
-%% @end
-%%------------------------------------------------------------------------------
--spec maybe_migrate_notification_emails(cb_context:context()) -> cb_context:context().
-maybe_migrate_notification_emails(Context) ->
-    ReqData = cb_context:req_data(Context),
-    case maybe_migrate_vm_box(ReqData) of
-        {'true', ReqData1} ->
-            cb_context:setters(Context
-                              ,[{fun cb_context:set_req_data/2, ReqData1}
-                               ,{fun cb_context:add_resp_header/3
-                                ,<<"Warning">>
-                                ,<<"214 Transformation applied: attribute notify_email_address replaced">>
-                                }
-                               ]
-                              );
-        'false' -> Context
     end.
 
 %%------------------------------------------------------------------------------
@@ -1257,63 +1235,3 @@ update_mwi(Context, BoxId, 'success') ->
     Context;
 update_mwi(Context, _BoxId, _Status) ->
     Context.
-
-%%------------------------------------------------------------------------------
-%% @doc
-%% @end
-%%------------------------------------------------------------------------------
--spec maybe_migrate_vm_box(kzd_voicemail_box:doc()) ->
-          {'true', kzd_voicemail_box:doc()} |
-          'false'.
-maybe_migrate_vm_box(Box) ->
-    case kzd_vmboxes:notify_email_addresses(Box) of
-        [] -> 'false';
-        Emails ->
-            {'true', kzd_voicemail_box:set_notification_emails(Box, Emails)}
-    end.
-
-%%------------------------------------------------------------------------------
-%% @doc
-%% @end
-%%------------------------------------------------------------------------------
--spec migrate(kz_term:ne_binary()) -> 'ok'.
-migrate(Account) ->
-    AccountDb = kzs_util:format_account_db(Account),
-    case kz_datamgr:get_results(AccountDb, ?CB_LIST, ['include_docs']) of
-        {'ok', []} -> 'ok';
-        {'error', _E} -> io:format("failed to check account ~s for voicemail boxes: ~p~n", [Account, _E]);
-        {'ok', Boxes} ->
-            maybe_migrate_boxes(AccountDb, Boxes)
-    end.
-
-%%------------------------------------------------------------------------------
-%% @doc
-%% @end
-%%------------------------------------------------------------------------------
--spec maybe_migrate_boxes(kz_term:ne_binary(), kz_json:objects()) -> 'ok'.
-maybe_migrate_boxes(AccountDb, Boxes) ->
-    ToUpdate =
-        lists:foldl(fun(View, Acc) ->
-                            Box = kz_json:get_value(<<"doc">>, View),
-                            case maybe_migrate_vm_box(Box) of
-                                'false' -> Acc;
-                                {'true', Box1} -> [Box1 | Acc]
-                            end
-                    end
-                   ,[]
-                   ,Boxes
-                   ),
-    io:format("migrating ~p out of ~p boxes~n", [length(ToUpdate), length(Boxes)]),
-    maybe_update_boxes(AccountDb, ToUpdate).
-
-%%------------------------------------------------------------------------------
-%% @doc
-%% @end
-%%------------------------------------------------------------------------------
--spec maybe_update_boxes(kz_term:ne_binary(), kz_json:objects()) -> 'ok'.
-maybe_update_boxes(_AccountDb, []) -> 'ok';
-maybe_update_boxes(AccountDb, Boxes) ->
-    case kz_datamgr:save_docs(AccountDb, Boxes) of
-        {'ok', _Saved} -> io:format("  updated ~p boxes in ~s~n", [length(_Saved), AccountDb]);
-        {'error', _E}-> io:format("  failed to update boxes: ~p~n", [_E])
-    end.

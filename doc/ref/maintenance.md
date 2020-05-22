@@ -26,8 +26,6 @@
 | `init_apps/1` | `(AppsPath)` | |
 | `init_apps/2` | `(AppsPath,AppUrl)` | |
 | `migrate/0` |  | |
-| `migrate_account_data/1` | `(Account)` | |
-| `migrate_accounts_data/0` |  | |
 | `move_account/2` | `(Account,ToAccount)` | |
 | `promote_account/1` | `(AccountId)` | |
 | `refresh/0` |  | |

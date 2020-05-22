@@ -167,11 +167,7 @@ allowed_apps_store_doc_map(AccountId, UserId, AppStoreJObj) ->
 
 -spec get_apps_store_doc(kz_term:ne_binary()) -> {'ok', kz_json:object()} | {'error', any()}.
 get_apps_store_doc(AccountId) ->
-    case kzd_apps_store:fetch(AccountId) of
-        {'error', 'not_found'} ->
-            cb_apps_maintenance:migrate(AccountId);
-        Result -> Result
-    end.
+    kzd_apps_store:fetch(AccountId).
 
 -spec is_authorized(kz_term:ne_binary(), kz_term:api_ne_binary(), kz_json:object()) -> boolean().
 is_authorized(_, 'undefined', _) ->

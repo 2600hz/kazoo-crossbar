@@ -26,8 +26,6 @@
 
 -define(ACCT_MD5_LIST, <<"users/creds_by_md5">>).
 -define(ACCT_SHA1_LIST, <<"users/creds_by_sha">>).
--define(LIST_BY_RESET_ID, <<"users/list_by_reset_id">>).
--define(LIST_BY_MTIME, <<"users/list_by_mtime">>).
 -define(DEFAULT_LANGUAGE, <<"en-us">>).
 -define(USER_AUTH_TOKENS, kapps_config:get_integer(?CONFIG_CAT, <<"user_auth_tokens">>, 35)).
 

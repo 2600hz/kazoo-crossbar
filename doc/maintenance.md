@@ -26,8 +26,6 @@
 | `init_apps/1`                         | `(AppsPath)`                            | `AppsPath` is the filesystem path to a directory of apps (which each have a `metadata/app.json` file |
 | `init_apps/2`                         | `(AppsPath,AppUrl)`                     | Initializes (or updates) the apps to use the `AppUrl` for API requests                               |
 | `migrate/0`                           |                                         | Applies any data migrations needed between versions of KAZOO                                         |
-| `migrate_account_data/1`              | `(Account)`                             | Performs just the account-specific migrations necessary on the Account                               |
-| `migrate_accounts_data/0`             |                                         | Performs just the account-specific migrations necessary on all accounts                              |
 | `move_account/2`                      | `(Account,ToAccount)`                   | Moves `Account` to be a child of `ToAccount`                                                         |
 | `promote_account/1`                   | `(AccountId)`                           | Add the `superduper_admin` status to the account                                                     |
 | `refresh/0`                           |                                         | Deprecated: use `kapps_maintenance refresh` instead                                                  |
