@@ -273,11 +273,12 @@ post(Context, _) ->
 sync_sip_data(Context) ->
     NewDoc = cb_context:doc(Context),
     AccountId = cb_context:account_id(Context),
+    ShouldReboot = cb_context:req_value(Context, <<"reboot">>),
 
     case cb_context:fetch(Context, 'sync') of
         'false' -> 'ok';
-        'true' -> provisioner_util:sync_user(AccountId);
-        'force' -> provisioner_util:force_sync_user(AccountId, NewDoc)
+        'true' -> provisioner_util:sync_user(AccountId, ShouldReboot);
+        'force' -> provisioner_util:force_sync_user(AccountId, NewDoc, ShouldReboot)
     end.
 
 -spec post(cb_context:context(), kz_term:ne_binary(), path_token()) -> cb_context:context().

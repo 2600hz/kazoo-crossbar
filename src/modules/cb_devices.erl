@@ -1076,7 +1076,9 @@ sync_sip_data(Context, UseTheForce) ->
     NewDoc = cb_context:doc(Context),
     OldDoc = cb_context:fetch(Context, 'db_doc'),
     AccountId = cb_context:account_id(Context),
+    ShouldReboot = cb_context:req_value(Context, <<"reboot">>),
+
     case UseTheForce of
-        'true' -> provisioner_util:sync_device(AccountId, OldDoc, NewDoc);
-        'false' -> provisioner_util:force_sync_device(AccountId, NewDoc)
+        'true' -> provisioner_util:sync_device(AccountId, OldDoc, NewDoc, ShouldReboot);
+        'false' -> provisioner_util:force_sync_device(AccountId, NewDoc, ShouldReboot)
     end.
