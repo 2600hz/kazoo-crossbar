@@ -35,7 +35,6 @@ workflows:
       #       - kazoo/build
       - kazoo/build-centos7:
           target-type: kapp
-          circle-pr: << pipeline.parameters.circle-pr >>
           # requires:
           #   - kazoo/eunit-tests
           #   - kazoo/code-checks
