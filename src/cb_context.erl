@@ -190,7 +190,7 @@ set_accepting_charges(#cb_context{req_json = ReqJObj} = Context) ->
 account_id(#cb_context{account_id=AcctId}) -> AcctId.
 
 -spec account_modb(context()) -> kz_term:ne_binary().
-account_modb(#cb_context{account_id=AcctId}) -> kzs_util:format_account_modb(AcctId, 'encoded').
+account_modb(#cb_context{account_id=AcctId}) -> kazoo_modb:get_modb(AcctId).
 
 -spec account_name(context()) -> kz_term:api_ne_binary().
 account_name(#cb_context{account_name=Name}) -> Name.
