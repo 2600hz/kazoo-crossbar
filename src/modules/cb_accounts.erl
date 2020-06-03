@@ -519,9 +519,12 @@ validate_request(AccountId, Context) ->
             extra_validation(AccountId, Context1);
         {'validation_errors', ValidationErrors} ->
             cb_context:add_doc_validation_errors(Context, ValidationErrors);
-        {'system_error', Error} ->
+        {'system_error', Error} when is_atom(Error) ->
             lager:info("system error validating account: ~p", [Error]),
-            cb_context:add_system_error(Error, Context)
+            cb_context:add_system_error(Error, Context);
+        {'system_error', {Error, Message}} ->
+            lager:info("system error validating account: ~p, ~p", [Error, Message]),
+            cb_context:add_system_error(Error, Message, Context)
     end.
 
 -spec maybe_add_pvt_fields(kz_term:api_ne_binary(), kzd_accounts:doc()) -> kz_json:object().
