@@ -642,7 +642,7 @@ content_types_accepted(ClientCT, Req, Context, []) ->
     lager:debug("endpoint(s) specify no accepted content-types, using defaults"),
     content_types_accepted(ClientCT, Req, cb_context:set_content_types_accepted(Context, ?CONTENT_ACCEPTED));
 content_types_accepted(ClientCT, Req, Context, Accepted) ->
-    CTA = lists:foldl(fun(I, Acc) ->
+    CTA = lists:foldr(fun(I, Acc) ->
                               content_types_accepted_fold(I, Acc, ClientCT)
                       end
                      ,[]
@@ -654,7 +654,7 @@ content_types_accepted(ClientCT, Req, Context, Accepted) ->
 -spec content_types_accepted_fold(crossbar_content_handler(), content_type_callbacks(), kz_term:ne_binary()) ->
           content_type_callbacks().
 content_types_accepted_fold({Fun, ContentTypes}, Acc, ClientCT) ->
-    lists:foldl(fun(ContentType, Acc1) ->
+    lists:foldr(fun(ContentType, Acc1) ->
                         content_type_accepted_fold(ContentType, Acc1, Fun, ClientCT)
                 end
                ,Acc
