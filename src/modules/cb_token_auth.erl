@@ -248,7 +248,7 @@ check_as_payload(Context, JObj, AccountId) ->
           {'true', cb_context:context()}.
 check_descendants(Context, JObj, AccountId, AsAccountId, AsOwnerId) ->
     case kapps_util:account_descendants(AccountId) of
-        [] -> false;
+        [] -> 'false';
         Descendants ->
             case lists:member(AsAccountId, Descendants) of
                 'false' -> 'false';
@@ -265,7 +265,7 @@ check_descendants(Context, JObj, AccountId, AsAccountId, AsOwnerId) ->
 -spec set_auth_doc(cb_context:context(), kz_json:object()) -> cb_context:context().
 set_auth_doc(Context, JObj) ->
     AuthAccountId = kz_json:get_ne_binary_value(<<"account_id">>, JObj),
-    OwnerId = kz_json:get_ne_binary_value(<<"ownerid">>, JObj),
+    OwnerId = kz_json:get_ne_binary_value(<<"owner_id">>, JObj),
     cb_context:setters(Context
                       ,[{fun cb_context:set_auth_doc/2, JObj}
                        ,{fun cb_context:set_auth_account_id/2, AuthAccountId}
@@ -273,11 +273,11 @@ set_auth_doc(Context, JObj) ->
                        ]).
 
 -spec maybe_add_is_admins(kz_term:api_ne_binary(), kz_term:api_ne_binary()) -> cb_context:setters().
-maybe_add_is_admins(?NE_BINARY = AuthAccountId, ?NE_BINARY = OwnerId) ->
+maybe_add_is_admins(<<AuthAccountId/binary>>, <<OwnerId/binary>>) ->
     [{fun cb_context:set_is_superduper_admin/2, cb_context:is_superduper_admin(AuthAccountId)}
     ,{fun cb_context:set_is_account_admin/2, cb_context:is_account_admin(AuthAccountId, OwnerId)}
     ];
-maybe_add_is_admins(?NE_BINARY = AuthAccountId, 'undefined') ->
+maybe_add_is_admins(<<AuthAccountId/binary>>, 'undefined') ->
     [{fun cb_context:set_is_superduper_admin/2, cb_context:is_superduper_admin(AuthAccountId)}];
 maybe_add_is_admins(_, _) ->
     [].
