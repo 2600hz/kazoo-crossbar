@@ -435,7 +435,7 @@ col_pretty_print(_JObj, Timestamp, Context) ->
     UTCSecondsOffset = cb_context:req_value(Context, ?KEY_UTC_OFFSET),
     kz_time:pretty_print_datetime(handle_utc_time_offset(Timestamp, UTCSecondsOffset)).
 
--spec maybe_filter_empties(kz_term:proplist(), boolean()) -> kz_json:objects().
+-spec maybe_filter_empties(kz_term:proplist(), boolean()) -> kz_json:object().
 maybe_filter_empties(Rows, 'true') ->
     kz_json:from_list(props:filter_empty_strings(Rows));
 maybe_filter_empties(Rows, 'false') ->

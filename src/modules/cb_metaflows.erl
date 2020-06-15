@@ -124,7 +124,7 @@ validate_delete_metaflows(Context) ->
             Context1 = cb_context:set_doc(Context, kz_json:delete_key(<<"metaflows">>, Doc)),
             crossbar_util:response(kz_json:new(), Context1);
         _ ->
-             Context
+            Context
     end.
 
 -spec validate_set_metaflows(cb_context:context()) ->
