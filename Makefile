@@ -1,5 +1,5 @@
 CWD = $(shell pwd -P)
-ROOT = $(realpath $(CWD)/../..)
+ROOT ?= $(realpath $(CWD)/../..)
 PROJECT = crossbar
 
 COMPILE_MOAR = priv/couchdb/schemas/port_requests.to_scheduled.json
