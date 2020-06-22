@@ -8,10 +8,10 @@
 *.sasl
 *.plt
 *.app
-.deps.mk
+.deps.mk*
+.apps.mk*
 .deps.rules
 .test.deps
-.apps.mk.*
 *.beam
 *.so
 *.o
