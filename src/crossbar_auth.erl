@@ -16,6 +16,7 @@
         ,log_success_auth/4, log_success_auth/5, log_success_auth/6
         ,log_failed_auth/4, log_failed_auth/5, log_failed_auth/6
         ,get_inherited_config/1
+        ,enforce_scopes/0
         ]).
 
 -include("crossbar.hrl").
@@ -71,15 +72,18 @@ create_auth_token(Context, Method, JObj) ->
     AuthConfig = get_account_config(AccountId),
     Expiration = token_auth_expiry(Method, AuthConfig),
 
-    Claims = props:filter_undefined(
-               [{<<"account_id">>, AccountId}
-               ,{<<"owner_id">>, OwnerId}
-               ,{<<"as">>, kz_json:get_value(<<"as">>, Data)}
-               ,{<<"method">>, Method}
-               ,{<<"exp">>, Expiration}
-               ,{<<"mfa_resp">>, kz_json:get_ne_value(<<"multi_factor_response">>, Data)}
-                | kz_json:to_proplist(kz_json:get_value(<<"Claims">>, JObj, kz_json:new()))
-               ]),
+    Raw = props:filter_undefined(
+            [{<<"account_id">>, AccountId}
+            ,{<<"owner_id">>, OwnerId}
+            ,{<<"as">>, kz_json:get_value(<<"as">>, Data)}
+            ,{<<"method">>, Method}
+            ,{<<"exp">>, Expiration}
+            ,{<<"mfa_resp">>, kz_json:get_ne_value(<<"multi_factor_response">>, Data)}
+            ,{<<"scope">>, kz_json:get_ne_value(<<"scope">>, Data, kz_auth_scope:default())}
+             | kz_json:to_proplist(kz_json:get_value(<<"Claims">>, JObj, kz_json:new()))
+            ]),
+
+    Claims = kz_auth_scope:claims(Raw),
 
     IsMultiFactor = is_multi_factor_enabled(Claims, AuthConfig),
 
@@ -384,3 +388,10 @@ maybe_add_metadata(ContextDoc, Doc) ->
         'true' -> Doc;
         'false' -> kz_json:set_value(<<"metadata">>, ContextDoc, Doc)
     end.
+
+%%------------------------------------------------------------------------------
+%% @doc Is scope mapping enabled
+%% @end
+%%------------------------------------------------------------------------------
+-spec enforce_scopes() -> boolean().
+enforce_scopes() -> ?IAM_ENFORCE_SCOPES.

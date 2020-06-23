@@ -1,0 +1,51 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "_id": "scopes",
+    "description": "Scopes represent an entity that can be resolved to a set of claims or mapped to API permissions",
+    "properties": {
+        "claims": {
+            "default": [],
+            "description": "List of claims this scope provides and optional mapping to system key.",
+            "items": {
+                "anyOf": [
+                    {
+                        "type": "string"
+                    },
+                    {
+                        "items": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "string"
+                            }
+                        ],
+                        "type": "array"
+                    }
+                ]
+            },
+            "type": "array"
+        },
+        "module": {
+            "description": "Defines a custom module to handle claims mapping.",
+            "type": "string"
+        },
+        "privileges": {
+            "default": [],
+            "description": "Permissions granted to this scope",
+            "items": [
+                {
+                    "enum": [
+                        "read",
+                        "write",
+                        "all"
+                    ],
+                    "type": "string"
+                }
+            ],
+            "type": "array"
+        }
+    },
+    "required": [],
+    "type": "object"
+}

@@ -165,6 +165,14 @@ get_auth_restrictions('undefined') ->
     lager:debug("no auth doc to check"),
     'undefined';
 get_auth_restrictions(AuthDoc) ->
+    get_auth_restrictions(AuthDoc, ?IAM_ENFORCE_SCOPES).
+
+-spec get_auth_restrictions(kz_term:api_object(), boolean()) -> kz_term:api_object().
+get_auth_restrictions(AuthDoc, 'true') ->
+    ScopeBackend = kz_term:to_atom(?IAM_SCOPE_BACKEND),
+    lager:debug("scope enforcement enabled, using ~p iam backend", [ScopeBackend]),
+    (ScopeBackend):get_scope_restrictions(AuthDoc);
+get_auth_restrictions(AuthDoc, 'false') ->
     AuthModule = kz_json:get_atom_value(<<"method">>, AuthDoc),
     AccountId = kz_json:get_ne_binary_value(<<"account_id">>, AuthDoc),
     OwnerId = kz_json:get_ne_binary_value(<<"owner_id">>, AuthDoc),

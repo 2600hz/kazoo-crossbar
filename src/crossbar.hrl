@@ -35,6 +35,11 @@
 -define(CROSSBAR_DEFAULT_CONTENT_TYPE, {<<"application">>, <<"json">>, '*'}).
 
 -define(CB_ACCOUNT_TOKEN_RESTRICTIONS, <<"token_restrictions">>).
+-define(IAM_ENFORCE_SCOPES
+       ,kapps_config:get_is_true(?AUTH_CONFIG_CAT, [<<"iam">>, <<"enforce_scopes">>], 'false')
+       ).
+-define(IAM_SCOPE_BACKEND
+       ,kapps_config:get_ne_binary(?AUTH_CONFIG_CAT,[<<"iam">>, <<"scope_backend">>], <<"cb_tr_scope_backend">>)).
 
 -define(DEFAULT_ACCEPT_HEADER, [{{<<"*">>, <<"*">>, []}, 1000, []}]).
 
