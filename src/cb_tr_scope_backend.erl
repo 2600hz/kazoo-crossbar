@@ -39,6 +39,7 @@
 %% default scope -> restriction constants
 -define(GLOBAL_READ_ONLY, kz_json:from_list([{?ARGS_ANY, ?READ_ACCESS}])).
 -define(GLOBAL_FULL_CONTROL, kz_json:from_list([{?ARGS_ANY, ?ALL_ACCESS}])).
+-define(GLOBAL_DENY, kz_json:from_list([{?ARGS_ANY, ?DENY_ACCESS}])).
 
 %%------------------------------------------------------------------------------
 %% @doc Fetch subset of token restrictions based on scopes
@@ -46,6 +47,14 @@
 %%------------------------------------------------------------------------------
 -spec get_scope_restrictions(kz_term:api_object()) -> kz_term:api_object().
 get_scope_restrictions(AuthDoc) ->
+    AuthOnly = kz_json:is_true(?AUTH_ONLY, AuthDoc),
+    get_scope_restrictions(AuthDoc, AuthOnly).
+
+-spec get_scope_restrictions(kz_term:api_object(), boolean()) -> kz_term:api_object().
+get_scope_restrictions(_AuthDoc, 'true') ->
+    lager:debug("auth only token, denying api access ..."),
+    build_global_rule(?CATCHALL, ?GLOBAL_DENY);
+get_scope_restrictions(AuthDoc, 'false') ->
     TokenRestrictions = crossbar_util:get_token_restrictions(kz_json:get_ne_value(<<"method">>, AuthDoc)
                                                             ,kz_json:get_ne_value(<<"account_id">>, AuthDoc)
                                                             ,kz_json:get_ne_value(<<"owner_id">>, AuthDoc)
@@ -62,7 +71,7 @@ resolve_restrictions(AuthDoc, TokenRestrictions) ->
     RawScopes = kz_json:get_ne_value(<<"scope">>, AuthDoc),
     Filtered = kz_auth_scope:bin_to_list(RawScopes) -- ?IGNORE_SCOPES,
     Scopes = kz_auth_scope:parse_raw(Filtered, PrivLevel),
-    maybe_set_read_only(Scopes, TokenRestrictions, kz_json:get_ne_value(?READ_ONLY, AuthDoc)).
+    maybe_set_read_only(Scopes, TokenRestrictions, kz_json:is_true(?READ_ONLY, AuthDoc)).
 
 %%------------------------------------------------------------------------------
 %% @doc Verify if _read_only claim is set
