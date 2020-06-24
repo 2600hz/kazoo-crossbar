@@ -8460,10 +8460,6 @@
         'type': object
       'type': array
   'type': object
-'skels':
-  'description': Skeleton JSON schema
-  'properties': {}
-  'type': object
 'sms':
   'description': sms document
   'properties':
@@ -13627,7 +13623,7 @@
       'description': stepswitch ensure valid emergency cid
       'type': boolean
     'fixed_length_shortdial_correction':
-      'description': stepswitch fixed_length_shortdial_correction
+      'description': 'add {FIXED} digits from caller ID to destination'
       'minimum': 1
       'type': integer
     'format_from_uri':
@@ -13644,12 +13640,17 @@
       'type': string
     'max_shortdial_correction':
       'default': 5
-      'description': stepswitch maximum shortdial correction
+      'description': 'add up to {MAX} digits from caller ID to destination number'
       'minimum': 1
       'type': integer
     'min_shortdial_correction':
       'default': 2
-      'description': stepswitch minimum shortdial correction
+      'description': 'add at least {MIN} digits from caller ID to destination number'
+      'minimum': 1
+      'type': integer
+    'min_shortdial_destination':
+      'description': |-
+        do short-dial correction if dialed number's length is equal to this value
       'minimum': 1
       'type': integer
     'route_by':

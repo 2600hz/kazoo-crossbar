@@ -129,7 +129,7 @@ maybe_merge_scope_restrictions(#scope{privileges=Priv}=Scope, TokenRestrictions,
 
 -spec maybe_merge_scope_restrictions(scope() | kz_term:binary(), kz_term:api_object(), kz_term:binaries(), list()) -> list().
 maybe_merge_scope_restrictions(#scope{scope=Name}, TokenRestrictions, Requested, Acc) ->
-  maybe_merge_scope_restrictions(Name, TokenRestrictions, Requested, Acc);
+    maybe_merge_scope_restrictions(Name, TokenRestrictions, Requested, Acc);
 maybe_merge_scope_restrictions(Name, TokenRestrictions, Requested, Acc) ->
     ResourceRestrictions = kz_json:get_first_defined([Name
                                                      ,?CATCHALL
@@ -144,8 +144,8 @@ maybe_merge_scope_restrictions(Name, TokenRestrictions, Requested, Acc) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec merge_scope_restrictions(kz_term:binary(), kz_term:api_object(), kz_term:binaries()) -> kz_term:api_object().
-% merge_scope_restrictions(#scope{scope=Name}, ResourceRestrictions, Requested) ->
-%   merge_scope_restrictions(Name, ResourceRestrictions, Requested);
+                                                % merge_scope_restrictions(#scope{scope=Name}, ResourceRestrictions, Requested) ->
+                                                %   merge_scope_restrictions(Name, ResourceRestrictions, Requested);
 merge_scope_restrictions(Name, ResourceRestrictions, Requested) ->
     Fun = fun(Props, _Acc) ->
                   Mutator = fun(K, V, A) ->

@@ -497,10 +497,6 @@
     '$ref': 'paths/services.yml#/paths/~1accounts~1{ACCOUNT_ID}~1services~1{PLAN_ID}'
   '/accounts/{ACCOUNT_ID}/siblings':
     '$ref': 'paths/accounts.yml#/paths/~1accounts~1{ACCOUNT_ID}~1siblings'
-  '/accounts/{ACCOUNT_ID}/skels':
-    '$ref': 'paths/skels.yml#/paths/~1accounts~1{ACCOUNT_ID}~1skels'
-  '/accounts/{ACCOUNT_ID}/skels/{THING}':
-    '$ref': 'paths/skels.yml#/paths/~1accounts~1{ACCOUNT_ID}~1skels~1{THING}'
   '/accounts/{ACCOUNT_ID}/sms':
     '$ref': 'paths/sms.yml#/paths/~1accounts~1{ACCOUNT_ID}~1sms'
   '/accounts/{ACCOUNT_ID}/sms/{SMS_ID}':
