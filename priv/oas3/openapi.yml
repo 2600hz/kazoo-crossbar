@@ -58,6 +58,11 @@
   '/accounts/{ACCOUNT_ID}/call_inspector/{CALL_ID}':
     '$ref': >-
       paths/call_inspector.yml#/paths/~1accounts~1{ACCOUNT_ID}~1call_inspector~1{CALL_ID}
+  '/accounts/{ACCOUNT_ID}/call_reports':
+    '$ref': 'paths/call_reports.yml#/paths/~1accounts~1{ACCOUNT_ID}~1call_reports'
+  '/accounts/{ACCOUNT_ID}/call_reports/allowed_types':
+    '$ref': >-
+      paths/call_reports.yml#/paths/~1accounts~1{ACCOUNT_ID}~1call_reports~1allowed_types
   '/accounts/{ACCOUNT_ID}/callflows':
     '$ref': 'paths/callflows.yml#/paths/~1accounts~1{ACCOUNT_ID}~1callflows'
   '/accounts/{ACCOUNT_ID}/callflows/{CALLFLOW_ID}':

@@ -1103,6 +1103,31 @@
       'name': url
       'type': string
   'type': object
+'call_reports':
+  'description': Schema for a call report
+  'properties':
+    'call_id':
+      'description': Call ID for which the quality/issue report was submitted
+      'type': string
+      'x-support_level': supported
+    'cdr_id':
+      'description': CDR ID of the call for which the quality/issue report was submitted
+      'type': string
+      'x-support_level': supported
+    'description':
+      'description': |-
+        Description of the issue/steps to reproduce/etc. that may be submitted by, for example, a user
+      'type': string
+      'x-support_level': supported
+    'type':
+      'description': |-
+        Type of issue that was reported. Must be in the list of allowed types for call reports in system_config
+      'type': string
+      'x-support_level': supported
+  'required':
+    - call_id
+    - type
+  'type': object
 'call_waiting':
   'description': Parameters for server-side call waiting
   'properties':
@@ -10384,6 +10409,34 @@
       'description': crossbar call_inspector maximum_bulk
       'minimum': 1
       'type': integer
+  'type': object
+'system_config.crossbar.call_reports':
+  'description': Schema for crossbar.call_reports system_config
+  'properties':
+    'allowed_types':
+      'default':
+        - 'id': dropped_call
+          'name': Dropped call
+        - 'id': one_way_audio
+          'name': One-way audio
+        - 'id': broken_audio
+          'name': Broken audio or bad sound
+        - 'id': other
+          'name': Other
+      'description': Allowed types for call reports
+      'items':
+        'properties':
+          'id':
+            'type': string
+          'name':
+            'type': string
+        'required':
+          - id
+          - name
+        'type': object
+      'type': array
+  'required':
+    - allowed_types
   'type': object
 'system_config.crossbar.cdrs':
   'description': Schema for crossbar.cdrs system_config
