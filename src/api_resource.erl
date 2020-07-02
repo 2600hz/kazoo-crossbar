@@ -221,7 +221,7 @@ maybe_decode_start_key(Context) ->
 
 -spec metrics() -> {non_neg_integer(), non_neg_integer()}.
 metrics() ->
-    {kz_util:bin_usage(), kz_util:mem_usage()}.
+    {kapps_util:bin_usage(), kapps_util:mem_usage()}.
 
 -spec find_version(kz_term:ne_binary(), cowboy_req:req()) ->
           kz_term:ne_binary().
@@ -321,10 +321,10 @@ pretty_metric(N, 'false') ->
     kz_term:to_binary(N);
 pretty_metric(N, 'true') when N < 0 ->
     NegN = N * -1,
-    PrettyN = kz_util:pretty_print_bytes(NegN),
+    PrettyN = kz_term:pretty_print_bytes(NegN),
     <<"-", PrettyN/binary>>;
 pretty_metric(N, 'true') ->
-    kz_util:pretty_print_bytes(N).
+    kz_term:pretty_print_bytes(N).
 
 %%%=============================================================================
 %%% CowboyHTTPRest API Callbacks
