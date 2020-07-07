@@ -9,6 +9,11 @@
             "maxLength": 64,
             "minLength": 64,
             "type": "string"
+        },
+        "scope": {
+            "description": "Define scopes for API key",
+            "maxLength": 255,
+            "type": "string"
         }
     },
     "required": [

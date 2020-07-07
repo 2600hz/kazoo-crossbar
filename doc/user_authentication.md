@@ -17,6 +17,7 @@ Key | Description | Type | Default | Required | Support Level
 `credentials` | A hash of the user credentials | `string(1..64)` |   | `true` |  
 `method` | The hash method | `string('md5' | 'sha')` | `md5` | `false` |  
 `phone_number` | A phone number assigned to the users account | `string(1..64)` |   | `false` |  
+`scope` | Define scopes for API key | `string(0..255)` |   | `false` |  
 
 
 
