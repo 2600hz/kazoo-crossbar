@@ -963,7 +963,7 @@ get_priv_level_restrictions(Restrictions, PrivLevel) ->
 
 -spec descendants_count() -> 'ok'.
 descendants_count() ->
-    Limit = kapps_config:get_integer(?SYSCONFIG_COUCH, <<"default_chunk_size">>, 1000),
+    Limit = kapps_config:get_integer(<<"kazoo_couch">>, <<"default_chunk_size">>, 1000),
     ViewOptions = [{'limit', Limit}
                   ,{'skip', 0}
                   ],

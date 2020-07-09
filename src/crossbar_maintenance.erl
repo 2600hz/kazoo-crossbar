@@ -56,7 +56,6 @@
 -export([does_schema_exist/1]).
 
 -include("crossbar.hrl").
--include_lib("kazoo/include/kz_system_config.hrl").
 
 -type input_term() :: atom() | string() | kz_term:ne_binary().
 
