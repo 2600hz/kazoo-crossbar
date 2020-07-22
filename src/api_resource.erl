@@ -260,7 +260,7 @@ maybe_allow_proxy_req(_Peer, ForwardIP, 'false') ->
 maybe_allow_proxy_req(Peer, ForwardIP, 'true') ->
     case is_proxied(Peer) of
         'true' ->
-            lager:info("request is from expected reverse proxy: ~s", [ForwardIP]),
+            lager:debug("request with \"X-Forwarded-For: ~s\" header, was forwarded from expected reverse proxy peer (~s)", [ForwardIP, Peer]),
             kz_term:to_binary(ForwardIP);
         'false' ->
             lager:warning("request with \"X-Forwarded-For: ~s\" header, but peer (~s) is not allowed as proxy"
