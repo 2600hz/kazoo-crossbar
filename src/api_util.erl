@@ -1735,7 +1735,7 @@ conditional_resp_data(Context) ->
 
 maybe_add_version(Context, Acc) ->
     case cb_context:is_authenticated(Context) of
-        'true' -> [{<<"version">>, kz_util:kazoo_version()} | Acc];
+        'true' -> [{<<"version">>, kapps_util:kazoo_version()} | Acc];
         'false' -> Acc
     end.
 
@@ -1750,7 +1750,7 @@ close_chunk_json_envelope(Req, Context) ->
         [{<<"status">>, <<"success">>}
         ,{<<"request_id">>, cb_context:req_id(Context)}
         ,{<<"node">>, kz_nodes:node_encoded()}
-        ,{<<"version">>, kz_util:kazoo_version()}
+        ,{<<"version">>, kapps_util:kazoo_version()}
         ,{<<"timestamp">>, kz_time:iso8601(kz_time:now_s())}
         ,{<<"revision">>, kz_term:to_api_binary(cb_context:resp_etag(Context))}
         ,{<<"auth_token">>, cb_context:auth_token(Context)}

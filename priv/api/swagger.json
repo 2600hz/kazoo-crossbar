@@ -4552,9 +4552,21 @@
                     "description": "The indicated number of the caller",
                     "type": "string"
                 },
+                "channel_call_state": {
+                    "description": "Media Server channel call state",
+                    "type": "string"
+                },
                 "channel_created_time": {
                     "description": "Unix timestamp in microseconds of channel create",
                     "type": "integer"
+                },
+                "channel_name": {
+                    "description": "Media Server channel name",
+                    "type": "string"
+                },
+                "channel_state": {
+                    "description": "Media Server channel state",
+                    "type": "string"
                 },
                 "custom_application_vars": {
                     "description": "Any custom-set values",
@@ -4600,28 +4612,44 @@
                     "description": "The duration of the call leg, in seconds",
                     "type": "integer"
                 },
+                "event_category": {
+                    "description": "KAZOO specific key (Event-Category) included on each payload it publishes",
+                    "type": "string"
+                },
+                "event_name": {
+                    "description": "KAZOO specific key (Event-Name) included on each payload it publishes",
+                    "type": "string"
+                },
                 "fax_bad_rows": {
+                    "description": "Number of rows that failed to transfer",
                     "type": "string"
                 },
                 "fax_ecm_used": {
+                    "description": "Was ECM (error correction mode) used on the fax",
                     "type": "string"
                 },
                 "fax_result_code": {
+                    "description": "Media Server's result code of the transmission",
                     "type": "string"
                 },
                 "fax_result_text": {
+                    "description": "Error String, if any, or 'OK' if successful",
                     "type": "string"
                 },
                 "fax_success": {
+                    "description": "Whether the fax was considered a success or not",
                     "type": "string"
                 },
                 "fax_total_pages": {
+                    "description": "Number of pages in the fax",
                     "type": "string"
                 },
                 "fax_transfer_rate": {
+                    "description": "Baud of the fax transfer",
                     "type": "string"
                 },
                 "fax_transferred_pages": {
+                    "description": "Number of pages transferred",
                     "type": "string"
                 },
                 "from": {
@@ -4648,12 +4676,24 @@
                     "description": "correlating ID among related call legs",
                     "type": "string"
                 },
+                "interaction_key": {
+                    "description": "Unique portion of the interaction ID",
+                    "type": "string"
+                },
+                "interaction_time": {
+                    "description": "Timestamp of the creation of the interaction ID",
+                    "type": "integer"
+                },
                 "local_sdp": {
                     "description": "The SDP negotiated by the local agent",
                     "type": "string"
                 },
                 "media_server": {
                     "description": "The hostname of the media server that processed the call",
+                    "type": "string"
+                },
+                "msg_id": {
+                    "description": "KAZOO specific key (Msg-Id) assigned to each payload it publishes",
                     "type": "string"
                 },
                 "node": {
@@ -4695,6 +4735,22 @@
                 "ringing_seconds": {
                     "description": "How many seconds the leg was ringing (pre-answer)",
                     "type": "integer"
+                },
+                "switch_hostname": {
+                    "description": "Media Server hostname (as reported by the switch)",
+                    "type": "string"
+                },
+                "switch_nodename": {
+                    "description": "Media Server node name (as known in ecallmgr)",
+                    "type": "string"
+                },
+                "switch_uri": {
+                    "description": "Media Server URI",
+                    "type": "string"
+                },
+                "switch_url": {
+                    "description": "Media Server URL",
+                    "type": "string"
                 },
                 "timestamp": {
                     "description": "UTC timestamp, in Gregorian seconds, of when the CDR was generated",
@@ -7029,6 +7085,63 @@
             ],
             "type": "object"
         },
+        "kapi.acdc_agent.member_connect_win": {
+            "description": "AMQP API for acdc_agent.member_connect_win",
+            "properties": {
+                "Agent-ID": {
+                    "type": "string"
+                },
+                "Agent-Process-IDs": {
+                    "type": "array"
+                },
+                "CDR-Url": {
+                    "type": "string"
+                },
+                "Call": {
+                    "type": "object"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "member"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "connect_win"
+                    ],
+                    "type": "string"
+                },
+                "Notifications": {
+                    "type": "object"
+                },
+                "Process-ID": {
+                    "type": "string"
+                },
+                "Queue-ID": {
+                    "type": "string"
+                },
+                "Record-Caller": {
+                    "type": "boolean"
+                },
+                "Recording-URL": {
+                    "type": "string"
+                },
+                "Ring-Timeout": {
+                    "type": "integer"
+                },
+                "Wrapup-Timeout": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "Agent-ID",
+                "Agent-Process-IDs",
+                "Call",
+                "Queue-ID"
+            ],
+            "type": "object"
+        },
         "kapi.acdc_agent.pause": {
             "description": "AMQP API for acdc_agent.pause",
             "properties": {
@@ -7648,61 +7761,6 @@
                 },
                 "Queue-ID": {
                     "type": "string"
-                }
-            },
-            "required": [
-                "Call",
-                "Queue-ID"
-            ],
-            "type": "object"
-        },
-        "kapi.acdc_queue.member_connect_win": {
-            "description": "AMQP API for acdc_queue.member_connect_win",
-            "properties": {
-                "Agent-Process-IDs": {
-                    "type": "array"
-                },
-                "CDR-Url": {
-                    "type": "string"
-                },
-                "Call": {
-                    "type": "object"
-                },
-                "Caller-Exit-Key": {
-                    "type": "string"
-                },
-                "Event-Category": {
-                    "enum": [
-                        "member"
-                    ],
-                    "type": "string"
-                },
-                "Event-Name": {
-                    "enum": [
-                        "connect_win"
-                    ],
-                    "type": "string"
-                },
-                "Notifications": {
-                    "type": "object"
-                },
-                "Process-ID": {
-                    "type": "string"
-                },
-                "Queue-ID": {
-                    "type": "string"
-                },
-                "Record-Caller": {
-                    "type": "boolean"
-                },
-                "Recording-URL": {
-                    "type": "string"
-                },
-                "Ring-Timeout": {
-                    "type": "integer"
-                },
-                "Wrapup-Timeout": {
-                    "type": "integer"
                 }
             },
             "required": [
@@ -33051,11 +33109,6 @@
             },
             "type": "object"
         },
-        "skels": {
-            "description": "Skeleton JSON schema",
-            "properties": {},
-            "type": "object"
-        },
         "sms": {
             "description": "sms document",
             "properties": {
@@ -42485,13 +42538,6 @@
             "required": true,
             "type": "string"
         },
-        "THING": {
-            "description": "request THING parameter",
-            "in": "path",
-            "name": "THING",
-            "required": true,
-            "type": "string"
-        },
         "TRANSACTION_ID": {
             "description": "request TRANSACTION_ID parameter",
             "in": "path",
@@ -49510,128 +49556,6 @@
                     },
                     {
                         "$ref": "#/parameters/ACCOUNT_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
-        "/accounts/{ACCOUNT_ID}/skels": {
-            "get": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "put": {
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "skels",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/skels"
-                        }
-                    },
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
-        "/accounts/{ACCOUNT_ID}/skels/{THING}": {
-            "delete": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/THING"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "get": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/THING"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "patch": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/THING"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "post": {
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "skels",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/skels"
-                        }
-                    },
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/THING"
                     }
                 ],
                 "responses": {

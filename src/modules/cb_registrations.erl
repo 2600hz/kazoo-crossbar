@@ -99,7 +99,14 @@ authorize(_, _) -> 'false'.
 
 -spec authorize_admin(cb_context:context(), req_nouns()) -> boolean().
 authorize_admin(Context, [{<<"registrations">>, [?COUNT_PATH_TOKEN]}]) ->
-    cb_context:is_superduper_admin(Context).
+    cb_context:is_superduper_admin(Context);
+authorize_admin(_Context, [{<<"registrations">>, [?COUNT_PATH_TOKEN]}
+                          ,{<<"accounts">>, [_AccountId]}
+                          ]) ->
+    'true';
+authorize_admin(_Context, _Path) ->
+    lager:info("failed to parse path for authz: ~p", [_Path]),
+    'false'.
 
 %%------------------------------------------------------------------------------
 %% @doc This function determines if the parameters and content are correct
@@ -166,7 +173,7 @@ delete(Context, Username) ->
 lookup_regs(Context) ->
     Req = [{<<"Realm">>, get_realm(Context)}
           ,{<<"Fields">>, []}
-           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+          | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
 
     ReqResp = kz_amqp_worker:call_collect(Req
@@ -210,7 +217,10 @@ maybe_default_port(Port, _, _) -> Port.
 -spec normalize_registration(kz_json:object()) -> kz_json:object().
 normalize_registration(JObj) ->
     OriginalContact = kz_json:get_binary_value(<<"Original-Contact">>, JObj, <<>>),
-    [#uri{scheme=Scheme,domain=Domain, port=Port, ext_opts=Opts}=_Uri] = kzsip_uri:uris(OriginalContact),
+
+    normalize_registration(JObj, kzsip_uri:uris(OriginalContact)).
+
+normalize_registration(JObj, [#uri{scheme=Scheme,domain=Domain, port=Port, ext_opts=Opts}=_Uri]) ->
     Transport = props:get_binary_value(<<"transport">>, Opts),
     Updaters = [fun(J) -> kz_json:delete_keys(?MASK_REG_FIELDS, J) end
                ,fun(J) ->
@@ -220,14 +230,17 @@ normalize_registration(JObj) ->
                         kz_json:set_values(Values, J)
                 end
                ],
-    kz_json:normalize(lists:foldr(fun(F, J) -> F(J) end, JObj, Updaters)).
+    kz_json:normalize(lists:foldr(fun(F, J) -> F(J) end, JObj, Updaters));
+normalize_registration(JObj, _E) ->
+    lager:info("failed to parse original contact: ~p", [_E]),
+    JObj.
 
 -spec count_registrations(cb_context:context()) -> integer().
 count_registrations(Context) ->
     Req = [{<<"Realm">>, get_realm(Context)}
           ,{<<"Fields">>, []}
           ,{<<"Count-Only">>, 'true'}
-           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+          | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
     ReqResp = kz_amqp_worker:call(Req
                                  ,fun kapi_registration:publish_query_req/1
