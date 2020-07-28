@@ -15,6 +15,7 @@
         ,refresh/0, refresh/1
         ,register_views/0
         ,flush/0
+        ,update_schema/1
         ,update_schemas/0
         ,db_init/0
         ]).
@@ -1115,6 +1116,10 @@ update_schemas() ->
     ?SUP_LOG_WARNING("starting system schemas update"),
     kz_datamgr:revise_docs_from_folder(?KZ_SCHEMA_DB, ?APP, <<"schemas">>),
     ?SUP_LOG_WARNING("finished system schemas update").
+
+-spec update_schema(kz_term:text()) -> 'ok'.
+update_schema(Schema) ->
+    kz_datamgr:revise_doc_from_file(?KZ_SCHEMA_DB, ?APP, list_to_binary(["schemas/", Schema, ".json"])).
 
 %%------------------------------------------------------------------------------
 %% @doc Updates system schemas using files in Crossbar `priv' folder during
