@@ -4662,9 +4662,7 @@
           'description': Model name of the phone
           'oneOf':
             - 'type': string
-            - 'items':
-                'type': string
-              'type': array
+            - 'type': integer
         'feature_keys':
           'type': object
           'x-patternProperties':

@@ -60,7 +60,7 @@ Key | Description | Type | Default | Required | Support Level
 `provision.combo_keys` |   | `object()` |   | `false` |  
 `provision.endpoint_brand` | Brand of the phone | `string()` |   | `false` |  
 `provision.endpoint_family` | Family name of the phone | `string()` |   | `false` |  
-`provision.endpoint_model` | Model name of the phone | `string() | array(string())` |   | `false` |  
+`provision.endpoint_model` | Model name of the phone | `string() | integer()` |   | `false` |  
 `provision.feature_keys./^[0-9]+$/` | Device provisioner Combo/Feature Key | [#/definitions/devices.combo_key](#devicescombo_key) |   | `false` |  
 `provision.feature_keys` |   | `object()` |   | `false` |  
 `provision.id` | Provisioner Template ID | `string()` |   | `false` |  
