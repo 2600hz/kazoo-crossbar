@@ -594,7 +594,7 @@ save_attached_data(Context, _TaskId, 'undefined', 'false') ->
 save_attached_data(Context, TaskId, Records, 'false') ->
     lager:debug("converting json to csv before saving"),
     lager:debug("csv fields found: ~p", [kz_json:get_keys(hd(Records))]),
-    CSV = kz_csv:json_to_iolist(Records),
+    CSV = kz_term:to_binary(kz_csv:from_jobjs(Records)),
     lager:debug("saving ~s attachment in task ~s", [?KZ_TASKS_ANAME_IN, TaskId]),
     Options = [{'content_type', <<"text/csv">>}],
     crossbar_doc:save_attachment(TaskId, ?KZ_TASKS_ANAME_IN, CSV, Context, Options).
