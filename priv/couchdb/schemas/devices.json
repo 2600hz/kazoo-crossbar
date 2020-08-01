@@ -291,10 +291,7 @@
                             "type": "string"
                         },
                         {
-                            "items": {
-                                "type": "string"
-                            },
-                            "type": "array"
+                            "type": "integer"
                         }
                     ]
                 },
