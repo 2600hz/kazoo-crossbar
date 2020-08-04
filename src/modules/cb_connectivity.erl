@@ -108,6 +108,7 @@ post(Context, _) ->
     Context1 = crossbar_doc:save(Context),
     case cb_context:resp_status(Context1) of
         'success' ->
+            maybe_aggregate_device(Context1),
             'ok' = track_assignment('post', Context),
             _ = crossbar_util:maybe_refresh_fs_xml('sys_info', Context),
             Context1;
@@ -124,6 +125,7 @@ put(Context) ->
     case cb_context:resp_status(Context1) of
         'success' ->
             registration_update(Context),
+            maybe_aggregate_device(Context1),
             Context1;
         _Status -> Context1
     end.
@@ -134,6 +136,7 @@ delete(Context, _) ->
     case cb_context:resp_status(Context1) of
         'success' ->
             registration_update(Context),
+            remove_aggregate(Context1),
             'ok' = track_assignment('delete', Context),
             _ = crossbar_util:maybe_refresh_fs_xml('sys_info', Context),
             Context1;
@@ -271,3 +274,51 @@ summary(Context) ->
               ,{'reduce', 'false'}
               ],
     crossbar_view:load(Context, ?CB_LIST, Options).
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec maybe_aggregate_device(cb_context:context()) -> cb_context:context().
+maybe_aggregate_device(Context) ->
+    Device = cb_context:doc(Context),
+    Fun = fun(Server) ->
+                  kz_json:get_ne_binary_value([<<"auth">>, <<"auth_method">>], Server) =:= <<"IP">>
+          end,
+    case lists:any(Fun, kzd_trunkstore:servers(Device)) of
+        true -> aggregate_device(Context);
+        false -> remove_aggregate(Context)
+    end.
+
+-spec aggregate_device(cb_context:context()) -> cb_context:context().
+aggregate_device(Context) ->
+    Device = cb_context:doc(Context),
+    lager:debug("adding connectivity to the sip auth aggregate"),
+    Doc = kz_doc:delete_revision(Device),
+    Update = kz_json:to_proplist(kz_json:flatten(Doc)),
+    UpdateOptions = [{'update', Update}
+                    ,{'create', []}
+                    ,{'ensure_saved', 'true'}
+                    ],
+    case kz_datamgr:update_doc(?KZ_SIP_DB, kz_doc:id(Device), UpdateOptions) of
+        {'ok', _} ->
+            _ = kz_amqp_worker:cast(kz_api:default_headers(?APP_NAME, ?APP_VERSION), fun kapi_trusted:publish_reload/1),
+            Context;
+        {'error', _R} ->
+            lager:debug("failed to aggregate device: ~p", [_R]),
+            crossbar_util:response_db_fatal(Context)
+    end.
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec remove_aggregate(cb_context:context()) -> cb_context:context().
+remove_aggregate(Context) ->
+    Device = cb_context:doc(Context),
+    case kz_datamgr:del_doc(?KZ_SIP_DB, kz_doc:id(Device)) of
+        {'error', 'not_found'} -> Context;
+        {'ok', _JObj} ->
+            _ = kz_amqp_worker:cast(kz_api:default_headers(?APP_NAME, ?APP_VERSION), fun kapi_trusted:publish_reload/1),
+            Context
+    end.
