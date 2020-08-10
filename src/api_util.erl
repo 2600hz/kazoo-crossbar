@@ -55,8 +55,6 @@
         ,ensure_content_type/1
         ,create_event_name/2
 
-        ,encode_start_key/1, decode_start_key/1
-
         ,exec_req/2
         ,get_request_body/1
         ]).
@@ -1725,9 +1723,9 @@ create_default_resp_envelope(Context) ->
                    ]
            end,
 
-    encode_start_keys(kz_json:set_values(Resp, cb_context:resp_envelope(Context))
-                     ,cb_context:should_paginate(Context)
-                     ).
+    maybe_delete_range_keys(kz_json:set_values(Resp, cb_context:resp_envelope(Context))
+                           ,cb_context:should_paginate(Context)
+                           ).
 
 conditional_resp_data(Context) ->
     Fs = [fun maybe_add_version/2],
@@ -1741,9 +1739,9 @@ maybe_add_version(Context, Acc) ->
 
 -spec close_chunk_json_envelope(cowboy_req:req(), cb_context:context()) -> 'ok'.
 close_chunk_json_envelope(Req, Context) ->
-    Paging = kz_json:to_proplist(encode_start_keys(cb_context:resp_envelope(Context)
-                                                  ,cb_context:should_paginate(Context)
-                                                  )
+    Paging = kz_json:to_proplist(maybe_delete_range_keys(cb_context:resp_envelope(Context)
+                                                        ,cb_context:should_paginate(Context)
+                                                        )
                                 ),
     Trailer =
         Paging ++
@@ -1761,31 +1759,12 @@ close_chunk_json_envelope(Req, Context) ->
               ],
     'ok' = cowboy_req:stream_body(<<"], ", (kz_binary:join(Encoded))/binary, "}">>, 'fin', Req).
 
--spec encode_start_keys(kz_json:object(), boolean()) -> kz_json:object().
-encode_start_keys(Resp, 'false') ->
+-spec maybe_delete_range_keys(kz_json:object(), boolean()) -> kz_json:object().
+maybe_delete_range_keys(Resp, 'false') ->
     lager:debug("pagination disabled, removing resp envelope keys"),
     kz_json:delete_keys([<<"start_key">>, <<"page_size">>, <<"next_start_key">>], Resp);
-encode_start_keys(Resp, 'true') ->
-    lists:foldl(fun(Key, JObj) ->
-                        case kz_json:get_value(Key, JObj) of
-                            'undefined' -> JObj;
-                            Value ->
-                                kz_json:set_value(Key, encode_start_key(Value), JObj)
-                        end
-                end
-               ,Resp
-               ,[<<"start_key">>, <<"next_start_key">>]
-               ).
-
--spec encode_start_key(kz_json:path()) -> kz_term:ne_binary().
-encode_start_key(StartKey) ->
-    kz_base64url:encode(erlang:term_to_binary(StartKey)).
-
--spec decode_start_key(kz_term:ne_binary()) -> kz_json:path().
-decode_start_key(Encoded) ->
-    try erlang:binary_to_term(kz_base64url:decode(Encoded))
-    catch _:_ -> Encoded
-    end.
+maybe_delete_range_keys(Resp, 'true') ->
+    Resp.
 
 %%------------------------------------------------------------------------------
 %% @doc

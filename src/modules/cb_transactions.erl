@@ -156,7 +156,7 @@ validate(Context) ->
 
 -spec validate_transactions(cb_context:context(), http_method()) -> cb_context:context().
 validate_transactions(Context, ?HTTP_GET) ->
-    Options = [{'mapper', fun normalize_view_results/3}],
+    Options = [{'mapper', fun normalize_view_results/2}],
     crossbar_view:load_modb(Context, ?VIEW_BY_TIMESTAMP, Options).
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
@@ -264,9 +264,9 @@ handle_bookkeeper_result(Context, Transaction) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec normalize_view_results(cb_context:context(), kzd_transactions:doc(), kz_json:objects()) ->
+-spec normalize_view_results(kzd_transactions:doc(), kz_json:objects()) ->
           kz_json:objects().
-normalize_view_results(_Context, JObj, Acc) ->
+normalize_view_results(JObj, Acc) ->
     [normalize_view_result(JObj) | Acc].
 
 -spec normalize_view_result(kz_json:object()) -> kz_json:object().

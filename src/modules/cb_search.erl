@@ -276,9 +276,10 @@ format_query_option(Name) -> Name.
 search(Context, Type, Query, Val, Opts) ->
     ViewName = <<?QUERY_TPL/binary, Query/binary>>,
     Value = cb_modules_util:normalize_alphanum_name(Val),
+    StartKey = props:get_value('next_startkey', cb_context:req_value(Context, <<"bookmark">>, []), Value),
     Options =
-        [{'startkey', get_start_key(Context, Type, Value)}
-        ,{'endkey', get_end_key(Context, Type, Value)}
+        [{'startkey', get_start_key(Context, Type, StartKey)}
+        ,{'endkey', get_end_key(Context, Type, StartKey)}
         ,{'mapper', crossbar_view:get_value_fun()}
          | Opts
         ],
@@ -316,9 +317,9 @@ multi_search(Context, Type, [_|Props], Acc) ->
 %%------------------------------------------------------------------------------
 -spec get_start_key(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) -> kz_term:ne_binaries().
 get_start_key(Context, <<"account">>=Type, Value) ->
-    [cb_context:auth_account_id(Context), Type, cb_context:req_value(Context, <<"start_key">>, Value)];
-get_start_key(Context, Type, Value) ->
-    [Type, cb_context:req_value(Context, <<"start_key">>, Value)].
+    [cb_context:auth_account_id(Context), Type, Value];
+get_start_key(_, Type, Value) ->
+    [Type, Value].
 
 %%------------------------------------------------------------------------------
 %% @doc resource.
@@ -336,6 +337,6 @@ get_end_key(_, Type, Value) ->
 %%------------------------------------------------------------------------------
 -spec next_binary_key(binary()) -> kz_term:ne_binary().
 next_binary_key(<<>>) ->
-    <<"Z">>;
+    kz_term:high_unicode_value();
 next_binary_key(Bin) ->
-    <<Bin/binary, "Z">>.
+    <<Bin/binary, (kz_term:high_unicode_value())/binary>>.

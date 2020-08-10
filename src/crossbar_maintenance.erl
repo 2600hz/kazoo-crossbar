@@ -1119,7 +1119,8 @@ update_schemas() ->
 
 -spec update_schema(kz_term:text()) -> 'ok'.
 update_schema(Schema) ->
-    kz_datamgr:revise_doc_from_file(?KZ_SCHEMA_DB, ?APP, list_to_binary(["schemas/", Schema, ".json"])).
+    {'ok', _} = kz_datamgr:revise_doc_from_file(?KZ_SCHEMA_DB, ?APP, list_to_binary(["schemas/", Schema, ".json"])),
+    ?SUP_LOG_WARNING("updated schema ~s", [Schema]).
 
 %%------------------------------------------------------------------------------
 %% @doc Updates system schemas using files in Crossbar `priv' folder during

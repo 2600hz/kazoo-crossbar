@@ -349,7 +349,7 @@ summary(Context, {'reseller_plans', AccountId}) ->
     Options = [{'databases', [?KZ_DATA_DB]}
               ,{'mapper', crossbar_view:get_doc_fun()}
               ,{'startkey', [AccountId]}
-              ,{'endkey', [AccountId, kz_view:high_unicode_value()]}
+              ,{'endkey', [AccountId, kz_term:high_unicode_value()]}
               ,'include_docs'
               ],
     crossbar_view:load(Context, ?CB_ACCOUNT_LIST, Options).

@@ -33,7 +33,6 @@
 
 -define(ATTACHMENT, <<"attachment">>).
 
--define(CB_LIST_ALL, <<"faxes/crossbar_listing">>).
 -define(CB_LIST_BY_FAXBOX, <<"faxes/list_by_faxbox">>).
 -define(CB_LIST_BY_OWNERID, <<"faxes/list_by_ownerid">>).
 -define(CB_LIST_BY_FOLDER, <<"faxes/list_by_folder">>).
@@ -572,6 +571,22 @@ fax_modb_summary(Context, Folder) ->
               ],
     crossbar_view:load_modb(Context, ViewName, Options).
 
+%%------------------------------------------------------------------------------
+%% @doc Attempt to load a summarized listing of all instances of this
+%% resource.
+%% @end
+%%------------------------------------------------------------------------------
+-spec outgoing_summary(cb_context:context()) -> cb_context:context().
+outgoing_summary(Context) ->
+    JObj = cb_context:fetch(Context, <<"faxbox">>, kz_json:new()),
+    {ViewName, Opts} = get_view_and_filter(Context, {kz_doc:id(JObj), kz_doc:type(JObj)}, 'undefined'),
+    Options = [{'mapper', crossbar_view:get_value_fun()}
+              ,{'databases', [?KZ_FAXES_DB]}
+              ,'include_docs'
+               | Opts
+              ],
+    crossbar_view:load(Context, ViewName, Options).
+
 -spec get_view_and_filter(cb_context:context(), {kz_term:api_ne_binary(), kz_term:api_ne_binary()}, kz_term:api_ne_binary()) ->
           {kz_term:ne_binary(), crossbar_view:options()}.
 get_view_and_filter(_, {?NE_BINARY=Id, <<"faxbox">>}, ?NE_BINARY=Folder) ->
@@ -619,6 +634,16 @@ load_smtp_log(Context) ->
               ,'include_docs'
               ],
     crossbar_view:load_modb(Context, ?CB_LIST_SMTP_LOG, Options).
+
+%%------------------------------------------------------------------------------
+%% @doc Normalizes the results of a view.
+%% @end
+%%------------------------------------------------------------------------------
+-spec normalize_modb_view_results(kz_json:object(), kz_json:objects()) -> kz_json:objects().
+normalize_modb_view_results(JObj, Acc) ->
+    Doc = kz_json:get_value(<<"doc">>, JObj),
+    View = kz_json:get_value(<<"value">>, JObj),
+    [kz_doc:public_fields(kz_json:merge_jobjs(View, Doc))|Acc].
 
 %%------------------------------------------------------------------------------
 %% @doc Load the binary attachment of a fax doc
@@ -703,32 +728,6 @@ get_timezone(Context) ->
             end;
         _ -> kzd_accounts:timezone(cb_context:auth_account_id(Context))
     end.
-
-%%------------------------------------------------------------------------------
-%% @doc Attempt to load a summarized listing of all instances of this
-%% resource.
-%% @end
-%%------------------------------------------------------------------------------
--spec outgoing_summary(cb_context:context()) -> cb_context:context().
-outgoing_summary(Context) ->
-    JObj = cb_context:fetch(Context, <<"faxbox">>, kz_json:new()),
-    {ViewName, Opts} = get_view_and_filter(Context, {kz_doc:id(JObj), kz_doc:type(JObj)}, 'undefined'),
-    Options = [{'mapper', crossbar_view:get_value_fun()}
-              ,{'databases', [?KZ_FAXES_DB]}
-              ,'include_docs'
-               | Opts
-              ],
-    crossbar_view:load(Context, ViewName, Options).
-
-%%------------------------------------------------------------------------------
-%% @doc Normalizes the results of a view.
-%% @end
-%%------------------------------------------------------------------------------
--spec normalize_modb_view_results(kz_json:object(), kz_json:objects()) -> kz_json:objects().
-normalize_modb_view_results(JObj, Acc) ->
-    Doc = kz_json:get_value(<<"doc">>, JObj),
-    View = kz_json:get_value(<<"value">>, JObj),
-    [kz_doc:public_fields(kz_json:merge_jobjs(View, Doc))|Acc].
 
 -spec maybe_save_attachment(cb_context:context()) -> cb_context:context().
 maybe_save_attachment(Context) ->

@@ -976,7 +976,7 @@ load_summary_by_type(Context, Type) ->
 by_types_view_options(Context, Type, 'true', 'agent') ->
     [{'range_start_keymap', [cb_context:fetch(Context, 'port_authority_id'), Type]}
     ,{'range_end_keymap', [cb_context:fetch(Context, 'port_authority_id'), Type]}
-    ,{'range_key_name', <<"modified">>}
+    ,{'time_filter_key', <<"modified">>}
     ];
 by_types_view_options(Context, Type, 'false', 'agent') ->
     [{'startkey', [cb_context:fetch(Context, 'port_authority_id'), Type]}
@@ -985,7 +985,7 @@ by_types_view_options(Context, Type, 'false', 'agent') ->
 by_types_view_options(Context, Type, 'true', _) ->
     [{'range_start_keymap', [cb_context:account_id(Context), Type]}
     ,{'range_end_keymap', [cb_context:account_id(Context), Type]}
-    ,{'range_key_name', <<"modified">>}
+    ,{'time_filter_key', <<"modified">>}
     ];
 by_types_view_options(Context, Type, 'false', _) ->
     [{'startkey', [cb_context:account_id(Context), Type]}

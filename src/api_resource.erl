@@ -199,24 +199,43 @@ maybe_start_trace('true') ->
 
 -spec maybe_decode_start_key(cb_context:context()) -> cb_context:context().
 maybe_decode_start_key(Context) ->
-    case cb_context:req_value(Context, <<"start_key">>) of
+    case cb_context:req_value(Context, <<"bookmark">>, cb_context:req_value(Context, <<"start_key">>)) of
         'undefined' -> Context;
         Value ->
             QS = cb_context:query_string(Context),
             ReqData = cb_context:req_data(Context),
             ReqJson = cb_context:req_json(Context),
 
+            ToDelete = [<<"start_key">>, <<"bookmark">>],
+
             NewReqData = case kz_json:is_json_object(ReqData) of
-                             'true' -> kz_json:delete_key(<<"start_key">>, ReqData);
+                             'true' -> kz_json:delete_keys(ToDelete, ReqData);
                              'false' -> ReqData
                          end,
-            NewQS = kz_json:set_value(<<"start_key">>, api_util:decode_start_key(Value), QS),
+            Bookmark = decode_bookmark(Value),
+            NewQS = kz_json:set_value(<<"bookmark">>, Bookmark, QS),
 
             Setters = [{fun cb_context:set_req_data/2, NewReqData}
                       ,{fun cb_context:set_query_string/2, NewQS}
-                      ,{fun cb_context:set_req_json/2, kz_json:delete_key(<<"start_key">>, ReqJson)}
+                      ,{fun cb_context:set_req_json/2, kz_json:delete_keys(ToDelete, ReqJson)}
                       ],
             cb_context:setters(Context, Setters)
+    end.
+
+%% @doc
+%% Bookmark should be opaque, but until poeple start using bookmark
+%% we need to support both old start_key and new bookmark in crossbar.
+%%
+%% It is highly recommended to use the opaque bookmark in the new
+%% code. Use {@link kz_view_cursor:bookmark_encoded/1} or
+%% {@link kz_view_cursor:encode_bookmark/1} to convert the Bookmark
+%% in the Cursor to Base64 URL useful for HTTP.
+-spec decode_bookmark(kz_term:ne_binary()) -> kz_view:bookmark().
+decode_bookmark(Encoded) ->
+    try kz_view_cursor:decode_bookmark(Encoded) of
+        <<StartKey/binary>> -> [{'next_startkey', StartKey}];
+        Bookmark when is_list(Bookmark) -> Bookmark
+    catch _:_ -> Encoded
     end.
 
 -spec metrics() -> {non_neg_integer(), non_neg_integer()}.
@@ -889,9 +908,15 @@ to_json(Req, Context, Accept) ->
 -spec to_custom(cowboy_req:req(), cb_context:context()) -> {'stop', cowboy_req:req(), cb_context:context()}.
 to_custom(Req0, Context0) ->
     lager:debug("run: to_custom"),
-    [{Mod, Params}|_] = cb_context:req_nouns(Context0),
-    Verb = cb_context:req_verb(Context0),
-    Event = api_util:create_event_name(Context0, [<<"to_custom">>, kz_term:to_lower_binary(Verb), Mod]),
+    to_custom(Req0, Context0
+             ,cb_context:req_nouns(Context0)
+             ,cb_context:req_verb(Context0)
+             ).
+
+to_custom(Req0, Context0, [{Mod, Params}|_], ReqVerb) ->
+    Event = api_util:create_event_name(Context0
+                                      ,[<<"to_custom">>, kz_term:to_lower_binary(ReqVerb), Mod]
+                                      ),
     Payload = [{Req0, Context0} | Params],
     {Req, Context} = crossbar_bindings:fold(Event, Payload),
     {'stop', Req, Context}.
@@ -1040,139 +1065,101 @@ to_pdf(Req, Context, RespData) ->
     ,Context
     }.
 
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-type chunk_map() :: #{event_name := kz_term:ne_binary()
+                      ,chunking_started := boolean()
+                      ,chunk_response_type => kz_term:ne_binary()
+                      }.
+
 -spec to_chunk(kz_term:ne_binary(), cowboy_req:req(), cb_context:context()) ->
           {iolist() | kz_term:ne_binary() | 'stop', cowboy_req:req(), cb_context:context()}.
 to_chunk(ToFun, Req, Context) ->
     lager:debug("(chunked) starting '~s' chunked query", [ToFun]),
-    EventName = to_fun_event_name(ToFun, Context),
-    next_chunk_fold(#{start_key => 'undefined'
-                     ,last_key => 'undefined'
-                     ,total_queried => 0
-                     ,previous_chunk_length => 0
-                     ,chunking_started => 'false'
-                     ,chunking_finished => 'false'
-                     ,cowboy_req => Req
-                     ,context => Context
-                     ,chunk_response_type => ToFun
-                     ,event_name => EventName
-                     }).
-
--spec next_chunk_fold(map()) -> {iolist() | kz_term:ne_binary() | 'stop', cowboy_req:req(), cb_context:context()}.
-next_chunk_fold(#{chunking_finished := 'true'
-                 ,chunking_started := StartedChunk
-                 ,context := Context
-                 }=ChunkMap) ->
-    lager:debug("(chunked) chunked query finished"),
-    finish_chunked_response(ChunkMap#{context => reset_context_between_chunks(Context, StartedChunk)});
-next_chunk_fold(#{chunking_started := StartedChunk
-                 ,context := Context0
-                 ,chunk_response_type := _ToFun
-                 }=ChunkMap0) ->
-    lager:debug("(chunked) calling next chunk ~s", [_ToFun]),
-    Context1 = cb_context:store(Context0, 'chunking_started', StartedChunk),
-    ChunkMap1 = #{context := Context2} = crossbar_view:next_chunk(ChunkMap0#{context := Context1}),
-
-    next_chunk_results(ChunkMap1, api_util:succeeded(Context2)).
-
-next_chunk_results(#{context := Context
-                    ,chunking_started := StartedChunk
-                    }=ChunkMap, 'false') ->
-    lager:debug("(chunked) getting next chunk was unsuccessful"),
-    finish_chunked_response(ChunkMap#{context => reset_context_between_chunks(Context, StartedChunk)});
-next_chunk_results(#{context := Context0
-                    ,cowboy_req := Req0
-                    ,chunk_response_type := _ToFun
-                    ,chunking_started := StartedChunk
-                    ,event_name := Event
-                    }=ChunkMap, 'true') ->
-    {Req1, Context1} = crossbar_bindings:fold(Event, {Req0, Context0}),
-    lager:debug("(chunked) ran '~s'", [_ToFun]),
-    case api_util:succeeded(Context1) of
-        'true' ->
-            process_chunk(ChunkMap#{cowboy_req := Req1
-                                   ,context := Context1
-                                   });
-        'false' ->
-            lager:debug("(chunked) '~s' was unsuccessful", [_ToFun]),
-            finish_chunked_response(ChunkMap#{context => reset_context_between_chunks(Context1, StartedChunk)})
+    try
+        EventName = to_fun_event_name(ToFun, Context),
+        Cursor = cb_context:fetch(Context, 'view_cursor'),
+        next_chunk_fold(#{chunking_started => 'false'
+                         ,chunk_response_type => ToFun
+                         ,event_name => EventName
+                         }, Cursor, Req, cb_context:store(Context, 'view_cursor', 'undefined'))
+    catch
+        _E:_T:_ST ->
+            kz_log:log_stacktrace(_ST,"crashed during to_chunk response: ~p:~p", [_E, _T]),
+            {'stop', Req, cb_context:set_resp_status(Context, 'stop')}
     end.
 
+
 %%------------------------------------------------------------------------------
-%% @doc Check folded `to_json' response and send this chunk result.
-%% === Sending chunk response from the module directly ===
-%%
-%% If module is sending the chunked response in its own `to_json' function,
-%% return a `non_neg_integer' of how many of queried items did you sent.
-%% Obviously it should be same size as passed JObjs or less.
-%%
-%% The {@link init_chunk_stream/1} is helping you to initializing chunk
-%% response by sending HTTP headers and start the response envelope.
-%%
-%% When an error occurred (e.g. a db request error) and you want to
-%% stop sending chunks, set the error in `Context'. If the chunk is already
-%% started it will be closed by the regular JSON envelope or CSV.
-%%
-%% If chunk is not started yet, a regular Crossbar error will be generated
-%% (a JSON non-chunked response). So don't forget to add appropriate error
-%% to the Context.
-%%
-%% === Let api_resource sends chunk response ===
-%%
-%% Simply set response in `Context''s `resp_data', either as a list of JObjs
-%% or list of CSV binary (depends on response type).
-%%
-%% <div class="notice">The JObjs in `Context''s response data are in the correct order,
-%% if you're changing the JObjs (looping over, change/replace) do not forget
-%% to reverse it to the correct order again (unless you have a customized sort order).</div>
-%%
-%% <div class="notice">For CSV, you have to check if chunk is started, if not
-%% create the header and add it to the first element
-%% (`<<Headers/binary, "\r\n", FirstRow/binary>>') of you're response.</div>
+%% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec process_chunk(map()) -> {iolist() | kz_term:ne_binary() | 'stop', cowboy_req:req(), cb_context:context()}.
-process_chunk(#{context := Context
-               ,cowboy_req := Req
-               ,chunk_response_type := ToFun
-               ,event_name := EventName
-               ,chunking_started := IsStarted
-               }=ChunkMap) ->
-    case cb_context:resp_data(Context) of
-        0 ->
-            lager:debug("(chunked) ~s did not send data", [ToFun]),
-            next_chunk_fold(ChunkMap#{context => reset_context_between_chunks(Context, IsStarted)
-                                     ,chunking_started => IsStarted
-                                     }
-                           );
-        SentLength when is_integer(SentLength) ->
-            lager:debug("(chunked) ~s sent ~p data", [ToFun, SentLength]),
-            next_chunk_fold(ChunkMap#{context => reset_context_between_chunks(Context, 'true')
-                                     ,chunking_started => 'true'
-                                     ,previous_chunk_length => SentLength
-                                     }
-                           );
-        [] ->
-            lager:debug("(chunked) ~s did not send data", [ToFun]),
-            next_chunk_fold(ChunkMap#{context => reset_context_between_chunks(Context, IsStarted)
-                                     ,chunking_started => IsStarted
-                                     ,previous_chunk_length => 0 %% the module filtered all queried result
-                                     }
-                           );
-        Resp when is_list(Resp) ->
-            PrevLength = length(Resp),
-            {StartedChunk, Req1, Context1} = send_chunk_response(ToFun, Req, Context),
-            lager:debug("(chunked) ~s sent ~p chunked resp", [ToFun, PrevLength]),
-            next_chunk_fold(ChunkMap#{context => reset_context_between_chunks(Context1, StartedChunk)
-                                     ,cowboy_req => Req1
-                                     ,chunking_started => StartedChunk
-                                     ,previous_chunk_length =>  PrevLength
-                                     }
-                           );
-        _Other ->
-            lager:debug("event ~s returned unsupported chunk response, stopping here", [EventName]),
-            finish_chunked_response(ChunkMap#{context => reset_context_between_chunks(Context, IsStarted)})
+-spec next_chunk_fold(chunk_map(), kz_view_cursor:cursor(), cowboy_req:req(), cb_context:context()) ->
+          {iolist() | kz_term:ne_binary() | 'stop', cowboy_req:req(), cb_context:context()}.
+next_chunk_fold(#{chunking_started := StartedChunk
+                 ,chunk_response_type := ToFun
+                 }=ChunkMap, Cursor, Req, Context0) ->
+    lager:debug("(chunked) calling next chunk ~s", [ToFun]),
+    Context1 = cb_context:store(Context0, 'chunking_started', StartedChunk),
+    try crossbar_view:next_batch(Context1, Cursor) of
+        {'ok', 'cursor_exhausted'} ->
+            lager:debug("(chunked) chunked query finished"),
+            finish_chunked_response(ChunkMap, Cursor, Req, reset_context_between_chunks(Context1, StartedChunk));
+        {'ok', {NewCursor, JObjs}} ->
+            case process_chunk(ChunkMap, Req, cb_context:set_resp_data(Context1, JObjs)) of
+                {'ok', {NewChunkMap, NewReq, NewContext}} ->
+                    next_chunk_fold(NewChunkMap, NewCursor, NewReq, NewContext);
+                {'error', _} ->
+                    finish_chunked_response(ChunkMap, Cursor, Req, reset_context_between_chunks(Context1, StartedChunk))
+            end;
+        {'error', ContextError} ->
+            lager:debug("(chunked) getting next chunk was unsuccessful"),
+            finish_chunked_response(ChunkMap, Cursor, Req, reset_context_between_chunks(ContextError, StartedChunk))
+    catch
+        _E:_T:_ST ->
+            kz_log:log_stacktrace(_ST,"crashed during to_chunk response: ~p:~p", [_E, _T]),
+            {'stop', Req, cb_context:set_resp_status(Context1, 'stop')}
     end.
 
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec process_chunk(chunk_map(), cowboy_req:req(), cb_context:context()) ->
+          kz_either:either(kz_term:ne_binary(), {chunk_map(), cowboy_req:req(), cb_context:context()}).
+process_chunk(ChunkMap, Req0, Context0) ->
+    #{chunk_response_type := ToFun
+     ,event_name := Event
+     } = ChunkMap,
+    {Req1, Context1} = crossbar_bindings:fold(Event, {Req0, Context0}),
+    lager:debug("(chunked) ran '~s'", [ToFun]),
+    case api_util:succeeded(Context1) of
+        'true' ->
+            {StartedChunk, Req2, Context2} = send_chunk_response(ToFun, Req1, Context1),
+            {'ok', {ChunkMap#{chunking_started => StartedChunk}, Req2, reset_context_between_chunks(Context2, StartedChunk)}};
+        'false' ->
+            lager:debug("(chunked) '~s' was unsuccessful", [ToFun]),
+            {'error', <<"to_fun failed">>}
+    end.
+
+-spec send_chunk_response(kz_term:ne_binary(), cowboy_req:req(), cb_context:context()) ->
+          {boolean(), cowboy_req:req(), cb_context:context()}.
+send_chunk_response(<<"to_json">>, Req, Context) ->
+    api_util:create_json_chunk_response(Req, Context);
+send_chunk_response(<<"to_csv">>, Req, Context) ->
+    lager:debug("creating CSV chunk"),
+    api_util:create_csv_chunk_response(Req, Context).
+
+%%------------------------------------------------------------------------------
+%% @doc Reset Context and setresponse data to an empty.
+%%
+%% Check if an error message is set in case if calling to_fun failure. If response
+%% is not successful and an error message is set, return that as is otherwise
+%% set response data to an empty list.
+%% @end
+%%------------------------------------------------------------------------------
 -spec reset_context_between_chunks(cb_context:context(), boolean()) -> cb_context:context().
 reset_context_between_chunks(Context, StartedChunk) ->
     Context1 = cb_context:setters(Context
@@ -1182,13 +1169,6 @@ reset_context_between_chunks(Context, StartedChunk) ->
                                  ),
     reset_context_between_chunks(Context1, StartedChunk, api_util:succeeded(Context)).
 
-%%------------------------------------------------------------------------------
-%% @doc Reset response data to an empty or check an error message is set.
-%%
-%% Let's check if response is not successful an error message is set
-%% and if not set it to an empty list.
-%% @end
-%%------------------------------------------------------------------------------
 reset_context_between_chunks(Context, _StartedChunk, 'true') ->
     cb_context:set_resp_data(Context, []);
 reset_context_between_chunks(Context, _StartedChunk, 'false') ->
@@ -1207,53 +1187,33 @@ reset_context_between_chunks(Context, _StartedChunk, 'false') ->
             cb_context:set_resp_data(Context, [])
     end.
 
--spec send_chunk_response(kz_term:ne_binary(), cowboy_req:req(), cb_context:context()) ->
-          {boolean(), cowboy_req:req(), cb_context:context()}.
-send_chunk_response(<<"to_json">>, Req, Context) ->
-    api_util:create_json_chunk_response(Req, Context);
-send_chunk_response(<<"to_csv">>, Req, Context) ->
-    lager:debug("creating CSV chunk"),
-    api_util:create_csv_chunk_response(Req, Context).
-
 %%------------------------------------------------------------------------------
 %% @doc If chunked is started close data array and send envelope as the last chunk.
 %% Otherwise return `{Req, Context}' to allow {@link api_util} or {@link api_resource}
-%% handling the errors in the Context.
+%% build error response and send it as before.
 %% @end
 %%------------------------------------------------------------------------------
--spec finish_chunked_response(map()) -> {iolist() | kz_term:ne_binary() | 'stop', cowboy_req:req(), cb_context:context()}.
+-spec finish_chunked_response(chunk_map(), kz_view_cursor:cursor(), cowboy_req:req(), cb_context:context()) ->
+          {iolist() | kz_term:ne_binary() | 'stop', cowboy_req:req(), cb_context:context()}.
 finish_chunked_response(#{chunking_started := 'false'
                          ,chunk_response_type := <<"to_json">>
-                         ,context := Context
-                         ,cowboy_req := Req
-                         }) ->
-    %% chunk is not started, return whatever error's or response data in Context
+                         }, _Cursor, Req, Context) ->
+    %% chunk is not started, return whatever error or response data are in Context
     api_util:create_pull_response(Req, Context);
-finish_chunked_response(#{chunk_response_type := <<"to_csv">>
-                         ,context := Context
-                         ,cowboy_req := Req
-                         }) ->
-    %% chunk is not started, return empty CSV
+finish_chunked_response(#{chunk_response_type := <<"to_csv">>}, _Cursor, Req, Context) ->
+    %% let's api_util handle closing csv
     lager:debug("creating CSV pull response"),
     api_util:create_pull_response(Req, Context, fun api_util:create_csv_resp_content/2);
-finish_chunked_response(#{total_queried := TotalQueried
-                         ,chunking_started := 'true'
-                         ,cowboy_req := Req
-                         ,context := Context
-                         ,last_key := NextStartKey
-                         ,start_key := StartKey
-                         }) ->
+finish_chunked_response(#{chunking_started := 'true'}, Cursor, Req, Context) ->
     %% Chunk is already started closing JSON envelope,
-    DeleteKeys = [<<"start_key">>, <<"page_size">>, <<"next_start_key">>],
-    Paging = kz_json:set_values([{<<"start_key">>, StartKey}
-                                ,{<<"page_size">>, TotalQueried}
-                                ,{<<"next_start_key">>, NextStartKey}
-                                ]
-                               ,kz_json:delete_keys(DeleteKeys, cb_context:resp_envelope(Context))
-                               ),
-    api_util:close_chunk_json_envelope(Req, cb_context:set_resp_envelope(Context, Paging)),
+    Envelope = kz_json:set_values(kz_view_cursor:bookmark_compat(Cursor), cb_context:resp_envelope(Context)),
+    api_util:close_chunk_json_envelope(Req, cb_context:set_resp_envelope(Context, Envelope)),
     {'stop', Req, Context}.
 
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
 -spec to_fun_event_name(kz_term:ne_binary(), cb_context:context()) -> kz_term:ne_binary().
 to_fun_event_name(ToThing, Context) ->
     [{Mod, _Params}|_] = cb_context:req_nouns(Context),

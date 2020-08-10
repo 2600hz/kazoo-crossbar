@@ -908,7 +908,7 @@ validate_delete(Context) ->
 set_response(Result, Context, CB) ->
     set_response(Result, Context, CB, 'undefined').
 
--spec set_response(knm_numbers:return(), cb_context:context(), cb(), kz_term:ne_binary()) -> cb_context:context().
+-spec set_response(knm_numbers:return(), cb_context:context(), cb(), kz_term:api_ne_binary()) -> cb_context:context().
 set_response({'ok', [JObj]}, Context, _, 'undefined') ->
     %% single number operation
     crossbar_util:response(JObj, Context);

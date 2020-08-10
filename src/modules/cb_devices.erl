@@ -37,8 +37,6 @@
 
 -define(MOD_CONFIG_CAT, <<(?CONFIG_CAT)/binary, ".devices">>).
 
--define(CB_LIST, <<"devices/crossbar_listing">>).
--define(OWNER_LIST, <<"devices/listing_by_owner">>).
 -define(CB_LIST_MAC, <<"devices/listing_by_macaddress">>).
 
 -define(KEY_MAC_ADDRESS, <<"mac_address">>).
@@ -258,12 +256,20 @@ load_device_summary(Context) ->
 -spec load_device_summary(cb_context:context(), req_nouns()) ->
           cb_context:context().
 load_device_summary(Context, [{<<"devices">>, []}, {<<"users">>, [UserId]} | _]) ->
-    ViewOptions = [{'key', UserId}
-                  ,{'mapper', crossbar_view:get_value_fun()}
-                  ],
-    crossbar_view:load(Context, ?OWNER_LIST, ViewOptions);
+    Options = [{'doc_type', <<"device">>}
+              ,{'mapper', crossbar_view:get_value_fun()}
+              ],
+    Selector = [{'key', [{<<"doc_type">>, <<"device">>}, {<<"owner_id">>, UserId}]}
+               ],
+    crossbar_view:find(Context, <<"crossbar_listings/by_type_ownerid">>, Selector, Options);
 load_device_summary(Context, _ReqNouns) ->
-    crossbar_view:load(Context, ?CB_LIST, [{'mapper', crossbar_view:get_value_fun()}]).
+    Options = [{'doc_type', <<"device">>}
+              ,{'mapper', crossbar_view:get_value_fun()}
+              ],
+    Selector = [{'start', [{<<"doc_type">>, <<"device">>}]}
+               ,{'end', [{<<"doc_type">>, <<"device">>}]}
+               ],
+    crossbar_view:find(Context, <<"crossbar_listings/by_type_id">>, Selector, Options).
 
 %%------------------------------------------------------------------------------
 %% @doc

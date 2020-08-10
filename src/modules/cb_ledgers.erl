@@ -174,7 +174,7 @@ validate(Context, ?AVAILABLE) ->
 validate(Context, SourceService) ->
     ViewOptions = [{'is_chunked', 'true'}
                   ,{'range_keymap', SourceService}
-                  ,{'mapper', fun normalize_view_results/3}
+                  ,{'mapper', fun normalize_view_results/2}
                   ,'include_docs'
                   ],
     crossbar_view:load_modb(Context, ?VIEW_BY_SOURCE, ViewOptions).
@@ -455,9 +455,9 @@ build_success_response(AccountId, Ledger) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec normalize_view_results(cb_context:context(), kzd_ledgers:doc(), kz_json:objects()) ->
+-spec normalize_view_results(kzd_ledgers:doc(), kz_json:objects()) ->
           kz_json:objects().
-normalize_view_results(_Context, JObj, Acc) ->
+normalize_view_results(JObj, Acc) ->
     [normalize_view_result(kz_json:get_value(<<"doc">>, JObj)) | Acc].
 
 -spec normalize_view_result(kzd_ledgers:doc()) -> kz_json:object().

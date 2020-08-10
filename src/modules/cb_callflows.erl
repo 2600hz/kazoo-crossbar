@@ -32,7 +32,6 @@
 
 -define(SERVER, ?MODULE).
 
--define(CB_LIST, <<"callflows/crossbar_listing">>).
 -define(CB_LIST_BY_NUMBER, <<"callflows/listing_by_number">>).
 -define(CB_LIST_BY_PATTERN, <<"callflows/listing_by_pattern">>).
 
@@ -156,7 +155,13 @@ delete(Context, _CallflowId) ->
 %%------------------------------------------------------------------------------
 -spec load_callflow_summary(cb_context:context()) -> cb_context:context().
 load_callflow_summary(Context) ->
-    crossbar_view:load(Context, ?CB_LIST, [{'mapper', crossbar_view:get_value_fun()}]).
+    Options = [{'doc_type', kzd_callflows:type()}
+              ,{'mapper', crossbar_view:get_value_fun()}
+              ],
+    Selector = [{'start', [{<<"doc_type">>, kzd_callflows:type()}]}
+               ,{'end', [{<<"doc_type">>, kzd_callflows:type()}]}
+               ],
+    crossbar_view:find(Context, <<"crossbar_listings/by_type_id">>, Selector, Options).
 
 %%------------------------------------------------------------------------------
 %% @doc Load a callflow document from the database

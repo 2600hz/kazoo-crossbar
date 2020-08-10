@@ -286,7 +286,7 @@ delete_account(Account) ->
 -spec summary_available(cb_context:context()) ->
           cb_context:context().
 summary_available(Context) ->
-    Options = [{'mapper', fun normalize_available/3}
+    Options = [{'mapper', fun normalize_available/2}
               ,{'databases', [kzs_util:format_account_id(
                                 cb_context:master_account_id(Context)
                                )
@@ -296,15 +296,15 @@ summary_available(Context) ->
               ],
     crossbar_view:load(Context, ?AVAILABLE_FUNCTIONS, Options).
 
--spec normalize_available(cb_context:context(), kz_json:object(), kz_json:objects()) ->
+-spec normalize_available(kz_json:object(), kz_json:objects()) ->
           kz_json:objects().
-normalize_available(Context, JObj, Acc) ->
-    maybe_filter_non_admin_hooks(Context, kz_doc:id(JObj), kz_json:get_json_value(<<"doc">>, JObj), Acc).
+normalize_available(JObj, Acc) ->
+    maybe_filter_non_admin_hooks(kz_doc:id(JObj), kz_json:get_json_value(<<"doc">>, JObj), Acc).
 
--spec maybe_filter_non_admin_hooks(cb_context:context(), kz_term:ne_binary(), kz_json:object(), kz_json:objects()) -> kz_json:objects().
-maybe_filter_non_admin_hooks(_, <<"functions_", Id/binary>>, JObj, Acc) ->
+-spec maybe_filter_non_admin_hooks(kz_term:ne_binary(), kz_json:object(), kz_json:objects()) -> kz_json:objects().
+maybe_filter_non_admin_hooks(<<"functions_", Id/binary>>, JObj, Acc) ->
     [kz_doc:set_id(JObj, Id) | Acc];
-maybe_filter_non_admin_hooks(_, Id, JObj, Acc) ->
+maybe_filter_non_admin_hooks(Id, JObj, Acc) ->
     [kz_doc:set_id(JObj, Id) | Acc].
 %%------------------------------------------------------------------------------
 %% @doc

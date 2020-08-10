@@ -26,7 +26,6 @@
 -include("crossbar.hrl").
 
 -define(PVT_FUNS, [fun add_pvt_type/2]).
--define(CB_LIST, <<"directories/crossbar_listing">>).
 -define(CB_USERS_LIST, <<"directories/users_listing">>).
 
 -type payload() :: {cowboy_req:req(), cb_context:context()}.
@@ -359,7 +358,13 @@ on_successful_validation(DocId, Context) ->
 %%------------------------------------------------------------------------------
 -spec summary(cb_context:context()) -> cb_context:context().
 summary(Context) ->
-    crossbar_view:load(Context, ?CB_LIST, [{'mapper', crossbar_view:get_value_fun()}]).
+    Options = [{'doc_type', <<"directory">>}
+              ,{'mapper', crossbar_view:get_value_fun()}
+              ],
+    Selector = [{'start', [{<<"doc_type">>, <<"directory">>}]}
+               ,{'end', [{<<"doc_type">>, <<"directory">>}]}
+               ],
+    crossbar_view:find(Context, <<"crossbar_listings/by_type_id">>, Selector, Options).
 
 %%------------------------------------------------------------------------------
 %% @doc Normalizes the results of a view.
