@@ -354,7 +354,7 @@ post(Context, ?COLLECTION) ->
               ],
     Results = knm_numbers:update(Numbers, [{fun knm_phone_number:reset_doc/2, ReqData}], Options),
     CB = fun() -> ?MODULE:post(cb_context:set_accepting_charges(Context), ?COLLECTION) end,
-    set_response(Results, Context, CB);
+    set_response(Results, Context, CB, ?COLLECTION);
 post(Context, ?LOCALITY) ->
     fetch_locality(Context);
 post(Context, Number) ->
@@ -377,7 +377,7 @@ put(Context, ?COLLECTION) ->
               ],
     Results = knm_numbers:create(Numbers, Options),
     CB = fun() -> ?MODULE:put(cb_context:set_accepting_charges(Context), ?COLLECTION) end,
-    set_response(Results, Context, CB);
+    set_response(Results, Context, CB, ?COLLECTION);
 put(Context, Number) ->
     Doc = cb_context:doc(Context),
     Options = [{'assign_to', cb_context:account_id(Context)}
@@ -391,13 +391,13 @@ put(Context, Number) ->
 
 -spec put(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 put(Context, ?COLLECTION, ?ACTIVATE) ->
-    {Numbers, _} = take_collection_numbers(Context),
-    Options = [{'public_fields', cb_context:req_data(Context)}
+    {Numbers, ReqData} = take_collection_numbers(Context),
+    Options = [{'public_fields', ReqData}
                | default_knm_options(Context)
               ],
     Results = knm_numbers:move(Numbers, cb_context:account_id(Context), Options),
     CB = fun() -> ?MODULE:put(cb_context:set_accepting_charges(Context), ?COLLECTION, ?ACTIVATE) end,
-    set_response(Results, Context, CB);
+    set_response(Results, Context, CB, ?COLLECTION);
 put(Context, <<Number/binary>>, ?ACTIVATE) ->
     Options = [{'public_fields', cb_context:doc(Context)}
                | default_knm_options(Context)
@@ -431,7 +431,7 @@ patch(Context, ?COLLECTION) ->
               ],
     Results = knm_numbers:update(Numbers, [{fun knm_phone_number:update_doc/2, ReqData}], Options),
     CB = fun() -> ?MODULE:patch(cb_context:set_accepting_charges(Context), ?COLLECTION) end,
-    set_response(Results, Context, CB);
+    set_response(Results, Context, CB, ?COLLECTION);
 patch(Context, Number) ->
     Options = [{'assign_to', cb_context:account_id(Context)}
                | default_knm_options(Context)
@@ -446,7 +446,7 @@ delete(Context, ?COLLECTION) ->
     {Numbers, _} = take_collection_numbers(Context),
     Options = default_knm_options(Context),
     CB = fun() -> ?MODULE:delete(cb_context:set_accepting_charges(Context), ?COLLECTION) end,
-    set_response(release_or_delete(Context, Numbers, Options), Context, CB);
+    set_response(release_or_delete(Context, Numbers, Options), Context, CB, ?COLLECTION);
 delete(Context, Number) ->
     Options = default_knm_options(Context),
 
@@ -905,27 +905,31 @@ validate_delete(Context) ->
 -type cb() :: fun(() -> cb_context:context()).
 
 -spec set_response(knm_numbers:return(), cb_context:context(), cb()) -> cb_context:context().
-set_response({'ok', [JObj]}, Context, _) ->
+set_response(Result, Context, CB) ->
+    set_response(Result, Context, CB, 'undefined').
+
+-spec set_response(knm_numbers:return(), cb_context:context(), cb(), kz_term:ne_binary()) -> cb_context:context().
+set_response({'ok', [JObj]}, Context, _, 'undefined') ->
     %% single number operation
     crossbar_util:response(JObj, Context);
-set_response({'ok', JObjs}, Context, _) ->
+set_response({'ok', JObjs}, Context, _, _Collection) ->
     %% collection operation (multi numbers)
     Resp = kz_json:from_list(
              [{<<"success">>, kz_json:from_list([{kz_doc:id(JObj), JObj} || JObj <- JObjs])}
              ,{<<"error">>, []}
              ]),
     crossbar_util:response(Resp, Context);
-set_response({'ok', [], [Failed]}, Context, _) ->
+set_response({'ok', [], [Failed]}, Context, _, 'undefined') ->
     %% single number operation
     set_error(Failed, Context);
-set_response({'ok', Success, FailedProp}, Context, _) ->
+set_response({'ok', Success, FailedProp}, Context, _, _Collection) ->
     %% collection operation (multi numbers)
     Resp = kz_json:from_list(
              [{<<"success">>, kz_json:from_list([{kz_doc:id(JObj), JObj} || JObj <- Success])}
              ,{<<"error">>, kz_json:from_list(FailedProp)}
              ]),
     crossbar_util:response(Resp, Context);
-set_response({'dry_run', Quotes}, Context, CB) ->
+set_response({'dry_run', Quotes}, Context, CB, _Collection) ->
     case kz_term:is_empty(Quotes) of
         'false' -> crossbar_util:response_402(Quotes, Context);
         'true' -> CB()
