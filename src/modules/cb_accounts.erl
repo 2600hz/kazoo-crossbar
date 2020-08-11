@@ -354,7 +354,7 @@ put(Context, PathAccountId) ->
             kz_log:log_stacktrace(ST),
             ContextErr = cb_context:add_system_error('unspecified_fault', <<"internal error, unable to create the account">>, Context),
             unroll(ContextErr, NewAccountId)
-        end.
+    end.
 
 -spec unroll(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 unroll(Context, NewAccountId) ->
