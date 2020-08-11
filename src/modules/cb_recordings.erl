@@ -239,8 +239,8 @@ action_lookup(_, [?MEDIA_VALUE(<<"application">>, <<"x-json">>, _, _, _)|_]) ->
 action_lookup(_, [?MEDIA_VALUE(<<"*">>, <<"*">>, _, _, _)|_]) ->
     lager:debug("catch-all accept header, using json"),
     'read';
-action_lookup(Acceptable, [?MEDIA_VALUE(Type, SubType, _, _, _)|Accepts]) ->
-    case is_acceptable_accept(Acceptable, Type, SubType) of
+action_lookup(Acceptable, [{{Type, SubType, _}=ContentType, _, _}|Accepts]) ->
+    case is_acceptable_accept(ContentType, Acceptable) of
         'false' ->
             lager:debug("unknown accept header: ~s/~s", [Type, SubType]),
             action_lookup(Acceptable, Accepts);
@@ -279,6 +279,6 @@ media_values(AcceptValue, Tunneled) ->
 acceptable_content_types(Context) ->
     props:get_value('to_binary', cb_context:content_types_provided(Context), []).
 
--spec is_acceptable_accept(kz_term:proplist(), kz_term:ne_binary(), kz_term:ne_binary()) -> boolean().
-is_acceptable_accept(Acceptable, Type, SubType) ->
-    lists:member({Type,SubType}, Acceptable).
+-spec is_acceptable_accept(cowboy_content_type(), [cowboy_content_type()]) -> boolean().
+is_acceptable_accept(ContentType, Acceptable) ->
+    api_util:content_type_matches(ContentType, Acceptable).
