@@ -349,24 +349,18 @@ put(Context, PathAccountId) ->
         'throw':'datastore_fault' ->
             ContextErr = cb_context:add_system_error('datastore_fault', Context),
             unroll(ContextErr, NewAccountId);
-        'throw':ContextErr ->
-            unroll(ContextErr, NewAccountId);
-        ?STACKTRACE(_E, _R, ST)
-        lager:debug("unexpected failure when creating account: ~s: ~p", [_E, _R]),
-        kz_log:log_stacktrace(ST),
-        unroll(Context, NewAccountId)
+        _E:_R:ST ->
+            lager:debug("unexpected failure when creating account: ~s: ~p", [_E, _R]),
+            kz_log:log_stacktrace(ST),
+            ContextErr = cb_context:add_system_error('unspecified_fault', <<"internal error, unable to create the account">>, Context),
+            unroll(ContextErr, NewAccountId)
         end.
 
 -spec unroll(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 unroll(Context, NewAccountId) ->
     lager:error("failed to create account, unrolling changes"),
-
-    case cb_context:is_context(Context) of
-        'true' -> delete(Context, NewAccountId);
-        'false' ->
-            _ = delete(Context, NewAccountId),
-            cb_context:add_system_error('unspecified_fault', <<"internal error, unable to create the account">>, Context)
-    end.
+    _ = delete(Context, NewAccountId),
+    Context.
 
 -spec put(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 put(Context, _AccountId, ?API_KEY) ->
