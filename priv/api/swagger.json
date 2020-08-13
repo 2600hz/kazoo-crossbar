@@ -11490,9 +11490,20 @@
                     "type": "integer"
                 },
                 "default_agent_pause_timeout": {
-                    "default": 600,
                     "description": "acdc default agent pause timeout",
-                    "type": "integer"
+                    "oneOf": [
+                        {
+                            "default": 600,
+                            "minimum": 0,
+                            "type": "integer"
+                        },
+                        {
+                            "enum": [
+                                "infinity"
+                            ],
+                            "type": "string"
+                        }
+                    ]
                 },
                 "max_connect_failures": {
                     "default": 3,
