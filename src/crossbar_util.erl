@@ -73,13 +73,6 @@
 -export([format_emergency_caller_id_number/1]).
 
 -export([get_devices_by_owner/2]).
--export([maybe_refresh_fs_xml/2
-        ,refresh_fs_xml/1
-        ]).
-
--ifdef(TEST).
--export([trunkstore_servers_changed/2]).
--endif.
 
 -include_lib("kazoo_services/include/kazoo_services.hrl").
 -include("crossbar.hrl").
@@ -1019,122 +1012,6 @@ format_emergency_caller_id_number(Context) ->
     Doc = cb_context:req_data(Context),
     cb_context:set_req_data(Context, kzd_module_utils:maybe_normalize_emergency_caller_id_number(Doc)).
 
--type refresh_type() :: 'user' | 'device' | 'sys_info' | 'account'.
-
--spec maybe_refresh_fs_xml(refresh_type(), cb_context:context()) -> 'ok'.
-maybe_refresh_fs_xml(Kind, Context) ->
-    DbDoc = cb_context:fetch(Context, 'db_doc'),
-    Doc = cb_context:doc(Context),
-    Precondition =
-        (kzd_devices:presence_id(DbDoc) =/= kzd_devices:presence_id(Doc))
-        or (kz_json:get_value([<<"media">>, <<"encryption">>, <<"enforce_security">>], DbDoc) =/=
-                kz_json:get_value([<<"media">>, <<"encryption">>, <<"enforce_security">>], Doc)
-           ),
-    maybe_refresh_fs_xml(Kind, Context, Precondition).
-
--spec maybe_refresh_fs_xml(refresh_type(), cb_context:context(), boolean()) -> 'ok'.
-maybe_refresh_fs_xml('user', _Context, 'false') -> 'ok';
-maybe_refresh_fs_xml('user', Context, 'true') ->
-    Doc = cb_context:doc(Context),
-    AccountDb = cb_context:db_name(Context),
-    Realm = kzd_accounts:fetch_realm(AccountDb),
-    Id = kz_doc:id(Doc),
-    Devices = get_devices_by_owner(AccountDb, Id),
-    lists:foreach(fun (DevDoc) -> refresh_fs_xml(Realm, DevDoc) end, Devices);
-maybe_refresh_fs_xml('device', Context, Precondition) ->
-    Doc   = cb_context:doc(Context),
-    DbDoc = cb_context:fetch(Context, 'db_doc'),
-    ( Precondition
-      or (kzd_devices:sip_username(DbDoc) =/= kzd_devices:sip_username(Doc))
-      or (kzd_devices:sip_password(DbDoc) =/= kzd_devices:sip_password(Doc))
-      or (kz_json:get_value(<<"owner_id">>, DbDoc) =/=
-              kz_json:get_value(<<"owner_id">>, Doc))
-      or (kz_json:is_true(<<"enabled">>, DbDoc)
-          andalso not kz_json:is_true(<<"enabled">>, Doc)
-         )
-    )
-        andalso refresh_fs_xml(kzd_accounts:fetch_realm(cb_context:db_name(Context))
-                              ,DbDoc
-                              ),
-    'ok';
-maybe_refresh_fs_xml('account', Context, _) ->
-    Devices = get_account_devices(cb_context:account_id(Context)),
-    Realm = kzd_accounts:fetch_realm(cb_context:db_name(Context)),
-    lists:foreach(fun(DevDoc) -> refresh_fs_xml(Realm, DevDoc) end, Devices);
-maybe_refresh_fs_xml('sys_info', Context, Precondition) ->
-    Doc = cb_context:doc(Context),
-    Servers = kz_json:get_value(<<"servers">>, Doc, []),
-
-    DbDoc = cb_context:fetch(Context, 'db_doc'),
-    DbServers = kz_json:get_value(<<"servers">>, DbDoc, []),
-
-    ( Precondition
-      or trunkstore_servers_changed(Servers, DbServers)
-    ).
-
--spec trunkstore_servers_changed(kz_json:objects(), kz_json:objects()) -> boolean().
-trunkstore_servers_changed([], []) -> 'false';
-trunkstore_servers_changed([], _DbServers) -> 'true';
-trunkstore_servers_changed(_Servers, []) -> 'true';
-trunkstore_servers_changed(Servers, DbServers) ->
-    MappedServers = map_servers(Servers),
-    DbMappedServers = map_servers(DbServers),
-
-    servers_changed(MappedServers, DbMappedServers)
-        orelse servers_changed(DbMappedServers, MappedServers).
-
--spec servers_changed(kz_json:object(), kz_json:object()) -> boolean().
-servers_changed(Servers1, Servers2) ->
-    kz_json:any(fun({Name, S}) ->
-                        server_changed(S, kz_json:get_value(Name, Servers2))
-                end
-               ,Servers1
-               ).
-
--spec server_changed(kz_json:object(), kz_term:api_object()) -> boolean().
-server_changed(_Server, 'undefined') ->
-    lager:debug("server ~s existence has changed", [kz_json:get_value(<<"server_name">>, _Server)]),
-    'true';
-server_changed(Server1, Server2) ->
-    Keys = [ [<<"auth">>, <<"auth_method">>]
-           ,[<<"auth">>, <<"ip">>]
-           ,[<<"auth">>, <<"auth_user">>]
-           ,[<<"auth">>, <<"auth_password">>]
-           ,[<<"options">>, <<"enabled">>]
-           ],
-    lists:any(fun(K) ->
-                      kz_json:get_value(K, Server1) =/= kz_json:get_value(K, Server2)
-              end
-             ,Keys
-             ).
-
--spec map_servers(kz_json:objects()) -> kz_json:object().
-map_servers(Servers) ->
-    lists:foldl(fun map_server/2, kz_json:new(), Servers).
-
--spec map_server(kz_json:object(), kz_json:object()) -> kz_json:object().
-map_server(Server, Acc) ->
-    Name = kz_json:get_value(<<"server_name">>, Server),
-    kz_json:set_value(Name, Server, Acc).
-
--spec refresh_fs_xml(cb_context:context()) -> 'ok'.
-refresh_fs_xml(Context) ->
-    Realm = kzd_accounts:fetch_realm(cb_context:db_name(Context)),
-    DbDoc = cb_context:fetch(Context, 'db_doc'),
-    refresh_fs_xml(Realm, DbDoc).
-
--spec refresh_fs_xml(kz_term:ne_binary(), kz_json:object()) -> 'ok'.
-refresh_fs_xml(Realm, Doc) ->
-    case kzd_devices:sip_username(Doc, kz_json:get_value(<<"username">>, Doc)) of
-        'undefined' -> 'ok';
-        Username ->
-            lager:debug("flushing fs xml for user '~s' at '~s'", [Username,Realm]),
-            Req = [{<<"Username">>, Username}
-                  ,{<<"Realm">>, Realm}
-                   | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
-                  ],
-            kz_amqp_worker:cast(Req, fun kapi_switch:publish_fs_xml_flush/1)
-    end.
 
 -spec get_devices_by_owner(kz_term:ne_binary(), kz_term:api_binary()) -> kz_term:ne_binaries().
 get_devices_by_owner(_AccountDb, 'undefined') -> [];
@@ -1146,17 +1023,6 @@ get_devices_by_owner(AccountDb, OwnerId) ->
         {'ok', JObjs} -> [kz_json:get_value(<<"doc">>, JObj) || JObj <- JObjs];
         {'error', _R} ->
             lager:warning("unable to find documents owned by ~s: ~p", [OwnerId, _R]),
-            []
-    end.
-
--spec get_account_devices(kz_term:api_binary()) -> kz_term:ne_binaries().
-get_account_devices('undefined') -> [];
-get_account_devices(Account) ->
-    AccountDb = kzs_util:format_account_db(Account),
-    case kz_datamgr:get_results(AccountDb, <<"devices/crossbar_listing">>, []) of
-        {'ok', JObjs} -> [kz_json:get_value(<<"value">>, JObj) || JObj <- JObjs];
-        {'error', _R} ->
-            lager:warning("unable to find device documents owned by ~s: ~p", [AccountDb, _R]),
             []
     end.
 
