@@ -110,7 +110,6 @@ post(Context, _) ->
         'success' ->
             maybe_aggregate_device(Context1),
             'ok' = track_assignment('post', Context),
-            _ = crossbar_util:maybe_refresh_fs_xml('sys_info', Context),
             Context1;
         _Status -> Context1
     end.
@@ -138,7 +137,6 @@ delete(Context, _) ->
             registration_update(Context),
             remove_aggregate(Context1),
             'ok' = track_assignment('delete', Context),
-            _ = crossbar_util:maybe_refresh_fs_xml('sys_info', Context),
             Context1;
         _Status -> Context1
     end.

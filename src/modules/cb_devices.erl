@@ -821,7 +821,6 @@ handle_device_update(DeviceId, Context) ->
         'false' -> Context;
         'true' ->
             _ = kz_process:spawn(fun crossbar_util:flush_registration/1, [Context]),
-            _ = crossbar_util:maybe_refresh_fs_xml('device', Context),
             Routines = [fun maybe_add_mdn/2
                        ,fun maybe_remove_previous_mdn/2
                        ,fun maybe_aggregate_device/2
@@ -979,7 +978,6 @@ handle_device_removal(DeviceId, Context) ->
         'false' -> Context;
         'true' ->
             _ = kz_process:spawn(fun crossbar_util:flush_registration/1, [Context]),
-            _ = crossbar_util:refresh_fs_xml(Context),
             Routines = [fun maybe_remove_aggregate/2
                        ,fun maybe_delete_provision/2
                        ,fun maybe_remove_mdn/2
@@ -1081,6 +1079,6 @@ sync_sip_data(Context, UseTheForce) ->
     ShouldReboot = cb_context:req_value(Context, <<"reboot">>),
 
     case UseTheForce of
-        'true' -> provisioner_util:sync_device(AccountId, OldDoc, NewDoc, ShouldReboot);
-        'false' -> provisioner_util:force_sync_device(AccountId, NewDoc, ShouldReboot)
+        'false' -> provisioner_util:sync_device(AccountId, OldDoc, NewDoc, ShouldReboot);
+        'true' -> provisioner_util:force_sync_device(AccountId, NewDoc, ShouldReboot)
     end.
