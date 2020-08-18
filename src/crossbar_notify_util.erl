@@ -44,8 +44,7 @@ notify_account_change(AccountId, {<<"zones">>, Zones}, _Context) ->
 
 notify_account_change(AccountId, {<<"pvt_enabled">>, IsEnabled}, Context) ->
     lager:info("account ~s enabled has changed, sending registrations flush: pvt_enable: ~p", [AccountId, IsEnabled]),
-    crossbar_util:flush_registrations(Context),
-    crossbar_util:maybe_refresh_fs_xml('account', Context);
+    crossbar_util:flush_registrations(Context);
 
 notify_account_change(_Account, {_Key, _Value}, _Context) ->
     'ok'.

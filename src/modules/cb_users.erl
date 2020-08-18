@@ -257,7 +257,6 @@ validate_photo(Context, UserId, ?HTTP_GET) ->
 
 -spec post(cb_context:context(), path_token()) -> cb_context:context().
 post(Context, _) ->
-    _ = crossbar_util:maybe_refresh_fs_xml('user', Context),
     Context1 = cb_modules_util:take_sync_field(Context),
     sync_sip_data(Context1),
     Context2 = crossbar_doc:save(cb_modules_util:remove_plaintext_password(Context1)),
