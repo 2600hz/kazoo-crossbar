@@ -45,4 +45,5 @@
 | `set_app_screenshots/2`               | `(AppId,PathToScreenshotsFolder)`       | Updates the app's screenshot metadata                                                                |
 | `start_module/1`                      | `(Module)`                              | Starts an API endpoint and persists it to the startup list                                           |
 | `stop_module/1`                       | `(Module)`                              | Stops and API endpoint and removes it from the startup list                                          |
+| `update_schema/1`                     | `(Schema)`                              | Update the individual schema in the database                                                         |
 | `update_schemas/0`                    |                                         | Updates the `system_schemas` database with the on-disk version of the schema                         |

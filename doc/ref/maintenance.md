@@ -45,4 +45,5 @@
 | `set_app_screenshots/2` | `(AppId,PathToScreenshotsFolder)` | |
 | `start_module/1` | `(Module)` | |
 | `stop_module/1` | `(Module)` | |
+| `update_schema/1` | `(Schema)` | |
 | `update_schemas/0` |  | |

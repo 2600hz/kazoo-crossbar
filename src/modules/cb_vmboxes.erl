@@ -718,7 +718,7 @@ check_vmbox_schema(VMBoxId, Context) ->
     OnSuccess = fun(C) -> validate_media_extension(VMBoxId, C) end,
     cb_context:validate_request_data(find_schema(), Context, OnSuccess).
 
--spec find_schema() -> kz_json:api_object().
+-spec find_schema() -> kz_term:api_object().
 find_schema() ->
     case kz_json_schema:load(<<"vmboxes">>) of
         {'ok', SchemaJObj} ->

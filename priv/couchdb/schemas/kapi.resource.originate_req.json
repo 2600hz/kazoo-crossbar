@@ -211,6 +211,9 @@
         "Privacy-Method": {
             "type": "string"
         },
+        "Proxy-Path": {
+            "type": "string"
+        },
         "Ringback": {
             "type": "string"
         },
