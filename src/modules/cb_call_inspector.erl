@@ -98,7 +98,7 @@ load_chunk_view(Context, ViewName, Options0) ->
                          ,kz_services_reseller:is_reseller(AuthAccountId)
                          ),
     Options = [{'is_chunked', 'true'}
-              ,{'chunk_size', ?MAX_BULK}
+              ,{'batch_size', ?MAX_BULK}
               ,{'mapper', fun(JObjs) -> cdrs_listing_mapper(Context, JObjs) end}
               ,'include_docs'
                | Options0

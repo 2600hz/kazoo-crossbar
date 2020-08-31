@@ -24,9 +24,6 @@
 
 -include("crossbar.hrl").
 
--define(CB_LIST, <<"groups/crossbar_listing">>).
--define(CB_LIST_BY_USER, <<"groups/crossbar_listing_by_user">>).
-
 %%%=============================================================================
 %%% API
 %%%=============================================================================
@@ -187,12 +184,20 @@ validate_patch(Id, Context) ->
 summary(Context) ->
     case cb_context:user_id(Context) of
         'undefined' ->
-            crossbar_view:load(Context, ?CB_LIST, [{'mapper', crossbar_view:get_value_fun()}]);
-        UserId ->
-            Options = [{'key', UserId}
+            Options = [{'doc_type', <<"group">>}
                       ,{'mapper', crossbar_view:get_value_fun()}
                       ],
-            crossbar_view:load(Context, ?CB_LIST_BY_USER, Options)
+            Selector = [{'start', [{<<"doc_type">>, <<"group">>}]}
+                       ,{'end', [{<<"doc_type">>, <<"group">>}]}
+                       ],
+            crossbar_view:find(Context, <<"crossbar_listings/by_type_id">>, Selector, Options);
+        UserId ->
+            Options = [{'doc_type', <<"group">>}
+                      ,{'mapper', crossbar_view:get_value_fun()}
+                      ],
+            Selector = [{'key', [{<<"doc_type">>, <<"group">>}, {<<"owner_id">>, UserId}]}
+                       ],
+            crossbar_view:find(Context, <<"crossbar_listings/by_type_ownerid">>, Selector, Options)
     end.
 
 %%------------------------------------------------------------------------------

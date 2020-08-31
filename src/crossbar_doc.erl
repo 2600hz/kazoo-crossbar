@@ -763,6 +763,8 @@ handle_datamgr_errors('conflict', DocId, Context) ->
 handle_datamgr_errors('invalid_view_name', View, Context) ->
     lager:debug("loading view ~s from ~s failed: invalid view", [View, cb_context:db_name(Context)]),
     cb_context:add_system_error('datastore_missing_view', kz_json:from_list([{<<"cause">>, kz_term:to_binary(View)}]), Context);
+handle_datamgr_errors('memory_exceeded', _View, Context) ->
+    crossbar_util:response_range_not_satisfiable(Context);
 handle_datamgr_errors(Else, _View, Context) ->
     lager:debug("operation failed: ~p on ~p", [Else, _View]),
     try kz_term:to_binary(Else) of

@@ -27,8 +27,6 @@
 
 -include("crossbar.hrl").
 
--define(CB_LIST, <<"menus/crossbar_listing">>).
-
 %%%=============================================================================
 %%% API
 %%%=============================================================================
@@ -133,7 +131,13 @@ delete(Context, _DocId) ->
 %%------------------------------------------------------------------------------
 -spec load_menu_summary(cb_context:context()) -> cb_context:context().
 load_menu_summary(Context) ->
-    crossbar_view:load(Context, ?CB_LIST, [{'mapper', crossbar_view:get_value_fun()}]).
+    Options = [{'doc_type', <<"menu">>}
+              ,{'mapper', crossbar_view:get_value_fun()}
+              ],
+    Selector = [{'start', [{<<"doc_type">>, <<"menu">>}]}
+               ,{'end', [{<<"doc_type">>, <<"menu">>}]}
+               ],
+    crossbar_view:find(Context, <<"crossbar_listings/by_type_id">>, Selector, Options).
 
 %%------------------------------------------------------------------------------
 %% @doc Create a new menu document with the data provided, if it is valid

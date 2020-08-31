@@ -24,8 +24,6 @@
 
 -include("crossbar.hrl").
 
--define(CB_LIST, <<"faxbox/crossbar_listing">>).
-
 -define(DEFAULT_FAX_SMTP_DOMAIN, <<"fax.kazoo.io">>).
 
 -define(SMTP_EMAIL_FIELD, <<"pvt_smtp_email_address">>).
@@ -312,10 +310,14 @@ generate_email_address(Context) ->
 %%------------------------------------------------------------------------------
 -spec faxbox_listing(cb_context:context()) -> cb_context:context().
 faxbox_listing(Context) ->
-    ViewOptions = [{'mapper', fun normalize_view_results/2}
-                  ,'include_docs'
-                  ],
-    crossbar_view:load(Context, <<"faxbox/crossbar_listing">>, ViewOptions).
+    Options = [{'doc_type', kzd_fax_box:type()}
+              ,{'mapper', fun normalize_view_results/2}
+              ,'include_docs'
+              ],
+    Selector = [{'start', [{<<"doc_type">>, kzd_fax_box:type()}]}
+               ,{'end', [{<<"doc_type">>, kzd_fax_box:type()}]}
+               ],
+    crossbar_view:find(Context, <<"crossbar_listings/by_type_id">>, Selector, Options).
 
 -spec normalize_view_results(kz_json:object(), kz_json:objects()) -> kz_json:objects().
 normalize_view_results(JObj, Acc) ->

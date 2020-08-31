@@ -772,7 +772,13 @@ validate_patch(Context, BoxId)->
 %%------------------------------------------------------------------------------
 -spec load_vmbox_summary(cb_context:context()) -> cb_context:context().
 load_vmbox_summary(Context) ->
-    Context1 = crossbar_view:load(Context, ?CB_LIST, [{'mapper', crossbar_view:get_value_fun()}]),
+    Options = [{'doc_type', <<"vmbox">>}
+              ,{'mapper', crossbar_view:get_value_fun()}
+              ],
+    Selector = [{'start', [{<<"doc_type">>, <<"vmbox">>}]}
+               ,{'end', [{<<"doc_type">>, <<"vmbox">>}]}
+               ],
+    Context1 = crossbar_view:find(Context, <<"crossbar_listings/by_type_id">>, Selector, Options),
     load_vmbox_summary(Context1, cb_context:resp_status(Context1)).
 
 -spec load_vmbox_summary(cb_context:cb_context(), crossbar_status()) -> cb_context:context().

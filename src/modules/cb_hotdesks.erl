@@ -23,8 +23,6 @@
 
 -include("crossbar.hrl").
 
--define(CB_LIST, <<"hotdesks/crossbar_listing">>).
-
 %%%=============================================================================
 %%% API
 %%%=============================================================================
@@ -94,7 +92,13 @@ validate_hotdesks(Context, ?HTTP_GET, _) ->
 %%------------------------------------------------------------------------------
 -spec fetch_all_hotdesks(cb_context:context()) -> cb_context:context().
 fetch_all_hotdesks(Context) ->
-    crossbar_view:load(Context, ?CB_LIST, [{'mapper', crossbar_view:get_value_fun()}]).
+    Options = [{'doc_type', <<"hotdesk">>}
+              ,{'mapper', crossbar_view:get_value_fun()}
+              ],
+    Selector = [{'start', [{<<"doc_type">>, <<"hotdesk">>}]}
+               ,{'end', [{<<"doc_type">>, <<"hotdesk">>}]}
+               ],
+    crossbar_view:find(Context, <<"crossbar_listings/by_type_ownerid">>, Selector, Options).
 
 -spec fetch_user_hotdesks(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
 fetch_user_hotdesks(DeviceId, Context) ->
@@ -109,14 +113,21 @@ fetch_user_hotdesks(DeviceId, Context) ->
 
 -spec fetch_users(kz_term:ne_binaries(), cb_context:context()) -> cb_context:context().
 fetch_users(UserIds, Context) ->
-    ViewOptions = [{'keys', UserIds}
-                  ,{'mapper', crossbar_view:get_value_fun()}
-                  ],
-    crossbar_view:load(Context, <<"users/list_by_id">>, ViewOptions).
+    Options = [{'doc_type', <<"user">>}
+              ,{'mapper', crossbar_view:get_value_fun()}
+              ],
+    Selector = [{'keys', [[{<<"doc_type">>, <<"user">>}, {<<"id">>, Id}]
+                          || Id <- UserIds
+                         ]
+                }
+               ],
+    crossbar_view:find(Context, <<"crossbar_listings/by_type_id">>, Selector, Options).
 
 -spec fetch_device_hotdesks(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
 fetch_device_hotdesks(UserId, Context) ->
-    ViewOptions = [{'key', UserId}
-                  ,{'mapper', crossbar_view:get_value_fun()}
-                  ],
-    crossbar_view:load(Context, ?CB_LIST, ViewOptions).
+    Options = [{'doc_type', <<"hotdesk">>}
+              ,{'mapper', crossbar_view:get_value_fun()}
+              ],
+    Selector = [{'key', [{<<"doc_type">>, <<"hotdesk">>}, {<<"owner_id">>, UserId}]}
+               ],
+    crossbar_view:find(Context, <<"crossbar_listings/by_type_ownerid">>, Selector, Options).

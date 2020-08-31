@@ -248,13 +248,13 @@ summary(Context, Prefix, ViewName, Reduce) ->
 -spec view_options(kz_term:ne_binaries(), boolean()) -> crossbar_view:options().
 view_options(Prefix, 'true') ->
     [{'startkey', Prefix}
-    ,{'endkey', Prefix ++ [kz_view:high_unicode_value()]}
+    ,{'endkey', Prefix ++ [kz_term:high_unicode_value()]}
     ,{'mapper', fun normalize_view_results/2}
     ,'group'
     ];
 view_options(Prefix, 'false') ->
     [{'startkey', Prefix}
-    ,{'endkey', Prefix ++ [kz_view:high_unicode_value()]}
+    ,{'endkey', Prefix ++ [kz_term:high_unicode_value()]}
     ,{'mapper', fun normalize_resource_selector_result/2}
     ].
 

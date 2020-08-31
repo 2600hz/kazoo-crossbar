@@ -40,7 +40,6 @@
 -include("crossbar.hrl").
 -include_lib("nklib/include/nklib.hrl").
 
--define(CB_LIST, <<"conferences/crossbar_listing">>).
 -define(CB_LIST_BY_NUMBER, <<"conference/listing_by_number">>).
 
 -define(PARTICIPANTS, <<"participants">>).
@@ -138,7 +137,13 @@ validate(Context, ConferenceId, ?PARTICIPANTS, ParticipantId) ->
 %%------------------------------------------------------------------------------
 -spec validate_conferences(http_method(), cb_context:context()) -> cb_context:context().
 validate_conferences(?HTTP_GET, Context) ->
-    LoadedContext = crossbar_view:load(Context, ?CB_LIST, [{'mapper', crossbar_view:get_value_fun()}]),
+    Options = [{'doc_type', <<"conference">>}
+              ,{'mapper', crossbar_view:get_value_fun()}
+              ],
+    Selector = [{'start', [{<<"doc_type">>, <<"conference">>}]}
+               ,{'end', [{<<"doc_type">>, <<"conference">>}]}
+               ],
+    LoadedContext = crossbar_view:find(Context, <<"crossbar_listings/by_type_id">>, Selector, Options),
     case cb_context:resp_status(LoadedContext) of
         'success' ->
             Context1 = search_conferences(LoadedContext),

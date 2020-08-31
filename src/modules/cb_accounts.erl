@@ -811,7 +811,7 @@ leak_trial_time_left(Context, JObj, _Expiration) ->
 load_children(AccountId, Context) ->
     Options = [{'databases', [?KZ_ACCOUNTS_DB]}
               ,{'startkey', [AccountId]}
-              ,{'endkey', [AccountId, kz_view:high_unicode_value()]}
+              ,{'endkey', [AccountId, kz_term:high_unicode_value()]}
               ,{'mapper', crossbar_view:get_value_fun()}
               ],
     crossbar_view:load(Context, ?AGG_VIEW_CHILDREN, Options).
@@ -824,7 +824,7 @@ load_children(AccountId, Context) ->
 load_descendants(AccountId, Context) ->
     Options = [{'databases', [?KZ_ACCOUNTS_DB]}
               ,{'startkey', [AccountId]}
-              ,{'endkey', [AccountId, kz_view:high_unicode_value()]}
+              ,{'endkey', [AccountId, kz_term:high_unicode_value()]}
               ,{'mapper', crossbar_view:get_value_fun()}
               ],
     crossbar_view:load(Context, ?AGG_VIEW_DESCENDANTS, Options).

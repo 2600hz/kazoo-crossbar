@@ -34,7 +34,6 @@
 
 -define(MOD_CONFIG_CAT, <<(?CONFIG_CAT)/binary, ".users">>).
 
--define(CB_LIST, <<"users/crossbar_listing">>).
 -define(LIST_BY_PRESENCE_ID, <<"devices/listing_by_presence_id">>).
 
 -define(VCARD, <<"vcard">>).
@@ -361,7 +360,7 @@ load_attachment(UserId, AttachmentId, Context) ->
 maybe_update_devices_presence(Context) ->
     DbDoc = cb_context:fetch(Context, 'db_doc'),
     Doc = cb_context:doc(Context),
-    case kzd_devices:presence_id(DbDoc) =:= kzd_devices:presence_id(Doc) of
+    case kzd_users:presence_id(DbDoc) =:= kzd_users:presence_id(Doc) of
         'true' ->
             lager:debug("presence_id did not change, ignoring");
         'false' ->
@@ -445,7 +444,13 @@ send_email(Context) ->
 %%------------------------------------------------------------------------------
 -spec load_users_summary(cb_context:context()) -> cb_context:context().
 load_users_summary(Context) ->
-    crossbar_view:load(Context, ?CB_LIST, [{'mapper', crossbar_view:get_value_fun()}]).
+    Options = [{'doc_type', <<"user">>}
+              ,{'mapper', crossbar_view:get_value_fun()}
+              ],
+    Selector = [{'start', [{<<"doc_type">>, <<"user">>}]}
+               ,{'end', [{<<"doc_type">>, <<"user">>}]}
+               ],
+    crossbar_view:find(Context, <<"crossbar_listings/by_type_name">>, Selector, Options).
 
 %%------------------------------------------------------------------------------
 %% @doc Load a user document from the database

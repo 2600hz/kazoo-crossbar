@@ -224,7 +224,7 @@ load_chunk_view(Context, ViewName, Options0) ->
               ,{fun cb_context:store/3, 'is_reseller', kz_services_reseller:is_reseller(AuthAccountId)}
               ],
     Options = [{'is_chunked', 'true'}
-              ,{'chunk_size', ?MAX_BULK}
+              ,{'batch_size', ?MAX_BULK}
               ,{'max_range', ?MOD_MAX_RANGE}
                | Options0
               ],
@@ -355,7 +355,11 @@ cdrs_listing_mapper(Context, JObj, Acc) ->
 %%------------------------------------------------------------------------------
 -spec load_chunked_cdrs(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 load_chunked_cdrs(Context, RespType) ->
-    load_chunked_cdrs(Context, RespType, cb_context:resp_data(Context)).
+    QS = cb_context:query_string(Context),
+    %% range keys are using interaction_time, crossbar_filter for create_* is using pvt_created
+    %% and interaction_time could be before pvt_created
+    C1 = cb_context:set_query_string(Context, kz_json:delete_keys([<<"created_from">>, <<"create_to">>], QS)),
+    load_chunked_cdrs(C1, RespType, cb_context:resp_data(Context)).
 
 -spec load_chunked_cdrs(cb_context:context(), kz_term:ne_binary(), kz_json:objects()) -> cb_context:context().
 load_chunked_cdrs(Context, RespType, RespData) ->

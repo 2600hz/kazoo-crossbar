@@ -24,8 +24,6 @@
 
 -include("crossbar.hrl").
 
--define(CB_LIST, <<"trunkstore/crossbar_listing">>).
-
 %%%=============================================================================
 %%% API
 %%%=============================================================================
@@ -108,7 +106,7 @@ post(Context, _) ->
     Context1 = crossbar_doc:save(Context),
     case cb_context:resp_status(Context1) of
         'success' ->
-            maybe_aggregate_device(Context1),
+            _UnusedContext = maybe_aggregate_device(Context1),
             'ok' = track_assignment('post', Context),
             Context1;
         _Status -> Context1
@@ -124,7 +122,7 @@ put(Context) ->
     case cb_context:resp_status(Context1) of
         'success' ->
             registration_update(Context),
-            maybe_aggregate_device(Context1),
+            _UnusedContext = maybe_aggregate_device(Context1),
             Context1;
         _Status -> Context1
     end.
@@ -135,7 +133,7 @@ delete(Context, _) ->
     case cb_context:resp_status(Context1) of
         'success' ->
             registration_update(Context),
-            remove_aggregate(Context1),
+            _UnusedContext = remove_aggregate(Context1),
             'ok' = track_assignment('delete', Context),
             Context1;
         _Status -> Context1
@@ -268,10 +266,13 @@ on_successful_validation(Id, Context) ->
 %%------------------------------------------------------------------------------
 -spec summary(cb_context:context()) -> cb_context:context().
 summary(Context) ->
-    Options = [{'mapper', crossbar_view:get_id_fun()}
-              ,{'reduce', 'false'}
+    Options = [{'doc_type', <<"sys_info">>}
+              ,{'mapper', crossbar_view:get_id_fun()}
               ],
-    crossbar_view:load(Context, ?CB_LIST, Options).
+    Selector = [{'start', [{<<"doc_type">>, <<"sys_info">>}]}
+               ,{'end', [{<<"doc_type">>, <<"sys_info">>}]}
+               ],
+    crossbar_view:find(Context, <<"crossbar_listings/by_type_id">>, Selector, Options).
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -284,8 +285,8 @@ maybe_aggregate_device(Context) ->
                   kz_json:get_ne_binary_value([<<"auth">>, <<"auth_method">>], Server) =:= <<"IP">>
           end,
     case lists:any(Fun, kzd_trunkstore:servers(Device)) of
-        true -> aggregate_device(Context);
-        false -> remove_aggregate(Context)
+        'true' -> aggregate_device(Context);
+        'false' -> remove_aggregate(Context)
     end.
 
 -spec aggregate_device(cb_context:context()) -> cb_context:context().
