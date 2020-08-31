@@ -135,6 +135,9 @@
         "Proxy-IP": {
             "type": "string"
         },
+        "Proxy-Path": {
+            "type": "string"
+        },
         "Proxy-Zone": {
             "type": "string"
         },

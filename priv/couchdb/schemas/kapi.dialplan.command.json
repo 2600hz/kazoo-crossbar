@@ -6,6 +6,15 @@
         "A-MOH": {
             "type": "string"
         },
+        "ASR-Engine": {
+            "type": "string"
+        },
+        "ASR-Engine-Params": {
+            "type": "object"
+        },
+        "ASR-Engine-Settings": {
+            "type": "object"
+        },
         "Action": {
             "enum": [
                 "hold",
@@ -468,6 +477,9 @@
             "type": "string"
         },
         "Profile": {
+            "type": "string"
+        },
+        "Proxy-Path": {
             "type": "string"
         },
         "Publish-Usurp": {
