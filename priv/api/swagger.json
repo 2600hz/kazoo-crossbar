@@ -12188,6 +12188,218 @@
             ],
             "type": "object"
         },
+        "kapi.conference.command": {
+            "description": "AMQP API for conference.command",
+            "properties": {
+                "Account-ID": {
+                    "type": "string"
+                },
+                "Affects": {
+                    "enum": [
+                        "all",
+                        "current"
+                    ],
+                    "type": "string"
+                },
+                "Application-Name": {
+                    "enum": [
+                        "deaf_participant",
+                        "dial",
+                        "dial_resp",
+                        "kick",
+                        "lock",
+                        "mute_participant",
+                        "participant_energy",
+                        "participant_volume_in",
+                        "participant_volume_out",
+                        "participants",
+                        "play",
+                        "record",
+                        "recordstop",
+                        "relate_participants",
+                        "say",
+                        "set",
+                        "stop_play",
+                        "tones",
+                        "tts",
+                        "undeaf_participant",
+                        "unlock",
+                        "unmute_participant"
+                    ],
+                    "type": "string"
+                },
+                "Call-ID": {
+                    "type": "string"
+                },
+                "Caller-ID-Name": {
+                    "type": "string"
+                },
+                "Caller-ID-Number": {
+                    "type": "string"
+                },
+                "Conference-ID": {
+                    "type": "string"
+                },
+                "Custom-Application-Vars": {
+                    "type": "object"
+                },
+                "Custom-Channel-Vars": {
+                    "type": "object"
+                },
+                "Endless-Playback": {
+                    "type": "string"
+                },
+                "Endpoint-Responses": {
+                    "type": "string"
+                },
+                "Endpoints": {
+                    "items": {
+                        "$ref": "#/definitions/kapi.dialplan.bridge_endpoint",
+                        "type": "object"
+                    },
+                    "type": "string"
+                },
+                "Energy-Level": {
+                    "type": "string"
+                },
+                "Engine": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "Conference",
+                        "conference"
+                    ]
+                },
+                "Event-Name": {
+                    "enum": [
+                        "command"
+                    ]
+                },
+                "Group-ID": {
+                    "type": "string"
+                },
+                "Insert-At": {
+                    "enum": [
+                        "flush",
+                        "head",
+                        "now",
+                        "tail"
+                    ],
+                    "type": "string"
+                },
+                "Language": {
+                    "type": "string"
+                },
+                "Leg": {
+                    "type": "string"
+                },
+                "Loop-Count": {
+                    "minimum": 1,
+                    "type": "string"
+                },
+                "Media-Name": {
+                    "type": "string"
+                },
+                "Other-Participant": {
+                    "type": "string"
+                },
+                "Outbound-Call-ID": {
+                    "type": "string"
+                },
+                "Parameter": {
+                    "enum": [
+                        "Caller-ID-Name",
+                        "Caller-ID-Number",
+                        "Max-Members"
+                    ],
+                    "type": "string"
+                },
+                "Participant-Flags": {
+                    "type": "string"
+                },
+                "Participant-ID": {
+                    "type": "string"
+                },
+                "Profile-Name": {
+                    "type": "string"
+                },
+                "Relationship": {
+                    "enum": [
+                        "clear",
+                        "deaf",
+                        "mute"
+                    ],
+                    "type": "string"
+                },
+                "Target-Call-ID": {
+                    "type": "string"
+                },
+                "Terminators": {
+                    "items": {
+                        "enum": [
+                            "1",
+                            "2",
+                            "3",
+                            "4",
+                            "5",
+                            "6",
+                            "7",
+                            "8",
+                            "9",
+                            "*",
+                            "0",
+                            "#"
+                        ],
+                        "type": "string"
+                    },
+                    "type": "string"
+                },
+                "Text": {
+                    "type": "string"
+                },
+                "Timeout": {
+                    "type": "string"
+                },
+                "Tones": {
+                    "items": {
+                        "$ref": "#/definitions/kapi.dialplan.tones_req_tone_headers",
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "Value": {
+                    "type": "string"
+                },
+                "Voice": {
+                    "type": "string"
+                },
+                "Volume-In-Level": {
+                    "type": "string"
+                },
+                "Volume-Out-Level": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Application-Name",
+                "Call-ID",
+                "Conference-ID",
+                "Endpoint-Responses",
+                "Endpoints",
+                "Energy-Level",
+                "Media-Name",
+                "Other-Participant",
+                "Parameter",
+                "Participant-ID",
+                "Text",
+                "Tones",
+                "Value",
+                "Volume-In-Level",
+                "Volume-Out-Level"
+            ],
+            "type": "object"
+        },
         "kapi.conference.conference_error": {
             "description": "AMQP API for conference.conference_error",
             "properties": {
@@ -12497,6 +12709,36 @@
             },
             "required": [
                 "Participant-ID"
+            ],
+            "type": "object"
+        },
+        "kapi.conference.error": {
+            "description": "AMQP API for conference.error",
+            "properties": {
+                "Conference-ID": {
+                    "type": "string"
+                },
+                "Error-Message": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "conference"
+                    ]
+                },
+                "Event-Name": {
+                    "enum": [
+                        "error"
+                    ]
+                },
+                "Request": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Conference-ID",
+                "Error-Message",
+                "Request"
             ],
             "type": "object"
         },
@@ -13282,6 +13524,9 @@
                     "type": "string"
                 },
                 "UUID": {
+                    "type": "string"
+                },
+                "Zone": {
                     "type": "string"
                 }
             },
@@ -14533,6 +14778,15 @@
                 "A-MOH": {
                     "type": "string"
                 },
+                "ASR-Engine": {
+                    "type": "string"
+                },
+                "ASR-Engine-Params": {
+                    "type": "object"
+                },
+                "ASR-Engine-Settings": {
+                    "type": "object"
+                },
                 "Action": {
                     "enum": [
                         "hold",
@@ -14995,6 +15249,9 @@
                     "type": "string"
                 },
                 "Profile": {
+                    "type": "string"
+                },
+                "Proxy-Path": {
                     "type": "string"
                 },
                 "Publish-Usurp": {
@@ -18190,6 +18447,47 @@
             ],
             "type": "object"
         },
+        "kapi.directory.clear": {
+            "description": "AMQP API for directory.clear",
+            "properties": {
+                "Event-Category": {
+                    "enum": [
+                        "cache"
+                    ]
+                },
+                "Event-Name": {
+                    "enum": [
+                        "clear"
+                    ]
+                },
+                "Keys": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Keys"
+            ],
+            "type": "object"
+        },
+        "kapi.directory.flush": {
+            "description": "AMQP API for directory.flush",
+            "properties": {
+                "Event-Category": {
+                    "enum": [
+                        "cache"
+                    ]
+                },
+                "Event-Name": {
+                    "enum": [
+                        "flush"
+                    ]
+                }
+            },
+            "type": "object"
+        },
         "kapi.discovery.flush": {
             "description": "AMQP API for discovery.flush",
             "properties": {
@@ -19388,6 +19686,72 @@
             },
             "required": [
                 "Chunks"
+            ],
+            "type": "object"
+        },
+        "kapi.keys.query": {
+            "description": "AMQP API for keys.query",
+            "properties": {
+                "Event-Category": {
+                    "enum": [
+                        "jwt.keys"
+                    ]
+                },
+                "Event-Name": {
+                    "enum": [
+                        "query"
+                    ]
+                },
+                "Request-Issuer": {
+                    "type": "string"
+                },
+                "Server-ID": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Server-ID"
+            ],
+            "type": "object"
+        },
+        "kapi.keys.reload": {
+            "description": "AMQP API for keys.reload",
+            "properties": {
+                "Event-Category": {
+                    "enum": [
+                        "jwt.keys"
+                    ]
+                },
+                "Event-Name": {
+                    "enum": [
+                        "reload"
+                    ]
+                }
+            },
+            "type": "object"
+        },
+        "kapi.keys.reply": {
+            "description": "AMQP API for keys.reply",
+            "properties": {
+                "Event-Category": {
+                    "enum": [
+                        "jwt.keys"
+                    ]
+                },
+                "Event-Name": {
+                    "enum": [
+                        "reply"
+                    ]
+                },
+                "Issuer": {
+                    "type": "object"
+                },
+                "Keys": {
+                    "type": "object"
+                }
+            },
+            "required": [
+                "Keys"
             ],
             "type": "object"
         },
@@ -26575,6 +26939,9 @@
                 "Privacy-Method": {
                     "type": "string"
                 },
+                "Proxy-Path": {
+                    "type": "string"
+                },
                 "Ringback": {
                     "type": "string"
                 },
@@ -26770,6 +27137,9 @@
                     "type": "string"
                 },
                 "Proxy-IP": {
+                    "type": "string"
+                },
+                "Proxy-Path": {
                     "type": "string"
                 },
                 "Proxy-Zone": {
