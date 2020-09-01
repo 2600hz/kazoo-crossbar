@@ -221,7 +221,7 @@ create_request(Context) ->
           ,{<<"Custom-Vars">>, kz_json:from_list(CCVs)}
           ,{<<"Route-Type">>, Type}
           ,{<<"Event-Category">>, <<"mms">>}
-           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+          | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
 
     cb_context:set_doc(Context, kz_json:set_values(KVs, Payload)).
@@ -395,7 +395,7 @@ summary(Context) ->
     {ViewName, Opts} =
         build_view_name_range_keys(cb_context:device_id(Context), cb_context:user_id(Context)),
     Options = [{'mapper', fun normalize_view_results/2}
-               | Opts
+              | Opts
               ],
     crossbar_view:load_modb(Context, ViewName, Options).
 
