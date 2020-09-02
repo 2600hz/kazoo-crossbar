@@ -41,6 +41,9 @@
         },
         "Token-Data": {
             "type": "string"
+        },
+        "Token-Info": {
+            "type": "string"
         }
     },
     "required": [
