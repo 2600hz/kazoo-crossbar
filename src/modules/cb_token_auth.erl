@@ -146,7 +146,7 @@ deduct_tokens(Context) ->
         'true' -> 'true';
         'false' ->
             lager:warning("bucket ~s does not have enough tokens(~b needed) for this request"
-                          ,[Bucket, Cost]
+                         ,[Bucket, Cost]
                          ),
             {'stop', cb_context:add_system_error('too_many_requests', Context)}
     end.
@@ -180,8 +180,8 @@ early_authenticate_token(_Context, 'undefined') -> 'false'.
           {'stop', cb_context:context()}.
 check_auth_token(Context) ->
     check_auth_token(Context
-                     ,cb_context:auth_token(Context)
-                     ,cb_context:magic_pathed(Context)
+                    ,cb_context:auth_token(Context)
+                    ,cb_context:magic_pathed(Context)
                     ).
 
 -spec check_auth_token(cb_context:context(), kz_term:api_binary(), boolean()) ->
