@@ -136,6 +136,9 @@ authenticate(Context, 'undefined', 'x-auth-token') ->
     end;
 authenticate(_Context, _AccountId, _TokenType) -> 'false'.
 
+-spec deduct_tokens(cb_context:context()) ->
+          'true' |
+          {'stop', cb_context:context()}.
 deduct_tokens(Context) ->
     Bucket = cb_modules_util:bucket_name(Context),
     Cost = cb_modules_util:token_cost(Context),
