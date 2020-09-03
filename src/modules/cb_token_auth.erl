@@ -142,7 +142,7 @@ authenticate(_Context, _AccountId, _TokenType) -> 'false'.
 deduct_tokens(Context) ->
     Bucket = cb_modules_util:bucket_name(Context),
     Cost = cb_modules_util:token_cost(Context),
-    case kz_buckets:consume_tokens(?APP, Bucket, Cost) of
+    case kz_buckets:consume_tokens(?APP_NAME, Bucket, Cost) of
         'true' -> 'true';
         'false' ->
             lager:warning("bucket ~s does not have enough tokens(~b needed) for this request"
