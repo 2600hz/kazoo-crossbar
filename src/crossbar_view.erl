@@ -342,17 +342,17 @@ add_user_params(Context, CursorOptions, Options, IsTimeQuery) ->
            ,{'is_time_query', IsTimeQuery}
            ,{'should_paginate', cb_context:should_paginate(Context)}
            ,{'time_filter_key', TimeFilterKey}
-            | [{K, V}
-               || {K, V} <- Options,
-                  lists:member(K, ?USER_PARAMS_ONLY)
-              ]
+           | [{K, V}
+              || {K, V} <- Options,
+                 lists:member(K, ?USER_PARAMS_ONLY)
+             ]
            ],
     case time_range(Context, Options, TimeFilterKey) of
         {StartTime, EndTime} ->
             CursorProp = [{'filtermap', FilterMap}
                          ,{'user_params', [{'start_time', StartTime}
                                           ,{'end_time', EndTime}
-                                           | Prop
+                                          | Prop
                                           ]
                           }
                          ],
@@ -374,7 +374,7 @@ has_qs_filter(Context, Options, _, 'false') ->
 merge_options(CursorOptions, Options) ->
     %% remove result key in favor of crossbar_view mapper fun
     DeleteKeys = ['descending', 'limit', 'result_key'
-                  | ?CB_SPECIFIC_VIEW_OPTIONS
+                 | ?CB_SPECIFIC_VIEW_OPTIONS
                  ],
     DefaultOptions = props:set_values(CursorOptions, props:delete_keys(DeleteKeys, Options)),
     lists:foldl(fun(F, Acc) -> F(Acc) end

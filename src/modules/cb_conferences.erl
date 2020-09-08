@@ -532,7 +532,7 @@ exec_dial_endpoints(Context, ConferenceId, Data, ToDial) ->
               ,{<<"Profile-Name">>, kz_json:get_ne_binary_value(<<"profile_name">>, Data)}
               ,{<<"Target-Call-ID">>, TargetCallId}
               ,{<<"Timeout">>, Timeout}
-               | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+              | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
               ],
 
     Zone = zone(ConferenceId, TargetCallId),
@@ -562,7 +562,7 @@ zone(ConferenceId, TargetCallId) ->
     Req = [{<<"Call-ID">>, TargetCallId}
           ,{<<"Fields">>, <<"all">>}
           ,{<<"Active-Only">>, 'true'}
-           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+          | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
 
     case kz_amqp_worker:call_collect(Req
@@ -962,7 +962,7 @@ conference_realtime_data(ConferenceId) ->
 -spec request_conference_details(kz_term:ne_binary()) -> kz_json:object().
 request_conference_details(ConferenceId) ->
     Req = [{<<"Conference-ID">>, ConferenceId}
-           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+          | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
     case kz_amqp_worker:call_collect(Req, fun kapi_conference:publish_search_req/1, {'ecallmgr', 'true'}) of
         {'error', _E} ->
@@ -1040,7 +1040,7 @@ partition_participants(Participants, Fun) ->
 search_conferences(Context) ->
     AccountId = cb_context:account_id(Context),
     Req = [{<<"Account-ID">>, AccountId}
-           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+          | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
     case kz_amqp_worker:call_collect(Req, fun kapi_conference:publish_search_req/1, {'ecallmgr', 'true'}) of
         {'error', _E} ->
