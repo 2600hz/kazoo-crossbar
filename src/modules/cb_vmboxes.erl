@@ -676,7 +676,7 @@ normalization_format(Context) ->
     BoxId = kzd_box_message:source_id(cb_context:doc(Context)),
     AccountDb = kzs_util:format_account_db(cb_context:account_id(Context)),
     case kz_datamgr:open_cache_doc(AccountDb, BoxId) of
-        {'ok', BoxJObj} -> kzd_voicemail_box:media_extension(BoxJObj);
+        {'ok', BoxJObj} -> kzd_vmboxes:media_extension(BoxJObj);
         {'error', _} -> ?NORMALIZATION_FORMAT
     end.
 
@@ -753,10 +753,10 @@ validate_media_extension(VMBoxId, Context) ->
 -spec on_successful_validation(kz_term:api_binary(), cb_context:context()) ->
           cb_context:context().
 on_successful_validation('undefined', Context) ->
-    Props = [{<<"pvt_type">>, kzd_voicemail_box:type()}],
+    Props = [{<<"pvt_type">>, kzd_vmboxes:type()}],
     cb_context:set_doc(Context, kz_json:set_values(Props, cb_context:doc(Context)));
 on_successful_validation(VMBoxId, Context) ->
-    crossbar_doc:load_merge(VMBoxId, Context, ?TYPE_CHECK_OPTION(kzd_voicemail_box:type())).
+    crossbar_doc:load_merge(VMBoxId, Context, ?TYPE_CHECK_OPTION(kzd_vmboxes:type())).
 
 %%------------------------------------------------------------------------------
 %% @doc Support PATCH - merge vmbox document with request data
@@ -845,7 +845,7 @@ maybe_load_vmboxes_fold([Id|Ids], Context) ->
 
 -spec load_vmbox(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
 load_vmbox(BoxId, Context) ->
-    C1 = crossbar_doc:load(BoxId, Context, ?TYPE_CHECK_OPTION(kzd_voicemail_box:type())),
+    C1 = crossbar_doc:load(BoxId, Context, ?TYPE_CHECK_OPTION(kzd_vmboxes:type())),
     cb_context:set_resp_data(C1, kz_json:delete_key(?VM_KEY_MESSAGES, cb_context:resp_data(C1))).
 
 -spec empty_source_id(cb_context:context()) -> cb_context:context().
@@ -968,13 +968,13 @@ validate_new_message(BoxId, Context) ->
 -spec create_new_message_document(cb_context:context(), kz_json:object()) -> cb_context:context().
 create_new_message_document(Context, BoxJObj) ->
     AccountId = cb_context:account_id(Context),
-    BoxNum = kzd_voicemail_box:mailbox_number(BoxJObj),
+    BoxNum = kzd_vmboxes:mailbox(BoxJObj),
 
     Doc = cb_context:doc(Context),
 
     Props = [{<<"Message-Timestamp">>, kz_json:get_integer_value(<<"timestamp">>, Doc)}
             ,{<<"Box-Num">>, BoxNum}
-            ,{<<"Timezone">>, kzd_voicemail_box:timezone(BoxJObj)}
+            ,{<<"Timezone">>, kzd_vmboxes:timezone(BoxJObj)}
             ,{<<"Box-Id">>, kz_doc:id(BoxJObj)}
             ],
     JObj = kzd_box_message:new(AccountId, Props),
@@ -1022,7 +1022,7 @@ load_message_binary(BoxId, MediaId, Context) ->
                 {'error', Error} ->
                     crossbar_doc:handle_datamgr_errors(Error, BoxId, Context);
                 {'ok', BoxJObj} ->
-                    Timezone = kzd_voicemail_box:timezone(BoxJObj),
+                    Timezone = kzd_vmboxes:timezone(BoxJObj),
                     load_attachment_from_message(JObj, Context, Timezone)
             end;
         {'error', Err} -> crossbar_doc:handle_datamgr_errors(Err, MediaId, Context)
@@ -1077,7 +1077,7 @@ load_messages_binaries(BoxId, Context) ->
         {'error', Error} ->
             crossbar_doc:handle_datamgr_errors(Error, BoxId, Context);
         {'ok', BoxJObj} ->
-            Timezone = kzd_voicemail_box:timezone(BoxJObj),
+            Timezone = kzd_vmboxes:timezone(BoxJObj),
             _ = save_attachments_to_file(Ids, BoxId, Context, Timezone, WorkDir),
             maybe_create_zip_file(WorkDir, Context)
     end.
