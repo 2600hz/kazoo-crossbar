@@ -14,6 +14,7 @@
 
 -export([build/1
         ,build_with_mapper/2, build_with_mapper/3
+        ,build_with_user_params/3
         ,is_defined/1, is_only_time_filter/2
 
         ,by_doc/2, by_doc/3
@@ -40,7 +41,8 @@ build(Context) ->
 
 %% @equiv build_with_mapper(Context, UserMapper, is_defined(Context))
 
--spec build_with_mapper(cb_context:context(), crossbar_view:user_mapper_fun()) -> kz_view:filtermap().
+-spec build_with_mapper(cb_context:context(), crossbar_view:user_mapper_fun()) ->
+          kz_view:filtermap() | 'undefined'.
 build_with_mapper(Context, UserMapper) ->
     build_with_mapper(Context, UserMapper, is_defined(Context)).
 
@@ -50,16 +52,37 @@ build_with_mapper(Context, UserMapper) ->
 %% on the view result.
 %% @end
 %%------------------------------------------------------------------------------
--spec build_with_mapper(cb_context:context(), crossbar_view:user_mapper_fun(), boolean()) -> kz_view:filtermap().
+-spec build_with_mapper(cb_context:context(), crossbar_view:user_mapper_fun(), boolean()) ->
+          kz_view:filtermap() | 'undefined'.
 build_with_mapper(Context, UserMapper, 'false') when is_function(UserMapper, 3) ->
     fun(JObj, Acc) -> UserMapper(Context, JObj, Acc) end;
-build_with_mapper(_, UserMapper, 'false') when UserMapper =:= 'undefined'
-                                               orelse is_function(UserMapper, 1)
+build_with_mapper(_, 'undefined', 'false') ->
+    'undefined';
+build_with_mapper(_, UserMapper, 'false') when is_function(UserMapper, 1)
                                                orelse is_function(UserMapper, 2) ->
     UserMapper;
 build_with_mapper(Context, UserMapper, 'true') ->
     FilterFun = build(Context, 'true'),
     build_filter_map_fun(Context, FilterFun, UserMapper).
+
+-spec build_with_user_params(cb_context:context(), kz_term:proplist(), crossbar_view:user_mapper_fun()) ->
+          kz_view:filtermap() | 'undefined'.
+build_with_user_params(Context, UserParams, UserMapper) ->
+    build_with_user_params(Context, UserParams, UserMapper, props:is_true('has_fields', UserParams, 'false')).
+
+build_with_user_params(Context, UserParams, UserMapper, 'false') ->
+    HasQsfilter = props:is_true('has_qs_filter', UserParams, 'false'),
+    build_with_mapper(Context, UserMapper, HasQsfilter);
+build_with_user_params(Context, UserParams, UserMapper, 'true') ->
+    Fields = props:get_value('fields', UserParams),
+    case props:is_true('field_key', UserParams, <<"doc">>) of
+        'filtermap'=FieldKey ->
+            HasQsfilter = props:is_true('has_qs_filter', UserParams, 'false'),
+            FilterMap = build_with_mapper(Context, UserMapper, HasQsfilter),
+            build_filtermap_fields_fun(Fields, FieldKey, FilterMap);
+        FieldKey ->
+            build_filtermap_fields_fun(Fields, FieldKey, 'undefined')
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc Check if there is any filter request in query string.
@@ -170,6 +193,41 @@ build_filter_map_fun(Context, FilterFun, UserMapper) when is_function(UserMapper
                 'false' -> Acc
             end
     end.
+
+%%------------------------------------------------------------------------------
+%% @doc Build a kz_view filtermap fun with would apply filtermap first then
+%% get requested fields from the result.
+%% @end
+%%------------------------------------------------------------------------------
+build_filtermap_fields_fun(Fields, FieldKey, 'undefined') ->
+    fun(JObj, Acc) ->
+            [get_fields(Fields, kz_json:get_value(FieldKey, JObj, kz_json:new()), kz_json:new())
+            | Acc
+            ]
+    end;
+build_filtermap_fields_fun(Fields, _FieldKey, FilterMap) when is_function(FilterMap, 1) ->
+    fun(JObjs) ->
+            case FilterMap(JObjs) of
+                {'error', _}=Error -> Error;
+                NewJObjs ->
+                    [get_fields(Fields, JObj, kz_json:new()) || JObj <- NewJObjs]
+            end
+    end;
+build_filtermap_fields_fun(Fields, _FieldKey, FilterMap) when is_function(FilterMap, 2) ->
+    fun(JObj, Acc) ->
+            case FilterMap(JObj, Acc) of
+                {'error', _}=Error -> Error;
+                [NewJObj | Acc] ->
+                    %% Acc did not changed, just get fields from head
+                    [get_fields(Fields, NewJObj, kz_json:new()) | Acc];
+                NewAcc ->
+                    [get_fields(Fields, J, kz_json:new()) || J <- NewAcc]
+            end
+    end.
+
+get_fields([], _, Acc) -> Acc;
+get_fields([K|Ks], JObj, Acc) ->
+    get_fields(Ks, JObj, kz_json:set_values(K,kz_json:get_value(K, JObj), Acc)).
 
 %%------------------------------------------------------------------------------
 %% @doc Return `true' if key is a filter key.

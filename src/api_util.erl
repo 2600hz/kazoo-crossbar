@@ -187,7 +187,9 @@ maybe_get_req_data(Context, Req0, _Version) ->
 -spec get_query_string_data(cowboy_req:req()) ->
           {kz_json:object(), cowboy_req:req()}.
 get_query_string_data(Req) ->
-    QS = cowboy_req:parse_qs(Req),
+    QS = kz_http_util:parse_query_arrays(
+           cowboy_req:parse_qs(Req)
+          ),
     get_query_string_data(QS, Req).
 
 -spec get_query_string_data(kz_term:proplist(), cowboy_req:req()) ->

@@ -37,7 +37,8 @@
 
 %% too many types {{{
 -define(CB_SPECIFIC_VIEW_OPTIONS,
-        ['ascending', 'databases', 'mapper', 'no_filter'
+        ['ascending', 'databases', 'mapper', 'no_filter', 'no_fields'
+        ,'fields', 'field_key'
 
          %% non-range query
         ,'end_keymap', 'keymap', 'start_keymap'
@@ -91,6 +92,9 @@
                    [{'mapper', user_mapper_fun()} |
                     {'max_range', pos_integer()} |
                     {'no_filter', boolean()} |
+                    {'no_fields', boolean()} |
+                    {'fields', kz_json:paths()} |
+                    {'field_key', kz_term:ne_binary() | 'filtermap'} |
 
                     %% for non-ranged query
                     {'end_keymap', keymap()} |
@@ -260,7 +264,6 @@ build_yodb_options(Context, Thing) ->
 %% old get_*_funs {{{
 %%------------------------------------------------------------------------------
 %% @doc Returns a function to get `doc' object from each view result.
-%% @deprecated Please use kz_view filtermap options
 %% @end
 %%------------------------------------------------------------------------------
 -spec get_doc_fun() -> mapper_fun().
@@ -268,7 +271,6 @@ get_doc_fun() -> fun(JObj, Acc) -> [kz_json:get_json_value(<<"doc">>, JObj)|Acc]
 
 %%------------------------------------------------------------------------------
 %% @doc Returns a function to get `value' object from each view result.
-%% @deprecated Please use kz_view filtermap options
 %% @end
 %%------------------------------------------------------------------------------
 -spec get_value_fun() -> mapper_fun().
@@ -276,7 +278,6 @@ get_value_fun() -> fun(JObj, Acc) -> [kz_json:get_value(<<"value">>, JObj)|Acc] 
 
 %%------------------------------------------------------------------------------
 %% @doc
-%% @deprecated Please use kz_view filtermap options
 %% @end
 %%------------------------------------------------------------------------------
 -spec get_key_fun() -> mapper_fun().
@@ -284,7 +285,6 @@ get_key_fun() -> fun(JObj, Acc) -> [kz_json:get_value(<<"key">>, JObj)|Acc] end.
 
 %%------------------------------------------------------------------------------
 %% @doc Returns a function to get `value' object from each view result.
-%% @deprecated Please use kz_view filtermap options
 %% @end
 %%------------------------------------------------------------------------------
 -spec get_id_fun() -> mapper_fun().
@@ -333,9 +333,7 @@ build_cursor_options(Context, Options, NoDesignModule, IsTimeQuery) ->
 add_user_params(Context, CursorOptions, Options, IsTimeQuery) ->
     TimeFilterKey = props:get_ne_binary_value('time_filter_key', Options, <<"created">>),
     HasQSFilter = has_qs_filter(Context, Options, TimeFilterKey, IsTimeQuery),
-
     UserMapper = props:get_value('mapper', Options),
-    FilterMap = crossbar_filter:build_with_mapper(Context, UserMapper, HasQSFilter),
 
     Prop = [{'has_qs_filter', HasQSFilter}
            ,{'is_chunked', is_chunked(Context, Options)}
@@ -343,13 +341,13 @@ add_user_params(Context, CursorOptions, Options, IsTimeQuery) ->
            ,{'should_paginate', cb_context:should_paginate(Context)}
            ,{'time_filter_key', TimeFilterKey}
            | [{K, V}
-              || {K, V} <- Options,
+              || {K, V} <- add_fields_options(Context, Options),
                  lists:member(K, ?USER_PARAMS_ONLY)
              ]
            ],
     case time_range(Context, Options, TimeFilterKey) of
         {StartTime, EndTime} ->
-            CursorProp = [{'filtermap', FilterMap}
+            CursorProp = [{'filtermap', build_filtermap(Context, UserMapper, Prop)}
                          ,{'user_params', [{'start_time', StartTime}
                                           ,{'end_time', EndTime}
                                           | Prop
@@ -370,6 +368,24 @@ has_qs_filter(Context, Options, _, 'false') ->
     not props:is_true('no_filter', Options, 'false')
         andalso crossbar_filter:is_defined(Context).
 
+-spec add_fields_options(cb_context:context(), options()) -> options().
+add_fields_options(Context, Options) ->
+    case kz_json:get_ne_binaries(<<"fields">>, cb_context:query_string(Context)) of
+        [] ->
+            [{'has_fields', 'false'}
+            | Options
+            ];
+        Fields ->
+            [{'fields', Fields}
+            ,{'field_key', props:get_value('field_key', Options, <<"doc">>)}
+            ,{'has_fields', not props:is_true('no_fields', Options, 'false')}
+            | Options
+            ]
+    end.
+
+build_filtermap(Context, UserMapper, UserParams) ->
+    crossbar_filter:build_with_user_params(Context, UserParams, UserMapper).
+
 -spec merge_options(kz_view:options(), options()) -> kz_view:options().
 merge_options(CursorOptions, Options) ->
     %% remove result key in favor of crossbar_view mapper fun
@@ -384,7 +400,11 @@ merge_options(CursorOptions, Options) ->
                 ]).
 
 maybe_set_include_docs(Options) ->
-    case props:get_value(['user_params', 'has_qs_filter'], Options) of
+    case props:is_true(['user_params', 'has_qs_filter'], Options, 'false')
+        orelse (props:is_true(['user_params', 'has_fields'], Options, 'false')
+                andalso props:get_value(['user_params', 'field_key'], Options) =:= <<"doc">>
+               )
+    of
         'true' -> ['include_docs' | props:delete('include_docs', Options)];
         'false' -> Options
     end.
