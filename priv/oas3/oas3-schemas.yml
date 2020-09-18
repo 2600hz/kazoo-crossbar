@@ -293,6 +293,15 @@
         Controls whether we should send bill reminder for this account a few days before due date
       'type': boolean
   'type': object
+'account_config.voicemail':
+  'description': Schema for voicemail account_config
+  'properties':
+    'vm_message_forward_type':
+      'default': only_forward
+      'description': |-
+        Enable or disable the ability to prepend a message when forwarding a voicemail message
+      'type': string
+  'type': object
 'account_config.webhooks':
   'description': Schema for webhooks account_config
   'properties':
@@ -9452,14 +9461,6 @@
           'default': false
           'description': send ampq message to notify about voicemail deletion
           'type': boolean
-        'vm_message_forward_type':
-          'default': only_forward
-          'description': |-
-            Enable or disable the ability to prepend a message when forwarding a voicemail message
-          'enum':
-            - only_forward
-            - prepend_forward
-          'type': string
       'type': object
   'type': object
 'system_config.callflow.call_forward':
@@ -14117,6 +14118,18 @@
       'description': trunkstore ring ready offnet
       'type': boolean
   'type': object
+'system_config.voicemail':
+  'description': Schema for voicemail system_config
+  'properties':
+    'vm_message_forward_type':
+      'default': only_forward
+      'description': |-
+        Enable or disable the ability to prepend a message when forwarding a voicemail message
+      'enum':
+        - only_forward
+        - prepend_forward
+      'type': string
+  'type': object
 'system_config.webhooks':
   'description': Schema for webhooks system_config
   'properties':
@@ -15136,6 +15149,15 @@
       'description': Transcribe voicemail using ASR engine
       'type': boolean
       'x-support_level': alpha
+    'vm_message_forward_type':
+      'default': only_forward
+      'description': |-
+        Enable or disable the ability to prepend a message when forwarding a voicemail message
+      'enum':
+        - only_forward
+        - prepend_forward
+      'type': string
+      'x-support_level': supported
   'required':
     - mailbox
     - name

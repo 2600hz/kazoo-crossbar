@@ -1,0 +1,17 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "_id": "system_config.voicemail",
+    "description": "Schema for voicemail system_config",
+    "properties": {
+        "vm_message_forward_type": {
+            "default": "only_forward",
+            "description": "Enable or disable the ability to prepend a message when forwarding a voicemail message",
+            "enum": [
+                "only_forward",
+                "prepend_forward"
+            ],
+            "type": "string"
+        }
+    },
+    "type": "object"
+}

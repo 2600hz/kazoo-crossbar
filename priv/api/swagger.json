@@ -404,6 +404,17 @@
             },
             "type": "object"
         },
+        "account_config.voicemail": {
+            "description": "Schema for voicemail account_config",
+            "properties": {
+                "vm_message_forward_type": {
+                    "default": "only_forward",
+                    "description": "Enable or disable the ability to prepend a message when forwarding a voicemail message",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "account_config.webhooks": {
             "description": "Schema for webhooks account_config",
             "properties": {
@@ -11638,15 +11649,6 @@
                             "default": false,
                             "description": "send ampq message to notify about voicemail deletion",
                             "type": "boolean"
-                        },
-                        "vm_message_forward_type": {
-                            "default": "only_forward",
-                            "description": "Enable or disable the ability to prepend a message when forwarding a voicemail message",
-                            "enum": [
-                                "only_forward",
-                                "prepend_forward"
-                            ],
-                            "type": "string"
                         }
                     },
                     "type": "object"
@@ -17735,6 +17737,21 @@
             },
             "type": "object"
         },
+        "system_config.voicemail": {
+            "description": "Schema for voicemail system_config",
+            "properties": {
+                "vm_message_forward_type": {
+                    "default": "only_forward",
+                    "description": "Enable or disable the ability to prepend a message when forwarding a voicemail message",
+                    "enum": [
+                        "only_forward",
+                        "prepend_forward"
+                    ],
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "system_config.webhooks": {
             "description": "Schema for webhooks system_config",
             "properties": {
@@ -18863,6 +18880,15 @@
                     "default": false,
                     "description": "Transcribe voicemail using ASR engine",
                     "type": "boolean"
+                },
+                "vm_message_forward_type": {
+                    "default": "only_forward",
+                    "description": "Enable or disable the ability to prepend a message when forwarding a voicemail message",
+                    "enum": [
+                        "only_forward",
+                        "prepend_forward"
+                    ],
+                    "type": "string"
                 }
             },
             "required": [
