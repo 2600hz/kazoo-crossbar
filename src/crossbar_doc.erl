@@ -30,6 +30,7 @@
 -export([handle_datamgr_success/2
         ,handle_datamgr_errors/3
         ]).
+-export([public_and_read_only/1]).
 
 -ifdef(TEST).
 -export([patch_the_doc/2]).

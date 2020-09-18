@@ -126,6 +126,7 @@ debug_read(Context, ?MATCH_MODB_PREFIX(Year, Month, CallId)) ->
               ,{'endkey', [CallId, kz_json:new()]}
               ,{'mapper', fun normalize_debug_read/2}
               ,{'startkey', [CallId]}
+              ,{'field_key', 'filtermap'}
               ,'include_docs'
               ],
     Context1 = crossbar_view:load(Context, ?CB_DEBUG_LIST, Options),
@@ -139,6 +140,7 @@ debug_read(Context, CallId) ->
     ViewOptions = [{'mapper', fun normalize_debug_read/2}
                   ,{'range_keymap', CallId}
                   ,{'unchunkable', 'true'}
+                  ,{'field_key', 'filtermap'}
                   ,'include_docs'
                   ],
     crossbar_view:load_modb(Context, ?CB_DEBUG_LIST, ViewOptions).

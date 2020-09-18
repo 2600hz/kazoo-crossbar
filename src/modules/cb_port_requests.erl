@@ -964,6 +964,7 @@ load_summary_by_type(Context, Type) ->
               ,{'databases', [?KZ_PORT_REQUESTS_DB]}
               ,{'unchunkable', 'true'}
               ,{'should_paginate', 'false'}
+              ,{'field_key', 'filtermap'}
               ,'include_docs'
               | by_types_view_options(Context, Type, IsRanged, AuthorityType)
               ],
@@ -1045,6 +1046,7 @@ load_summary_by_number(Context, Number) ->
     Options = [{'keymap', knm_converters:normalize(Number)}
               ,{'mapper', fun normalize_number_summarize_results/3}
               ,{'databases', [?KZ_PORT_REQUESTS_DB]}
+              ,{'field_key', 'filtermap'}
               ,'include_docs'
               ],
     crossbar_view:load(Context, ?LISTING_BY_NUMBER, Options).
@@ -1078,6 +1080,7 @@ last_submitted(Context) ->
               ,{'endkey', [AccountId, kz_json:new()]}
               ,{'mapper', fun  normalize_last_submitted/3}
               ,{'databases', [?KZ_PORT_REQUESTS_DB]}
+              ,{'field_key', 'filtermap'}
               ,'include_docs'
               ],
     crossbar_view:load(Context, <<"port_requests/listing_submitted">>, Options).

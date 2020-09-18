@@ -427,6 +427,7 @@ summary_available(Context) ->
     IsSuperAdmin = cb_context:is_superduper_admin(Context),
     C1 = cb_context:store(Context, 'is_superduper_admin', IsSuperAdmin),
     Options = [{'mapper', fun normalize_available/3}
+              ,{'field_key', 'filtermap'}
               ,'include_docs'
               ],
     crossbar_view:load(cb_context:set_db_name(C1, MasterAccountDb), ?AVAILABLE_HOOKS, Options).
@@ -490,6 +491,7 @@ summary_attempts(Context, HookId) ->
     ViewName = get_view_name(HookId),
     Options = [{'mapper', fun normalize_attempt_results/2}
               ,{'range_keymap', HookId}
+              ,{'field_key', 'filtermap'}
               ,'include_docs'
               ],
     crossbar_view:load_modb(Context, ViewName, Options).
