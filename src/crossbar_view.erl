@@ -38,7 +38,7 @@
 %% too many types {{{
 -define(CB_SPECIFIC_VIEW_OPTIONS,
         ['ascending', 'databases', 'mapper', 'no_filter', 'no_fields'
-        ,'fields', 'field_key'
+        ,'fields', 'field_key', 'has_fields'
 
          %% non-range query
         ,'end_keymap', 'keymap', 'start_keymap'
@@ -370,7 +370,12 @@ has_qs_filter(Context, Options, _, 'false') ->
 
 -spec add_fields_options(cb_context:context(), options()) -> options().
 add_fields_options(Context, Options) ->
-    case kz_json:get_ne_binaries(<<"fields">>, cb_context:query_string(Context)) of
+    case lists:usort(
+           [F || F <- kz_json:get_ne_binaries(<<"fields">>, cb_context:query_string(Context)),
+                 not kz_doc:is_private_key(F)
+           ]
+          )
+    of
         [] ->
             [{'has_fields', 'false'}
             | Options

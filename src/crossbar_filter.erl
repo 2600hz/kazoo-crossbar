@@ -75,7 +75,7 @@ build_with_user_params(Context, UserParams, UserMapper, 'false') ->
     build_with_mapper(Context, UserMapper, HasQsfilter);
 build_with_user_params(Context, UserParams, UserMapper, 'true') ->
     Fields = props:get_value('fields', UserParams),
-    case props:is_true('field_key', UserParams, <<"doc">>) of
+    case props:get_value('field_key', UserParams, <<"doc">>) of
         'filtermap'=FieldKey ->
             HasQsfilter = props:is_true('has_qs_filter', UserParams, 'false'),
             FilterMap = build_with_mapper(Context, UserMapper, HasQsfilter),
@@ -199,9 +199,11 @@ build_filter_map_fun(Context, FilterFun, UserMapper) when is_function(UserMapper
 %% get requested fields from the result.
 %% @end
 %%------------------------------------------------------------------------------
+-spec build_filtermap_fields_fun(kz_json:paths(), kz_term:ne_binary() | 'filtermap', kz_view:filtermap()) ->
+          kz_view:filtermap().
 build_filtermap_fields_fun(Fields, FieldKey, 'undefined') ->
     fun(JObj, Acc) ->
-            [get_fields(Fields, kz_json:get_value(FieldKey, JObj, kz_json:new()), kz_json:new())
+            [get_fields(Fields, kz_doc:public_fields(kz_json:get_value(FieldKey, JObj, kz_json:new())), kz_json:new())
             | Acc
             ]
     end;
@@ -210,7 +212,7 @@ build_filtermap_fields_fun(Fields, _FieldKey, FilterMap) when is_function(Filter
             case FilterMap(JObjs) of
                 {'error', _}=Error -> Error;
                 NewJObjs ->
-                    [get_fields(Fields, JObj, kz_json:new()) || JObj <- NewJObjs]
+                    [get_fields(Fields, kz_doc:public_fields(JObj), kz_json:new()) || JObj <- NewJObjs]
             end
     end;
 build_filtermap_fields_fun(Fields, _FieldKey, FilterMap) when is_function(FilterMap, 2) ->
@@ -219,15 +221,16 @@ build_filtermap_fields_fun(Fields, _FieldKey, FilterMap) when is_function(Filter
                 {'error', _}=Error -> Error;
                 [NewJObj | Acc] ->
                     %% Acc did not changed, just get fields from head
-                    [get_fields(Fields, NewJObj, kz_json:new()) | Acc];
+                    [get_fields(Fields, kz_json:public_fields(NewJObj), kz_json:new()) | Acc];
                 NewAcc ->
-                    [get_fields(Fields, J, kz_json:new()) || J <- NewAcc]
+                    [get_fields(Fields, kz_json:public_fields(J), kz_json:new()) || J <- NewAcc]
             end
     end.
 
 get_fields([], _, Acc) -> Acc;
 get_fields([K|Ks], JObj, Acc) ->
-    get_fields(Ks, JObj, kz_json:set_values(K,kz_json:get_value(K, JObj), Acc)).
+    %% get_fields(Ks, JObj, kz_json:set_value(K, kz_json:get_value(K, JObj, 'null'), Acc, #{'keep_null' => 'true'})).
+    get_fields(Ks, JObj, kz_json:set_value(K, kz_json:get_value(K, JObj), Acc)).
 
 %%------------------------------------------------------------------------------
 %% @doc Return `true' if key is a filter key.
