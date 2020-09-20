@@ -370,12 +370,7 @@ has_qs_filter(Context, Options, _, 'false') ->
 
 -spec add_fields_options(cb_context:context(), options()) -> options().
 add_fields_options(Context, Options) ->
-    case lists:usort(
-           [F || F <- kz_json:get_ne_binaries(<<"fields">>, cb_context:query_string(Context)),
-                 not kz_doc:is_private_key(F)
-           ]
-          )
-    of
+    case get_fields(Context) of
         [] ->
             [{'has_fields', 'false'}
             | Options
@@ -387,6 +382,27 @@ add_fields_options(Context, Options) ->
             | Options
             ]
     end.
+
+-spec get_fields(cb_context:context()) -> kz_term:ne_binaries().
+get_fields(Context) ->
+    case kz_json:get_value(<<"fields">>, cb_context:query_string(Context)) of
+        'undefined' -> [];
+        List when is_list(List) ->
+            lists:usort([Key || K <- List,
+                                Key <- [kz_binary:strip(K)],
+                                kz_term:is_ne_binary(Key)
+                                    andalso not kz_doc:is_private_key(Key)
+                        ]);
+        Binary when is_binary(Binary) ->
+            lists:usort([Key || B <- binary:split(Binary, <<",">>, ['global']),
+                                Key <- [kz_binary:strip(B)],
+                                kz_term:is_ne_binary(B)
+                                    andalso not kz_doc:is_private_key(B)
+                        ]);
+        _ ->
+            []
+    end.
+
 
 build_filtermap(Context, UserMapper, UserParams) ->
     crossbar_filter:build_with_user_params(Context, UserParams, UserMapper).
