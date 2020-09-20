@@ -81,7 +81,13 @@ build_with_user_params(Context, UserParams, UserMapper, 'true') ->
             FilterMap = build_with_mapper(Context, UserMapper, HasQsfilter),
             build_filtermap_fields_fun(Fields, FieldKey, FilterMap);
         FieldKey ->
-            build_filtermap_fields_fun(Fields, FieldKey, 'undefined')
+            case props:is_true('has_qs_filter', UserParams, 'false') of
+                'false' ->
+                    build_filtermap_fields_fun(Fields, FieldKey, 'undefined');
+                'true' ->
+                    FilterMap = build_with_mapper(Context, 'undefined', 'true'),
+                    build_filtermap_fields_fun(Fields, FieldKey, FilterMap)
+            end
     end.
 
 %%------------------------------------------------------------------------------
@@ -211,6 +217,7 @@ build_filtermap_fields_fun(Fields, _FieldKey, FilterMap) when is_function(Filter
     fun(JObjs) ->
             case FilterMap(JObjs) of
                 {'error', _}=Error -> Error;
+                JObjs -> JObjs;
                 NewJObjs ->
                     [get_fields(Fields, kz_doc:public_fields(JObj), kz_json:new()) || JObj <- NewJObjs]
             end
@@ -221,9 +228,9 @@ build_filtermap_fields_fun(Fields, _FieldKey, FilterMap) when is_function(Filter
                 {'error', _}=Error -> Error;
                 [NewJObj | Acc] ->
                     %% Acc did not changed, just get fields from head
-                    [get_fields(Fields, kz_json:public_fields(NewJObj), kz_json:new()) | Acc];
+                    [get_fields(Fields, kz_doc:public_fields(NewJObj), kz_json:new()) | Acc];
                 NewAcc ->
-                    [get_fields(Fields, kz_json:public_fields(J), kz_json:new()) || J <- NewAcc]
+                    [get_fields(Fields, kz_doc:public_fields(J), kz_json:new()) || J <- NewAcc]
             end
     end.
 
