@@ -714,6 +714,7 @@
     "trunkstore.ensure_valid_caller_id": "trunkstore ensure valid caller id",
     "trunkstore.honor_diversions_by_cid_validation": "trunkstore honor diversions by cid validation",
     "trunkstore.ring_ready_offnet": "trunkstore ring ready offnet",
+    "voicemail.vm_message_forward_type": "Enable or disable the ability to prepend a message when forwarding a voicemail message",
     "webhooks.attempt_failure_count": "webhooks attempt failure count",
     "webhooks.attempt_failure_expiry_ms": "webhooks attempt failure expiry in milliseconds",
     "webhooks.connect_timeout_ms": "webhooks connect timeout in milliseconds",
