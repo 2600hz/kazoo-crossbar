@@ -44,6 +44,7 @@ Key | Description | Type | Default | Required | Support Level
 `operator_number` | Alternate/override number to use when calling operator from voicemail | `integer() | string()` |   | `false` |  
 `owner_id` | The ID of the user object that 'owns' the voicemail box | `string(32)` |   | `false` | `supported`
 `pin` | The pin number for the voicemail box | `string(4..6)` |   | `false` | `supported`
+`play_envelope_action` | When to play the envelope during voicemail message playback | `string('play_after' | 'play_before' | 'skip')` | `play_after` | `false` |  
 `require_pin` | Determines if a pin is required to check the voicemail from the users devices | `boolean()` | `false` | `false` | `supported`
 `save_after_notify` | Move the voicemail to save folder after the notification has been sent (This setting will override delete_after_notify) | `boolean()` | `false` | `false` | `supported`
 `seek_duration_ms` | callflow fastforward and rewind seek duration | `integer()` | `10000` | `false` |  

@@ -3,6 +3,16 @@
     "_id": "system_config.voicemail",
     "description": "Schema for voicemail system_config",
     "properties": {
+        "play_envelope_action": {
+            "default": "play_after",
+            "description": "When to play the envelope during voicemail message playback",
+            "enum": [
+                "play_after",
+                "play_before",
+                "skip"
+            ],
+            "type": "string"
+        },
         "vm_message_forward_type": {
             "default": "only_forward",
             "description": "Enable or disable the ability to prepend a message when forwarding a voicemail message",

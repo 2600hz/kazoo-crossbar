@@ -148,6 +148,16 @@
             "support_level": "supported",
             "type": "string"
         },
+        "play_envelope_action": {
+            "default": "play_after",
+            "description": "When to play the envelope during voicemail message playback",
+            "enum": [
+                "play_after",
+                "play_before",
+                "skip"
+            ],
+            "type": "string"
+        },
         "require_pin": {
             "default": false,
             "description": "Determines if a pin is required to check the voicemail from the users devices",

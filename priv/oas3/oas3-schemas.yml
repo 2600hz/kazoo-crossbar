@@ -296,6 +296,14 @@
 'account_config.voicemail':
   'description': Schema for voicemail account_config
   'properties':
+    'play_envelope_action':
+      'default': play_after
+      'description': When to play the envelope during voicemail message playback
+      'enum':
+        - play_after
+        - play_before
+        - skip
+      'type': string
     'vm_message_forward_type':
       'default': only_forward
       'description': |-
@@ -14121,6 +14129,14 @@
 'system_config.voicemail':
   'description': Schema for voicemail system_config
   'properties':
+    'play_envelope_action':
+      'default': play_after
+      'description': When to play the envelope during voicemail message playback
+      'enum':
+        - play_after
+        - play_before
+        - skip
+      'type': string
     'vm_message_forward_type':
       'default': only_forward
       'description': |-
@@ -15105,6 +15121,14 @@
       'minLength': 4
       'type': string
       'x-support_level': supported
+    'play_envelope_action':
+      'default': play_after
+      'description': When to play the envelope during voicemail message playback
+      'enum':
+        - play_after
+        - play_before
+        - skip
+      'type': string
     'require_pin':
       'default': false
       'description': |-
