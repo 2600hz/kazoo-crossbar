@@ -3,6 +3,15 @@
     "_id": "vmboxes",
     "description": "Schema for a voicemail box",
     "properties": {
+        "after_forward_action": {
+            "default": "save",
+            "description": "Action to perform after forwarding a voicemail message",
+            "enum": [
+                "prompt",
+                "save"
+            ],
+            "type": "string"
+        },
         "announcement_only": {
             "default": false,
             "description": "Determine if the mailbox should only play announcements",
