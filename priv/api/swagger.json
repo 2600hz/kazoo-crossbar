@@ -407,6 +407,15 @@
         "account_config.voicemail": {
             "description": "Schema for voicemail account_config",
             "properties": {
+                "after_forward_action": {
+                    "default": "save",
+                    "description": "Action to perform after forwarding a voicemail message",
+                    "enum": [
+                        "prompt",
+                        "save"
+                    ],
+                    "type": "string"
+                },
                 "vm_message_forward_type": {
                     "default": "only_forward",
                     "description": "Enable or disable the ability to prepend a message when forwarding a voicemail message",
@@ -17740,6 +17749,15 @@
         "system_config.voicemail": {
             "description": "Schema for voicemail system_config",
             "properties": {
+                "after_forward_action": {
+                    "default": "save",
+                    "description": "Action to perform after forwarding a voicemail message",
+                    "enum": [
+                        "prompt",
+                        "save"
+                    ],
+                    "type": "string"
+                },
                 "vm_message_forward_type": {
                     "default": "only_forward",
                     "description": "Enable or disable the ability to prepend a message when forwarding a voicemail message",
@@ -18712,6 +18730,15 @@
         "vmboxes": {
             "description": "Schema for a voicemail box",
             "properties": {
+                "after_forward_action": {
+                    "default": "save",
+                    "description": "Action to perform after forwarding a voicemail message",
+                    "enum": [
+                        "prompt",
+                        "save"
+                    ],
+                    "type": "string"
+                },
                 "announcement_only": {
                     "default": false,
                     "description": "Determine if the mailbox should only play announcements",
