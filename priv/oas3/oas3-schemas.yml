@@ -5599,7 +5599,8 @@
       'type': object
     'amount':
       'description': 'Ledger amount, in currency amount'
-      'minimum': 1
+      'exclusiveMinimum': true
+      'minimum': 0
       'type': number
     'description':
       'description': Useful description for ledger
