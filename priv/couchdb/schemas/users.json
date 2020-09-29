@@ -284,6 +284,13 @@
             },
             "type": "object"
         },
+        "scopes": {
+            "description": "Scope restrictions applied to this user",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
         "timezone": {
             "description": "User's timezone",
             "support_level": "supported",
