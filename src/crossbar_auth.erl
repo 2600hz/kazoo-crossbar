@@ -16,6 +16,8 @@
         ,log_success_auth/4, log_success_auth/5, log_success_auth/6
         ,log_failed_auth/4, log_failed_auth/5, log_failed_auth/6
         ,get_inherited_config/1
+        ,available_scopes/1
+        ,scopes/2
         ]).
 
 -include("crossbar.hrl").
@@ -26,6 +28,7 @@
           ,{<<"token_auth_expiry_s">>, ?SECONDS_IN_HOUR}
           ,{<<"log_failed_attempts">>, 'true'}
           ,{<<"log_successful_attempts">>, LogSuccess}
+          ,{<<"scopes">>, ?CB_DEFAULT_SCOPES}
           ]
          )
        ).
@@ -43,6 +46,7 @@
 -define(DEFAULT_AUTH_EXPIRY, kapps_config:get_integer(?AUTH_CONFIG_CAT, <<"token_auth_expiry_s">>, ?SECONDS_IN_HOUR)).
 -define(SHOULD_LOG_FAILED, kapps_config:get_is_true(?AUTH_CONFIG_CAT, <<"log_failed_attempts">>, 'true')).
 -define(SHOULD_LOG_SUCCESS, kapps_config:get_is_true(?AUTH_CONFIG_CAT, <<"log_successful_attempts">>, 'true')).
+-define(AUTH_MODULE_SCOPES_KEY(AuthModule), [<<"auth_modules">>, AuthModule, <<"scopes">>]).
 
 -spec create_auth_token(cb_context:context(), atom()) ->
           cb_context:context().
@@ -384,3 +388,33 @@ maybe_add_metadata(ContextDoc, Doc) ->
         'true' -> Doc;
         'false' -> kz_json:set_value(<<"metadata">>, ContextDoc, Doc)
     end.
+
+%%------------------------------------------------------------------------------
+%% @doc fetch or set default scopes for an auth_module
+%% @end
+%%------------------------------------------------------------------------------
+-spec available_scopes(atom() | kz_term:ne_binary()) -> kz_term:ne_binaries().
+available_scopes(AuthModule) when is_atom(AuthModule) ->
+  available_scopes(kz_term:to_binary(AuthModule));
+available_scopes(AuthModule) ->
+  kapps_config:get_ne_binaries(?AUTH_CONFIG_CAT, ?AUTH_MODULE_SCOPES_KEY(AuthModule), [?APP_NAME], <<"default">>).
+
+%%------------------------------------------------------------------------------
+%% @doc resolve scope restrictions to scopes
+%% @end
+%%------------------------------------------------------------------------------
+-spec scopes(kz_term:ne_binary(), kz_term:ne_binaries() | kz_term:binary()) -> kz_term:api_binaries().
+scopes(_AccountId, []) ->
+  [];
+scopes(AccountId, ScopeRestrictions) when is_list(ScopeRestrictions) ->
+  Fun = fun(R, Acc) ->
+          scopes(AccountId, R) ++ Acc
+        end,
+  lists:foldl(Fun, [], ScopeRestrictions);
+scopes(AccountId, ScopeRestriction) when is_binary(ScopeRestriction) ->
+  AccountDb = kzs_util:format_account_db(AccountId),
+  case kz_datamgr:open_cache_doc(AccountDb, ScopeRestriction) of
+    {'ok', Doc} ->
+      kz_json:get_list_value(<<"scopes">>, Doc, []);
+    _ -> 'undefined'
+  end.
