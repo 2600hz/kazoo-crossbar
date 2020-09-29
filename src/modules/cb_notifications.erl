@@ -1212,7 +1212,7 @@ template_module_name(Id, Context, CT) ->
 %%------------------------------------------------------------------------------
 -spec summary(cb_context:context()) -> cb_context:context().
 summary(Context) ->
-    case cb_context:db_name(Context) of
+    case cb_context:account_id(Context) of
         'undefined' -> summary_available(Context);
         _AccountDb -> summary_account(Context)
     end.
@@ -1221,7 +1221,7 @@ summary(Context) ->
 summary_available(Context) ->
     case fetch_available(Context) of
         {'ok', Available} -> crossbar_doc:handle_json_success(Available, Context);
-        {'error', 'not_found'} -> fetch_summary_available(Context)
+        _ -> fetch_summary_available(Context)
     end.
 
 -spec fetch_summary_available(cb_context:context()) -> cb_context:context().
@@ -1243,7 +1243,7 @@ fetch_summary_available(Context) ->
 
 -spec cache_available(cb_context:context()) -> 'ok'.
 cache_available(Context) ->
-    case kz_json:get_fields(cb_context:query_string(Context)) of
+    case cb_context:fetch(Context, 'fields') of
         'undefined' ->
             kz_cache:store_local(?CACHE_NAME
                                 ,{?MODULE, 'available'}
@@ -1261,10 +1261,12 @@ flush() ->
 is_cache_key({?MODULE, 'available'}, _) -> 'true';
 is_cache_key(_K, _V) -> 'false'.
 
--spec fetch_available(cb_context:context()) -> {'ok', kz_json:objects()} |
+-spec fetch_available(cb_context:context()) ->
+          {'ok', kz_json:objects()} |
+          {any(), pid()} |
           {'error', 'not_found'}.
 fetch_available(Context) ->
-    case kz_json:get_values(<<"fields">>, cb_context:query_string(Context)) of
+    case kz_json:get_value(<<"fields">>, cb_context:query_string(Context)) of
         'undefined' ->
             kz_cache:fetch_local(?CACHE_NAME, {?MODULE, 'available'});
         _ ->
@@ -1278,7 +1280,7 @@ summary_account(Context) ->
               ,{'should_paginate', 'false'}
               ,{'unchunkable', 'true'}
               ,{'field_key', 'filtermap'}
-              | 'include_docs'
+              ,'include_docs'
               ],
     Context1 = crossbar_view:load(Context, ?CB_LIST, Options),
     summary_account(Context1, cb_context:resp_status(Context1)).
@@ -1323,9 +1325,7 @@ merge_fold(Overridden, Acc) ->
             [note_account_defined(Overridden) | Filtered]
     end.
 
--type normalize_fun() :: fun((kz_json:object(), kz_json:objects()) -> kz_json:objects()).
-
--spec select_normalize_fun(cb_context:context()) -> normalize_fun().
+-spec select_normalize_fun(cb_context:context()) -> crossbar_view:user_mapper_fun().
 select_normalize_fun(Context) ->
     case cb_context:is_superduper_admin(Context) of
         'true' -> fun normalize_available_admin/2;

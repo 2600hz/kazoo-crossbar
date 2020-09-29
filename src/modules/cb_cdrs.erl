@@ -237,7 +237,7 @@ maybe_add_fields_fun(Context) ->
         'false' ->
             Context;
         'true' ->
-            Fields = kz_json:get_value(<<"fields">>, cb_context:query_string(Context), []),
+            Fields = cb_context:fetch(Context, 'fields', []),
             FieldsFun = kz_view:build_fields_fun(Fields, 'undefined'),
             cb_context:store(Context, 'fields_fun', FieldsFun)
     end.
@@ -400,10 +400,9 @@ load_chunked_cdr_ids(Context, RespType, Db, Ids) ->
     load_chunked_cdr_ids(Context, RespType, Db, Ids, cb_context:resp_status(Context)).
 
 load_chunked_cdr_ids(Context, RespType, Db, Ids, 'success') ->
-    FieldsFun = cb_context:fetch(Context, 'fields_fun'),
     case kz_datamgr:open_docs(Db, Ids, [{'doc_type', kzd_cdrs:type()}]) of
         {'ok', Results} ->
-            Resp0 = [normalize_cdr(Context, RespType, Result, FieldsFun)
+            Resp0 = [normalize_cdr(Context, RespType, Result)
                      || Result <- Results,
                         %% Filter those docs which have accidentally put into this db.
                         %% See {@link cdr_channel_destroy} comment for function `prepare_and_save/3`
@@ -425,25 +424,19 @@ load_chunked_cdr_ids(Context, _RespType, _Db, _Ids, _Status) ->
 
 -spec normalize_cdr(cb_context:context(), kz_term:ne_binary(), kz_json:object()) -> kz_json:object() | kz_term:ne_binary().
 normalize_cdr(Context, ContentType, Result) ->
-    HasFields = kz_term:is_true(cb_context:fetch(Context, 'has_fields')),
-    normalize_cdr(Context, ContentType, kz_json:get_json_value(<<"doc">>, Result), HasFields).
-
--spec normalize_cdr(cb_context:context(), kz_term:ne_binary(), kz_json:object(), kz_view:fields_fun() | 'undefined') -> kz_json:object() | kz_term:ne_binary().
-normalize_cdr(Context, ContentType, Result, 'undefined') ->
     JObj = kz_json:get_json_value(<<"doc">>, Result),
     Duration = kzd_cdrs:duration_seconds(JObj, 0),
     Timestamp = kzd_cdrs:timestamp(JObj, 0) - Duration,
 
     MappedRows = [{K, apply_row_mapper(K, F, JObj, Timestamp, Context)} || {K, F} <- csv_rows(Context)],
-    do_normalize_cdr(ContentType, MappedRows);
-normalize_cdr(Context, ContentType, Result, FieldsFun) ->
-    JObj = kz_json:get_json_value(<<"doc">>, Result),
-    Duration = kzd_cdrs:duration_seconds(JObj, 0),
-    Timestamp = kzd_cdrs:timestamp(JObj, 0) - Duration,
 
-    MappedRows = [{K, apply_row_mapper(K, F, JObj, Timestamp, Context)} || {K, F} <- csv_rows(Context)],
-    NewDoc = FieldsFun(kz_json:set_values(MappedRows, JObj)),
-    do_normalize_cdr(ContentType, [kz_json:recursive_to_proplist(NewDoc)]).
+    case cb_context:fetch(Context, 'fields_fun') of
+        'undefined' ->
+            do_normalize_cdr(ContentType, MappedRows);
+        FieldsFun ->
+            NewDoc = FieldsFun(kz_json:set_values(MappedRows, JObj)),
+            do_normalize_cdr(ContentType, kz_json:recursive_to_proplist(NewDoc))
+    end.
 
 do_normalize_cdr(<<"json">>, Prop) ->
     maybe_filter_empties(Prop, kapps_config:is_true(?MOD_CONFIG_CAT, <<"should_filter_empty_strings">>, 'false'));

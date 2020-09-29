@@ -92,6 +92,7 @@
                     {'max_range', pos_integer()} |
                     {'no_filter', boolean()} |
                     {'no_fields', boolean()} |
+                    {'unchunkable', boolean()} |
 
                     %% for non-ranged query
                     {'end_keymap', keymap()} |
@@ -402,9 +403,7 @@ add_filtermap_fields_options({Context, CursorOptions0}, CbViewOptions) ->
     UserMapper = props:get_value('mapper', CbViewOptions),
     HasQSFilter = props:is_true(['user_params', 'has_qs_filter'], CursorOptions0, 'false'),
 
-    Setters = [{fun cb_context:set_query_string/2
-               ,kz_json:set_value(<<"fields">>, Fields, cb_context:query_string(Context))
-               }
+    Setters = [{fun cb_context:store/3, 'fields', Fields}
               ,{fun cb_context:store/3, 'has_fields', HasFields}
               ,{fun cb_context:store/3, 'has_qs_filter', HasQSFilter}
               ],
@@ -412,45 +411,30 @@ add_filtermap_fields_options({Context, CursorOptions0}, CbViewOptions) ->
     NewContext = cb_context:setters(Context, Setters),
     FilterMap = crossbar_filter:build_with_mapper(NewContext, UserMapper, HasQSFilter),
 
-    CursorOptions = props:set_value(['user_params', 'has_fields'], HasFields, CursorOptions0),
+    CursorOptions = [{'filtermap', FilterMap}
+                    | props:set_value(['user_params', 'has_fields'], HasFields, CursorOptions0)
+                    ],
+    CursorFields  = [{'field_key', FieldKey}
+                    ,{'fields', Fields}
+                    | CursorOptions
+                    ],
 
     case Fields of
         'undefined' ->
-            {NewContext, [{'filtermap', FilterMap}
-                         | CursorOptions
-                         ]
-            };
+            {NewContext, CursorOptions};
+        Fields when HasFields
+                    andalso FieldKey =/= 'filtermap'
+                    andalso HasQSFilter ->
+            %% this only builds filtermap fun with crossbar qs filter
+            FilterFunOnly = crossbar_filter:build_with_mapper(Context, 'undefined', HasQSFilter),
+            {NewContext, props:set_value('filtermap', FilterFunOnly, CursorFields)};
+        Fields when HasFields
+                    andalso FieldKey =:= 'filtermap' ->
+            {NewContext, CursorFields};
         Fields when HasFields ->
-            case {FieldKey, HasQSFilter} of
-                {'filtermap', _} ->
-                    {NewContext
-                    ,[{'filtermap', FilterMap}
-                     ,{'fields', Fields}
-                     | CursorOptions
-                     ]
-                    };
-                {_, 'true'} ->
-                    %% this only builds filtermap fun with crossbar qs filter
-                    {NewContext
-                    ,[{'filtermap', crossbar_filter:build_with_mapper(Context, 'undefined', HasQSFilter)}
-                     ,{'field_key', FieldKey}
-                     ,{'fields', Fields}
-                     | CursorOptions
-                     ]
-                    };
-                {_, 'false'} ->
-                    {NewContext
-                    ,[{'field_key', FieldKey}
-                     ,{'fields', Fields}
-                     | CursorOptions
-                     ]
-                    }
-            end;
+            {NewContext, props:delete_keys(['filtermap'], CursorFields)};
         Fields ->
-            {NewContext, [{'filtermap', FilterMap}
-                         | CursorOptions
-                         ]
-            }
+            {NewContext, CursorOptions}
     end.
 
 set_context_vars({Context, Options}, _CbViewOptions) ->
@@ -462,7 +446,7 @@ set_context_vars({Context, Options}, _CbViewOptions) ->
               ],
     {cb_context:setters(Context, Setters), Options}.
 
--spec get_fields(cb_context:context()) -> kz_term:api_proplist().
+-spec get_fields(cb_context:context()) -> kz_view:fields() | 'undefined'.
 get_fields(Context) ->
     case kz_json:get_value(<<"fields">>, cb_context:query_string(Context)) of
         List when is_list(List) ->
@@ -558,7 +542,7 @@ is_chunked(Context, Options) ->
                    ,cb_context:query_string(Context)
                    ,props:get_is_true('is_chunked', Options, 'false')
                    )
-        andalso not props:get_is_true('unchunkable', Options, 'false').
+        andalso not kz_term:is_true(props:get_first_defined(['no_batch', 'unchunkable'], Options, 'false')).
 
 %%------------------------------------------------------------------------------
 %% @doc If pagination available, returns page size.
