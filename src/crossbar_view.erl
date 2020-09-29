@@ -345,7 +345,7 @@ add_user_params(Context, CursorOptions, Options, IsTimeQuery) ->
     case time_range(Context, Options, TimeFilterKey) of
         {StartTime, EndTime} ->
             UserParams = [{'start_time', StartTime}
-                          ,{'end_time', EndTime}
+                         ,{'end_time', EndTime}
                          | Prop
                          ],
             {'ok', merge_options(add_filtermap_fields_options(Context, CursorOptions, UserParams, Options), Options)
