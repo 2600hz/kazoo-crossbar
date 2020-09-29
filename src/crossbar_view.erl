@@ -38,7 +38,6 @@
 %% too many types {{{
 -define(CB_SPECIFIC_VIEW_OPTIONS,
         ['ascending', 'databases', 'mapper', 'no_filter', 'no_fields'
-        ,'fields', 'field_key', 'has_fields'
 
          %% non-range query
         ,'end_keymap', 'keymap', 'start_keymap'
@@ -93,8 +92,6 @@
                     {'max_range', pos_integer()} |
                     {'no_filter', boolean()} |
                     {'no_fields', boolean()} |
-                    {'fields', kz_json:paths()} |
-                    {'field_key', kz_term:ne_binary() | 'filtermap'} |
 
                     %% for non-ranged query
                     {'end_keymap', keymap()} |
@@ -261,7 +258,7 @@ build_yodb_options(Context, Thing) ->
     end.
 %% }}}
 
-%% old get_*_funs {{{
+%% get_*_funs {{{
 %%------------------------------------------------------------------------------
 %% @doc Returns a function to get `doc' object from each view result.
 %% @end
@@ -333,31 +330,68 @@ build_cursor_options(Context, Options, NoDesignModule, IsTimeQuery) ->
 add_user_params(Context, CursorOptions, Options, IsTimeQuery) ->
     TimeFilterKey = props:get_ne_binary_value('time_filter_key', Options, <<"created">>),
     HasQSFilter = has_qs_filter(Context, Options, TimeFilterKey, IsTimeQuery),
-    UserMapper = props:get_value('mapper', Options),
 
-    Prop = [{'has_qs_filter', HasQSFilter}
+    Prop = [{'has_fields', not props:is_true('no_fields', Options, 'false')}
+           ,{'has_qs_filter', HasQSFilter}
            ,{'is_chunked', is_chunked(Context, Options)}
            ,{'is_time_query', IsTimeQuery}
            ,{'should_paginate', cb_context:should_paginate(Context)}
            ,{'time_filter_key', TimeFilterKey}
            | [{K, V}
-              || {K, V} <- add_fields_options(Context, Options),
+              || {K, V} <- Options,
                  lists:member(K, ?USER_PARAMS_ONLY)
              ]
            ],
     case time_range(Context, Options, TimeFilterKey) of
         {StartTime, EndTime} ->
-            CursorProp = [{'filtermap', build_filtermap(Context, UserMapper, Prop)}
-                         ,{'user_params', [{'start_time', StartTime}
-                                          ,{'end_time', EndTime}
-                                          | Prop
-                                          ]
-                          }
+            UserParams = [{'start_time', StartTime}
+                          ,{'end_time', EndTime}
+                         | Prop
                          ],
-            {'ok', merge_options(props:set_values(CursorProp, CursorOptions), Options)
+            {'ok', merge_options(add_filtermap_fields_options(Context, CursorOptions, UserParams, Options), Options)
             };
         Ctx -> {'error', Ctx}
     end.
+
+add_filtermap_fields_options(Context, CursorOptions, UserParams, Options) ->
+    UserMapper = props:get_value('mapper', Options),
+
+    FieldKey = props:get_value('field_key', Options, <<"doc">>),
+
+    HasQSFilter = props:is_true('has_qs_filter', UserParams),
+    FilterMap = crossbar_filter:build_with_mapper(Context, UserMapper, HasQSFilter),
+
+    case get_fields(Context) of
+        'undefined' ->
+            [{'filtermap', FilterMap}
+            ,{'user_params', [{'has_fields', 'false'} | UserParams]}
+            | CursorOptions
+            ];
+        Fields ->
+            case {FieldKey, HasQSFilter} of
+                {'filtermap', _} ->
+                    [{'filtermap', FilterMap}
+                    ,{'fields', Fields}
+                    ,{'user_params', [{'has_fields', 'true'} | UserParams]}
+                    | CursorOptions
+                    ];
+                {_, 'true'} ->
+                    %% this only builds filtermap with crossbar qs filter
+                    [{'filtermap', crossbar_filter:build_with_mapper(Context, 'undefined', HasQSFilter)}
+                    ,{'field_key', FieldKey}
+                    ,{'fields', Fields}
+                    ,{'user_params', [{'has_fields', 'true'} | UserParams]}
+                    | CursorOptions
+                    ];
+                {_, 'false'} ->
+                    [{'field_key', FieldKey}
+                    ,{'fields', Fields}
+                    ,{'user_params', [{'has_fields', 'true'} | UserParams]}
+                    | CursorOptions
+                    ]
+            end
+    end.
+
 
 -spec has_qs_filter(cb_context:context(), options(), kz_term:ne_binary(), boolean()) -> boolean().
 has_qs_filter(Context, Options, TimeFilterKey, 'true') ->
@@ -368,54 +402,64 @@ has_qs_filter(Context, Options, _, 'false') ->
     not props:is_true('no_filter', Options, 'false')
         andalso crossbar_filter:is_defined(Context).
 
--spec add_fields_options(cb_context:context(), options()) -> options().
-add_fields_options(Context, Options) ->
-    case get_fields(Context) of
-        [] ->
-            [{'has_fields', 'false'}
-            | Options
-            ];
-        Fields ->
-            [{'fields', Fields}
-            ,{'field_key', props:get_value('field_key', Options, <<"doc">>)}
-            ,{'has_fields', not props:is_true('no_fields', Options, 'false')}
-            | Options
-            ]
-    end.
-
--spec get_fields(cb_context:context()) -> kz_term:ne_binaries().
+-spec get_fields(cb_context:context()) -> kz_term:api_proplist().
 get_fields(Context) ->
     case kz_json:get_value(<<"fields">>, cb_context:query_string(Context)) of
-        'undefined' -> [];
         List when is_list(List) ->
-            lists:usort([Key || K <- List,
-                                Key <- [kz_binary:strip(K)],
-                                kz_term:is_ne_binary(Key)
-                                    andalso not kz_doc:is_private_key(Key)
-                        ]);
+            validate_fields(List);
         Binary when is_binary(Binary) ->
-            lists:usort([Key || B <- binary:split(Binary, <<",">>, ['global']),
-                                Key <- [kz_binary:strip(B)],
-                                kz_term:is_ne_binary(B)
-                                    andalso not kz_doc:is_private_key(B)
-                        ]);
-        _ ->
-            []
+            validate_fields(binary:split(Binary, <<",">>, ['global']));
+        Other ->
+            case kz_json:is_json_object(Other) of
+                'true' ->
+                    validate_fields(kz_json:recursive_to_proplist(Other));
+                'false' ->
+                    'undefined'
+            end
     end.
 
+validate_fields(List) ->
+    case lists:foldl(fun validate_fields/2, [], List) of
+        [] -> 'undefined';
+        Fields -> lists:usort(Fields)
+    end.
 
-build_filtermap(Context, UserMapper, UserParams) ->
-    crossbar_filter:build_with_user_params(Context, UserParams, UserMapper).
+validate_fields([], Acc) ->
+    Acc;
+validate_fields(Key, Acc) when Key =:= <<"id">>
+                               orelse Key =:= <<"_id">> ->
+    [<<"_id">> | Acc];
+validate_fields({Key, Value}, Acc) when Key =:= <<"id">>
+                                        orelse Key =:= <<"_id">> ->
+    [{<<"_id">>, Value} | Acc];
+validate_fields(Key, Acc) when is_binary(Key) ->
+    K = kz_binary:strip(Key),
+    case kz_term:is_ne_binary(K)
+        andalso not kz_doc:is_private_key(K)
+    of
+        'true' -> [K | Acc];
+        'false' -> Acc
+    end;
+validate_fields({Key, Value}, Acc) ->
+    K = kz_binary:strip(Key),
+    case kz_term:is_ne_binary(K)
+        andalso not kz_doc:is_private_key(K)
+    of
+        'true' -> [{K, Value} | Acc];
+        'false' -> Acc
+    end;
+validate_fields(_, Acc) ->
+    Acc.
 
 -spec merge_options(kz_view:options(), options()) -> kz_view:options().
-merge_options(CursorOptions, Options) ->
+merge_options(CursorOptions0, Options) ->
     %% remove result key in favor of crossbar_view mapper fun
     DeleteKeys = ['descending', 'limit', 'result_key'
                  | ?CB_SPECIFIC_VIEW_OPTIONS
                  ],
-    DefaultOptions = props:set_values(CursorOptions, props:delete_keys(DeleteKeys, Options)),
+    CursorOptions1 = props:set_values(CursorOptions0, props:delete_keys(DeleteKeys, Options)),
     lists:foldl(fun(F, Acc) -> F(Acc) end
-               ,DefaultOptions
+               ,CursorOptions1
                ,[fun maybe_set_include_docs/1
                 ,fun maybe_set_log_prefix/1
                 ]).
@@ -423,7 +467,7 @@ merge_options(CursorOptions, Options) ->
 maybe_set_include_docs(Options) ->
     case props:is_true(['user_params', 'has_qs_filter'], Options, 'false')
         orelse (props:is_true(['user_params', 'has_fields'], Options, 'false')
-                andalso props:get_value(['user_params', 'field_key'], Options) =:= <<"doc">>
+                andalso props:get_value('field_key', Options) =:= <<"doc">>
                )
     of
         'true' -> ['include_docs' | props:delete('include_docs', Options)];
