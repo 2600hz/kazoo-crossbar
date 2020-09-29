@@ -284,7 +284,7 @@
             },
             "type": "object"
         },
-        "scopes": {
+        "scope_restrictions": {
             "description": "Scope restrictions applied to this user",
             "items": {
                 "type": "string"
