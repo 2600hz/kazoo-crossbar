@@ -292,6 +292,7 @@ summary_available(Context) ->
                                )
                              ]
                }
+              ,{'field_key', 'filtermap'}
               ,'include_docs'
               ],
     crossbar_view:load(Context, ?AVAILABLE_FUNCTIONS, Options).

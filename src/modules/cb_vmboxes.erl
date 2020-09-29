@@ -875,6 +875,7 @@ load_message_summary(BoxId, Context, ViewName, Options) ->
 
     ViewOptions = [{'mapper', Mapper}
                   ,{'max_range', MaxRange}
+                  ,{'field_key', 'filtermap'}
                   | Options
                   ],
     crossbar_view:load_modb(prefix_qs_filter_keys(Context), ViewName, ViewOptions).

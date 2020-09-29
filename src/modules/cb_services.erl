@@ -267,6 +267,7 @@ validate(Context, ?AUDIT, ?SUMMARY) ->
                   ,{'mapper', fun normalize_day_summary_by_date/2}
                   ,{'range_start_keymap', StartKeyFun}
                   ,{'range_end_keymap', EndKeyFun}
+                  ,{'no_fields', 'true'}
                   ],
     ViewName = <<"services/day_summary_by_date">>,
     audit_summary(Context, ViewName, ViewOptions);
@@ -281,6 +282,7 @@ validate(Context, ?AUDIT, ?SUMMARY, SourceService) ->
                   ,{'mapper', fun normalize_day_summary_by_source/2}
                   ,{'range_start_keymap', RangeKeyFun}
                   ,{'range_end_keymap', RangeKeyFun}
+                  ,{'no_fields', 'true'}
                   ],
     ViewName = <<"services/day_summary_by_source">>,
     audit_summary(Context, ViewName, ViewOptions).

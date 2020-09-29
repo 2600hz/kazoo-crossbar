@@ -228,7 +228,19 @@ load_chunk_view(Context, ViewName, Options0) ->
               ,{'max_range', ?MOD_MAX_RANGE}
               | Options0
               ],
-    crossbar_view:load_modb(cb_context:setters(fix_qs_filter_keys(Context), Setters), ViewName, Options).
+    maybe_add_fields_fun(
+      crossbar_view:load_modb(cb_context:setters(fix_qs_filter_keys(Context), Setters), ViewName, Options)
+     ).
+
+maybe_add_fields_fun(Context) ->
+    case kz_term:is_true(cb_context:fetch(Context, 'has_fields', 'false')) of
+        'false' ->
+            Context;
+        'true' ->
+            Fields = kz_json:get_value(<<"fields">>, cb_context:query_string(Context), []),
+            FieldsFun = kz_view:build_fields_fun(Fields, 'undefined'),
+            cb_context:store(Context, 'fields_fun', FieldsFun)
+    end.
 
 -spec fix_qs_filter_keys(cb_context:context()) -> cb_context:context().
 fix_qs_filter_keys(Context) ->
@@ -264,6 +276,7 @@ load_cdr_summary(Context) ->
               ,{'range_end_keymap', crossbar_view:suffix_key_fun([kz_json:new()])}
               ,{'list', ?CB_SUMMARY_LIST}
               ,{'max_range', ?MOD_MAX_RANGE}
+              ,{'no_fields', 'true'}
               ],
     C1 = crossbar_view:load_modb(Context, ?CB_SUMMARY_VIEW, Options),
     case cb_context:resp_status(C1) of
@@ -322,6 +335,7 @@ get_view_options([{<<"cdrs">>, [?PATH_INTERACTION]}, {?KZ_ACCOUNTS_DB, _}|_]) ->
        ,{'group_level', 2}
        ,{'reduce', 'true'}
        ,{'no_filter', 'true'}
+       ,{'no_fields', 'true'}
        | maybe_add_stale_to_options(?STALE_CDR)
        ])
     };
@@ -335,6 +349,7 @@ get_view_options([{<<"cdrs">>, [?PATH_INTERACTION]}, {<<"users">>, [OwnerId]}|_]
        ,{'group_level', 3}
        ,{'reduce', 'true'}
        ,{'no_filter', 'true'}
+       ,{'no_fields', 'true'}
        | maybe_add_stale_to_options(?STALE_CDR)
        ])
     };
@@ -385,9 +400,10 @@ load_chunked_cdr_ids(Context, RespType, Db, Ids) ->
     load_chunked_cdr_ids(Context, RespType, Db, Ids, cb_context:resp_status(Context)).
 
 load_chunked_cdr_ids(Context, RespType, Db, Ids, 'success') ->
+    FieldsFun = cb_context:fetch(Context, 'fields_fun'),
     case kz_datamgr:open_docs(Db, Ids, [{'doc_type', kzd_cdrs:type()}]) of
         {'ok', Results} ->
-            Resp0 = [normalize_cdr(Context, RespType, Result)
+            Resp0 = [normalize_cdr(Context, RespType, Result, FieldsFun)
                      || Result <- Results,
                         %% Filter those docs which have accidentally put into this db.
                         %% See {@link cdr_channel_destroy} comment for function `prepare_and_save/3`
@@ -408,25 +424,31 @@ load_chunked_cdr_ids(Context, _RespType, _Db, _Ids, _Status) ->
     Context.
 
 -spec normalize_cdr(cb_context:context(), kz_term:ne_binary(), kz_json:object()) -> kz_json:object() | kz_term:ne_binary().
-normalize_cdr(Context, <<"json">>, Result) ->
+normalize_cdr(Context, ContentType, Result) ->
+    HasFields = kz_term:is_true(cb_context:fetch(Context, 'has_fields')),
+    normalize_cdr(Context, ContentType, kz_json:get_json_value(<<"doc">>, Result), HasFields).
+
+-spec normalize_cdr(cb_context:context(), kz_term:ne_binary(), kz_json:object(), kz_view:fields_fun() | 'undefined') -> kz_json:object() | kz_term:ne_binary().
+normalize_cdr(Context, ContentType, Result, 'undefined') ->
     JObj = kz_json:get_json_value(<<"doc">>, Result),
     Duration = kzd_cdrs:duration_seconds(JObj, 0),
     Timestamp = kzd_cdrs:timestamp(JObj, 0) - Duration,
 
     MappedRows = [{K, apply_row_mapper(K, F, JObj, Timestamp, Context)} || {K, F} <- csv_rows(Context)],
-    maybe_filter_empties(MappedRows, kapps_config:is_true(?MOD_CONFIG_CAT, <<"should_filter_empty_strings">>, 'false'));
-normalize_cdr(Context, <<"csv">>, Result) ->
+    do_normalize_cdr(ContentType, MappedRows);
+normalize_cdr(Context, ContentType, Result, FieldsFun) ->
     JObj = kz_json:get_json_value(<<"doc">>, Result),
     Duration = kzd_cdrs:duration_seconds(JObj, 0),
     Timestamp = kzd_cdrs:timestamp(JObj, 0) - Duration,
 
-    <<(kz_binary:join([apply_row_mapper(K, F, JObj, Timestamp, Context)
-                       || {K, F} <- csv_rows(Context)
-                      ]
-                     ,<<",">>
-                     ))/binary
-     ,"\r\n"
-    >>.
+    MappedRows = [{K, apply_row_mapper(K, F, JObj, Timestamp, Context)} || {K, F} <- csv_rows(Context)],
+    NewDoc = FieldsFun(kz_json:set_values(MappedRows, JObj)),
+    do_normalize_cdr(ContentType, [kz_json:recursive_to_proplist(NewDoc)]).
+
+do_normalize_cdr(<<"json">>, Prop) ->
+    maybe_filter_empties(Prop, kapps_config:is_true(?MOD_CONFIG_CAT, <<"should_filter_empty_strings">>, 'false'));
+do_normalize_cdr(<<"csv">>, Prop) ->
+    <<(kz_binary:join(Prop, <<",">>))/binary, "\r\n">>.
 
 -spec apply_row_mapper(kz_term:ne_binary(), fun(), kz_json:object(), kz_time:gregorian_seconds(), cb_context:context()) -> binary().
 apply_row_mapper(<<"datetime">>, _F, JObj, Timestamp, Context) ->
@@ -441,9 +463,9 @@ col_pretty_print(_JObj, Timestamp, Context) ->
 
 -spec maybe_filter_empties(kz_term:proplist(), boolean()) -> kz_json:object().
 maybe_filter_empties(Rows, 'true') ->
-    kz_json:from_list(props:filter_empty_strings(Rows));
+    kz_json:from_list_recursive(props:filter_empty_strings(Rows));
 maybe_filter_empties(Rows, 'false') ->
-    kz_json:from_list(Rows).
+    kz_json:from_list_recursive(Rows).
 
 -spec maybe_add_csv_header(cb_context:context(), kz_term:ne_binary(), kz_json:objects() | kz_term:binaries()) -> cb_context:context().
 maybe_add_csv_header(Context, _, []) ->
