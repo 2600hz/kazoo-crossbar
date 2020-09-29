@@ -57,6 +57,7 @@
 
         ,exec_req/2
         ,get_request_body/1
+        % ,allow_scopes/2
         ]).
 
 -include_lib("kernel/include/file.hrl").
@@ -699,6 +700,8 @@ parse_path_tokens(_Context, [<<"system_configs">>=Mod|T], Events) ->
     [{Mod, T} | Events];
 parse_path_tokens(_Context, [<<"configs">>=Mod|T], Events) ->
     [{Mod, T} | Events];
+parse_path_tokens(_Context, [<<"scopes">>=Mod|T], Events) ->
+    [{Mod, T} | Events];
 parse_path_tokens(_Context, [<<"sup">>=Mod|T], Events) ->
     [{Mod, cb_sup:format_path_tokens(T)} | Events];
 parse_path_tokens(Context, [<<"account">>|T], Events) ->
@@ -968,7 +971,17 @@ get_pretty_print(Req, Context) ->
           {'true', cowboy_req:req(), cb_context:context()} |
           stop_return().
 is_permitted(Req, Context) ->
-    is_permitted_verb(Req, Context, cb_context:req_verb(Context)).
+  is_permitted_scope(Req, Context).
+
+is_permitted_scope(Req, Context0) ->
+  lager:debug("checking for enforced scopes"),
+   case maybe_enforce_scopes(Req, Context0) of
+      {'true', Req, Context1} ->
+        is_permitted_verb(Req, Context1, cb_context:req_verb(Context1));
+      {'stop', Context1} ->
+        lager:debug("allowed_scopes stopped"),
+        ?MODULE:stop(Req, Context1)
+    end.
 
 -spec is_permitted_verb(cowboy_req:req(), cb_context:context(), http_method()) ->
           {'true', cowboy_req:req(), cb_context:context()} |
@@ -1844,3 +1857,34 @@ exec_req(Req, [_|_]=Funs) ->
 exec_req_fold({F, V}, Req) -> F(V, Req);
 exec_req_fold({F, K, V}, Req) -> F(K, V, Req);
 exec_req_fold(F, Req) when is_function(F, 1) -> F(Req).
+
+-spec maybe_enforce_scopes(cowboy_req:req(), cb_context:context()) -> {'true', cowboy_req:req(), cb_context:context()} | stop_return().
+maybe_enforce_scopes(Req, Context) ->
+  TokenType = cb_context:auth_token_type(Context),
+  lager:debug("token type is : ~p~n", [cb_context:auth_token_type(Context)]),
+  maybe_enforce_scopes(Req, Context, TokenType).
+
+-spec maybe_enforce_scopes(cowboy_req:req(), cb_context:context(), atom()) -> {'true', cowboy_req:req(), cb_context:context()} | stop_return().
+maybe_enforce_scopes(Req, Context, 'x-auth-token') ->
+  lager:debug("jwt token detected, enforcing scopes"),
+  [{Mod, _Params} | _] = cb_context:req_nouns(Context),
+  AuthModule = kz_json:get_ne_binary_value(<<"method">>, cb_context:auth_doc(Context), []),
+  Event = create_event_name(Context, <<"allowed_scopes.",Mod/binary>>),
+  RequiredScopes = crossbar_bindings:pmap(Event, AuthModule),
+  enforce_scopes(Req, Context, RequiredScopes);
+maybe_enforce_scopes(Req, Context, _TokenType) ->
+  lager:debug("legacy token detected skipping scope enforcement"),
+  {'true', Req, Context}.
+
+-spec enforce_scopes(cowboy_req:req(), cb_context:context(), kz_term:ne_binaries()) -> {'true', cowboy_req:req(), cb_context:context()} | stop_return().
+enforce_scopes(Req, Context, []) ->
+      {'true', Req, Context};
+enforce_scopes(Req, Context, [RequiredScopes|_]) ->
+  case kz_auth_scope:all(cb_context:auth_token(Context), RequiredScopes) of
+    'true' ->
+      lager:debug("all scopes match"),
+      {'true', Req, Context};
+    'false' ->
+      lager:debug("all scopes match failed"),
+      {'stop', Context}
+  end.
