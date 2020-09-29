@@ -136,8 +136,8 @@ load(Context, View) ->
 %%------------------------------------------------------------------------------
 -spec load(cb_context:context(), kz_term:ne_binary(), options()) -> cb_context:context().
 load(Context, View, Options) ->
-    CursorOptions = build_cursor_options(Context, Options, 'true', 'false'),
-    load_view(Context, View, [], build_range_keys(Context, CursorOptions)).
+    Build = build_cursor_options(Context, Options, 'true', 'false'),
+    load_view(View, [], build_range_keys(Build)).
 
 %% @equiv load_time_range(Context, View, [])
 -spec load_time_range(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
@@ -151,8 +151,8 @@ load_time_range(Context, View) ->
 %%------------------------------------------------------------------------------
 -spec load_time_range(cb_context:context(), kz_term:ne_binary(), options()) -> cb_context:context().
 load_time_range(Context, View, Options) ->
-    CursorOptions = build_cursor_options(Context, Options, 'true', 'true'),
-    load_view(Context, View, [], build_time_range_keys(Context, CursorOptions)).
+    Build = build_cursor_options(Context, Options, 'true', 'true'),
+    load_view(View, [], build_time_range_keys(Build)).
 
 
 %% @equiv load_modb(Context, View, [])
@@ -168,8 +168,8 @@ load_modb(Context, View) ->
 
 -spec load_modb(cb_context:context(), kz_term:ne_binary(), options()) -> cb_context:context().
 load_modb(Context, View, Options) ->
-    CursorOptions = build_cursor_options(Context, Options, 'true', 'true'),
-    load_view(Context, View, [], build_modb_options(Context, CursorOptions)).
+    Build = build_cursor_options(Context, Options, 'true', 'true'),
+    load_view(View, [], build_modb_options(Build)).
 
 
 %% @equiv load_yodb(Context, View, [])
@@ -184,8 +184,8 @@ load_yodb(Context, View) ->
 %%------------------------------------------------------------------------------
 -spec load_yodb(cb_context:context(), kz_term:ne_binary(), options()) -> cb_context:context().
 load_yodb(Context, View, Options) ->
-    CursorOptions = build_cursor_options(Context, Options, 'true', 'true'),
-    load_view(Context, View, [], build_yodb_options(Context, CursorOptions)).
+    Build = build_cursor_options(Context, Options, 'true', 'true'),
+    load_view(View, [], build_yodb_options(Build)).
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -193,21 +193,21 @@ load_yodb(Context, View, Options) ->
 %%------------------------------------------------------------------------------
 -spec find(cb_context:context(), kz_term:ne_binary(), kz_view:selector(), options()) -> cb_context:context().
 find(Context, View, Selector, Options) ->
-    CursorOptions = build_cursor_options(Context, Options, 'false', 'false'),
-    load_view(Context, View, Selector, build_range_keys(Context, CursorOptions)).
+    Build = build_cursor_options(Context, Options, 'false', 'false'),
+    load_view(View, Selector, build_range_keys(Build)).
 
 %% build options funs {{{
 %%------------------------------------------------------------------------------
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec build_range_keys(cb_context:context(), kz_either:either(cb_context:context(), kz_view:options())) ->
-          kz_either:either(cb_context:context(), kz_view:options()).
-build_range_keys(Context, {'ok', CursorOptions}) ->
+-spec build_range_keys(kz_either:either(cb_context:context(), {cb_context:context(), kz_view:options()})) ->
+          kz_either:either(cb_context:context(), {cb_context:context(), kz_view:options()}).
+build_range_keys({'ok', {Context, CursorOptions}}) ->
     Bookmark = props:get_value('bookmark', CursorOptions, []),
     case props:is_true('no_design_module', CursorOptions, 'true') of
         'false' ->
-            {'ok', CursorOptions};
+            {'ok', {Context, CursorOptions}};
         'true' ->
             {StartKey, EndKey} = build_start_end_keys(Context, CursorOptions, props:get_value('direction', CursorOptions)),
             Prop = props:filter_undefined(
@@ -215,18 +215,18 @@ build_range_keys(Context, {'ok', CursorOptions}) ->
                      ,{'endkey', EndKey}
                      ,{'startkey_docid', props:get_value('next_startkey_docid', Bookmark)}
                      ]),
-            {'ok', props:set_values(Prop, props:delete('bookmark', CursorOptions))}
+            {'ok', {Context, props:set_values(Prop, props:delete('bookmark', CursorOptions))}}
     end;
-build_range_keys(_, {'error', _}=Error) ->
+build_range_keys({'error', _}=Error) ->
     Error.
 
--spec build_time_range_keys(cb_context:context(), kz_either:either(cb_context:context(), kz_view:options())) ->
-          kz_either:either(cb_context:context(), kz_view:options()).
-build_time_range_keys(_Context, {'ok', CursorOptions}) ->
+-spec build_time_range_keys(kz_either:either(cb_context:context(), {cb_context:context(), kz_view:options()})) ->
+          kz_either:either(cb_context:context(), {cb_context:context(), kz_view:options()}).
+build_time_range_keys({'ok', {Context, CursorOptions}}) ->
     Bookmark = props:get_value('bookmark', CursorOptions, []),
     case props:is_true('no_design_module', CursorOptions, 'true') of
         'false' ->
-            {'ok', CursorOptions};
+            {'ok', {Context, CursorOptions}};
         'true' ->
             {StartKey, EndKey} = build_time_start_end_keys(CursorOptions),
             Prop = props:filter_undefined(
@@ -234,26 +234,26 @@ build_time_range_keys(_Context, {'ok', CursorOptions}) ->
                      ,{'endkey', EndKey}
                      ,{'startkey_docid', props:get_value('next_startkey_docid', Bookmark)}
                      ]),
-            {'ok', props:set_values(Prop, props:delete('bookmark', CursorOptions))}
+            {'ok', {Context, props:set_values(Prop, props:delete('bookmark', CursorOptions))}}
     end;
-build_time_range_keys(_, {'error', _}=Error) ->
+build_time_range_keys({'error', _}=Error) ->
     Error.
 
--spec build_modb_options(cb_context:context(), kz_either:either(cb_context:context(), kz_view:options())) ->
-          kz_either:either(cb_context:context(), kz_view:options()).
-build_modb_options(Context, Thing) ->
-    case build_time_range_keys(Context, Thing) of
-        {'ok', CursorOptions} ->
-            {'ok', props:set_value('databases', get_range_modbs(Context, CursorOptions), CursorOptions)};
+-spec build_modb_options(kz_either:either(cb_context:context(), {cb_context:context(), kz_view:options()})) ->
+          kz_either:either(cb_context:context(), {cb_context:context(), kz_view:options()}).
+build_modb_options(Thing) ->
+    case build_time_range_keys(Thing) of
+        {'ok', {Context, CursorOptions}} ->
+            {'ok', {Context, props:set_value('databases', get_range_modbs(Context, CursorOptions), CursorOptions)}};
         {'error', _}=Error -> Error
     end.
 
--spec build_yodb_options(cb_context:context(), kz_either:either(cb_context:context(), kz_view:options())) ->
-          kz_either:either(cb_context:context(), kz_view:options()).
-build_yodb_options(Context, Thing) ->
-    case build_time_range_keys(Context, Thing) of
-        {'ok', CursorOptions} ->
-            {'ok', props:set_value('databases', get_range_yodbs(Context, CursorOptions), CursorOptions)};
+-spec build_yodb_options(kz_either:either(cb_context:context(), {cb_context:context(), kz_view:options()})) ->
+          kz_either:either(cb_context:context(), {cb_context:context(), kz_view:options()}).
+build_yodb_options(Thing) ->
+    case build_time_range_keys(Thing) of
+        {'ok', {Context, CursorOptions}} ->
+            {'ok', {Context, props:set_value('databases', get_range_yodbs(Context, CursorOptions), CursorOptions)}};
         {'error', _}=Error -> Error
     end.
 %% }}}
@@ -298,7 +298,7 @@ get_id_fun() -> fun(JObj, Acc) -> [kz_doc:id(JObj)|Acc] end.
 %% @end
 %%------------------------------------------------------------------------------
 -spec build_cursor_options(cb_context:context(), options(), boolean(), boolean()) ->
-          kz_either:either(cb_context:context(), kz_view:options()).
+          kz_either:either(cb_context:context(), {cb_context:context(), kz_view:options()}).
 build_cursor_options(Context, Options, NoDesignModule, IsTimeQuery) ->
     try
         CursorOptions = props:filter_undefined(
@@ -316,8 +316,8 @@ build_cursor_options(Context, Options, NoDesignModule, IsTimeQuery) ->
                           ]),
         add_user_params(Context, CursorOptions, Options, IsTimeQuery)
     of
-        {'ok', NewCursorOptions} ->
-            {'ok', NewCursorOptions};
+        {'ok', _}=OK ->
+            OK;
         {'error', Ctx} ->
             Ctx
     catch
@@ -326,13 +326,12 @@ build_cursor_options(Context, Options, NoDesignModule, IsTimeQuery) ->
     end.
 
 -spec add_user_params(cb_context:context(), kz_view:options(), options(), boolean()) ->
-          kz_either:either(cb_context:context(), kz_view:options()).
+          kz_either:either(cb_context:context(), {cb_context:context(), kz_view:options()}).
 add_user_params(Context, CursorOptions, Options, IsTimeQuery) ->
     TimeFilterKey = props:get_ne_binary_value('time_filter_key', Options, <<"created">>),
     HasQSFilter = has_qs_filter(Context, Options, TimeFilterKey, IsTimeQuery),
 
-    Prop = [{'has_fields', not props:is_true('no_fields', Options, 'false')}
-           ,{'has_qs_filter', HasQSFilter}
+    Prop = [{'has_qs_filter', HasQSFilter}
            ,{'is_chunked', is_chunked(Context, Options)}
            ,{'is_time_query', IsTimeQuery}
            ,{'should_paginate', cb_context:should_paginate(Context)}
@@ -344,54 +343,15 @@ add_user_params(Context, CursorOptions, Options, IsTimeQuery) ->
            ],
     case time_range(Context, Options, TimeFilterKey) of
         {StartTime, EndTime} ->
-            UserParams = [{'start_time', StartTime}
-                         ,{'end_time', EndTime}
-                         | Prop
+            CursorProp = [{'user_params', [{'start_time', StartTime}
+                                          ,{'end_time', EndTime}
+                                          | Prop
+                                          ]
+                          }
                          ],
-            {'ok', merge_options(add_filtermap_fields_options(Context, CursorOptions, UserParams, Options), Options)
-            };
+            {'ok', merge_options(Context, props:set_values(CursorProp, CursorOptions), Options)};
         Ctx -> {'error', Ctx}
     end.
-
-add_filtermap_fields_options(Context, CursorOptions, UserParams, Options) ->
-    UserMapper = props:get_value('mapper', Options),
-
-    FieldKey = props:get_value('field_key', Options, <<"doc">>),
-
-    HasQSFilter = props:is_true('has_qs_filter', UserParams),
-    FilterMap = crossbar_filter:build_with_mapper(Context, UserMapper, HasQSFilter),
-
-    case get_fields(Context) of
-        'undefined' ->
-            [{'filtermap', FilterMap}
-            ,{'user_params', [{'has_fields', 'false'} | UserParams]}
-            | CursorOptions
-            ];
-        Fields ->
-            case {FieldKey, HasQSFilter} of
-                {'filtermap', _} ->
-                    [{'filtermap', FilterMap}
-                    ,{'fields', Fields}
-                    ,{'user_params', [{'has_fields', 'true'} | UserParams]}
-                    | CursorOptions
-                    ];
-                {_, 'true'} ->
-                    %% this only builds filtermap with crossbar qs filter
-                    [{'filtermap', crossbar_filter:build_with_mapper(Context, 'undefined', HasQSFilter)}
-                    ,{'field_key', FieldKey}
-                    ,{'fields', Fields}
-                    ,{'user_params', [{'has_fields', 'true'} | UserParams]}
-                    | CursorOptions
-                    ];
-                {_, 'false'} ->
-                    [{'field_key', FieldKey}
-                    ,{'fields', Fields}
-                    ,{'user_params', [{'has_fields', 'true'} | UserParams]}
-                    | CursorOptions
-                    ]
-            end
-    end.
-
 
 -spec has_qs_filter(cb_context:context(), options(), kz_term:ne_binary(), boolean()) -> boolean().
 has_qs_filter(Context, Options, TimeFilterKey, 'true') ->
@@ -401,6 +361,106 @@ has_qs_filter(Context, Options, TimeFilterKey, 'true') ->
 has_qs_filter(Context, Options, _, 'false') ->
     not props:is_true('no_filter', Options, 'false')
         andalso crossbar_filter:is_defined(Context).
+
+-spec merge_options(cb_context:context(), kz_view:options(), options()) -> {cb_context:context(), kz_view:options()}.
+merge_options(Context, CursorOptions0, Options) ->
+    %% remove result key in favor of crossbar_view mapper fun
+    DeleteKeys = ['descending', 'limit', 'result_key'
+                 | ?CB_SPECIFIC_VIEW_OPTIONS
+                 ],
+    CursorOptions1 = props:set_values(CursorOptions0, props:delete_keys(DeleteKeys, Options)),
+    lists:foldl(fun(F, Acc) -> F(Acc, Options) end
+               ,{Context, CursorOptions1}
+               ,[fun add_filtermap_fields_options/2
+                ,fun maybe_set_log_prefix/2
+                ,fun maybe_set_include_docs/2
+                ,fun set_context_vars/2
+                ]).
+
+maybe_set_include_docs({Context, Options}, _CbViewOptions) ->
+    case props:is_true(['user_params', 'has_qs_filter'], Options, 'false')
+        orelse (props:is_true(['user_params', 'has_fields'], Options, 'false')
+                andalso props:get_value('field_key', Options) =:= <<"doc">>
+               )
+    of
+        'true' -> {Context, ['include_docs' | props:delete('include_docs', Options)]};
+        'false' -> {Context, Options}
+    end.
+
+maybe_set_log_prefix({Context, Options}, _CbViewOptions) ->
+    case props:is_true(['user_params', 'is_chunked'], Options) of
+        'true' -> {Context, props:set_value('lager_prefix', "(chunked)", Options)};
+        'false' -> {Context, Options}
+    end.
+
+add_filtermap_fields_options({Context, CursorOptions0}, CbViewOptions) ->
+    FieldKey = props:get_value('field_key', CbViewOptions, <<"doc">>),
+    Fields = get_fields(Context),
+    HasFields = Fields =/= []
+                    andalso not props:is_true('no_fields', CbViewOptions, 'false'),
+
+    UserMapper = props:get_value('mapper', CbViewOptions),
+    HasQSFilter = props:is_true(['user_params', 'has_qs_filter'], CursorOptions0, 'false'),
+
+    Setters = [{fun cb_context:set_query_string/2
+               ,kz_json:set_value(<<"fields">>, Fields, cb_context:query_string(Context))
+               }
+              ,{fun cb_context:store/3, 'has_fields', HasFields}
+              ,{fun cb_context:store/3, 'has_qs_filter', HasQSFilter}
+              ],
+    %% in case usermap is a fun/3, store some variables
+    NewContext = cb_context:setters(Context, Setters),
+    FilterMap = crossbar_filter:build_with_mapper(NewContext, UserMapper, HasQSFilter),
+
+    CursorOptions = props:set_value(['user_params', 'has_fields'], HasFields, CursorOptions0),
+
+    case Fields of
+        'undefined' ->
+            {NewContext, [{'filtermap', FilterMap}
+                         | CursorOptions
+                         ]
+            };
+        Fields when HasFields ->
+            case {FieldKey, HasQSFilter} of
+                {'filtermap', _} ->
+                    {NewContext
+                    ,[{'filtermap', FilterMap}
+                     ,{'fields', Fields}
+                     | CursorOptions
+                     ]
+                    };
+                {_, 'true'} ->
+                    %% this only builds filtermap fun with crossbar qs filter
+                    {NewContext
+                    ,[{'filtermap', crossbar_filter:build_with_mapper(Context, 'undefined', HasQSFilter)}
+                     ,{'field_key', FieldKey}
+                     ,{'fields', Fields}
+                     | CursorOptions
+                     ]
+                    };
+                {_, 'false'} ->
+                    {NewContext
+                    ,[{'field_key', FieldKey}
+                     ,{'fields', Fields}
+                     | CursorOptions
+                     ]
+                    }
+            end;
+        Fields ->
+            {NewContext, [{'filtermap', FilterMap}
+                         | CursorOptions
+                         ]
+            }
+    end.
+
+set_context_vars({Context, Options}, _CbViewOptions) ->
+    HasQsfilter = props:is_true(['user_params', 'has_qs_filter'], Options),
+    Setters = [{fun cb_context:set_doc/2, []}
+              ,{fun cb_context:set_resp_data/2, []}
+              ,{fun cb_context:set_resp_status/2, 'success'}
+              ,{fun cb_context:store/3, 'has_qs_filter', HasQsfilter}
+              ],
+    {cb_context:setters(Context, Setters), Options}.
 
 -spec get_fields(cb_context:context()) -> kz_term:api_proplist().
 get_fields(Context) ->
@@ -431,54 +491,19 @@ validate_fields(Key, Acc) when Key =:= <<"id">>
     [<<"_id">> | Acc];
 validate_fields({Key, Value}, Acc) when Key =:= <<"id">>
                                         orelse Key =:= <<"_id">> ->
-    [{<<"_id">>, Value} | Acc];
+    [{<<"_id">>, kz_term:is_true(Value)} | Acc];
 validate_fields(Key, Acc) when is_binary(Key) ->
-    K = kz_binary:strip(Key),
-    case kz_term:is_ne_binary(K)
-        andalso not kz_doc:is_private_key(K)
-    of
-        'true' -> [K | Acc];
+    case not kz_doc:is_private_key(Key) of
+        'true' -> [Key | Acc];
         'false' -> Acc
     end;
 validate_fields({Key, Value}, Acc) ->
-    K = kz_binary:strip(Key),
-    case kz_term:is_ne_binary(K)
-        andalso not kz_doc:is_private_key(K)
-    of
-        'true' -> [{K, Value} | Acc];
+    case not kz_doc:is_private_key(Key) of
+        'true' -> [{Key, kz_term:is_true(Value)} | Acc];
         'false' -> Acc
     end;
 validate_fields(_, Acc) ->
     Acc.
-
--spec merge_options(kz_view:options(), options()) -> kz_view:options().
-merge_options(CursorOptions0, Options) ->
-    %% remove result key in favor of crossbar_view mapper fun
-    DeleteKeys = ['descending', 'limit', 'result_key'
-                 | ?CB_SPECIFIC_VIEW_OPTIONS
-                 ],
-    CursorOptions1 = props:set_values(CursorOptions0, props:delete_keys(DeleteKeys, Options)),
-    lists:foldl(fun(F, Acc) -> F(Acc) end
-               ,CursorOptions1
-               ,[fun maybe_set_include_docs/1
-                ,fun maybe_set_log_prefix/1
-                ]).
-
-maybe_set_include_docs(Options) ->
-    case props:is_true(['user_params', 'has_qs_filter'], Options, 'false')
-        orelse (props:is_true(['user_params', 'has_fields'], Options, 'false')
-                andalso props:get_value('field_key', Options) =:= <<"doc">>
-               )
-    of
-        'true' -> ['include_docs' | props:delete('include_docs', Options)];
-        'false' -> Options
-    end.
-
-maybe_set_log_prefix(Options) ->
-    case props:is_true(['user_params', 'is_chunked'], Options) of
-        'true' -> props:set_value('lager_prefix', "(chunked)", Options);
-        'false' -> Options
-    end.
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -624,11 +649,11 @@ get_range_yodbs(Context, Options) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec load_view(cb_context:context(), kz_term:ne_binary(), kz_view:selector(), kz_either:either(cb_context:context(), kz_view:options())) ->
+-spec load_view(kz_term:ne_binary(), kz_view:selector(), kz_either:either(cb_context:context(), {cb_context:context(), kz_view:options()})) ->
           cb_context:context().
-load_view(_, _, _, {'error', Context}) ->
+load_view(_, _, {'error', Context}) ->
     Context;
-load_view(Context, View, Selector, {'ok', Options}) ->
+load_view(View, Selector, {'ok', {Context, Options}}) ->
     case cb_context:fetch(Context, 'crossbar_view_extra') of
         'undefined' ->
             load_view({'ok', {Context, View, Selector, Options}});
@@ -638,16 +663,10 @@ load_view(Context, View, Selector, {'ok', Options}) ->
 
 load_view({'ok', {Context, View, Selector, Options}}) ->
     [Database|_] = props:get_value('databases', Options, [cb_context:db_name(Context)]),
-    HasQsfilter = props:is_true(['user_params', 'has_qs_filter'], Options),
-    Setters = [{fun cb_context:set_doc/2, []}
-              ,{fun cb_context:set_resp_data/2, []}
-              ,{fun cb_context:set_resp_status/2, 'success'}
-              ,{fun cb_context:store/3, 'has_qs_filter', HasQsfilter}
-              ],
     IsChunked = props:is_true(['user_params', 'is_chunked'], Options),
     case kz_view:find_batch(Database, View, Selector, Options) of
         {'ok', Cursor} ->
-            handle_load_view(cb_context:setters(Context, Setters), View, Cursor, IsChunked);
+            handle_load_view(Context, View, Cursor, IsChunked);
         {'error', Reason} ->
             crossbar_doc:handle_datamgr_errors(Reason, View, Context)
     end;
