@@ -60,6 +60,7 @@
         ,get_language/1
         ,get_language/2
         ,get_token_restrictions/3
+        ,get_scope_restrictions/1, get_scope_restrictions/2
         ]).
 -export([get_user_timezone/2
         ]).

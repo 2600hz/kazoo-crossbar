@@ -283,8 +283,9 @@ maybe_fetch_scopes(Context) ->
     AccountId = kz_json:get_ne_binary_value(<<"account_id">>, cb_context:doc(Context)),
     OwnerId = kz_json:get_ne_binary_value(<<"owner_id">>, cb_context:doc(Context)),
     case kzd_users:fetch(AccountId, OwnerId) of
-        {'ok', Doc} -> kzd_users:scopes(Doc);
-        _ -> 'undefined'
+        {'ok', Doc} ->
+            kzd_users:scope_restrictions(Doc);
+        _Error -> 'undefined'
     end.
 
 %%------------------------------------------------------------------------------

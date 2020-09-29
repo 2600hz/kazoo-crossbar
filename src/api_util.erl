@@ -1867,11 +1867,15 @@ maybe_enforce_scopes(Req, Context) ->
 -spec maybe_enforce_scopes(cowboy_req:req(), cb_context:context(), atom()) -> {'true', cowboy_req:req(), cb_context:context()} | stop_return().
 maybe_enforce_scopes(Req, Context, 'x-auth-token') ->
   lager:debug("jwt token detected, enforcing scopes"),
-  [{Mod, _Params} | _] = cb_context:req_nouns(Context),
-  AuthModule = kz_json:get_ne_binary_value(<<"method">>, cb_context:auth_doc(Context), []),
-  Event = create_event_name(Context, <<"allowed_scopes.",Mod/binary>>),
-  RequiredScopes = crossbar_bindings:pmap(Event, AuthModule),
-  enforce_scopes(Req, Context, RequiredScopes);
+  case kz_json:get_ne_binary_value(<<"method">>, cb_context:auth_doc(Context)) of
+    'undefined' ->
+      {'true', Req, Context};
+    AuthModule ->
+      [{Mod, _Params} | _] = cb_context:req_nouns(Context),
+      Event = create_event_name(Context, <<"allowed_scopes.",Mod/binary>>),
+      RequiredScopes = crossbar_bindings:pmap(Event, AuthModule),
+      enforce_scopes(Req, Context, RequiredScopes)
+  end;
 maybe_enforce_scopes(Req, Context, _TokenType) ->
   lager:debug("legacy token detected skipping scope enforcement"),
   {'true', Req, Context}.
