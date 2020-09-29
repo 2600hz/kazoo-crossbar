@@ -13,7 +13,7 @@
 -include("crossbar.hrl").
 -export([init/0
         ,authorize/1
-        ,allowed_methods/0, allowed_methods/1        
+        ,allowed_methods/0, allowed_methods/1
         ,resource_exists/0, resource_exists/1
         ,validate/1, validate/2
         ,post/2
@@ -162,7 +162,7 @@ post(Context, _Scope) ->
 %%------------------------------------------------------------------------------
 %% @doc
 %% @end
-%%------------------------------------------------------------------------------    
+%%------------------------------------------------------------------------------
 -spec put(cb_context:context()) -> cb_context:context().
 put(Context) ->
     save_scope(Context).
