@@ -13,13 +13,12 @@
 -include("crossbar.hrl").
 -export([init/0
         ,authorize/1
-        ,allowed_methods/0, allowed_methods/1
-        ,allowed_scopes/0
-        ,resource_exists/0, resource_exists/1        
+        ,allowed_methods/0, allowed_methods/1        
+        ,resource_exists/0, resource_exists/1
         ,validate/1, validate/2
         ,post/2
         ,put/1
-        ,delete/2        
+        ,delete/2
         ]).
 
 -define(SCOPES_KEY, <<"scopes">>).
@@ -38,11 +37,10 @@
 %%------------------------------------------------------------------------------
 -spec init() -> 'ok'.
 init() ->
-    _ = crossbar_bindings:bind(<<"*.authorize.scopes">>, ?MODULE, 'authorize'), 
-    _ = crossbar_bindings:bind(<<"*.allowed_methods.scopes">>, ?MODULE, 'allowed_methods'), 
-    _ = crossbar_bindings:bind(<<"*.allowed_scopes.scopes">>, ?MODULE, 'allowed_scopes'), 
+    _ = crossbar_bindings:bind(<<"*.authorize.scopes">>, ?MODULE, 'authorize'),
+    _ = crossbar_bindings:bind(<<"*.allowed_methods.scopes">>, ?MODULE, 'allowed_methods'),
     _ = crossbar_bindings:bind(<<"*.resource_exists.scopes">>, ?MODULE, 'resource_exists'),
-    _ = crossbar_bindings:bind(<<"*.validate.scopes">>, ?MODULE, 'validate'),    
+    _ = crossbar_bindings:bind(<<"*.validate.scopes">>, ?MODULE, 'validate'),
     _ = crossbar_bindings:bind(<<"*.execute.put.scopes">>, ?MODULE, 'put'),
     _ = crossbar_bindings:bind(<<"*.execute.delete.scopes">>, ?MODULE, 'delete'),
     crossbar_bindings:bind(<<"*.execute.post.scopes">>, ?MODULE, 'post').
@@ -53,19 +51,15 @@ init() ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec authorize(cb_context:context()) -> boolean() | {'stop', cb_context:context()}.
-authorize(Context) ->    
-    case cb_context:is_superduper_admin(Context) 
+authorize(Context) ->
+    case cb_context:is_superduper_admin(Context)
         andalso cb_context:req_nouns(Context) of
-        [{?SCOPES_KEY, _}] -> 'true';                   
+        [{?SCOPES_KEY, _}] -> 'true';
         'false' ->
             {'stop', cb_context:add_system_error('forbidden', Context)};
         _ ->
             {'stop', cb_context:add_system_error('bad_identifier', Context)}
     end.
-
--spec allowed_scopes() -> kz_term:ne_binaries().
-allowed_scopes() ->
-    ?CB_DEFAULT_SCOPES.
 
 %%------------------------------------------------------------------------------
 %% @doc Given the path tokens related to this module, what HTTP methods are
@@ -73,8 +67,8 @@ allowed_scopes() ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec allowed_methods() -> http_methods().
-allowed_methods() -> 
-    [?HTTP_GET, ?HTTP_PUT]. 
+allowed_methods() ->
+    [?HTTP_GET, ?HTTP_PUT].
 
 -spec allowed_methods(path_token()) -> http_methods().
 allowed_methods(_Scope) ->
@@ -126,24 +120,24 @@ validate_scope(Context, ?HTTP_PUT) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec validate_scope(cb_context:context(), path_token(), http_method()) -> cb_context:context().    
+-spec validate_scope(cb_context:context(), path_token(), http_method()) -> cb_context:context().
 validate_scope(Context, Scope, ?HTTP_DELETE) ->
     crossbar_doc:load(Scope, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE));
-validate_scope(Context, Scope, ?HTTP_GET) ->    
+validate_scope(Context, Scope, ?HTTP_GET) ->
     scope_summary(Context, Scope);
-validate_scope(Context, Scope, ?HTTP_POST) ->    
-    validate_request(Context, Scope).    
+validate_scope(Context, Scope, ?HTTP_POST) ->
+    validate_request(Context, Scope).
 
 %%------------------------------------------------------------------------------
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
 -spec validate_request(cb_context:context()) -> cb_context:context().
-validate_request(Context) ->     
+validate_request(Context) ->
     validate_request(Context, 'undefined').
 
 -spec validate_request(cb_context:context(), path_token()) -> cb_context:context().
-validate_request(Context, Scope) ->    
+validate_request(Context, Scope) ->
     OnSuccess = fun(C) -> on_successful_validation(C, Scope) end,
     cb_context:validate_request_data(?SCHEMA, Context, OnSuccess).
 
@@ -152,7 +146,7 @@ validate_request(Context, Scope) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec on_successful_validation(cb_context:context(), path_token()) -> cb_context:context().
-on_successful_validation(Context, 'undefined') ->    
+on_successful_validation(Context, 'undefined') ->
     cb_context:set_doc(Context, kz_doc:set_type(cb_context:doc(Context), ?PVT_TYPE));
 on_successful_validation(Context, Scope) ->
     crossbar_doc:load_merge(Scope, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE)).
@@ -193,7 +187,7 @@ set_to_system_auth_db(Context) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec save_scope(cb_context:context()) -> cb_context:context().
-save_scope(Context) -> 
+save_scope(Context) ->
     crossbar_doc:save(Context).
 
 %%------------------------------------------------------------------------------
@@ -201,15 +195,15 @@ save_scope(Context) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec scope_summary(cb_context:context()) -> cb_context:context().
-scope_summary(Context) -> 
+scope_summary(Context) ->
     scope_summary(Context, 'undefined').
 
 -spec scope_summary(cb_context:context(), path_token() | 'undefined') -> cb_context:context().
-scope_summary(Context, Scope) ->    
+scope_summary(Context, Scope) ->
     Options = props:filter_undefined(
                 [{'databases', [?SCOPES_CAT]}
                 ,{'key', Scope}
-                ,{'mapper', crossbar_view:get_doc_fun()}  
-                ,'include_docs'              
-                ]),    
+                ,{'mapper', crossbar_view:get_doc_fun()}
+                ,'include_docs'
+                ]),
     crossbar_view:load(Context, ?SCOPES_LIST, Options).
