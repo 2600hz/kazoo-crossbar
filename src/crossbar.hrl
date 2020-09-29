@@ -110,6 +110,8 @@
                          ,'cb_resource_templates'
                          ,'cb_resources'
                          ,'cb_schemas'
+                         ,'cb_scopes'
+                         ,'cb_scope_retrictions'
                          ,'cb_search'
                          ,'cb_security'
                          ,'cb_services'
@@ -246,6 +248,8 @@
                         ,{<<"usage_type">>, <<"Usage Type">>}
                         ,{<<"usage_unit">>, <<"Usage Unit">>}
                         ]).
+
+-define(CB_DEFAULT_SCOPES, [?APP_NAME]).
 
 -define(CROSSBAR_HRL, 'true').
 -endif.
