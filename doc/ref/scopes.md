@@ -10,7 +10,7 @@ Kazoo Auth Scope Definition
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`id` | Scope unique identifier | `string()` |   | `true` |  
+`id` | Scope unique identifier | `string()` |   | `false` |  
 `scopes.[]` |   | `string()` |   | `false` |  
 `scopes` | List of available subscopes | `array(string())` | `[]` | `false` |  
 
@@ -52,6 +52,16 @@ curl -v -X GET \
 
 ```shell
 curl -v -X POST \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/scopes/{SCOPE}
+```
+
+## Remove
+
+> DELETE /v2/scopes/{SCOPE}
+
+```shell
+curl -v -X DELETE \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     http://{SERVER}:8000/v2/scopes/{SCOPE}
 ```

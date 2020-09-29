@@ -10,7 +10,7 @@ Crossbar Scope Restrictions  Definition
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`id` | Scope Restriction unique identifier | `string()` |   | `true` |  
+`id` | Scope Restriction unique identifier | `string()` |   | `false` |  
 `scopes.[]` |   | `string()` |   | `false` |  
 `scopes` | List of enforced scopes | `array(string())` | `[]` | `false` |  
 
@@ -52,6 +52,16 @@ curl -v -X GET \
 
 ```shell
 curl -v -X POST \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/scope_restrictions/{SCOPE_RESTRICTION}
+```
+
+## Remove
+
+> DELETE /v2/accounts/{ACCOUNT_ID}/scope_restrictions/{SCOPE_RESTRICTION}
+
+```shell
+curl -v -X DELETE \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/scope_restrictions/{SCOPE_RESTRICTION}
 ```

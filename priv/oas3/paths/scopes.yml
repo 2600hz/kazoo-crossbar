@@ -24,6 +24,16 @@ paths:
       tags:
         - scopes
   /scopes/{SCOPE}:
+    delete:
+      operationId: DeleteScopesScope
+      parameters:
+        - $ref: '../oas3-parameters.yml#/SCOPE'
+      responses:
+        200:
+          description: Successful operation
+      summary: Delete an instance of scopes
+      tags:
+        - scopes
     get:
       operationId: GetScopesScope
       parameters:

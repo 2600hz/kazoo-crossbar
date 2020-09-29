@@ -10,7 +10,7 @@ Crossbar Scope Restrictions  Definition
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`id` | Scope Restriction unique identifier | `string()` |   | `true` |  
+`id` | Scope Restriction unique identifier | `string()` |   | `false` |  
 `scopes.[]` |   | `string()` |   | `false` |  
 `scopes` | List of enforced scopes | `array(string())` | `[]` | `false` |  
 
