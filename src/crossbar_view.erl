@@ -397,7 +397,7 @@ add_filtermap_fields_options({Context, CursorOptions0}, CbViewOptions) ->
     FieldKey = props:get_value('field_key', CbViewOptions, <<"doc">>),
     Fields = get_fields(Context),
     HasFields = Fields =/= []
-                    andalso not props:is_true('no_fields', CbViewOptions, 'false'),
+        andalso not props:is_true('no_fields', CbViewOptions, 'false'),
 
     UserMapper = props:get_value('mapper', CbViewOptions),
     HasQSFilter = props:is_true(['user_params', 'has_qs_filter'], CursorOptions0, 'false'),
