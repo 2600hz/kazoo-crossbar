@@ -35,6 +35,7 @@ Key | Description | Type | Default | Required | Support Level
 `notifications.sms` | SMS notifications | `object()` |   | `false` |  
 `notifications` | Status notifications | `object()` |   | `false` |  
 `retries` | The number of times to retry | `integer()` | `1` | `false` |  
+`subject` | The subject header in an email to fax message | `string()` |   | `false` |  
 `to_name` | The recipient name for the fax | `string()` |   | `false` |  
 `to_number` | The recipient number for the fax | `string()` |   | `true` |  
 `tx_result.error_message` | A description of any error that occurred | `string()` | "" | `false` |  
@@ -95,7 +96,7 @@ curl -v -X PUT \
 }
 ```
 
-In the second method, you can use a single PUT request and send a [multi-part `content-type`](multipart.md) to attach both the JSON metadata about the fax transmission and the document itself, in a single request. This avoids needing to have an external storage location for storing fax attachments prior to processing. This is a good solution for portals that upload documents.
+In the second method, you can use a single PUT request and send a [multi-part `content-type`](./multipart) to attach both the JSON metadata about the fax transmission and the document itself, in a single request. This avoids needing to have an external storage location for storing fax attachments prior to processing. This is a good solution for portals that upload documents.
 
 ```shell
 curl -v -X PUT \
