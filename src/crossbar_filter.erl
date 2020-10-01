@@ -18,6 +18,7 @@
 
         ,by_doc/2, by_doc/3
         ]).
+-export([normalize_query_string/1]).
 
 -include("crossbar.hrl").
 
@@ -121,6 +122,49 @@ by_doc(_, _, 'false') -> 'true';
 by_doc('undefined', _, 'true') -> 'true';
 by_doc(Doc, Context, 'true') ->
     filter_doc_by_querystring(Doc, cb_context:query_string(Context)).
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec normalize_query_string({cb_context:context(), kz_json:object()}) -> {cb_context:context(), kz_json:object()}.
+normalize_query_string({Context, QS}) ->
+    {Context, kz_json:map(fun normalize_qs/2, QS)}.
+
+normalize_qs(Key = <<"filter_array_intersect_all">>, Value) ->
+    {Key, normalize_filter_array(Value)};
+normalize_qs(Key = <<"filter_array_intersect_any">>, Value) ->
+    {Key, normalize_filter_array(Value)};
+normalize_qs(Key = <<"filter_array_intersect_none">>, Value) ->
+    {Key, normalize_filter_array(Value)};
+normalize_qs(Key = <<"filter_array_member">>, Value) ->
+    {Key, normalize_filter_array(Value)};
+normalize_qs(Key, Value) ->
+    {Key, Value}.
+
+normalize_filter_array(Value) ->
+    case kz_json:is_json_object(Value) of
+        'true' ->
+            kz_json:map(fun normalize_filter_array/2, Value);
+        'false' ->
+            %% set invalid values to false so during filteration
+            %% we filter out all result because of bad value here.
+            %% If you don't provide valid input don't expect to get any
+            %% correct result.
+            'false'
+    end.
+
+normalize_filter_array(Key, <<Bin/binary>>) ->
+    normalize_filter_array(Key, binary:split(Bin, <<",">>, ['global']));
+normalize_filter_array(Key, Value) when is_list(Value) ->
+    {Key, Value};
+normalize_filter_array(Key, Value) ->
+    case kz_json:is_json_object(Value) of
+        'true' ->
+            {Key, kz_json:map(fun normalize_filter_array/2, Value)};
+        'false' ->
+            {Key, [Value]}
+    end.
 
 %%%=============================================================================
 %%% Load view internal functions

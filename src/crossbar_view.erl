@@ -27,6 +27,8 @@
         ,get_value_fun/0
         ,get_key_fun/0
         ,get_id_fun/0
+
+        ,normalize_query_string/1
         ]).
 
 -export([next_batch/2]).
@@ -196,6 +198,74 @@ load_yodb(Context, View, Options) ->
 find(Context, View, Selector, Options) ->
     Build = build_cursor_options(Context, Options, 'false', 'false'),
     load_view(View, Selector, build_range_keys(Build)).
+
+%% {{{ normalize query string
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec normalize_query_string({cb_context:context(), kz_json:object()}) -> {cb_context:context(), kz_json:object()}.
+normalize_query_string({Context, QS}) ->
+    Fields = maybe_normalize_fields(kz_json:get_value(<<"fields">>, QS)),
+    {cb_context:store(Context, 'fields', Fields), kz_json:delete_key(<<"fields">>, QS)}.
+
+maybe_normalize_fields(List) when is_list(List) ->
+    normalize_fields(List);
+maybe_normalize_fields(Binary) when is_binary(Binary) ->
+    normalize_fields(binary:split(Binary, <<",">>, ['global']));
+maybe_normalize_fields(Other) ->
+    case kz_json:is_json_object(Other) of
+        'true' ->
+            normalize_fields(Other);
+        'false' ->
+            'undefined'
+    end.
+
+-spec normalize_fields(kz_json:object() | kz_term:ne_binaries()) -> kz_json:object() | kz_term:ne_binaries().
+normalize_fields(List) when is_list(List) ->
+    [maybe_id_field(F) || F <- List,
+                          is_valid_field(F)
+    ];
+normalize_fields(JObj) ->
+    kz_json:foldl(fun normalize_fields/3
+                 ,kz_json:new()
+                 ,JObj
+                 ).
+
+normalize_fields(Key, Value, Acc) ->
+    case {is_valid_field(Key)
+         ,kz_json:is_json_object(Value)
+         }
+    of
+        {'false', _} ->
+            Acc;
+        {'true', 'true'} ->
+            [{Path, Inclusion}] = kz_json:to_proplist(
+                                    kz_json:flatten_deep(Value)
+                                   ),
+            kz_json:set_value(Key
+                             ,kz_json:expand_deep(
+                                kz_json:from_list([{Path, kz_term:is_true(Inclusion)}])
+                               )
+                             ,Acc
+                             );
+        {'true', 'false'} ->
+            {Key, kz_term:is_true(Value)}
+    end.
+
+is_valid_field(<<"_id">>) ->
+    'true';
+is_valid_field([]) ->
+    'false';
+is_valid_field([Key|_]) ->
+    not kz_doc:is_private_key(Key);
+is_valid_field(Field) ->
+    not kz_doc:is_private_key(Field).
+
+maybe_id_field(<<"_id">>) -> <<"_id">>;
+maybe_id_field(<<"id">>) -> <<"_id">>;
+maybe_id_field(Field) -> Field.
+%% }}}
 
 %% build options funs {{{
 %%------------------------------------------------------------------------------
@@ -403,8 +473,7 @@ add_filtermap_fields_options({Context, CursorOptions0}, CbViewOptions) ->
     UserMapper = props:get_value('mapper', CbViewOptions),
     HasQSFilter = props:is_true(['user_params', 'has_qs_filter'], CursorOptions0, 'false'),
 
-    Setters = [{fun cb_context:store/3, 'fields', Fields}
-              ,{fun cb_context:store/3, 'has_fields', HasFields}
+    Setters = [{fun cb_context:store/3, 'has_fields', HasFields}
               ,{fun cb_context:store/3, 'has_qs_filter', HasQSFilter}
               ],
     %% in case usermap is a fun/3, store some variables
@@ -448,46 +517,15 @@ set_context_vars({Context, Options}, _CbViewOptions) ->
 
 -spec get_fields(cb_context:context()) -> kz_view:fields() | 'undefined'.
 get_fields(Context) ->
-    case kz_json:get_value(<<"fields">>, cb_context:query_string(Context)) of
-        List when is_list(List) ->
-            validate_fields(List);
-        Binary when is_binary(Binary) ->
-            validate_fields(binary:split(Binary, <<",">>, ['global']));
-        Other ->
-            case kz_json:is_json_object(Other) of
-                'true' ->
-                    validate_fields(kz_json:recursive_to_proplist(Other));
-                'false' ->
-                    'undefined'
-            end
-    end.
-
-validate_fields(List) ->
-    case lists:foldl(fun validate_fields/2, [], List) of
+    case cb_context:fetch(Context, 'fields') of
+        'undefined' -> 'undefined';
         [] -> 'undefined';
-        Fields -> lists:usort(Fields)
+        List when is_list(List) -> List;
+        JObj ->
+            kz_json:to_proplist(
+              kz_json:flatten_deep(JObj)
+             )
     end.
-
-validate_fields([], Acc) ->
-    Acc;
-validate_fields(Key, Acc) when Key =:= <<"id">>
-                               orelse Key =:= <<"_id">> ->
-    [<<"_id">> | Acc];
-validate_fields({Key, Value}, Acc) when Key =:= <<"id">>
-                                        orelse Key =:= <<"_id">> ->
-    [{<<"_id">>, kz_term:is_true(Value)} | Acc];
-validate_fields(Key, Acc) when is_binary(Key) ->
-    case not kz_doc:is_private_key(Key) of
-        'true' -> [Key | Acc];
-        'false' -> Acc
-    end;
-validate_fields({Key, Value}, Acc) ->
-    case not kz_doc:is_private_key(Key) of
-        'true' -> [{Key, kz_term:is_true(Value)} | Acc];
-        'false' -> Acc
-    end;
-validate_fields(_, Acc) ->
-    Acc.
 
 %%------------------------------------------------------------------------------
 %% @doc
