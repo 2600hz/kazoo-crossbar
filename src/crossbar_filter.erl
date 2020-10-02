@@ -18,7 +18,6 @@
 
         ,by_doc/2, by_doc/3
         ]).
--export([normalize_query_string/1]).
 
 -include("crossbar.hrl").
 
@@ -123,49 +122,6 @@ by_doc('undefined', _, 'true') -> 'true';
 by_doc(Doc, Context, 'true') ->
     filter_doc_by_querystring(Doc, cb_context:query_string(Context)).
 
-%%------------------------------------------------------------------------------
-%% @doc
-%% @end
-%%------------------------------------------------------------------------------
--spec normalize_query_string({cb_context:context(), kz_json:object()}) -> {cb_context:context(), kz_json:object()}.
-normalize_query_string({Context, QS}) ->
-    {Context, kz_json:map(fun normalize_qs/2, QS)}.
-
-normalize_qs(Key = <<"filter_array_intersect_all">>, Value) ->
-    {Key, normalize_filter_array(Value)};
-normalize_qs(Key = <<"filter_array_intersect_any">>, Value) ->
-    {Key, normalize_filter_array(Value)};
-normalize_qs(Key = <<"filter_array_intersect_none">>, Value) ->
-    {Key, normalize_filter_array(Value)};
-normalize_qs(Key = <<"filter_array_member">>, Value) ->
-    {Key, normalize_filter_array(Value)};
-normalize_qs(Key, Value) ->
-    {Key, Value}.
-
-normalize_filter_array(Value) ->
-    case kz_json:is_json_object(Value) of
-        'true' ->
-            kz_json:map(fun normalize_filter_array/2, Value);
-        'false' ->
-            %% set invalid values to false so during filteration
-            %% we filter out all result because of bad value here.
-            %% If you don't provide valid input don't expect to get any
-            %% correct result.
-            'false'
-    end.
-
-normalize_filter_array(Key, <<Bin/binary>>) ->
-    normalize_filter_array(Key, binary:split(Bin, <<",">>, ['global']));
-normalize_filter_array(Key, Value) when is_list(Value) ->
-    {Key, Value};
-normalize_filter_array(Key, Value) ->
-    case kz_json:is_json_object(Value) of
-        'true' ->
-            {Key, kz_json:map(fun normalize_filter_array/2, Value)};
-        'false' ->
-            {Key, [Value]}
-    end.
-
 %%%=============================================================================
 %%% Load view internal functions
 %%%=============================================================================
@@ -224,10 +180,10 @@ build_filter_map_fun(Context, FilterFun, UserMapper) when is_function(UserMapper
 %%------------------------------------------------------------------------------
 -spec is_filter_key({binary(), any()}) -> boolean().
 is_filter_key({<<"filter_not_", _/binary>>, _}) -> 'true';
-is_filter_key({<<"filter_array_intersect_all">>, _}) -> 'true';
-is_filter_key({<<"filter_array_intersect_any">>, _}) -> 'true';
-is_filter_key({<<"filter_array_intersect_none">>, _}) -> 'true';
-is_filter_key({<<"filter_array_member">>, _}) -> 'true';
+is_filter_key({<<"filter_array_intersect_all_">>, _}) -> 'true';
+is_filter_key({<<"filter_array_intersect_any_">>, _}) -> 'true';
+is_filter_key({<<"filter_array_intersect_none_">>, _}) -> 'true';
+is_filter_key({<<"filter_any_">>, _}) -> 'true';
 is_filter_key({<<"filter_", _/binary>>, _}) -> 'true';
 is_filter_key({<<"has_key", _/binary>>, _}) -> 'true';
 is_filter_key({<<"key_missing", _/binary>>, _}) -> 'true';
@@ -259,14 +215,14 @@ should_filter_doc(Doc, K, V) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec filter_prop(kz_json:object(), kz_term:ne_binary(), any()) -> kz_term:api_boolean().
-filter_prop(Doc, <<"filter_array_intersect_all">>, Val) ->
-    array_compare(Doc, Val, fun lists:all/2);
-filter_prop(Doc, <<"filter_array_intersect_any">>, Val) ->
-    array_compare(Doc, Val, fun lists:any/2);
-filter_prop(Doc, <<"filter_array_intersect_none">>, Val) ->
-    not array_compare(Doc, Val, fun lists:all/2);
-filter_prop(Doc, <<"filter_array_member">>, Val) ->
-    array_compare(Doc, Val, fun lists:all/2);
+filter_prop(Doc, <<"filter_array_intersect_all_", Key/binary>>, Val) ->
+    array_compare(get_list_value(Doc, Key), Val, fun lists:all/2);
+filter_prop(Doc, <<"filter_array_intersect_any_", Key/binary>>, Val) ->
+    array_compare(get_list_value(Doc, Key), Val, fun lists:any/2);
+filter_prop(Doc, <<"filter_array_intersect_none_", Key/binary>>, Val) ->
+    not array_compare(get_list_value(Doc, Key), Val, fun lists:all/2);
+filter_prop(Doc, <<"filter_in_array_", Key/binary>>, Val) ->
+    array_compare(get_binary_value(Doc, Key), Val, fun lists:any/2);
 filter_prop(Doc, <<"filter_not_", Key/binary>>, Val) ->
     not should_filter(Doc, Key, Val);
 filter_prop(Doc, <<"filter_", Key/binary>>, Val) ->
@@ -313,8 +269,7 @@ should_filter(Val, FilterVal) ->
 
 -spec should_filter(kz_json:object(), kz_term:ne_binary(), kz_json:json_term()) -> boolean().
 should_filter(Doc, Key, Val) ->
-    Keys = binary_key_to_json_key(Key),
-    should_filter(kz_json:get_binary_value(Keys, Doc, <<>>)
+    should_filter(get_binary_value(Doc, Key)
                  ,kz_term:to_binary(Val)
                  ).
 
@@ -332,31 +287,32 @@ has_value(Doc, Key) ->
 binary_key_to_json_key(Key) ->
     binary:split(Key, <<".">>, ['global']).
 
--spec array_compare(kz_json:object(), kz_json:object(), fun(({kz_json:path(), kz_json:flat_json_term()}) -> boolean())) ->
+-spec get_list_value(kz_json:object(), kz_term:ne_binary()) -> kz_json:json_array().
+get_list_value(Doc, Key) ->
+    Keys = binary_key_to_json_key(Key),
+    kz_json:get_list_value(Keys, Doc, []).
+
+-spec get_binary_value(kz_json:object(), kz_term:ne_binary()) -> binary().
+get_binary_value(Doc, Key) ->
+    Keys = binary_key_to_json_key(Key),
+    kz_json:get_binary_value(Keys, Doc, <<>>).
+
+-spec array_compare(kz_json:json_array() | binary(), kz_term:ne_binary() | list(), fun((_, _) -> boolean())) ->
           boolean().
-array_compare(_, 'false', _) ->
-    'false';
-array_compare(Doc, JObj, Fun) ->
-    %% we need a better flatten_deep maybe something like flatten_longest_prefix
-    %% so it flatten until it reaches the longest common prefix.
-    %% Example:
-    %% ```
-    %% kz_json:flatten_longest_prefix(
-    %%   {[{<<"servers">>
-    %%     ,[{[{<<"numbers">>,[<<"+14657856103">>,<<"2000">>]}]}
-    %%      ,{[{<<"numbers">>,[<<"3000">>,<<"+15099993254">>]}]}
-    %%      ]
-    %%     }
-    %%   ]}
-    %%  )
-    %% [{[<<"servers">>,1,<<"numbers">>], [<<"+14657856103">>, <<"2000">>]}
-    %% ,{[<<"servers">>,2,<<"numbers">>], [<<"3000">>, <<"+15099993254">>]}
-    %% ]
-    %% '''
-    Fun(fun({Path, Value}) ->
-                kz_json:get_value(Path, Doc) =:= Value
-        end
-       ,kz_json:to_proplist(
-           kz_json:flatten(JObj)
-          )
-       ).
+array_compare(Val, <<FilterVal/binary>>, Fun) ->
+    try kz_json:unsafe_decode(FilterVal) of
+        List when is_list(List) ->
+            array_compare(Val, kz_term:to_binary(Val), Fun);
+        _Data ->
+            lager:debug("data is not a list: ~p", [_Data]),
+            'false'
+    catch
+        _Error ->
+            lager:debug("data is not a list: ~p", [FilterVal]),
+            'false'
+    end;
+array_compare(<<Val/binary>>, FilterVal, Fun) when is_list(FilterVal) ->
+    Fun(fun(Elem) -> Elem =:= Val end, FilterVal);
+array_compare(Val, FilterVal, Fun) when is_list(Val)
+                                        andalso is_list(FilterVal) ->
+    Fun(fun(Elem) -> lists:member(Elem, Val) end, FilterVal).

@@ -180,44 +180,24 @@ maybe_get_req_data(Context, Req, ?VERSION_1) ->
     Message = <<"API version 1 is not supported. Please upgrade your code to use version 2.">>,
     Context1 = cb_context:add_system_error(410, 'gone', Message, Context),
     ?MODULE:stop(Req, Context1);
-maybe_get_req_data(Context, Req, _Version) ->
-    case get_query_string_data(Context, Req) of
-        {Context1, QS} ->
-            lager:debug("query string: ~s", [kz_json:encode(QS, ['pretty'])]),
-            get_req_data_binding(Context1, Req, get_content_type(Req), QS);
-        {'stop', _, _}=Stop ->
-            Stop
-    end.
+maybe_get_req_data(Context, Req0, _Version) ->
+    {QS, Req1} = get_query_string_data(Req0),
+    get_req_data_binding(Context, Req1, get_content_type(Req1), QS).
 
--spec get_query_string_data(cb_context:context(), cowboy_req:req()) ->
-          {cb_context:context(), kz_json:object()} |
-          stop_return().
-get_query_string_data(Context, Req) ->
-    try
-        normalize_query_string(Context
-                              ,kz_http_util:parse_query_arrays(
-                                 cowboy_req:parse_qs(Req)
-                                )
-                              )
-    catch
-        _E:_T:ST ->
-            kz_log:log_stacktrace(ST, "crashed during parsing query string: {~p:~p}", [_E, _T]),
-            Message = <<"invalid query string">>,
-            Context1 = cb_context:add_system_error(400, <<"validation error">>, Message, Context),
-            ?MODULE:stop(Req, Context1)
-    end.
+-spec get_query_string_data(cowboy_req:req()) ->
+          {kz_json:object(), cowboy_req:req()}.
+get_query_string_data(Req) ->
+    QS = cowboy_req:parse_qs(Req),
+    get_query_string_data(QS, Req).
 
--spec normalize_query_string(cb_context:context(), kz_term:proplist()) ->
-          {cb_context:context(), kz_json:object()}.
-normalize_query_string(Context, []) ->
-    {Context, kz_json:new()};
-normalize_query_string(Context, QS0) ->
-    lists:foldl(fun(Fun, Acc) -> Fun(Acc) end
-               ,{Context, kz_json:from_list(QS0)}
-               ,[fun crossbar_view:normalize_query_string/1
-                ,fun crossbar_filter:normalize_query_string/1
-                ]
-               ).
+-spec get_query_string_data(kz_term:proplist(), cowboy_req:req()) ->
+          {kz_json:object(), cowboy_req:req()}.
+get_query_string_data([], Req) ->
+    {kz_json:new(), Req};
+get_query_string_data(QS0, Req) ->
+    QS = kz_json:from_list(QS0),
+    lager:debug("query string: ~s", [kz_json:encode(QS, ['pretty'])]),
+    {QS, Req}.
 
 -spec get_content_type(cowboy_req:req()) -> kz_term:api_ne_binary().
 get_content_type(Req) ->

@@ -27,8 +27,6 @@
         ,get_value_fun/0
         ,get_key_fun/0
         ,get_id_fun/0
-
-        ,normalize_query_string/1
         ]).
 
 -export([next_batch/2]).
@@ -198,74 +196,6 @@ load_yodb(Context, View, Options) ->
 find(Context, View, Selector, Options) ->
     Build = build_cursor_options(Context, Options, 'false', 'false'),
     load_view(View, Selector, build_range_keys(Build)).
-
-%% {{{ normalize query string
-%%------------------------------------------------------------------------------
-%% @doc
-%% @end
-%%------------------------------------------------------------------------------
--spec normalize_query_string({cb_context:context(), kz_json:object()}) -> {cb_context:context(), kz_json:object()}.
-normalize_query_string({Context, QS}) ->
-    Fields = maybe_normalize_fields(kz_json:get_value(<<"fields">>, QS)),
-    {cb_context:store(Context, 'fields', Fields), kz_json:delete_key(<<"fields">>, QS)}.
-
-maybe_normalize_fields(List) when is_list(List) ->
-    normalize_fields(List);
-maybe_normalize_fields(Binary) when is_binary(Binary) ->
-    normalize_fields(binary:split(Binary, <<",">>, ['global']));
-maybe_normalize_fields(Other) ->
-    case kz_json:is_json_object(Other) of
-        'true' ->
-            normalize_fields(Other);
-        'false' ->
-            'undefined'
-    end.
-
--spec normalize_fields(kz_json:object() | kz_term:ne_binaries()) -> kz_json:object() | kz_term:ne_binaries().
-normalize_fields(List) when is_list(List) ->
-    [maybe_id_field(F) || F <- List,
-                          is_valid_field(F)
-    ];
-normalize_fields(JObj) ->
-    kz_json:foldl(fun normalize_fields/3
-                 ,kz_json:new()
-                 ,JObj
-                 ).
-
-normalize_fields(Key, Value, Acc) ->
-    case {is_valid_field(Key)
-         ,kz_json:is_json_object(Value)
-         }
-    of
-        {'false', _} ->
-            Acc;
-        {'true', 'true'} ->
-            [{Path, Inclusion}] = kz_json:to_proplist(
-                                    kz_json:flatten_deep(Value)
-                                   ),
-            kz_json:set_value(Key
-                             ,kz_json:expand_deep(
-                                kz_json:from_list([{Path, kz_term:is_true(Inclusion)}])
-                               )
-                             ,Acc
-                             );
-        {'true', 'false'} ->
-            {Key, kz_term:is_true(Value)}
-    end.
-
-is_valid_field(<<"_id">>) ->
-    'true';
-is_valid_field([]) ->
-    'false';
-is_valid_field([Key|_]) ->
-    not kz_doc:is_private_key(Key);
-is_valid_field(Field) ->
-    not kz_doc:is_private_key(Field).
-
-maybe_id_field(<<"_id">>) -> <<"_id">>;
-maybe_id_field(<<"id">>) -> <<"_id">>;
-maybe_id_field(Field) -> Field.
-%% }}}
 
 %% build options funs {{{
 %%------------------------------------------------------------------------------
@@ -517,15 +447,47 @@ set_context_vars({Context, Options}, _CbViewOptions) ->
 
 -spec get_fields(cb_context:context()) -> kz_view:fields() | 'undefined'.
 get_fields(Context) ->
-    case cb_context:fetch(Context, 'fields') of
+    case kz_json:get_value(<<"fields">>, cb_context:query_string(Context)) of
         'undefined' -> 'undefined';
-        [] -> 'undefined';
-        List when is_list(List) -> List;
-        JObj ->
-            kz_json:to_proplist(
-              kz_json:flatten_deep(JObj)
-             )
+        <<Fields/binary>> ->
+            try kz_json:unsafe_decode(Fields) of
+                List when is_list(List) ->
+                    normalize_fields(List);
+                <<Binary/binary>> ->
+                    normalize_fields(binary:split(Binary, <<",">>, ['global']));
+                _Data ->
+                    lager:debug("fields qs is not a list: ~p", [_Data]),
+                    'undefined'
+            catch
+                _ ->
+                    lager:debug("fields qs is not a list: ~p", [Fields]),
+                    'undefined'
+            end;
+        _Other ->
+            lager:debug("fields qs is not a list: ~p", [_Other]),
+            'undefined'
     end.
+
+-spec normalize_fields(kz_term:ne_binaries()) -> kz_view:fields() | 'undefined'.
+normalize_fields(List) ->
+    case [normalize_field(F) || F <- List,
+                                is_valid_field(F)
+         ]
+    of
+        [] -> 'undefined';
+        Fields -> Fields
+    end.
+
+is_valid_field(<<"_id">>) ->
+    'true';
+is_valid_field(<<Field/binary>>) ->
+    not kz_doc:is_private_key(Field);
+is_valid_field(_Field) ->
+    'false'.
+
+normalize_field(<<"_id">>) -> <<"_id">>;
+normalize_field(<<"id">>) -> <<"_id">>;
+normalize_field(Field) -> binary:split(Field, <<".">>, ['global']).
 
 %%------------------------------------------------------------------------------
 %% @doc
