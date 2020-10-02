@@ -223,8 +223,12 @@ build_filter_map_fun(Context, FilterFun, UserMapper) when is_function(UserMapper
 %% @end
 %%------------------------------------------------------------------------------
 -spec is_filter_key({binary(), any()}) -> boolean().
-is_filter_key({<<"filter_", _/binary>>, _}) -> 'true';
 is_filter_key({<<"filter_not_", _/binary>>, _}) -> 'true';
+is_filter_key({<<"filter_array_intersect_all">>, _}) -> 'true';
+is_filter_key({<<"filter_array_intersect_any">>, _}) -> 'true';
+is_filter_key({<<"filter_array_intersect_none">>, _}) -> 'true';
+is_filter_key({<<"filter_array_member">>, _}) -> 'true';
+is_filter_key({<<"filter_", _/binary>>, _}) -> 'true';
 is_filter_key({<<"has_key", _/binary>>, _}) -> 'true';
 is_filter_key({<<"key_missing", _/binary>>, _}) -> 'true';
 is_filter_key({<<"has_value", _/binary>>, _}) -> 'true';
@@ -255,6 +259,14 @@ should_filter_doc(Doc, K, V) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec filter_prop(kz_json:object(), kz_term:ne_binary(), any()) -> kz_term:api_boolean().
+filter_prop(Doc, <<"filter_array_intersect_all">>, Val) ->
+    array_compare(Doc, Val, fun lists:all/2);
+filter_prop(Doc, <<"filter_array_intersect_any">>, Val) ->
+    array_compare(Doc, Val, fun lists:any/2);
+filter_prop(Doc, <<"filter_array_intersect_none">>, Val) ->
+    not array_compare(Doc, Val, fun lists:all/2);
+filter_prop(Doc, <<"filter_array_member">>, Val) ->
+    array_compare(Doc, Val, fun lists:all/2);
 filter_prop(Doc, <<"filter_not_", Key/binary>>, Val) ->
     not should_filter(Doc, Key, Val);
 filter_prop(Doc, <<"filter_", Key/binary>>, Val) ->
@@ -319,3 +331,32 @@ has_value(Doc, Key) ->
 -spec binary_key_to_json_key(kz_term:ne_binary()) -> kz_term:ne_binaries().
 binary_key_to_json_key(Key) ->
     binary:split(Key, <<".">>, ['global']).
+
+-spec array_compare(kz_json:object(), kz_json:object(), fun(({kz_json:path(), kz_json:flat_json_term()}) -> boolean())) ->
+          boolean().
+array_compare(_, 'false', _) ->
+    'false';
+array_compare(Doc, JObj, Fun) ->
+    %% we need a better flatten_deep maybe something like flatten_longest_prefix
+    %% so it flatten until it reaches the longest common prefix.
+    %% Example:
+    %% ```
+    %% kz_json:flatten_longest_prefix(
+    %%   {[{<<"servers">>
+    %%     ,[{[{<<"numbers">>,[<<"+14657856103">>,<<"2000">>]}]}
+    %%      ,{[{<<"numbers">>,[<<"3000">>,<<"+15099993254">>]}]}
+    %%      ]
+    %%     }
+    %%   ]}
+    %%  )
+    %% [{[<<"servers">>,1,<<"numbers">>], [<<"+14657856103">>, <<"2000">>]}
+    %% ,{[<<"servers">>,2,<<"numbers">>], [<<"3000">>, <<"+15099993254">>]}
+    %% ]
+    %% '''
+    Fun(fun({Path, Value}) ->
+                kz_json:get_value(Path, Doc) =:= Value
+        end
+       ,kz_json:to_proplist(
+           kz_json:flatten(JObj)
+          )
+       ).
