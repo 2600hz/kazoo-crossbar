@@ -403,7 +403,8 @@ add_filtermap_fields_options({Context, CursorOptions0}, CbViewOptions) ->
     UserMapper = props:get_value('mapper', CbViewOptions),
     HasQSFilter = props:is_true(['user_params', 'has_qs_filter'], CursorOptions0, 'false'),
 
-    Setters = [{fun cb_context:store/3, 'has_fields', HasFields}
+    Setters = [{fun cb_context:store/3, 'fields', Fields}
+              ,{fun cb_context:store/3, 'has_fields', HasFields}
               ,{fun cb_context:store/3, 'has_qs_filter', HasQSFilter}
               ],
     %% in case usermap is a fun/3, store some variables
