@@ -6,6 +6,10 @@
 
 Filter | Operates On | Description
 ------ | ----------- | -----------
+`filter_array_intersect_all_{KEY}` | `{VALUE}` | 
+`filter_array_intersect_any_{KEY}` | `{VALUE}` | 
+`filter_array_intersect_none_{KEY}` | `{VALUE}` | 
+`filter_in_array_{KEY}` | `{VALUE}` | 
 `filter_not_{KEY}` | `{VALUE}` | 
 `filter_{KEY}` | `{VALUE}` | 
 `has_key` | `{KEY}` | 
