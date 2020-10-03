@@ -476,7 +476,16 @@ normalize_fields(List) ->
          ]
     of
         [] -> 'undefined';
-        Fields -> Fields
+        Fields ->
+            %% technically we don't need to _id here, kz_view will it for us,
+            %% but we are doing this, because we store fields in context
+            %% so modules like cb_cdrs can fetch it when generating CSV headers.
+            case props:get_value(<<"_id">>, Fields) of
+                'undefined' ->
+                    lists:usort([<<"_id">> | Fields]);
+                _ ->
+                    lists:usort(Fields)
+            end
     end.
 
 is_valid_field(<<"_id">>) ->
