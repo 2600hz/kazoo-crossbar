@@ -8,6 +8,11 @@ Query string filters allow the API results to be filtered by additional criteria
 
 Filter | Operates On | Description
 ------ | ----------- | -----------
+`filter_any_{KEY}` | `{VALUE}` | Doc included if `{KEY}` is any of the values in `{VALUE}` JSON array.
+`filter_array_intersect_all_{KEY}` | `{VALUE}` | Doc included if `{KEY}` is an array has all values in `{VALUE}` JSON array
+`filter_array_intersect_any_{KEY}` | `{VALUE}` | Doc included if `{KEY}` is an array has any values in `{VALUE}` JSON array
+`filter_array_intersect_none_{KEY}` | `{VALUE}` | Doc included if `{KEY}` is an array has **none** of the values in `{VALUE}` JSON array
+`filter_none_{KEY}` | `{VALUE}` | Doc included if `{KEY}` is not any of the values in `{VALUE}` JSON array
 `filter_not_{KEY}` | `{VALUE}` | Doc include if `{KEY}` is *not* `{VALUE}`
 `filter_{KEY}` | `{VALUE}` | Doc included if `{KEY}` is `{VALUE}`
 `has_key` | `{KEY}` | Doc included if `{KEY}` is present on the doc
@@ -19,12 +24,28 @@ Filter | Operates On | Description
 `modified_from` | `{VALUE}` | Doc included if the last-modified time is greater than or equal to `{VALUE}` (in Gregorian seconds)
 `modified_to` | `{VALUE}` | Doc included if the last-modified time is less than or equal to `{VALUE}` (in Gregorian seconds)
 
-## Keys
+### Keys
 
 Filters can be used on validated keys (those appearing in the schema) and on custom keys (those included by the caller).
 
 `{KEY}` can be a dot-delimited string representing a JSON key path. So `filter_foo.bar.baz=1` would match a doc that had `{"foo":{"bar":{"baz":1}}}` in it.
 
-## Multiple Filters
+## Array Value
+
+Is the `{VALUE}` of any of the filters above is an array, you should use pass it as encoded JSON array value in query string. So `filter_array_intersect_all_numbers=["1000"]` would match a doc that have `{"numbers": ["1000"]}` in it.
+
+### Multiple Filters
 
 Filters can be chained together on a query string and will be applied as a boolean `AND` operation. For example, `?filter_foo=1&has_key=bar` will look for docs where `foo=1` and the key `bar` exists on the doc.
+
+## Fetching Sparse Fieldsets
+
+A client **MAY** request that an endpoint return only specific fields (of the document) in the response. This will only works the request is listing objects, like `/users`.
+
+The value of `fields` parameters must be an encoded JSON array. Each element of the array can be dot-delimited string representing a JSON key path. If any of the requested fields are restricted (are private fields) then they would be ignored.
+
+The `id` of documents (if any) will always be part of the response.
+
+If `fields` parameter is empty, the server will treat the request as if no `fields` parameter is specified and will return the full response.
+
+Example: `/callflows?fields=["name"]` will return a list of all callflows `[{"name": "Main", "id": "id1"}]`.

@@ -180,10 +180,11 @@ build_filter_map_fun(Context, FilterFun, UserMapper) when is_function(UserMapper
 %%------------------------------------------------------------------------------
 -spec is_filter_key({binary(), any()}) -> boolean().
 is_filter_key({<<"filter_not_", _/binary>>, _}) -> 'true';
+is_filter_key({<<"filter_any_">>, _}) -> 'true';
 is_filter_key({<<"filter_array_intersect_all_">>, _}) -> 'true';
 is_filter_key({<<"filter_array_intersect_any_">>, _}) -> 'true';
 is_filter_key({<<"filter_array_intersect_none_">>, _}) -> 'true';
-is_filter_key({<<"filter_any_">>, _}) -> 'true';
+is_filter_key({<<"filter_none_">>, _}) -> 'true';
 is_filter_key({<<"filter_", _/binary>>, _}) -> 'true';
 is_filter_key({<<"has_key", _/binary>>, _}) -> 'true';
 is_filter_key({<<"key_missing", _/binary>>, _}) -> 'true';
@@ -215,14 +216,16 @@ should_filter_doc(Doc, K, V) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec filter_prop(kz_json:object(), kz_term:ne_binary(), any()) -> kz_term:api_boolean().
+filter_prop(Doc, <<"filter_any_", Key/binary>>, Val) ->
+    array_compare(get_binary_value(Doc, Key), Val, fun lists:any/2);
 filter_prop(Doc, <<"filter_array_intersect_all_", Key/binary>>, Val) ->
     array_compare(get_list_value(Doc, Key), Val, fun lists:all/2);
 filter_prop(Doc, <<"filter_array_intersect_any_", Key/binary>>, Val) ->
     array_compare(get_list_value(Doc, Key), Val, fun lists:any/2);
 filter_prop(Doc, <<"filter_array_intersect_none_", Key/binary>>, Val) ->
     not array_compare(get_list_value(Doc, Key), Val, fun lists:all/2);
-filter_prop(Doc, <<"filter_in_array_", Key/binary>>, Val) ->
-    array_compare(get_binary_value(Doc, Key), Val, fun lists:any/2);
+filter_prop(Doc, <<"filter_none_", Key/binary>>, Val) ->
+    not array_compare(get_binary_value(Doc, Key), Val, fun lists:any/2);
 filter_prop(Doc, <<"filter_not_", Key/binary>>, Val) ->
     not should_filter(Doc, Key, Val);
 filter_prop(Doc, <<"filter_", Key/binary>>, Val) ->
