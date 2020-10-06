@@ -46,6 +46,6 @@ The value of `fields` parameters must be an encoded JSON array. Each element of 
 
 The `id` of documents (if any) will always be part of the response.
 
-If `fields` parameter is empty, the server will treat the request as if no `fields` parameter is specified and will return the full response.
+If `fields` parameter is empty, the server will treat the request as if no `fields` parameter is specified and will return the default response (ie the "listing" result, not the full document).
 
-Example: `/callflows?fields=["name"]` will return a list of all callflows `[{"name": "Main", "id": "id1"}]`.
+Example: `/callflows?fields=["name","flow"]` will return a list of all callflows and include the `flow` field for each document like `[{"name": "Main", "flow": {...}, "id": "id1"}]`. If you were to make this request without the `fields` querystring, you would not receive the `flow` field in your response (because the listing response does not include the `flow` field by default). 
