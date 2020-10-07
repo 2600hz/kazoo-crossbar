@@ -395,9 +395,9 @@ maybe_add_metadata(ContextDoc, Doc) ->
 %%------------------------------------------------------------------------------
 -spec available_scopes(atom() | kz_term:ne_binary()) -> kz_term:ne_binaries().
 available_scopes(AuthModule) when is_atom(AuthModule) ->
-  available_scopes(kz_term:to_binary(AuthModule));
+    available_scopes(kz_term:to_binary(AuthModule));
 available_scopes(AuthModule) ->
-  kapps_config:get_ne_binaries(?AUTH_CONFIG_CAT, ?AUTH_MODULE_SCOPES_KEY(AuthModule), [?APP_NAME], <<"default">>).
+    kapps_config:get_ne_binaries(?AUTH_CONFIG_CAT, ?AUTH_MODULE_SCOPES_KEY(AuthModule), [?APP_NAME], <<"default">>).
 
 %%------------------------------------------------------------------------------
 %% @doc resolve scope restrictions to scopes
@@ -405,16 +405,16 @@ available_scopes(AuthModule) ->
 %%------------------------------------------------------------------------------
 -spec scopes(kz_term:ne_binary(), kz_term:ne_binaries() | kz_term:binary()) -> kz_term:api_binaries().
 scopes(_AccountId, []) ->
-  [];
+    [];
 scopes(AccountId, ScopeRestrictions) when is_list(ScopeRestrictions) ->
-  Fun = fun(R, Acc) ->
-          scopes(AccountId, R) ++ Acc
-        end,
-  lists:foldl(Fun, [], ScopeRestrictions);
+    Fun = fun(R, Acc) ->
+                  scopes(AccountId, R) ++ Acc
+          end,
+    lists:foldl(Fun, [], ScopeRestrictions);
 scopes(AccountId, ScopeRestriction) when is_binary(ScopeRestriction) ->
-  AccountDb = kzs_util:format_account_db(AccountId),
-  case kz_datamgr:open_cache_doc(AccountDb, ScopeRestriction) of
-    {'ok', Doc} ->
-      kz_json:get_list_value(<<"scopes">>, Doc, []);
-    _ -> 'undefined'
-  end.
+    AccountDb = kzs_util:format_account_db(AccountId),
+    case kz_datamgr:open_cache_doc(AccountDb, ScopeRestriction) of
+        {'ok', Doc} ->
+            kz_json:get_list_value(<<"scopes">>, Doc, []);
+        _ -> 'undefined'
+    end.

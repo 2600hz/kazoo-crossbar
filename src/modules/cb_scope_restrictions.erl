@@ -101,7 +101,7 @@ validate_scope_restriction(Context, ?HTTP_PUT) ->
 %%------------------------------------------------------------------------------
 -spec validate_scope_restriction(cb_context:context(), path_token(), http_method()) -> cb_context:context().
 validate_scope_restriction(Context, ScopeRestriction, ?HTTP_DELETE) ->
-	crossbar_doc:load(ScopeRestriction, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE));
+    crossbar_doc:load(ScopeRestriction, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE));
 validate_scope_restriction(Context, ScopeRestriction, ?HTTP_GET) ->
     scope_restriction_summary(Context, ScopeRestriction);
 validate_scope_restriction(Context, ScopeRestriction, ?HTTP_POST) ->
@@ -126,7 +126,7 @@ validate_request(Context, ScopeRestriction) ->
 %%------------------------------------------------------------------------------
 -spec on_successful_validation(cb_context:context(), path_token()) -> cb_context:context().
 on_successful_validation(Context, 'undefined') ->
-	cb_context:set_doc(Context, kz_doc:set_type(cb_context:doc(Context), ?PVT_TYPE));
+    cb_context:set_doc(Context, kz_doc:set_type(cb_context:doc(Context), ?PVT_TYPE));
 on_successful_validation(Context, ScopeRestriction) ->
     crossbar_doc:load_merge(ScopeRestriction, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE)).
 
@@ -148,7 +148,7 @@ put(Context) ->
 
 -spec delete(cb_context:context(), path_token()) -> cb_context:context().
 delete(Context, _) ->
-	crossbar_doc:delete(Context).
+    crossbar_doc:delete(Context).
 
 %%------------------------------------------------------------------------------
 %% @doc

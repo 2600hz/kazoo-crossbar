@@ -271,10 +271,10 @@ maybe_include_claims(Context) ->
         Scopes when is_list(Scopes) ->
             DocWithClaims =
                 kz_json:set_value(
-                    [<<"Claims">>, <<"scope">>]
-                    ,kz_auth_scope:to_str(Scopes)
-                    ,cb_context:doc(Context)
-                    ),
+                  [<<"Claims">>, <<"scope">>]
+                 ,kz_auth_scope:to_str(Scopes)
+                 ,cb_context:doc(Context)
+                 ),
             cb_context:set_doc(Context, DocWithClaims)
     end.
 

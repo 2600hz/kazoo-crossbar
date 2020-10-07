@@ -150,7 +150,7 @@ on_successful_validation(Context, 'undefined') ->
     cb_context:set_doc(Context, kz_doc:set_type(cb_context:doc(Context), ?PVT_TYPE));
 on_successful_validation(Context, Scope) ->
     crossbar_doc:load_merge(Scope, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE)).
-    
+
 %%------------------------------------------------------------------------------
 %% @doc
 %% @end
