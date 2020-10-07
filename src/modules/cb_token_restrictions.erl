@@ -165,11 +165,51 @@ get_auth_restrictions('undefined') ->
     lager:debug("no auth doc to check"),
     'undefined';
 get_auth_restrictions(AuthDoc) ->
+    Scopes = kz_json:get_ne_binary_value(<<"scope">>, AuthDoc, 'undefined'),
+    get_auth_restrictions(AuthDoc, Scopes).
+
+-spec get_auth_restrictions(kz_term:api_object(), kz_term:api_binary()) -> kz_term:api_object().
+get_auth_restrictions(AuthDoc, Scopes) ->
     AuthModule = kz_json:get_atom_value(<<"method">>, AuthDoc),
     AccountId = kz_json:get_ne_binary_value(<<"account_id">>, AuthDoc),
     OwnerId = kz_json:get_ne_binary_value(<<"owner_id">>, AuthDoc),
+    merge_auth_restrictions(AuthModule, AccountId, OwnerId, Scopes).
+-endif.
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-ifndef(TEST).
+-spec merge_auth_restrictions(kz_term:api_binary(), kz_term:api_binary(), kz_term:api_binary(), kz_term:api_binary()) -> kz_term:api_object().
+merge_auth_restrictions(AuthModule, AccountId, OwnerId, <<"">>) ->
+    merge_auth_restrictions(AuthModule, AccountId, OwnerId, 'undefined');
+merge_auth_restrictions(AuthModule, AccountId, OwnerId, 'undefined') ->
     lager:debug("checking for restrictions for ~s in ~s using ~s method", [OwnerId, AccountId, AuthModule]),
-    crossbar_util:get_token_restrictions(AuthModule, AccountId, OwnerId).
+    crossbar_util:get_token_restrictions(AuthModule, AccountId, OwnerId);
+merge_auth_restrictions(AuthModule, AccountId, OwnerId, _Scopes) ->
+    lager:debug("merging scope and token restrictions"),
+    TokenRestrictions = crossbar_util:get_token_restrictions(AuthModule, AccountId, OwnerId),
+    ScopeRestrictions = crossbar_util:get_scope_restrictions(AccountId, OwnerId),
+    maybe_merge_auth_restrictions(TokenRestrictions, ScopeRestrictions).
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec maybe_merge_auth_restrictions(kz_term:api_object(), kz_term:api_object()) -> kz_term:api_object().
+maybe_merge_auth_restrictions('undefined', 'undefined') ->
+    lager:debug("no restrictions defined, applying default restrictions"),
+    'undefined';
+maybe_merge_auth_restrictions(TokenRestrictions, 'undefined') ->
+    lager:debug("no scope restrictions defined, applying token restrictions"),
+    TokenRestrictions;
+maybe_merge_auth_restrictions('undefined', ScopeRestrictions) ->
+    lager:debug("no token restrictions defined, using scope restrictions"),
+    ScopeRestrictions;
+maybe_merge_auth_restrictions(TokenRestrictions, ScopeRestrictions) ->
+    lager:debug("token and scope restrictions defined attempting merge"),
+    kz_json:merge(TokenRestrictions, ScopeRestrictions).
 -endif.
 
 -spec maybe_deny_access(cb_context:context(), kz_json:object()) -> boolean().
