@@ -55,6 +55,7 @@
                     path_token() |
                     'undefined'
                    ] |
+                   kz_term:ne_binary() | %% api_util:maybe_enforce_scopes/3
                    cb_context:context() |
                    {cb_context:context(), kz_term:proplist()} | % api_resource:rest_init/2
                    {'error', _} | % api_util:execute_request/2

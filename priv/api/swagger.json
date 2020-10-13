@@ -992,6 +992,14 @@
                     },
                     "type": "object"
                 },
+                "scopes": {
+                    "default": [],
+                    "description": "scopes provided by this authentication module",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
                 "token_auth_expiry_s": {
                     "description": "expiration period of the JWT token (seconds)",
                     "type": "integer"
@@ -3838,6 +3846,18 @@
         },
         "callflows.ring_group": {
             "description": "Validator for the Ring Group callflow element",
+            "oneOf": [
+                {
+                    "required": [
+                        "endpoints"
+                    ]
+                },
+                {
+                    "required": [
+                        "group_id"
+                    ]
+                }
+            ],
             "properties": {
                 "endpoints": {
                     "description": "Endpoint IDs (devices, users, etc) included in the ring group",
@@ -3889,6 +3909,12 @@
                     "description": "If any leg rejects the call, cancel all other legs",
                     "type": "boolean"
                 },
+                "group_id": {
+                    "description": "Document ID of a group to merge its settings into callflow ring group module settings, including its endpoints.",
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                },
                 "ignore_forward": {
                     "default": true,
                     "description": "If true, will ignore SIP redirect requests for call-forwarded devices",
@@ -3937,9 +3963,6 @@
                     "type": "integer"
                 }
             },
-            "required": [
-                "endpoints"
-            ],
             "type": "object"
         },
         "callflows.ring_group_toggle": {
@@ -10280,6 +10303,46 @@
                 "gateways",
                 "name"
             ],
+            "type": "object"
+        },
+        "scope_restrictions": {
+            "description": "Crossbar Scope Restrictions  Definition",
+            "properties": {
+                "id": {
+                    "description": "Scope Restriction unique identifier",
+                    "type": "string"
+                },
+                "scopes": {
+                    "default": [],
+                    "description": "List of enforced scopes",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "token_restrictions": {
+                "description": "Token Restrictions to enforce for these scopes",
+                "type": "object"
+            },
+            "type": "object"
+        },
+        "scopes": {
+            "description": "Kazoo Auth Scope Definition",
+            "properties": {
+                "id": {
+                    "description": "Scope unique identifier",
+                    "type": "string"
+                },
+                "scopes": {
+                    "default": [],
+                    "description": "List of available subscopes",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
             "type": "object"
         },
         "service_plan.item": {
@@ -18608,6 +18671,13 @@
                     },
                     "type": "object"
                 },
+                "scope_restrictions": {
+                    "description": "Scope restrictions applied to this user",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
                 "timezone": {
                     "description": "User's timezone",
                     "type": "string"
@@ -19761,6 +19831,20 @@
             "in": "path",
             "name": "SCHEMA_NAME",
             "pattern": "^[a-z0-9._-]+$",
+            "required": true,
+            "type": "string"
+        },
+        "SCOPE": {
+            "description": "request SCOPE parameter",
+            "in": "path",
+            "name": "SCOPE",
+            "required": true,
+            "type": "string"
+        },
+        "SCOPE_RESTRICTION": {
+            "description": "request SCOPE_RESTRICTION parameter",
+            "in": "path",
+            "name": "SCOPE_RESTRICTION",
             "required": true,
             "type": "string"
         },
@@ -26369,6 +26453,110 @@
                 }
             }
         },
+        "/accounts/{ACCOUNT_ID}/scope_restrictions": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "put": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "scope_restrictions",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/scope_restrictions"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/scope_restrictions/{SCOPE_RESTRICTION}": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/SCOPE_RESTRICTION"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/SCOPE_RESTRICTION"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "scope_restrictions",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/scope_restrictions"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/SCOPE_RESTRICTION"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
         "/accounts/{ACCOUNT_ID}/search": {
             "get": {
                 "parameters": [
@@ -29334,6 +29522,78 @@
                 "parameters": [
                     {
                         "$ref": "#/parameters/SCHEMA_NAME"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/scopes": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "put": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "scopes",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/scopes"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/scopes/{SCOPE}": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/SCOPE"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/SCOPE"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "scopes",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/scopes"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/SCOPE"
                     }
                 ],
                 "responses": {

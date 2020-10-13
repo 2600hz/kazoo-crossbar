@@ -820,6 +820,12 @@
             should this multi factor authentication settings be applied when used by sub-accounts
           'type': boolean
       'type': object
+    'scopes':
+      'default': []
+      'description': scopes provided by this authentication module
+      'items':
+        'type': string
+      'type': array
     'token_auth_expiry_s':
       'description': expiration period of the JWT token (seconds)
       'type': integer
@@ -3040,6 +3046,11 @@
   'type': object
 'callflows.ring_group':
   'description': Validator for the Ring Group callflow element
+  'oneOf':
+    - 'required':
+        - endpoints
+    - 'required':
+        - group_id
   'properties':
     'endpoints':
       'description': 'Endpoint IDs (devices, users, etc) included in the ring group'
@@ -3080,6 +3091,12 @@
     'fail_on_single_reject':
       'description': 'If any leg rejects the call, cancel all other legs'
       'type': boolean
+    'group_id':
+      'description': |-
+        Document ID of a group to merge its settings into callflow ring group module settings, including its endpoints.
+      'maxLength': 128
+      'minLength': 1
+      'type': string
     'ignore_forward':
       'default': true
       'description': 'If true, will ignore SIP redirect requests for call-forwarded devices'
@@ -3117,8 +3134,6 @@
       'default': 20
       'description': 'How long to ring the ring group before continuing, in seconds'
       'type': integer
-  'required':
-    - endpoints
   'type': object
 'callflows.ring_group_toggle':
   'description': Validator for the ring_group_toggle callflow data object
@@ -8347,6 +8362,66 @@
   'required':
     - gateways
     - name
+  'type': object
+'scope_restrictions':
+  'description': Crossbar Scope Restrictions  Definition
+  'properties':
+    'id':
+      'description': Scope Restriction unique identifier
+      'type': string
+    'scopes':
+      'default': []
+      'description': List of enforced scopes
+      'items':
+        'type': string
+      'type': array
+  'token_restrictions':
+    'description': Token Restrictions to enforce for these scopes
+    'patternProperties':
+      '^\w+$':
+        'items':
+          'description': |-
+            Endpoint (first path token) to which to apply restrictions. '_' matches any endpoint
+          'properties':
+            'allowed_accounts':
+              'description': Account allowed to match this item
+              'items':
+                'type': string
+              'type': array
+              'uniqueItems': true
+            'rules':
+              'description': Rules applied to endpoint parameters
+              'type': object
+              'x-patternProperties':
+                '^[\w/#*]+$':
+                  'description': verbs
+                  'items':
+                    'enum':
+                      - GET
+                      - PUT
+                      - POST
+                      - PATCH
+                      - DELETE
+                      - _
+                    'type': string
+                  'type': array
+                  'uniqueItems': true
+          'type': object
+        'type': array
+    'type': object
+  'type': object
+'scopes':
+  'description': Kazoo Auth Scope Definition
+  'properties':
+    'id':
+      'description': Scope unique identifier
+      'type': string
+    'scopes':
+      'default': []
+      'description': List of available subscopes
+      'items':
+        'type': string
+      'type': array
   'type': object
 'service_plan.item':
   'description': Describes a service plan item
@@ -14906,6 +14981,11 @@
           'maxLength': 256
           'type': string
       'type': object
+    'scope_restrictions':
+      'description': Scope restrictions applied to this user
+      'items':
+        'type': string
+      'type': array
     'timezone':
       'description': User's timezone
       'type': string

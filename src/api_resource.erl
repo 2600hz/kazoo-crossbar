@@ -1137,12 +1137,30 @@ process_chunk(ChunkMap, Req0, Context0) ->
     lager:debug("(chunked) ran '~s'", [ToFun]),
     case api_util:succeeded(Context1) of
         'true' ->
-            {StartedChunk, Req2, Context2} = send_chunk_response(ToFun, Req1, Context1),
-            {'ok', {ChunkMap#{chunking_started => StartedChunk}, Req2, reset_context_between_chunks(Context2, StartedChunk)}};
+            Context2 = handle_response_data(Context1),
+            {StartedChunk, Req2, Context3} = send_chunk_response(ToFun, Req1, Context2),
+            {'ok', {ChunkMap#{chunking_started => StartedChunk}, Req2, reset_context_between_chunks(Context3, StartedChunk)}};
         'false' ->
             lager:debug("(chunked) '~s' was unsuccessful", [ToFun]),
             {'error', <<"to_fun failed">>}
     end.
+
+-spec handle_response_data(cb_context:context()) -> cb_context:context().
+handle_response_data(Context) ->
+    handle_response_data(Context, cb_context:resp_data(Context)).
+
+handle_response_data(Context, []) ->
+    Context;
+handle_response_data(Context, [JObj|_] = RespData) ->
+    case kz_json:is_json_object(JObj) of
+        'true' ->
+            JObjs = [crossbar_doc:public_and_read_only(J) || J <- RespData],
+            cb_context:set_resp_data(Context, JObjs);
+        'false' ->
+            Context
+    end;
+handle_response_data(Context, _) ->
+    Context.
 
 -spec send_chunk_response(kz_term:ne_binary(), cowboy_req:req(), cb_context:context()) ->
           {boolean(), cowboy_req:req(), cb_context:context()}.

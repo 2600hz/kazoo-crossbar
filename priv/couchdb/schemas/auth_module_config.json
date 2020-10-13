@@ -38,6 +38,14 @@
             },
             "type": "object"
         },
+        "scopes": {
+            "default": [],
+            "description": "scopes provided by this authentication module",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
         "token_auth_expiry_s": {
             "description": "expiration period of the JWT token (seconds)",
             "type": "integer"

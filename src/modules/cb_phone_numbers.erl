@@ -538,7 +538,9 @@ summary(Context) ->
 view_account_phone_numbers(Context) ->
     Context1 = crossbar_view:load(rename_qs_filters(Context)
                                  ,?CB_LIST
-                                 ,[{'mapper', fun normalize_view_results/3}]
+                                 ,[{'mapper', fun normalize_view_results/3}
+                                  ,{'no_fields', 'true'}
+                                  ]
                                  ),
     case cb_context:resp_status(Context1) of
         'success' ->

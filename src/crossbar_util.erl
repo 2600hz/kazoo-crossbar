@@ -60,6 +60,7 @@
         ,get_language/1
         ,get_language/2
         ,get_token_restrictions/3
+        ,get_scope_restrictions/1, get_scope_restrictions/2
         ]).
 -export([get_user_timezone/2
         ]).
@@ -947,6 +948,49 @@ get_priv_level_restrictions(Restrictions, PrivLevel) ->
     case lists:member(PrivLevel, RestrictionLevels) of
         'true' -> kz_json:get_json_value(PrivLevel, Restrictions);
         'false' -> kz_json:get_json_value(?CATCH_ALL, Restrictions)
+    end.
+
+-spec get_scope_restrictions(kz_term:api_object()) -> kz_term:api_object().
+get_scope_restrictions(AuthDoc) ->
+    AccountId = kz_json:get_ne_binary_value(<<"account_id">>, AuthDoc),
+    OwnerId = kz_json:get_ne_binary_value(<<"owner_id">>, AuthDoc),
+    get_scope_restrictions(AccountId, OwnerId).
+
+-spec get_scope_restrictions(kz_term:ne_binary(), kz_term:ne_binary()) -> kz_term:api_object().
+get_scope_restrictions(AccountId, OwnerId) ->
+    AccountDB = kzs_util:format_account_db(AccountId),
+    case kz_datamgr:open_cache_doc(AccountDB, OwnerId) of
+        {'ok', Doc} ->
+            Restrictions = kzd_users:scope_restrictions(Doc),
+            maybe_merge_scope_restrictions(AccountDB, Restrictions);
+        {'error', _} -> 'undefined'
+    end.
+
+-spec maybe_merge_scope_restrictions(kz_term:ne_binary(), kz_term:api_binaries()) -> kz_term:api_object().
+maybe_merge_scope_restrictions(_AccountDb, 'undefined'=ScopeRestrictions) ->
+    ScopeRestrictions;
+maybe_merge_scope_restrictions(AccountDb, ScopeRestrictions) ->
+    ViewOptions = [{'keys', ScopeRestrictions}],
+    case kz_datamgr:get_results(AccountDb, <<"scope_restrictions/crossbar_listing">>, ViewOptions) of
+        {'ok', Docs} ->
+            merge_scope_restrictions(Docs);
+        {'error', _} -> 'undefined'
+    end.
+
+-spec merge_scope_restrictions(kz_json:objects()) -> kz_json:api_object().
+merge_scope_restrictions(Docs) ->
+    Merged = lists:foldl(fun merge_scope_restrictions_fold/2, kz_json:new(), Docs),
+    case kz_json:is_empty(Merged) of
+        'true' -> 'undefined';
+        'false' -> Merged
+    end.
+
+-spec merge_scope_restrictions_fold(kz_doc:doc(), kz_json:object()) -> kz_json:object().
+merge_scope_restrictions_fold(Doc, Acc) ->
+    case kz_json:get_json_value([<<"value">>, <<"token_restrictions">>], Doc) of
+        'undefined' -> Acc;
+        Restrictions ->
+            kz_json:merge(Restrictions, Acc)
     end.
 
 %%------------------------------------------------------------------------------

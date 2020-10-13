@@ -449,6 +449,12 @@
   '/accounts/{ACCOUNT_ID}/resources/{RESOURCE_ID}':
     '$ref': >-
       paths/resources.yml#/paths/~1accounts~1{ACCOUNT_ID}~1resources~1{RESOURCE_ID}
+  '/accounts/{ACCOUNT_ID}/scope_restrictions':
+    '$ref': >-
+      paths/scope_restrictions.yml#/paths/~1accounts~1{ACCOUNT_ID}~1scope_restrictions
+  '/accounts/{ACCOUNT_ID}/scope_restrictions/{SCOPE_RESTRICTION}':
+    '$ref': >-
+      paths/scope_restrictions.yml#/paths/~1accounts~1{ACCOUNT_ID}~1scope_restrictions~1{SCOPE_RESTRICTION}
   '/accounts/{ACCOUNT_ID}/search':
     '$ref': 'paths/search.yml#/paths/~1accounts~1{ACCOUNT_ID}~1search'
   '/accounts/{ACCOUNT_ID}/search/multi':
@@ -656,6 +662,10 @@
     '$ref': 'paths/schemas.yml#/paths/~1schemas~1{SCHEMA_NAME}'
   '/schemas/{SCHEMA_NAME}/validation':
     '$ref': 'paths/schemas.yml#/paths/~1schemas~1{SCHEMA_NAME}~1validation'
+  '/scopes':
+    '$ref': 'paths/scopes.yml#/paths/~1scopes'
+  '/scopes/{SCOPE}':
+    '$ref': 'paths/scopes.yml#/paths/~1scopes~1{SCOPE}'
   '/sup/{MODULE}':
     '$ref': 'paths/sup.yml#/paths/~1sup~1{MODULE}'
   '/sup/{MODULE}/{FUNCTION}':

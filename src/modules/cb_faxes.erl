@@ -566,6 +566,7 @@ outbox_summary(Context) -> fax_modb_summary(Context, ?OUTBOX).
 fax_modb_summary(Context, Folder) ->
     {ViewName, Opts} = get_view_and_filter(Context, get_filter_doc(Context), Folder),
     Options = [{'mapper', fun normalize_modb_view_results/2}
+              ,{'field_key', 'filtermap'}
               ,'include_docs'
               | Opts
               ],

@@ -175,6 +175,7 @@ validate(Context, SourceService) ->
     ViewOptions = [{'is_chunked', 'true'}
                   ,{'range_keymap', SourceService}
                   ,{'mapper', fun normalize_view_results/2}
+                  ,{'field_key', 'filtermap'}
                   ,'include_docs'
                   ],
     crossbar_view:load_modb(Context, ?VIEW_BY_SOURCE, ViewOptions).
@@ -341,6 +342,7 @@ account_summary(Context, MODB) ->
     Options = [{'databases', [MODB]}
               ,{'group_level', 1}
               ,{'mapper', fun normalize_summary_by_account/2}
+              ,{'field_key', 'filtermap'}
               ,{'range_keymap', 'nil'}
               ],
     fetch_summary(Context, ?VIEW_BY_ACCOUNT, Options).

@@ -220,15 +220,25 @@ validate_chunk_view(Context) ->
 load_chunk_view(Context, ViewName, Options0) ->
     AuthAccountId = cb_context:auth_account_id(Context),
 
-    Setters = [{fun cb_context:store/3, 'has_cdr_filter', crossbar_filter:is_defined(Context)}
-              ,{fun cb_context:store/3, 'is_reseller', kz_services_reseller:is_reseller(AuthAccountId)}
+    Setters = [{fun cb_context:store/3, 'is_reseller', kz_services_reseller:is_reseller(AuthAccountId)}
               ],
     Options = [{'is_chunked', 'true'}
               ,{'batch_size', ?MAX_BULK}
               ,{'max_range', ?MOD_MAX_RANGE}
               | Options0
               ],
-    crossbar_view:load_modb(cb_context:setters(fix_qs_filter_keys(Context), Setters), ViewName, Options).
+    maybe_add_fields_fun(
+      crossbar_view:load_modb(cb_context:setters(fix_qs_filter_keys(Context), Setters), ViewName, Options)
+     ).
+
+maybe_add_fields_fun(Context) ->
+    case cb_context:fetch(Context, 'fields', []) of
+        [] ->
+            Context;
+        Fields ->
+            FieldsFun = kz_view:build_fields_fun(Fields, 'undefined'),
+            cb_context:store(Context, 'fields_fun', FieldsFun)
+    end.
 
 -spec fix_qs_filter_keys(cb_context:context()) -> cb_context:context().
 fix_qs_filter_keys(Context) ->
@@ -264,6 +274,7 @@ load_cdr_summary(Context) ->
               ,{'range_end_keymap', crossbar_view:suffix_key_fun([kz_json:new()])}
               ,{'list', ?CB_SUMMARY_LIST}
               ,{'max_range', ?MOD_MAX_RANGE}
+              ,{'no_fields', 'true'}
               ],
     C1 = crossbar_view:load_modb(Context, ?CB_SUMMARY_VIEW, Options),
     case cb_context:resp_status(C1) of
@@ -322,6 +333,7 @@ get_view_options([{<<"cdrs">>, [?PATH_INTERACTION]}, {?KZ_ACCOUNTS_DB, _}|_]) ->
        ,{'group_level', 2}
        ,{'reduce', 'true'}
        ,{'no_filter', 'true'}
+       ,{'no_fields', 'true'}
        | maybe_add_stale_to_options(?STALE_CDR)
        ])
     };
@@ -335,6 +347,7 @@ get_view_options([{<<"cdrs">>, [?PATH_INTERACTION]}, {<<"users">>, [OwnerId]}|_]
        ,{'group_level', 3}
        ,{'reduce', 'true'}
        ,{'no_filter', 'true'}
+       ,{'no_fields', 'true'}
        | maybe_add_stale_to_options(?STALE_CDR)
        ])
     };
@@ -370,7 +383,8 @@ load_chunked_cdrs(Context, RespType, RespData) ->
     C1 = cb_context:set_resp_data(Context, []),
     try maps:fold(fun(Db, Ids, C) -> load_chunked_cdr_ids(C, RespType, Db, Ids) end, C1, MapIds)
     catch
-        _T:_E ->
+        _T:_E:ST ->
+            kz_log:log_stacktrace(ST, "exception when loading cdr chunks. {~p, ~p}", [_T, _E]),
             cb_context:add_system_error('datastore_fault', Context)
     end.
 
@@ -396,7 +410,7 @@ load_chunked_cdr_ids(Context, RespType, Db, Ids, 'success') ->
 
                         %% if there are no filters, include doc
                         %% otherwise run filters against doc for inclusion
-                        crossbar_filter:by_doc(kz_json:get_json_value(<<"doc">>, Result), Context, cb_context:fetch(Context, 'has_cdr_filter'))
+                        crossbar_filter:by_doc(kz_json:get_json_value(<<"doc">>, Result), Context)
                     ],
             RespAcc = cb_context:resp_data(Context),
             maybe_add_csv_header(Context, RespType, RespAcc ++ Resp0);
@@ -408,25 +422,44 @@ load_chunked_cdr_ids(Context, _RespType, _Db, _Ids, _Status) ->
     Context.
 
 -spec normalize_cdr(cb_context:context(), kz_term:ne_binary(), kz_json:object()) -> kz_json:object() | kz_term:ne_binary().
-normalize_cdr(Context, <<"json">>, Result) ->
+normalize_cdr(Context, ContentType, Result) ->
     JObj = kz_json:get_json_value(<<"doc">>, Result),
+    MappedRows = map_rows(Context, ContentType, JObj),
+    case cb_context:fetch(Context, 'fields_fun') of
+        'undefined' ->
+            case kz_term:is_true(cb_context:fetch(Context, 'has_full_docs')) of
+                'true' when ContentType =:= <<"json">> ->
+                    kz_doc:public_fields(JObj);
+                _ ->
+                    do_normalize_cdr(ContentType, kz_json:from_list(MappedRows))
+            end;
+        FieldsFun ->
+            NewDoc = kz_doc:public_fields(FieldsFun(kz_json:set_values(MappedRows, JObj))),
+            do_normalize_cdr(ContentType, NewDoc)
+    end.
+
+-spec do_normalize_cdr(kz_term:ne_binary(), kz_json:object()) -> kz_json:object() | kz_term:ne_binary().
+do_normalize_cdr(<<"json">>, JObj) ->
+    JObj;
+do_normalize_cdr(<<"csv">>, JObj) ->
+    Result = [kz_term:safe_cast(V, <<>>, fun kz_term:to_binary/1)
+              || {_, V} <- kz_json:to_proplist(kz_json:flatten(JObj))
+             ],
+    <<(kz_binary:join(Result, <<",">>))/binary, "\r\n">>.
+
+-spec map_rows(cb_context:context(), kz_term:ne_binary(), kz_json:object()) -> kz_json:json_proplist().
+map_rows(Context, ContentType, JObj) ->
     Duration = kzd_cdrs:duration_seconds(JObj, 0),
     Timestamp = kzd_cdrs:timestamp(JObj, 0) - Duration,
 
     MappedRows = [{K, apply_row_mapper(K, F, JObj, Timestamp, Context)} || {K, F} <- csv_rows(Context)],
-    maybe_filter_empties(MappedRows, kapps_config:is_true(?MOD_CONFIG_CAT, <<"should_filter_empty_strings">>, 'false'));
-normalize_cdr(Context, <<"csv">>, Result) ->
-    JObj = kz_json:get_json_value(<<"doc">>, Result),
-    Duration = kzd_cdrs:duration_seconds(JObj, 0),
-    Timestamp = kzd_cdrs:timestamp(JObj, 0) - Duration,
-
-    <<(kz_binary:join([apply_row_mapper(K, F, JObj, Timestamp, Context)
-                       || {K, F} <- csv_rows(Context)
-                      ]
-                     ,<<",">>
-                     ))/binary
-     ,"\r\n"
-    >>.
+    case ContentType of
+        <<"json">> ->
+            ShouldFilterEmpty = kapps_config:is_true(?MOD_CONFIG_CAT, <<"should_filter_empty_strings">>, 'false'),
+            maybe_filter_empties(MappedRows, ShouldFilterEmpty);
+        _ ->
+            MappedRows
+    end.
 
 -spec apply_row_mapper(kz_term:ne_binary(), fun(), kz_json:object(), kz_time:gregorian_seconds(), cb_context:context()) -> binary().
 apply_row_mapper(<<"datetime">>, _F, JObj, Timestamp, Context) ->
@@ -439,11 +472,11 @@ col_pretty_print(_JObj, Timestamp, Context) ->
     UTCSecondsOffset = cb_context:req_value(Context, ?KEY_UTC_OFFSET),
     kz_time:pretty_print_datetime(handle_utc_time_offset(Timestamp, UTCSecondsOffset)).
 
--spec maybe_filter_empties(kz_term:proplist(), boolean()) -> kz_json:object().
+-spec maybe_filter_empties(kz_json:json_proplist(), boolean()) -> kz_json:json_proplist().
 maybe_filter_empties(Rows, 'true') ->
-    kz_json:from_list(props:filter_empty_strings(Rows));
+    props:filter_empty_strings(Rows);
 maybe_filter_empties(Rows, 'false') ->
-    kz_json:from_list(Rows).
+    Rows.
 
 -spec maybe_add_csv_header(cb_context:context(), kz_term:ne_binary(), kz_json:objects() | kz_term:binaries()) -> cb_context:context().
 maybe_add_csv_header(Context, _, []) ->
@@ -451,15 +484,26 @@ maybe_add_csv_header(Context, _, []) ->
 maybe_add_csv_header(Context, <<"json">>, Data) ->
     cb_context:set_resp_data(Context, Data);
 maybe_add_csv_header(Context, <<"csv">>, [Head | Tail]=Data) ->
-    case cb_context:fetch(Context, 'chunking_started') of
-        'true' ->
+    %% sorry, if you have requested fields, then you are on your own to
+    %% deal with headers.
+    case {cb_context:fetch(Context, 'chunking_started')
+         ,cb_context:fetch(Context, 'fields_fun') =:= 'undefined'
+         }
+    of
+        {'true', _} ->
             cb_context:set_resp_data(Context, Data);
-        'false' ->
+        {'false', 'true'} ->
             CSVHeader = kz_binary:join([K || {K, _Fun} <- csv_rows(Context)]
                                       ,<<",">>
                                       ),
+            cb_context:set_resp_data(Context, [<<CSVHeader/binary, "\r\n", Head/binary>> | Tail]);
+        {'false', 'false'} ->
+            CSVHeader = kz_binary:join([key_to_binary(K) || K <- cb_context:fetch(Context, 'fields', [])], <<",">>),
             cb_context:set_resp_data(Context, [<<CSVHeader/binary, "\r\n", Head/binary>> | Tail])
     end.
+
+key_to_binary(K) when is_list(K) -> kz_binary:join(K, <<".">>);
+key_to_binary(K) -> K.
 
 csv_rows(Context) ->
     kzd_cdrs:csv_headers(cb_context:fetch(Context, 'is_reseller', 'false')).

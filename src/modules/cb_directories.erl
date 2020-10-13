@@ -310,6 +310,7 @@ load_directory_users(Id, Context) ->
     Options = [{'startkey', [Id]}
               ,{'endkey', [Id, kz_json:new()]}
               ,{'mapper', fun normalize_users_results/2}
+              ,{'field_key', 'filtermap'}
               ],
     Context1 = crossbar_view:load(Context, ?CB_USERS_LIST, Options),
     case cb_context:resp_status(Context1) of

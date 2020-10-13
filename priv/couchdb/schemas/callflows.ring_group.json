@@ -2,6 +2,18 @@
     "$schema": "http://json-schema.org/draft-04/schema#",
     "_id": "callflows.ring_group",
     "description": "Validator for the Ring Group callflow element",
+    "oneOf": [
+        {
+            "required": [
+                "endpoints"
+            ]
+        },
+        {
+            "required": [
+                "group_id"
+            ]
+        }
+    ],
     "properties": {
         "endpoints": {
             "description": "Endpoint IDs (devices, users, etc) included in the ring group",
@@ -53,6 +65,12 @@
             "description": "If any leg rejects the call, cancel all other legs",
             "type": "boolean"
         },
+        "group_id": {
+            "description": "Document ID of a group to merge its settings into callflow ring group module settings, including its endpoints.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+        },
         "ignore_forward": {
             "default": true,
             "description": "If true, will ignore SIP redirect requests for call-forwarded devices",
@@ -101,8 +119,5 @@
             "type": "integer"
         }
     },
-    "required": [
-        "endpoints"
-    ],
     "type": "object"
 }

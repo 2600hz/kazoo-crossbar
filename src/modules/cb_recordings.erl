@@ -130,6 +130,7 @@ recording_summary(Context) ->
     Options = [{'mapper', fun summary_doc_fun/2}
               ,{'range_start_keymap', [UserId]}
               ,{'range_end_keymap', fun(Ts) -> build_end_key(Ts, UserId) end}
+              ,{'field_key', 'filtermap'}
               ,'include_docs'
               ],
     crossbar_view:load_modb(Context, ViewName, Options).
