@@ -781,7 +781,7 @@ load_vmbox_summary(Context) ->
     Context1 = crossbar_view:find(Context, <<"crossbar_listings/by_type_id">>, Selector, Options),
     load_vmbox_summary(Context1, cb_context:resp_status(Context1)).
 
--spec load_vmbox_summary(cb_context:cb_context(), crossbar_status()) -> cb_context:context().
+-spec load_vmbox_summary(cb_context:context(), crossbar_status()) -> cb_context:context().
 load_vmbox_summary(Context, 'success') ->
     CountMap = kvm_messages:count(cb_context:account_id(Context)),
     RspData = add_counts_to_summary_results(cb_context:doc(Context), CountMap),

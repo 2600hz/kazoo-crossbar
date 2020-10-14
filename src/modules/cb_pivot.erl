@@ -191,7 +191,7 @@ normalize_debug_results_fold(JObj, {Set, [H|Rest]=JObjAcc}) ->
         'true' -> {Set, [kz_json:merge_jobjs(H, NewJObj)|Rest]}
     end.
 
--spec sort_by_created(kz_json:object(), kz_json:object(), crossbar_view:direction()) -> boolean().
+-spec sort_by_created(kz_json:object(), kz_json:object(), kz_view:direction()) -> boolean().
 sort_by_created(A, B, 'ascending') ->
     kz_json:get_integer_value(<<"created">>, A, 0) < kz_json:get_integer_value(<<"created">>, B, 1);
 sort_by_created(A, B, 'descending') ->

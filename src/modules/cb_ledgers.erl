@@ -480,7 +480,7 @@ normalize_summary_by_account(JObj, Acc) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec normalize_ledger_jobj(kazoo_data:range_key(), kz_json:object()) -> kz_json:object().
+-spec normalize_ledger_jobj(kazoo_data:key_range(), kz_json:object()) -> kz_json:object().
 normalize_ledger_jobj(AccountId, JObj) ->
     AccountJObj = kz_json:from_list([{<<"id">>, AccountId}
                                     ,{<<"name">>, kz_json:get_value(<<"account_name">>, JObj)}

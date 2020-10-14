@@ -977,7 +977,7 @@ maybe_merge_scope_restrictions(AccountDb, ScopeRestrictions) ->
         {'error', _} -> 'undefined'
     end.
 
--spec merge_scope_restrictions(kz_json:objects()) -> kz_json:api_object().
+-spec merge_scope_restrictions(kz_json:objects()) -> kz_term:api_object().
 merge_scope_restrictions(Docs) ->
     Merged = lists:foldl(fun merge_scope_restrictions_fold/2, kz_json:new(), Docs),
     case kz_json:is_empty(Merged) of
