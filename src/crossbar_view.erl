@@ -410,10 +410,10 @@ add_filtermap_fields_options({Context, CursorOptions}, Options) ->
     end.
 
 -spec add_fields_options(cb_context:context(), kz_view:options(), options()) ->  context_options().
-add_fields_options(Context, CursorOptions, Options) ->
+add_fields_options(Context, CursorOptions0, Options) ->
     Fields = cb_context:fetch(Context, 'fields'),
     CursorOptions = [{'fields', Fields}
-                    | CursorOptions
+                    | CursorOptions0
                     ],
     case {props:get_value('field_key', CursorOptions)
          ,props:is_true(['user_params', 'should_filter'], CursorOptions, 'false')
