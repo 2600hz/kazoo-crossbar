@@ -41,7 +41,7 @@ build(Context) ->
 %% @equiv build_with_mapper(Context, UserMapper, is_defined(Context))
 
 -spec build_with_mapper(cb_context:context(), crossbar_view:user_mapper_fun()) ->
-          kz_view:filtermap() | 'undefined'.
+          kz_view:filtermap_fun() | 'undefined'.
 build_with_mapper(Context, UserMapper) ->
     build_with_mapper(Context, UserMapper, is_defined(Context)).
 
@@ -52,7 +52,7 @@ build_with_mapper(Context, UserMapper) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec build_with_mapper(cb_context:context(), crossbar_view:user_mapper_fun(), boolean()) ->
-          kz_view:filtermap() | 'undefined'.
+          kz_view:filtermap_fun() | 'undefined'.
 build_with_mapper(Context, UserMapper, 'false') when is_function(UserMapper, 3) ->
     fun(JObj, Acc) -> UserMapper(Context, JObj, Acc) end;
 build_with_mapper(_, 'undefined', 'false') ->
