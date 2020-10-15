@@ -14420,6 +14420,10 @@
     'enabled':
       'description': Whether the rule is enabled
       'type': boolean
+    'end_date':
+      'description': The date that any recurrence should be calculated as ending on
+      'type': integer
+      'x-support_level': supported
     'flags':
       'description': Flags set by external applications
       'items':
