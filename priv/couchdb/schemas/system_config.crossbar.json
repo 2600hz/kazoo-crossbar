@@ -36,6 +36,11 @@
             "description": "crossbar compress response body",
             "type": "boolean"
         },
+        "conference_auth_tokens": {
+            "default": 35,
+            "description": "crossbar conference_auth_tokens",
+            "type": "integer"
+        },
         "default_allow_anonymous_quickcalls": {
             "default": true,
             "description": "crossbar default allow anonymous quickcalls",

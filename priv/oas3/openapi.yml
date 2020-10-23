@@ -100,6 +100,11 @@
     '$ref': 'paths/comments.yml#/paths/~1accounts~1{ACCOUNT_ID}~1comments'
   '/accounts/{ACCOUNT_ID}/comments/{COMMENT_ID}':
     '$ref': 'paths/comments.yml#/paths/~1accounts~1{ACCOUNT_ID}~1comments~1{COMMENT_ID}'
+  '/accounts/{ACCOUNT_ID}/conference_auth':
+    '$ref': 'paths/conference_auth.yml#/paths/~1accounts~1{ACCOUNT_ID}~1conference_auth'
+  '/accounts/{ACCOUNT_ID}/conference_auth/{CONFERENCE_ID}':
+    '$ref': >-
+      paths/conference_auth.yml#/paths/~1accounts~1{ACCOUNT_ID}~1conference_auth~1{CONFERENCE_ID}
   '/accounts/{ACCOUNT_ID}/conferences':
     '$ref': 'paths/conferences.yml#/paths/~1accounts~1{ACCOUNT_ID}~1conferences'
   '/accounts/{ACCOUNT_ID}/conferences/{CONFERENCE_ID}':
