@@ -10,24 +10,36 @@
                     "enabled": true,
                     "log_failed_attempts": true,
                     "log_successful_attempts": false,
+                    "scopes": [
+                        "crossbar"
+                    ],
                     "token_auth_expiry_s": 3600
                 },
                 "cb_auth": {
                     "enabled": true,
                     "log_failed_attempts": true,
                     "log_successful_attempts": false,
+                    "scopes": [
+                        "crossbar"
+                    ],
                     "token_auth_expiry_s": 3600
                 },
                 "cb_ip_auth": {
                     "enabled": true,
                     "log_failed_attempts": true,
                     "log_successful_attempts": false,
+                    "scopes": [
+                        "crossbar"
+                    ],
                     "token_auth_expiry_s": 3600
                 },
                 "cb_user_auth": {
                     "enabled": true,
                     "log_failed_attempts": true,
                     "log_successful_attempts": true,
+                    "scopes": [
+                        "crossbar"
+                    ],
                     "token_auth_expiry_s": 3600
                 }
             },

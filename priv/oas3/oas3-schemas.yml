@@ -35,6 +35,77 @@
     'dialog_subscribed_mwi_prefix':
       'description': callflow dialog_subscribed_mwi_prefix
       'type': string
+    'voicemail':
+      'properties':
+        'delete_after_notify':
+          'default': false
+          'description': callflow voicemail delete_after_notify
+          'type': boolean
+        'extension':
+          'default': mp3
+          'description': callflow voicemail extension
+          'type': string
+        'force_require_pin':
+          'default': false
+          'description': callflow voicemail force_require_pin
+          'type': boolean
+        'is_voicemail_ff_rw_enabled':
+          'default': false
+          'description': callflow voicemail is_voicemail_ff_rw_enabled
+          'type': boolean
+        'max_box_number_length':
+          'default': 15
+          'description': callflow voicemail max_box_number_length
+          'type': integer
+        'max_message_count':
+          'default': 100
+          'description': callflow voicemail max_message_count
+          'type': integer
+        'max_message_length':
+          'default': 500
+          'description': callflow voicemail max_message_length
+          'type': integer
+        'max_pin_length':
+          'default': 6
+          'description': callflow voicemail max_pin_length
+          'type': integer
+        'message_retention_duration':
+          'default': 93
+          'description': callflow voicemail message_retention_duration
+          'type': integer
+        'min_message_size':
+          'default': 500
+          'description': callflow voicemail min_message_size
+          'type': integer
+        'save_after_notify':
+          'default': false
+          'description': callflow voicemail save_after_notify
+          'type': boolean
+        'seek_duration_ms':
+          'default': 10000
+          'description': callflow voicemail seek_duration_ms
+          'minimum': 0
+          'type': integer
+        'should_disable_callback':
+          'default': false
+          'description': callflow voicemail should_disable_callback
+          'type': boolean
+        'should_disable_offnet_callback':
+          'default': true
+          'description': callflow voicemail should_disable_offnet_callback
+          'type': boolean
+        'transcribe_default':
+          'default': false
+          'description': callflow voicemail transcribe_default
+          'type': boolean
+        'vm_delete_amqp':
+          'default': false
+          'description': callflow voicemail vm_delete_amqp
+          'type': boolean
+        'vm_message_forward_type':
+          'default': only_forward
+          'description': callflow voicemail vm_message_forward_type
+          'type': string
   'type': object
 'account_config.cdr':
   'description': Schema for cdr account_config
@@ -116,21 +187,29 @@
           'enabled': true
           'log_failed_attempts': true
           'log_successful_attempts': false
+          'scopes':
+            - crossbar
           'token_auth_expiry_s': 3600
         'cb_auth':
           'enabled': true
           'log_failed_attempts': true
           'log_successful_attempts': false
+          'scopes':
+            - crossbar
           'token_auth_expiry_s': 3600
         'cb_ip_auth':
           'enabled': true
           'log_failed_attempts': true
           'log_successful_attempts': false
+          'scopes':
+            - crossbar
           'token_auth_expiry_s': 3600
         'cb_user_auth':
           'enabled': true
           'log_failed_attempts': true
           'log_successful_attempts': true
+          'scopes':
+            - crossbar
           'token_auth_expiry_s': 3600
       'description': Default crossbar authentication modules configuration
       'properties':
@@ -9198,6 +9277,10 @@
     'max_connections_per_ip':
       'description': blackhole max_connections_per_ip
       'type': integer
+    'max_queued_messages':
+      'default': 50
+      'description': blackhole max_queued_messages
+      'type': integer
     'port':
       'default': 5555
       'description': blackhole port
@@ -9205,6 +9288,10 @@
     'request_timeout_ms':
       'default': 10000
       'description': blackhole request_timeout_ms
+      'type': integer
+    'send_timeout_ms':
+      'default': 5000
+      'description': blackhole send_timeout_ms
       'type': integer
     'ssl_ca_cert':
       'description': blackhole ssl_ca_cert
@@ -9937,6 +10024,10 @@
 'system_config.crossbar':
   'description': Schema for crossbar system_config
   'properties':
+    'allow_fetch_full_docs':
+      'default': false
+      'description': crossbar allow_fetch_full_docs
+      'type': boolean
     'allow_tracing':
       'default': false
       'description': crossbar allow tracing
@@ -10208,21 +10299,29 @@
           'enabled': true
           'log_failed_attempts': true
           'log_successful_attempts': false
+          'scopes':
+            - crossbar
           'token_auth_expiry_s': 3600
         'cb_auth':
           'enabled': true
           'log_failed_attempts': true
           'log_successful_attempts': false
+          'scopes':
+            - crossbar
           'token_auth_expiry_s': 3600
         'cb_ip_auth':
           'enabled': true
           'log_failed_attempts': true
           'log_successful_attempts': false
+          'scopes':
+            - crossbar
           'token_auth_expiry_s': 3600
         'cb_user_auth':
           'enabled': true
           'log_failed_attempts': true
           'log_successful_attempts': true
+          'scopes':
+            - crossbar
           'token_auth_expiry_s': 3600
       'description': Default crossbar authentication modules configuration
       'properties':
@@ -10335,6 +10434,10 @@
       'default': true
       'description': crossbar.devices allow aggregates
       'type': boolean
+    'check_sync_event':
+      'default': check-sync
+      'description': crossbar devices check_sync_event
+      'type': string
     'provisioner_host':
       'description': crossbar.devices provisioner host
       'type': string
@@ -14317,6 +14420,10 @@
     'enabled':
       'description': Whether the rule is enabled
       'type': boolean
+    'end_date':
+      'description': The date that any recurrence should be calculated as ending on
+      'type': integer
+      'x-support_level': supported
     'flags':
       'description': Flags set by external applications
       'items':

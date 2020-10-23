@@ -60,7 +60,7 @@
 
 -type time_range() :: {kz_time:gregorian_seconds(), kz_time:gregorian_seconds()}.
 %% `{StartTimestamp, EndTimestamp}'.
--type api_range_key() :: 'undefined' | ['undefined'] | kazoo_data:range_key().
+-type api_range_key() :: 'undefined' | ['undefined'] | kazoo_data:key_range().
 -type range_keys() :: {api_range_key(), api_range_key()}.
 %% `{Startkey, EndKey}'.
 -type keymap_fun() :: fun((cb_context:context()) -> api_range_key()) |
@@ -873,7 +873,7 @@ time_range(Context, MaxRange, Key, RangeFrom, RangeTo) ->
 %%
 %% <strong>Keymap description:</strong>
 %% <dl>
-%%   <dt>{@type kazoo_data:range_key()}</dt><dd>A regular CouchDB key to construct
+%%   <dt>{@type kazoo_data:key_range()}</dt><dd>A regular CouchDB key to construct
 %%    keys like `[<<"en">>, <<"us">>]'.</dd>
 %%   <dt>{@type keymap_fun()}</dt><dd>To customize your own key using a function.</dd>
 %% </dl>

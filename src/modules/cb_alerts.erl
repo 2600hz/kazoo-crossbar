@@ -428,7 +428,7 @@ maybe_check_financials(Context) ->
         'true' -> check_financials(Context)
     end.
 
--spec check_financials(cb_conteext:context()) -> cb_context:context().
+-spec check_financials(cb_context:context()) -> cb_context:context().
 check_financials(Context) ->
     Services = kz_services:fetch(cb_context:account_id(Context)),
     case kz_services_plans:is_empty(kz_services:plans(Services)) of

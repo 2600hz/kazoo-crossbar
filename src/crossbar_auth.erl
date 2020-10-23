@@ -403,7 +403,7 @@ available_scopes(AuthModule) ->
 %% @doc resolve scope restrictions to scopes
 %% @end
 %%------------------------------------------------------------------------------
--spec scopes(kz_term:ne_binary(), kz_term:ne_binaries() | kz_term:binary()) -> kz_term:api_binaries().
+-spec scopes(kz_term:ne_binary(), kz_term:ne_binaries() | binary()) -> kz_term:api_binaries().
 scopes(_AccountId, []) ->
     [];
 scopes(AccountId, ScopeRestrictions) when is_list(ScopeRestrictions) ->
