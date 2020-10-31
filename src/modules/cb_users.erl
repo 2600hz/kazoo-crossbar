@@ -463,7 +463,7 @@ maybe_send_desktop_welcome_email(Context, 'false', 'true') ->
     kapps_notify_publisher:cast(Req, fun kapi_notifications:publish_desktop_app_welcome/1);
 maybe_send_desktop_welcome_email(Context, 'true', 'true') ->
     WasEnabled = kz_term:is_not_empty(kz_json:get_ne_binary_value([<<"webphone">>, <<"device_id">>], cb_context:fetch(Context, 'db_doc'))),
-    NowEnabled = kkz_term:is_not_empt(kz_json:get_ne_binary_value([<<"webphone">>, <<"device_id">>], cb_context:doc(Context))),
+    NowEnabled = kz_term:is_not_empty(kz_json:get_ne_binary_value([<<"webphone">>, <<"device_id">>], cb_context:doc(Context))),
 
     maybe_send_webphone_enabled_email(Context, WasEnabled, NowEnabled);
 maybe_send_desktop_welcome_email(_Context, _WasEnabled, _NowEnabled) ->
