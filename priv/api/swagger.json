@@ -12924,6 +12924,16 @@
             },
             "type": "object"
         },
+        "system_config.crossbar.onebill": {
+            "description": "Schema for crossbar.onebill system_config",
+            "properties": {
+                "config": {
+                    "description": "crossbar onebill config",
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        },
         "system_config.crossbar.phone_numbers": {
             "description": "Schema for crossbar.phone_numbers system_config",
             "properties": {

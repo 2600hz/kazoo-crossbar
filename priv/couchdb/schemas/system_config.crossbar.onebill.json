@@ -1,0 +1,12 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "_id": "system_config.crossbar.onebill",
+    "description": "Schema for crossbar.onebill system_config",
+    "properties": {
+        "config": {
+            "description": "crossbar onebill config",
+            "type": "object"
+        }
+    },
+    "type": "object"
+}
