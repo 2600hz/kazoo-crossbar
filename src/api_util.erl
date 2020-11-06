@@ -226,9 +226,9 @@ get_req_data_binding(Context, Req, CT, QS) ->
           {cb_context:context(), cowboy_req:req()} |
           stop_return().
 get_req_data(Context, Req0, 'undefined', QS) ->
-    lager:debug("undefined content type when getting req data, assuming application/json"),
+    lager:debug("undefined content type when getting req data, assuming ~s", [?DEFAULT_CONTENT_TYPE]),
     Ctx = cb_context:set_req_header(Context, <<"content-type">>, ?DEFAULT_CONTENT_TYPE),
-    get_req_data(Ctx, Req0, <<"application/json">>, QS);
+    get_req_data(Ctx, Req0, ?DEFAULT_CONTENT_TYPE, QS);
 get_req_data(Context, Req, <<"multipart/form-data">>, QS) ->
     lager:debug("multipart/form-data content type when getting req data"),
     maybe_extract_multipart(cb_context:set_query_string(Context, QS), Req, QS);
@@ -1837,10 +1837,11 @@ default_stop(Req0, Context) ->
     lager:debug("ensured CORS headers are on the response"),
 
     Req4 = cowboy_req:set_resp_header(<<"x-request-id">>, cb_context:req_id(Context), Req3),
+    Req5 = set_resp_headers(Req4, Context),
 
     lager:debug("replying with ~p", [StatusCode]),
-    Req5 = cowboy_req:reply(StatusCode, Req4),
-    {'stop', Req5, cb_context:set_resp_status(Context, 'stop')}.
+    Req6 = cowboy_req:reply(StatusCode, Req5),
+    {'stop', Req6, cb_context:set_resp_status(Context, 'stop')}.
 
 -spec create_event_name(cb_context:context(), kz_term:ne_binary() | kz_term:ne_binaries()) -> kz_term:ne_binary().
 create_event_name(Context, Segments) when is_list(Segments) ->
