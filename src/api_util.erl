@@ -92,7 +92,8 @@
 -type req_fun_2() :: fun((any(), cowboy_req:req()) -> cowboy_req:req()).
 -type req_fun_3() :: fun((any(), any(), cowboy_req:req()) -> cowboy_req:req()).
 -type req_fun() :: req_fun_1() | req_fun_2() | req_fun_3().
--export_type([req_fun/0
+-export_type([pull_response_return/0
+             ,req_fun/0
              ,req_fun_1/0
              ,req_fun_2/0
              ,req_fun_3/0
@@ -103,6 +104,9 @@
                   {req_fun_2(), any()} |
                   {req_fun_3(), any(), any()}.
 -type req_funs() :: [req_kv()].
+
+-type pull_response() :: kz_term:text() | resp_file().
+-type pull_response_return() :: {pull_response(), cowboy_req:req(), cb_context:context()}.
 
 %%------------------------------------------------------------------------------
 %% @doc Attempts to determine if this is a cross origin resource preflight request
@@ -1641,21 +1645,19 @@ create_push_response(Req0, Context, Fun) ->
     Req2 = set_resp_headers(Req1, Context),
     {succeeded(Context), cowboy_req:set_resp_body(Content, Req2), Context}.
 
--type pull_response() :: kz_term:text() | resp_file().
-
 %%------------------------------------------------------------------------------
 %% @doc This function will create response expected for a request that
 %% is pulling data (like GET).
 %% @end
 %%------------------------------------------------------------------------------
 -spec create_pull_response(cowboy_req:req(), cb_context:context()) ->
-          {pull_response(), cowboy_req:req(), cb_context:context()} |
+          pull_response_return() |
           stop_return().
 create_pull_response(Req0, Context) ->
     create_pull_response(Req0, Context, fun create_resp_content/2).
 
 -spec create_pull_response(cowboy_req:req(), cb_context:context(), resp_content_fun()) ->
-          {pull_response(), cowboy_req:req(), cb_context:context()} |
+          pull_response_return() |
           stop_return().
 create_pull_response(Req0, Context0, Fun) ->
     {Content, Req1, Context1} =
@@ -1861,13 +1863,17 @@ exec_req_fold({F, V}, Req) -> F(V, Req);
 exec_req_fold({F, K, V}, Req) -> F(K, V, Req);
 exec_req_fold(F, Req) when is_function(F, 1) -> F(Req).
 
--spec maybe_enforce_scopes(cowboy_req:req(), cb_context:context()) -> {'true', cowboy_req:req(), cb_context:context()} | stop_return().
+-spec maybe_enforce_scopes(cowboy_req:req(), cb_context:context()) ->
+          {'true', cowboy_req:req(), cb_context:context()} |
+          stop_return().
 maybe_enforce_scopes(Req, Context) ->
     TokenType = cb_context:auth_token_type(Context),
     lager:debug("token type is : ~p~n", [cb_context:auth_token_type(Context)]),
     maybe_enforce_scopes(Req, Context, TokenType).
 
--spec maybe_enforce_scopes(cowboy_req:req(), cb_context:context(), atom()) -> {'true', cowboy_req:req(), cb_context:context()} | stop_return().
+-spec maybe_enforce_scopes(cowboy_req:req(), cb_context:context(), atom()) ->
+          {'true', cowboy_req:req(), cb_context:context()} |
+          stop_return().
 maybe_enforce_scopes(Req, Context, 'x-auth-token') ->
     lager:debug("jwt token detected, enforcing scopes"),
     case kz_json:get_ne_binary_value(<<"method">>, cb_context:auth_doc(Context)) of
@@ -1883,7 +1889,9 @@ maybe_enforce_scopes(Req, Context, _TokenType) ->
     lager:debug("legacy token detected skipping scope enforcement"),
     {'true', Req, Context}.
 
--spec enforce_scopes(cowboy_req:req(), cb_context:context(), kz_term:ne_binaries()) -> {'true', cowboy_req:req(), cb_context:context()} | stop_return().
+-spec enforce_scopes(cowboy_req:req(), cb_context:context(), kz_term:ne_binaries()) ->
+          {'true', cowboy_req:req(), cb_context:context()} |
+          stop_return().
 enforce_scopes(Req, Context, []) ->
     {'true', Req, Context};
 enforce_scopes(Req, Context, [RequiredScopes|_]) ->

@@ -974,8 +974,7 @@ take_collection_numbers(Context) ->
     }.
 
 -spec release_or_delete(cb_context:context(), kz_term:ne_binary() | kz_term:ne_binaries(), knm_options:options()) ->
-          knm_numbers:result() |
-          knm_numbers:results().
+          knm_numbers:return().
 release_or_delete(Context, Numbers, Options) ->
     case pick_release_or_delete(Context, Options) of
         'delete' -> knm_numbers:delete(Numbers, Options);
