@@ -646,9 +646,10 @@ create_call(Context, ConferenceId) ->
 build_endpoint(<<"sip:", _/binary>>=URI, ?BUILD_ACC(_, _, _, _)=Acc) ->
     lager:info("building SIP endpoint ~s", [URI]),
     build_sip_endpoint(URI, Acc);
-build_endpoint(<<_:32/binary>>=EndpointId, ?BUILD_ACC(Endpoints, Call, Context, Element)=Acc) ->
-    case kz_datamgr:open_cache_doc(kapps_call:account_db(Call), EndpointId) of
-        {'ok', Endpoint} -> build_endpoint_from_doc(Endpoint, Acc);
+build_endpoint(<<_:32/binary>>=EndpointId, ?BUILD_ACC(Endpoints, Call, Context, Element)) ->
+    Properties = kz_json:from_list([{<<"source">>, kz_term:to_binary(?MODULE)}]),
+    case kz_endpoint:build(EndpointId, Properties, Call) of
+        {'ok', Legs} -> ?BUILD_ACC(Endpoints ++ Legs, Call, Context, Element+1);
         {'error', _E} ->
             lager:info("failed to build endpoint ~s: ~p", [EndpointId, _E]),
             ?BUILD_ACC(Endpoints, Call, Context, Element+1)
@@ -665,9 +666,15 @@ build_endpoint(?NE_BINARY=Number, ?BUILD_ACC(Endpoints, Call, Context, Element)=
                       ,Element+1
                       )
     end;
-build_endpoint(Device, ?BUILD_ACC(_, _, _, _)=Acc) ->
+build_endpoint(Device, ?BUILD_ACC(Endpoints, Call, Context, Element)) ->
     DeviceWithId = kz_json:insert_value(<<"id">>, kz_binary:rand_hex(16), Device),
-    build_endpoint_from_doc(DeviceWithId, Acc, <<"device">>).
+    Properties = kz_json:from_list([{<<"source">>, kz_term:to_binary(?MODULE)}]),
+    case kz_endpoint:build(DeviceWithId, Properties, Call) of
+        {'ok', Legs} -> ?BUILD_ACC(Endpoints ++ Legs, Call, Context, Element+1);
+        {'error', _E} ->
+            lager:info("failed to build endpoint ~s: ~p", [kz_doc:id(Device), _E]),
+            ?BUILD_ACC(Endpoints, Call, Context, Element+1)
+    end.
 
 -spec add_not_endpoint_error(cb_context:context(), pos_integer()) -> cb_context:context().
 add_not_endpoint_error(Context, Element) when is_integer(Element) ->
@@ -691,6 +698,8 @@ build_number_endpoint(Number, ?BUILD_ACC(Endpoints, Call, Context, Element)) ->
                                    ,{<<"Authorizing-ID">>, kapps_call:authorizing_id(Call)}
                                    ,{<<"Loopback-Request-URI">>, <<Number/binary, "@", AccountRealm/binary>>}
                                    ,{<<"Request-URI">>, <<Number/binary, "@", AccountRealm/binary>>}
+                                   ,{<<"Require-Ignore-Early-Media">>, <<"true">>}
+                                   ,{<<"Ignore-Early-Media">>, <<"true">>}
                                    ])
 
                 }
@@ -699,15 +708,15 @@ build_number_endpoint(Number, ?BUILD_ACC(Endpoints, Call, Context, Element)) ->
     lager:info("adding number ~s endpoint", [Number]),
     ?BUILD_ACC([kz_json:from_list(Endpoint) | Endpoints], Call, Context, Element+1).
 
--spec build_sip_endpoint(kz_term:ne_binary(), build_acc()) ->
+-spec build_sip_endpoint(kz_term:ne_binary(), build_acc()) -> build_acc().
+build_sip_endpoint(URI, Acc) ->
+    build_sip_endpoint(URI, sip_uri(URI), Acc).
+
+-spec build_sip_endpoint(kz_term:ne_binary(), {binary(), binary()} | undefined, build_acc()) ->
           build_acc().
-build_sip_endpoint(URI, ?BUILD_ACC(Endpoints, Call, Context, Element)) ->
-    [#uri{user=SipUsername
-         ,domain=SipRealm
-         }
-    ] = nklib_parse_uri:uris(URI),
-
-
+build_sip_endpoint(URI, undefined, ?BUILD_ACC(Endpoints, Call, Context, Element)) ->
+    ?BUILD_ACC(Endpoints, Call, add_invalid_uri_error(Context, URI, Element), Element+1);
+build_sip_endpoint(URI, {SipUsername, SipRealm}, ?BUILD_ACC(Endpoints, Call, Context, Element)) ->
     SIPSettings = kz_json:from_list([{<<"invite_format">>, <<"route">>}
                                     ,{<<"route">>, URI}
                                     ,{<<"realm">>, SipRealm}
@@ -723,68 +732,31 @@ build_sip_endpoint(URI, ?BUILD_ACC(Endpoints, Call, Context, Element)) ->
             ?BUILD_ACC(Endpoints, Call, add_not_found_error(Context, URI, Element), Element+1)
     end.
 
--spec build_endpoint_from_doc(kz_json:object(), build_acc()) -> build_acc().
-build_endpoint_from_doc(Endpoint, ?BUILD_ACC(_, _, _, _)=Acc) ->
-    case kz_doc:is_soft_deleted(Endpoint)
-        orelse kz_doc:is_deleted(Endpoint)
-    of
-        'true' ->
-            lager:info("endpoint ~s is deleted, skipping", [kz_doc:id(Endpoint)]),
-            Acc;
-        'false' ->
-            build_endpoint_from_doc(Endpoint, Acc, kz_doc:type(Endpoint))
+-spec sip_uri(kz_term:ne_binary()) -> {binary(), binary()} | undefined.
+sip_uri(URI) ->
+    try nklib_parse_uri:uris(URI) of
+        [#uri{user=User, domain=Realm}] -> {User, Realm};
+        _Else -> undefined
+    catch
+        _Ex:Err:_ST ->
+            lager:error("invalid uri ~p => ~p / ~p", [URI, _Ex, Err]),
+            kz_log:log_stacktrace(_ST),
+            undefined
     end.
-
--spec build_endpoint_from_doc(kz_json:object(), build_acc(), kz_term:ne_binary()) -> build_acc().
-build_endpoint_from_doc(Device, ?BUILD_ACC(Endpoints, Call, Context, Element), <<"device">>) ->
-    Properties = kz_json:from_list([{<<"source">>, kz_term:to_binary(?MODULE)}]),
-    case kz_endpoint:build(Device, Properties, Call) of
-        {'ok', Legs} -> ?BUILD_ACC(Endpoints ++ Legs, Call, Context, Element+1);
-        {'error', _E} ->
-            lager:info("failed to build endpoint ~s: ~p", [kz_doc:id(Device), _E]),
-            ?BUILD_ACC(Endpoints, Call, add_not_found_error(Context, kz_doc:id(Device), Element), Element+1)
-    end;
-build_endpoint_from_doc(User, ?BUILD_ACC(Endpoints, Call, Context, Element), <<"user">>) ->
-    case maybe_add_user_endpoints(User, Call) of
-        [] ->
-            lager:info("no endpoints found for user ~s", [kz_doc:id(User)]),
-            ?BUILD_ACC(Endpoints, Call, add_no_devices_error(Context, kz_doc:id(User), Element), Element+1);
-        Legs ->
-            ?BUILD_ACC(Legs++Endpoints, Call, Context, Element+1)
-    end;
-build_endpoint_from_doc(Endpoint, ?BUILD_ACC(Endpoints, Call, Context, Element), _Type) ->
-    lager:info("ignoring endpoint type ~s for ~s", [_Type, kz_doc:id(Endpoint)]),
-    ?BUILD_ACC(Endpoints, Call, add_not_found_error(Context, kz_doc:id(Endpoint), Element), Element+1).
-
--spec maybe_add_user_endpoints(kz_json:object(), kapps_call:call()) -> kz_json:objects().
-maybe_add_user_endpoints(User, Call) ->
-    Properties = kz_json:from_list([{<<"source">>, kz_term:to_binary(?MODULE)}]),
-    lists:foldr(fun(EndpointId, Acc) ->
-                        case kz_endpoint:build(EndpointId, Properties, Call) of
-                            {'ok', Endpoint} -> Endpoint ++ Acc;
-                            {'error', _E} -> Acc
-                        end
-                end
-               ,[]
-               ,kz_attributes:owned_by(kz_doc:id(User), <<"device">>, Call)
-               ).
-
--spec add_no_devices_error(cb_context:context(), kz_term:ne_binary(), pos_integer()) -> cb_context:context().
-add_no_devices_error(Context, UserId, Element) when is_integer(Element) ->
-    cb_context:add_validation_error([<<"data">>, <<"endpoints">>, Element]
-                                   ,<<"minItems">>
-                                   ,kz_json:from_list([{<<"message">>, <<"user ", UserId/binary, " failed to resolve to route-able destinations">>}
-                                                      ,{<<"target">>, 1}
-                                                      ])
-                                   ,Context
-                                   ).
-
 
 -spec add_not_found_error(cb_context:context(), kz_term:ne_binary(), pos_integer()) -> cb_context:context().
 add_not_found_error(Context, Id, Index) when is_integer(Index) ->
     cb_context:add_validation_error([<<"data">>, <<"endpoints">>, Index]
                                    ,<<"not_found">>
                                    ,kz_json:from_list([{<<"message">>, <<"ID ", Id/binary, " not found">>}])
+                                   ,Context
+                                   ).
+
+-spec add_invalid_uri_error(cb_context:context(), kz_term:ne_binary(), pos_integer()) -> cb_context:context().
+add_invalid_uri_error(Context, Id, Index) when is_integer(Index) ->
+    cb_context:add_validation_error([<<"data">>, <<"endpoints">>, Index]
+                                   ,<<"not_found">>
+                                   ,kz_json:from_list([{<<"message">>, <<"URI ", Id/binary, " is invalid">>}])
                                    ,Context
                                    ).
 
