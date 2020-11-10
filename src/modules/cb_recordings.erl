@@ -153,7 +153,7 @@ summary_doc_fun(View, Acc) ->
 attachment_content_type(_Name, Meta, CTs) ->
     [kz_json:get_ne_binary_value(<<"content_type">>, Meta) | CTs].
 
--spec build_end_key(kz_time:gregorian_seconds(), kz_term:api_ne_binary()) -> kazoo_data:range_key().
+-spec build_end_key(kz_time:gregorian_seconds(), kz_term:api_ne_binary()) -> kazoo_data:key_range().
 build_end_key(Timestamp, 'undefined') -> [Timestamp, kz_json:new()];
 build_end_key(Timestamp, UserId) -> [UserId, Timestamp, kz_json:new()].
 

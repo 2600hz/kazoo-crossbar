@@ -115,7 +115,7 @@ validate_scope_restriction(Context, ScopeRestriction, ?HTTP_POST) ->
 validate_request(Context) ->
     validate_request(Context, 'undefined').
 
--spec validate_request(cb_context:context(), path_token()) -> cb_context:context().
+-spec validate_request(cb_context:context(), api_path_token()) -> cb_context:context().
 validate_request(Context, ScopeRestriction) ->
     OnSuccess = fun(C) -> on_successful_validation(C, ScopeRestriction) end,
     cb_context:validate_request_data(?SCHEMA, Context, OnSuccess).
@@ -124,7 +124,7 @@ validate_request(Context, ScopeRestriction) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec on_successful_validation(cb_context:context(), path_token()) -> cb_context:context().
+-spec on_successful_validation(cb_context:context(), api_path_token()) -> cb_context:context().
 on_successful_validation(Context, 'undefined') ->
     cb_context:set_doc(Context, kz_doc:set_type(cb_context:doc(Context), ?PVT_TYPE));
 on_successful_validation(Context, ScopeRestriction) ->

@@ -60,7 +60,7 @@
 
 -type time_range() :: {kz_time:gregorian_seconds(), kz_time:gregorian_seconds()}.
 %% `{StartTimestamp, EndTimestamp}'.
--type api_range_key() :: 'undefined' | ['undefined'] | kazoo_data:range_key().
+-type api_range_key() :: 'undefined' | ['undefined'] | kazoo_data:key_range().
 -type range_keys() :: {api_range_key(), api_range_key()}.
 %% `{Startkey, EndKey}'.
 -type keymap_fun() :: fun((cb_context:context()) -> api_range_key()) |
@@ -410,10 +410,10 @@ add_filtermap_fields_options({Context, CursorOptions}, Options) ->
     end.
 
 -spec add_fields_options(cb_context:context(), kz_view:options(), options()) ->  context_options().
-add_fields_options(Context, CursorOptions, Options) ->
+add_fields_options(Context, CursorOptions0, Options) ->
     Fields = cb_context:fetch(Context, 'fields'),
     CursorOptions = [{'fields', Fields}
-                    | CursorOptions
+                    | CursorOptions0
                     ],
     case {props:get_value('field_key', CursorOptions)
          ,props:is_true(['user_params', 'should_filter'], CursorOptions, 'false')
@@ -873,7 +873,7 @@ time_range(Context, MaxRange, Key, RangeFrom, RangeTo) ->
 %%
 %% <strong>Keymap description:</strong>
 %% <dl>
-%%   <dt>{@type kazoo_data:range_key()}</dt><dd>A regular CouchDB key to construct
+%%   <dt>{@type kazoo_data:key_range()}</dt><dd>A regular CouchDB key to construct
 %%    keys like `[<<"en">>, <<"us">>]'.</dd>
 %%   <dt>{@type keymap_fun()}</dt><dd>To customize your own key using a function.</dd>
 %% </dl>

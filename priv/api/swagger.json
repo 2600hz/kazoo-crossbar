@@ -51,6 +51,96 @@
                 "dialog_subscribed_mwi_prefix": {
                     "description": "callflow dialog_subscribed_mwi_prefix",
                     "type": "string"
+                },
+                "voicemail": {
+                    "properties": {
+                        "delete_after_notify": {
+                            "default": false,
+                            "description": "callflow voicemail delete_after_notify",
+                            "type": "boolean"
+                        },
+                        "extension": {
+                            "default": "mp3",
+                            "description": "callflow voicemail extension",
+                            "type": "string"
+                        },
+                        "force_require_pin": {
+                            "default": false,
+                            "description": "callflow voicemail force_require_pin",
+                            "type": "boolean"
+                        },
+                        "is_voicemail_ff_rw_enabled": {
+                            "default": false,
+                            "description": "callflow voicemail is_voicemail_ff_rw_enabled",
+                            "type": "boolean"
+                        },
+                        "max_box_number_length": {
+                            "default": 15,
+                            "description": "callflow voicemail max_box_number_length",
+                            "type": "integer"
+                        },
+                        "max_message_count": {
+                            "default": 100,
+                            "description": "callflow voicemail max_message_count",
+                            "type": "integer"
+                        },
+                        "max_message_length": {
+                            "default": 500,
+                            "description": "callflow voicemail max_message_length",
+                            "type": "integer"
+                        },
+                        "max_pin_length": {
+                            "default": 6,
+                            "description": "callflow voicemail max_pin_length",
+                            "type": "integer"
+                        },
+                        "message_retention_duration": {
+                            "default": 93,
+                            "description": "callflow voicemail message_retention_duration",
+                            "type": "integer"
+                        },
+                        "min_message_size": {
+                            "default": 500,
+                            "description": "callflow voicemail min_message_size",
+                            "type": "integer"
+                        },
+                        "save_after_notify": {
+                            "default": false,
+                            "description": "callflow voicemail save_after_notify",
+                            "type": "boolean"
+                        },
+                        "seek_duration_ms": {
+                            "default": 10000,
+                            "description": "callflow voicemail seek_duration_ms",
+                            "minimum": 0,
+                            "type": "integer"
+                        },
+                        "should_disable_callback": {
+                            "default": false,
+                            "description": "callflow voicemail should_disable_callback",
+                            "type": "boolean"
+                        },
+                        "should_disable_offnet_callback": {
+                            "default": true,
+                            "description": "callflow voicemail should_disable_offnet_callback",
+                            "type": "boolean"
+                        },
+                        "transcribe_default": {
+                            "default": false,
+                            "description": "callflow voicemail transcribe_default",
+                            "type": "boolean"
+                        },
+                        "vm_delete_amqp": {
+                            "default": false,
+                            "description": "callflow voicemail vm_delete_amqp",
+                            "type": "boolean"
+                        },
+                        "vm_message_forward_type": {
+                            "default": "only_forward",
+                            "description": "callflow voicemail vm_message_forward_type",
+                            "type": "string"
+                        }
+                    }
                 }
             },
             "type": "object"
@@ -155,24 +245,36 @@
                             "enabled": true,
                             "log_failed_attempts": true,
                             "log_successful_attempts": false,
+                            "scopes": [
+                                "crossbar"
+                            ],
                             "token_auth_expiry_s": 3600
                         },
                         "cb_auth": {
                             "enabled": true,
                             "log_failed_attempts": true,
                             "log_successful_attempts": false,
+                            "scopes": [
+                                "crossbar"
+                            ],
                             "token_auth_expiry_s": 3600
                         },
                         "cb_ip_auth": {
                             "enabled": true,
                             "log_failed_attempts": true,
                             "log_successful_attempts": false,
+                            "scopes": [
+                                "crossbar"
+                            ],
                             "token_auth_expiry_s": 3600
                         },
                         "cb_user_auth": {
                             "enabled": true,
                             "log_failed_attempts": true,
                             "log_successful_attempts": true,
+                            "scopes": [
+                                "crossbar"
+                            ],
                             "token_auth_expiry_s": 3600
                         }
                     },
@@ -1244,6 +1346,32 @@
                     "type": "string"
                 }
             },
+            "type": "object"
+        },
+        "call_reports": {
+            "description": "Schema for a call report",
+            "properties": {
+                "call_id": {
+                    "description": "Call ID for which the quality/issue report was submitted",
+                    "type": "string"
+                },
+                "cdr_id": {
+                    "description": "CDR ID of the call for which the quality/issue report was submitted",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "Description of the issue/steps to reproduce/etc. that may be submitted by, for example, a user",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type of issue that was reported. Must be in the list of allowed types for call reports in system_config",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "call_id",
+                "type"
+            ],
             "type": "object"
         },
         "call_waiting": {
@@ -11290,6 +11418,11 @@
                     "description": "blackhole max_connections_per_ip",
                     "type": "integer"
                 },
+                "max_queued_messages": {
+                    "default": 50,
+                    "description": "blackhole max_queued_messages",
+                    "type": "integer"
+                },
                 "port": {
                     "default": 5555,
                     "description": "blackhole port",
@@ -11298,6 +11431,11 @@
                 "request_timeout_ms": {
                     "default": 10000,
                     "description": "blackhole request_timeout_ms",
+                    "type": "integer"
+                },
+                "send_timeout_ms": {
+                    "default": 5000,
+                    "description": "blackhole send_timeout_ms",
                     "type": "integer"
                 },
                 "ssl_ca_cert": {
@@ -11692,6 +11830,16 @@
                             "description": "callflow fastforward and rewind seek duration",
                             "minimum": 0,
                             "type": "integer"
+                        },
+                        "should_disable_callback": {
+                            "default": false,
+                            "description": "If true, disallows callers to use voicemail callback feature",
+                            "type": "boolean"
+                        },
+                        "should_disable_offnet_callback": {
+                            "default": true,
+                            "description": "If true, requires caller to use an authorized device to use voicemail callback feature",
+                            "type": "boolean"
                         },
                         "transcribe_default": {
                             "default": false,
@@ -12214,6 +12362,11 @@
         "system_config.crossbar": {
             "description": "Schema for crossbar system_config",
             "properties": {
+                "allow_fetch_full_docs": {
+                    "default": false,
+                    "description": "crossbar allow_fetch_full_docs",
+                    "type": "boolean"
+                },
                 "allow_tracing": {
                     "default": false,
                     "description": "crossbar allow tracing",
@@ -12554,24 +12707,36 @@
                             "enabled": true,
                             "log_failed_attempts": true,
                             "log_successful_attempts": false,
+                            "scopes": [
+                                "crossbar"
+                            ],
                             "token_auth_expiry_s": 3600
                         },
                         "cb_auth": {
                             "enabled": true,
                             "log_failed_attempts": true,
                             "log_successful_attempts": false,
+                            "scopes": [
+                                "crossbar"
+                            ],
                             "token_auth_expiry_s": 3600
                         },
                         "cb_ip_auth": {
                             "enabled": true,
                             "log_failed_attempts": true,
                             "log_successful_attempts": false,
+                            "scopes": [
+                                "crossbar"
+                            ],
                             "token_auth_expiry_s": 3600
                         },
                         "cb_user_auth": {
                             "enabled": true,
                             "log_failed_attempts": true,
                             "log_successful_attempts": true,
+                            "scopes": [
+                                "crossbar"
+                            ],
                             "token_auth_expiry_s": 3600
                         }
                     },
@@ -12660,6 +12825,52 @@
             },
             "type": "object"
         },
+        "system_config.crossbar.call_reports": {
+            "description": "Schema for crossbar.call_reports system_config",
+            "properties": {
+                "allowed_types": {
+                    "default": [
+                        {
+                            "id": "dropped_call",
+                            "name": "Dropped call"
+                        },
+                        {
+                            "id": "one_way_audio",
+                            "name": "One-way audio"
+                        },
+                        {
+                            "id": "broken_audio",
+                            "name": "Broken audio or bad sound"
+                        },
+                        {
+                            "id": "other",
+                            "name": "Other"
+                        }
+                    ],
+                    "description": "Allowed types for call reports",
+                    "items": {
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name"
+                        ],
+                        "type": "object"
+                    },
+                    "type": "array"
+                }
+            },
+            "required": [
+                "allowed_types"
+            ],
+            "type": "object"
+        },
         "system_config.crossbar.cdrs": {
             "description": "Schema for crossbar.cdrs system_config",
             "properties": {
@@ -12720,6 +12931,11 @@
                     "default": true,
                     "description": "crossbar.devices allow aggregates",
                     "type": "boolean"
+                },
+                "check_sync_event": {
+                    "default": "check-sync",
+                    "description": "crossbar devices check_sync_event",
+                    "type": "string"
                 },
                 "provisioner_host": {
                     "description": "crossbar.devices provisioner host",
@@ -15735,12 +15951,12 @@
                     "default": {
                         "caribbean": {
                             "friendly_name": "Caribbean",
-                            "pretty_print": "SS(###) ### - ####",
+                            "pretty_print": "SS(###) ###-####",
                             "regex": "^\\+?1((?:684|264|268|242|246|441|284|345|767|809|829|849|473|671|876|664|670|787|939|869|758|784|721|868|649|340)\\d{7})$"
                         },
                         "did_us": {
                             "friendly_name": "US DID",
-                            "pretty_print": "SS(###) ### - ####",
+                            "pretty_print": "SS(###) ###-####",
                             "regex": "^(\\+?1)?([2-9][0-9]{2}[2-9][0-9]{6})$"
                         },
                         "emergency": {
@@ -15754,12 +15970,12 @@
                         },
                         "toll_us": {
                             "friendly_name": "US Toll",
-                            "pretty_print": "SS(###) ### - ####",
+                            "pretty_print": "SS(###) ###-####",
                             "regex": "^\\+1(900\\d{7})$"
                         },
                         "tollfree_us": {
                             "friendly_name": "US Tollfree",
-                            "pretty_print": "SS(###) ### - ####",
+                            "pretty_print": "SS(###) ###-####",
                             "regex": "^\\+1((?:800|88\\d|877|866|855|844|833|822)\\d{7})$"
                         },
                         "unknown": {
@@ -17935,6 +18151,10 @@
                     "description": "Whether the rule is enabled",
                     "type": "boolean"
                 },
+                "end_date": {
+                    "description": "The date that any recurrence should be calculated as ending on",
+                    "type": "integer"
+                },
                 "flags": {
                     "description": "Flags set by external applications",
                     "items": {
@@ -18751,6 +18971,10 @@
                 },
                 "length": {
                     "type": "integer"
+                },
+                "media_id": {
+                    "description": "Media ID of the message",
+                    "type": "string"
                 },
                 "timestamp": {
                     "description": "The UTC timestamp, in Gregorian seconds, that the voicemail was left on",
@@ -20697,6 +20921,48 @@
                     },
                     {
                         "$ref": "#/parameters/CALL_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/call_reports": {
+            "put": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "call_reports",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/call_reports"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/call_reports/allowed_types": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
                     }
                 ],
                 "responses": {

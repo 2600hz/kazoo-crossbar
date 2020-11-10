@@ -262,6 +262,7 @@ post(Context, _) ->
     case cb_context:resp_status(Context2) of
         'success' ->
             _ = maybe_update_devices_presence(Context2),
+            _ = maybe_send_desktop_welcome_email(Context1),
             Context2;
         _ -> Context2
     end.
@@ -438,6 +439,54 @@ send_email(Context) ->
     kapps_notify_publisher:cast(Req, fun kapi_notifications:publish_new_user/1).
 
 %%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec maybe_send_desktop_welcome_email(cb_context:context()) -> 'ok'.
+maybe_send_desktop_welcome_email(Context) ->
+    WasEnabled = kz_json:is_true([<<"desktop">>, <<"enabled">>], cb_context:fetch(Context, 'db_doc')),
+    NowEnabled = kz_json:is_true([<<"desktop">>, <<"enabled">>], cb_context:doc(Context)),
+
+    maybe_send_desktop_welcome_email(Context, WasEnabled, NowEnabled).
+
+maybe_send_desktop_welcome_email(Context, 'false', 'true') ->
+    lager:debug("publishing desktop app welcome notification"),
+    Doc = cb_context:doc(Context),
+
+    WebphoneId = kz_json:get_ne_binary_value([<<"webphone">>, <<"device_id">>], Doc),
+
+    Req = [{<<"Account-ID">>, cb_context:account_id(Context)}
+          ,{<<"User-ID">>, kz_doc:id(Doc)}
+          ,{<<"Webphone-Enabled">>, kz_term:is_not_empty(WebphoneId)}
+          | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+          ],
+    kapps_notify_publisher:cast(Req, fun kapi_notifications:publish_desktop_app_welcome/1);
+maybe_send_desktop_welcome_email(Context, 'true', 'true') ->
+    WasEnabled = kz_term:is_not_empty(kz_json:get_ne_binary_value([<<"webphone">>, <<"device_id">>], cb_context:fetch(Context, 'db_doc'))),
+    NowEnabled = kz_term:is_not_empty(kz_json:get_ne_binary_value([<<"webphone">>, <<"device_id">>], cb_context:doc(Context))),
+
+    maybe_send_webphone_enabled_email(Context, WasEnabled, NowEnabled);
+maybe_send_desktop_welcome_email(_Context, _WasEnabled, _NowEnabled) ->
+    'ok'.
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec maybe_send_webphone_enabled_email(cb_context:context(), boolean(), boolean()) -> 'ok'.
+maybe_send_webphone_enabled_email(Context, 'false', 'true') ->
+    lager:debug("publishing desktop app welcome notification"),
+    Doc = cb_context:doc(Context),
+
+    Req = [{<<"Account-ID">>, cb_context:account_id(Context)}
+          ,{<<"User-ID">>, kz_doc:id(Doc)}
+          | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+          ],
+    kapps_notify_publisher:cast(Req, fun kapi_notifications:publish_desktop_webphone_enabled/1);
+maybe_send_webphone_enabled_email(_Context, _WasEnabled, _NowEnabled) ->
+    'ok'.
+
+%%------------------------------------------------------------------------------
 %% @doc Attempt to load list of accounts, each summarized. Or a specific
 %% account summary.
 %% @end
@@ -479,13 +528,13 @@ validate_request(UserId, Context) ->
 
     case kzd_users:validate(AccountId, UserId, ReqJObj) of
         {'true', UserJObj} when is_binary(UserId) ->
-            lager:debug("successfull validated user object update"),
+            lager:debug("successfully validated user object update"),
             %% NOTE: We need to load the current (unmodified) user document
             %% into the cb_context KVS db_doc because billing uses that to
             %% determine what changed and charge accordingly
             cb_context:update_successfully_validated_request(load_user(UserId, Context), UserJObj);
         {'true', UserJObj} ->
-            lager:debug("successfull validated user object creation"),
+            lager:debug("successfully validated user object creation"),
             cb_context:update_successfully_validated_request(Context, UserJObj);
         {'validation_errors', ValidationErrors} ->
             lager:info("validation errors on user"),
