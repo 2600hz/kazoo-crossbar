@@ -201,7 +201,7 @@ check_auth_token(Context, AuthToken, _MagicPathed) ->
           boolean() |
           {'true', cb_context:context()} |
           {'stop', cb_context:context()}.
-validate_auth_token(Context, <<>>) ->
+validate_auth_token(_Context, <<>>) ->
     lager:debug("no auth token supplied"),
     'false';
 validate_auth_token(Context, <<AuthToken/binary>>) ->
