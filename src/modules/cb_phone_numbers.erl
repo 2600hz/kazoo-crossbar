@@ -921,7 +921,7 @@ set_response({'ok', JObjs}, Context, _, _Collection) ->
              ,{<<"error">>, []}
              ]),
     crossbar_util:response(Resp, Context);
-set_response({'ok', [], [Failed]}, Context, _, 'undefined') ->
+set_response({'ok', [], [{_, Failed}]}, Context, _, 'undefined') ->
     %% single number operation
     set_error(Failed, Context);
 set_response({'ok', Success, FailedProp}, Context, _, _Collection) ->
