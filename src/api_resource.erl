@@ -1122,6 +1122,7 @@ next_chunk_fold(#{chunking_started := StartedChunk
             finish_chunked_response(ChunkMap, Cursor, Req, reset_context_between_chunks(ContextError, StartedChunk))
     catch
         _E:_T:_ST ->
+            lager:debug("crashed during to_chunk response: ~p:~p", [_E, _T]),
             kz_log:log_stacktrace(_ST,"crashed during to_chunk response: ~p:~p", [_E, _T]),
             {'stop', Req, cb_context:set_resp_status(Context1, 'stop')}
     end.
