@@ -3,6 +3,11 @@
     "_id": "conferences",
     "description": "Schema for conferences",
     "properties": {
+        "allow_shareable_link": {
+            "default": false,
+            "description": "Indicates if the conference is reachable using a public link",
+            "type": "boolean"
+        },
         "bridge_password": {
             "description": "the password used for a conference bridge",
             "type": "string"
@@ -205,5 +210,8 @@
             "type": "boolean"
         }
     },
+    "required": [
+        "name"
+    ],
     "type": "object"
 }

@@ -148,6 +148,8 @@
     "crossbar.channels.system_wide_channels_list": "crossbar.channels system wide channels list",
     "crossbar.check_reverse_proxies": "If request is proxied, should Crossbar check allowed reverse proxies",
     "crossbar.compress_response_body": "crossbar compress response body",
+    "crossbar.conferences.invite_link_allowed_scope": "Scope to use when generating JWT token for conference invite link, default: 'crossbar:conference_join'",
+    "crossbar.conferences.invite_link_whitelabel_domain": "The domain to use when generating conference invite link",
     "crossbar.contact_list.default_includes": "crossbar.contact_list default includes",
     "crossbar.default_allow_anonymous_quickcalls": "crossbar default allow anonymous quickcalls",
     "crossbar.default_language": "crossbar default language",
