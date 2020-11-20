@@ -8,10 +8,38 @@
             "description": "crossbar.devices allow aggregates",
             "type": "boolean"
         },
+        "always_registered_device_types": {
+            "default": [
+                "application",
+                "cellphone",
+                "sip_url",
+                "landline",
+                "smartphone"
+            ],
+            "description": "crossbar devices always_registered_device_types",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
         "check_sync_event": {
             "default": "check-sync",
             "description": "crossbar devices check_sync_event",
             "type": "string"
+        },
+        "not_registrable_device_types": {
+            "default": [
+                "application",
+                "cellphone",
+                "sip_url",
+                "landline",
+                "smartphone"
+            ],
+            "description": "crossbar devices not_registrable_device_types",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
         },
         "provisioner_host": {
             "description": "crossbar.devices provisioner host",

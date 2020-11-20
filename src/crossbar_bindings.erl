@@ -49,30 +49,12 @@
 
 -include("crossbar.hrl").
 
--type payload() :: path_tokens() | % mapping over path tokens in URI
-                   [{cowboy_req:req(), cb_context:context()} |
-                    cb_context:context() |
-                    path_token() |
-                    'undefined'
-                   ] |
-                   kz_term:ne_binary() | %% api_util:maybe_enforce_scopes/3
-                   cb_context:context() |
-                   {cb_context:context(), kz_term:proplist()} | % api_resource:rest_init/2
-                   {'error', _} | % api_util:execute_request/2
-                   {kz_json:path(), cb_context:context(), path_tokens()} |
-                   {kz_time:datetime(), cowboy_req:req(), cb_context:context()} | % api_resource:expires/2
-                   {cowboy_req:req(), cb_context:context()}. % mapping over the request/context records
+-type payload() :: kazoo_bindings:payload().
+-type fold_results() :: payload().
 
 %%%=============================================================================
 %%% API
 %%%=============================================================================
-
--type map_results() :: [boolean() |
-                        http_methods() |
-                        {boolean() | 'stop', cb_context:context()} |
-                        {'ok', kz_json:object()} |
-                        {'error', atom() | binary()}
-                       ].
 
 %%------------------------------------------------------------------------------
 %% @doc Returns `[{Result, Payload1}]', a list of tuples, the first element
@@ -80,17 +62,15 @@
 %% is the payload, possibly modified.
 %% @end
 %%------------------------------------------------------------------------------
--spec map(kz_term:ne_binary(), payload()) -> map_results().
-map(Routing, Payload) ->
+-spec map(kz_term:ne_binary(), payload()) -> kazoo_bindings:map_results().
+map(<<Routing/binary>>, Payload) ->
     lager:debug("mapping ~s", [Routing]),
     kazoo_bindings:map(Routing, Payload).
 
--spec pmap(kz_term:ne_binary(), payload()) -> map_results().
-pmap(Routing, Payload) ->
+-spec pmap(kz_term:ne_binary(), payload()) -> kazoo_bindings:map_results().
+pmap(<<Routing/binary>>, Payload) ->
     lager:debug("pmapping ~s", [Routing]),
     kazoo_bindings:pmap(Routing, Payload).
-
--type fold_results() :: payload().
 
 %%------------------------------------------------------------------------------
 %% @doc Returns the modified Payload after it has been threaded through
@@ -114,7 +94,7 @@ any(Res) when is_list(Res) ->
 all(Res) when is_list(Res) ->
     kazoo_bindings:all(Res, fun check_bool/1).
 
--spec succeeded(map_results()) -> map_results().
+-spec succeeded(kazoo_bindings:map_results()) -> kazoo_bindings:map_results().
 succeeded(Res) when is_list(Res) ->
     Successes = kazoo_bindings:succeeded(Res, fun filter_out_failed/1),
     case props:get_value('stop', Successes) of
@@ -122,7 +102,7 @@ succeeded(Res) when is_list(Res) ->
         HaltContext -> [{'stop', HaltContext}]
     end.
 
--spec failed(map_results()) -> map_results().
+-spec failed(kazoo_bindings:map_results()) -> kazoo_bindings:map_results().
 failed(Res) when is_list(Res) ->
     kazoo_bindings:failed(Res, fun filter_out_succeeded/1).
 

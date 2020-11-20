@@ -139,6 +139,7 @@ validate(Context, ConferenceId, ?PARTICIPANTS, ParticipantId) ->
 validate_conferences(?HTTP_GET, Context) ->
     Options = [{'doc_type', <<"conference">>}
               ,{'mapper', crossbar_view:get_value_fun()}
+              ,{'no_batch', 'true'}
               ],
     Selector = [{'start', [{<<"doc_type">>, <<"conference">>}]}
                ,{'end', [{<<"doc_type">>, <<"conference">>}]}
@@ -146,9 +147,7 @@ validate_conferences(?HTTP_GET, Context) ->
     LoadedContext = crossbar_view:find(Context, <<"crossbar_listings/by_type_id">>, Selector, Options),
     case cb_context:resp_status(LoadedContext) of
         'success' ->
-            Context1 = search_conferences(LoadedContext),
-            RunningConferences = cb_context:fetch(Context1, 'conferences', kz_json:new()),
-            add_realtime(LoadedContext, RunningConferences);
+            maybe_add_running_conferences(LoadedContext);
         _ ->
             LoadedContext
     end;
@@ -295,44 +294,6 @@ on_successful_validation('undefined', Context) ->
 on_successful_validation(ConferenceId, Context) ->
     crossbar_doc:load_merge(ConferenceId, Context, ?TYPE_CHECK_OPTION(<<"conference">>)).
 
-empty_realtime_data() ->
-    kz_json:from_list_recursive(
-      [{<<"_read_only">>
-       ,[{<<"members">>, 0}
-        ,{<<"moderators">>, 0}
-        ,{<<"duration">>, 0}
-        ,{<<"is_locked">>, 'false'}
-        ]
-       }]).
-
--spec move_to_read_only(kz_json:key(), kz_json:object()) ->
-          {kz_json:key(), kz_json:object()}.
-move_to_read_only(Id, Realtime) ->
-    {Id, kz_json:from_list([{<<"id">>, Id}
-                           ,{<<"_read_only">>, kz_json:normalize(Realtime)}
-                           ])
-    }.
-
--spec add_realtime(cb_context:context(), kz_json:object()) -> cb_context:context().
-add_realtime(Context, RunningConferences) ->
-    ReadOnly = kz_json:map(fun move_to_read_only/2, RunningConferences),
-
-    Conferences = [add_realtime_fold(JObj, ReadOnly) || JObj <-  cb_context:doc(Context)],
-
-    cb_context:setters(Context
-                      ,[{fun cb_context:set_doc/2, Conferences}
-                       ,{fun cb_context:set_resp_status/2, 'success'}
-                       ,{fun cb_context:set_resp_data/2, Conferences}
-                       ,{fun cb_context:set_resp_envelope/2
-                        ,kz_json:set_value(<<"page_size">>, length(Conferences), cb_context:resp_envelope(Context))
-                        }
-                       ]).
-
--spec add_realtime_fold(kzd_conference:doc(), kz_json:object()) -> kz_json:object().
-add_realtime_fold(Conference, ReadOnly) ->
-    Realtime = kz_json:get_value(kz_doc:id(Conference), ReadOnly, empty_realtime_data()),
-    kz_json:merge(Conference, Realtime).
-
 %%------------------------------------------------------------------------------
 %% @doc Create a new conference document with the data provided, if it is valid
 %% @end
@@ -340,28 +301,84 @@ add_realtime_fold(Conference, ReadOnly) ->
 -spec validate_numbers(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
 validate_numbers(Id, Context) ->
     Doc = cb_context:doc(Context),
-    Conf = kz_json:get_value(<<"conference_numbers">>, Doc, []),
-    Member = kz_json:get_value([<<"member">>, <<"numbers">>], Doc, []),
-    Moderator = kz_json:get_value([<<"moderator">>, <<"numbers">>], Doc, []),
-    Keys = Conf ++ Member ++ Moderator,
+    DbDoc = cb_context:fetch(Context, 'db_doc', kz_json:new()),
+
+    OldConf = kzd_conferences:conference_numbers(DbDoc, []),
+    OldMember = kzd_conferences:member_numbers(DbDoc, []),
+    OldModerator = kzd_conferences:moderator_numbers(DbDoc, []),
+    OldKeys = OldConf ++ OldMember ++ OldModerator,
+
+    NewConf = kzd_conferences:conference_numbers(Doc, []),
+    NewMember = kzd_conferences:member_numbers(Doc, []),
+    NewModerator = kzd_conferences:moderator_numbers(Doc, []),
+    NewKeys = NewConf ++ NewMember ++ NewModerator,
+
+    validate_numbers(Id, Context, NewKeys, lists:usort(OldKeys) =:= lists:usort(NewKeys)).
+
+-spec validate_numbers(kz_term:api_binary(), cb_context:context(), kz_term:ne_binaries(), boolean()) ->
+          cb_context:context().
+validate_numbers(Id, Context, _, 'true') ->
+    validate_unique_name(Id, Context);
+validate_numbers(Id, Context, Keys, 'false') ->
     AccountId = cb_context:account_id(Context),
     case kz_datamgr:get_results(AccountId, ?CB_LIST_BY_NUMBER, [{'keys', Keys}]) of
-        {'error', _R} -> cb_context:add_system_error('datastore_fault', Context);
-        {'ok', []} -> on_successful_validation(Id, Context);
-        {'ok', JObjs} when Id =:= 'undefined' -> invalid_numbers(Context, JObjs);
+        {'error', _R} ->
+            cb_context:add_system_error('datastore_fault', Context);
+        {'ok', []} ->
+            validate_unique_name(Id, Context);
+        {'ok', JObjs} when Id =:= 'undefined' ->
+            invalid_numbers(Context, kz_datamgr:get_result_keys(JObjs));
         {'ok', JObjs} ->
             case [JObj || JObj <- JObjs, kz_doc:id(JObj) =/= Id] of
-                [] -> on_successful_validation(Id, Context);
-                OtherJObjs -> invalid_numbers(Context, OtherJObjs)
+                [] ->
+                    validate_unique_name(Id, Context);
+                OtherJObjs ->
+                    invalid_numbers(Context, kz_datamgr:get_result_keys(OtherJObjs))
             end
     end.
 
-invalid_numbers(Context, JObjs) ->
-    Numbers = kz_binary:join(kz_datamgr:get_result_keys(JObjs)),
+-spec invalid_numbers(cb_context:context(), kz_term:ne_binaries()) -> cb_context:context().
+invalid_numbers(Context, Keys) ->
+    Numbers = kz_binary:join(Keys),
     Error = kz_json:from_list([{<<"message">>, <<"Numbers already in use">>}
                               ,{<<"cause">>, Numbers}
                               ]),
     cb_context:add_validation_error([<<"numbers">>], <<"unique">>, Error, Context).
+
+-spec validate_unique_name(kz_term:api_ne_binary(), cb_context:context()) -> cb_context:context().
+validate_unique_name(Id, Context) ->
+    Doc = cb_context:doc(Context),
+    DbDoc = cb_context:fetch(Context, 'db_doc', kz_json:new()),
+    validate_unique_name(Id, Context, kzd_conferences:name(DbDoc), kzd_conferences:name(Doc)).
+
+-spec validate_unique_name(kz_term:api_ne_binary(), cb_context:context(), kz_term:api_ne_binary(), kz_term:ne_binary()) -> cb_context:context().
+validate_unique_name(Id, Context, Name, Name) ->
+    on_successful_validation(Id, Context);
+validate_unique_name(Id, Context, _OldName, NewName) ->
+    Options = [{'doc_type', <<"conference">>}],
+    Selector = [{'key', [{<<"doc_type">>, <<"conference">>}, {<<"name">>, NewName}]}],
+    case kz_view:find(cb_context:db_name(Context), <<"crossbar_listings/by_type_name">>, Selector, Options) of
+        {'ok', []} ->
+            on_successful_validation(Id, Context);
+        {'ok', _} when Id =:= 'undefined' ->
+            invalid_unique_name(Context, NewName);
+        {'ok', JObjs} ->
+            case [JObj || JObj <- JObjs, kz_doc:id(JObj) =/= Id] of
+                [] ->
+                    on_successful_validation(Id, Context);
+                _ ->
+                    invalid_unique_name(Context, NewName)
+            end;
+        {'error', Reason} ->
+            crossbar_doc:handle_datamgr_errors(Reason, <<"crossbar_listings/by_type_name">>, Context)
+    end.
+
+-spec invalid_unique_name(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+invalid_unique_name(Context, Name) ->
+    Error = kz_json:from_list([{<<"message">>, <<"public conference needs a system-wide unique name">>}
+                              ,{<<"cause">>, Name}
+                              ]),
+    cb_context:add_validation_error([<<"name">>], <<"unique">>, Error, Context).
 
 %%%=============================================================================
 %%% Conference Actions
@@ -646,9 +663,10 @@ create_call(Context, ConferenceId) ->
 build_endpoint(<<"sip:", _/binary>>=URI, ?BUILD_ACC(_, _, _, _)=Acc) ->
     lager:info("building SIP endpoint ~s", [URI]),
     build_sip_endpoint(URI, Acc);
-build_endpoint(<<_:32/binary>>=EndpointId, ?BUILD_ACC(Endpoints, Call, Context, Element)=Acc) ->
-    case kz_datamgr:open_cache_doc(kapps_call:account_db(Call), EndpointId) of
-        {'ok', Endpoint} -> build_endpoint_from_doc(Endpoint, Acc);
+build_endpoint(<<_:32/binary>>=EndpointId, ?BUILD_ACC(Endpoints, Call, Context, Element)) ->
+    Properties = kz_json:from_list([{<<"source">>, kz_term:to_binary(?MODULE)}]),
+    case kz_endpoint:build(EndpointId, Properties, Call) of
+        {'ok', Legs} -> ?BUILD_ACC(Endpoints ++ Legs, Call, Context, Element+1);
         {'error', _E} ->
             lager:info("failed to build endpoint ~s: ~p", [EndpointId, _E]),
             ?BUILD_ACC(Endpoints, Call, Context, Element+1)
@@ -665,9 +683,15 @@ build_endpoint(?NE_BINARY=Number, ?BUILD_ACC(Endpoints, Call, Context, Element)=
                       ,Element+1
                       )
     end;
-build_endpoint(Device, ?BUILD_ACC(_, _, _, _)=Acc) ->
+build_endpoint(Device, ?BUILD_ACC(Endpoints, Call, Context, Element)) ->
     DeviceWithId = kz_json:insert_value(<<"id">>, kz_binary:rand_hex(16), Device),
-    build_endpoint_from_doc(DeviceWithId, Acc, <<"device">>).
+    Properties = kz_json:from_list([{<<"source">>, kz_term:to_binary(?MODULE)}]),
+    case kz_endpoint:build(DeviceWithId, Properties, Call) of
+        {'ok', Legs} -> ?BUILD_ACC(Endpoints ++ Legs, Call, Context, Element+1);
+        {'error', _E} ->
+            lager:info("failed to build endpoint ~s: ~p", [kz_doc:id(Device), _E]),
+            ?BUILD_ACC(Endpoints, Call, Context, Element+1)
+    end.
 
 -spec add_not_endpoint_error(cb_context:context(), pos_integer()) -> cb_context:context().
 add_not_endpoint_error(Context, Element) when is_integer(Element) ->
@@ -691,6 +715,8 @@ build_number_endpoint(Number, ?BUILD_ACC(Endpoints, Call, Context, Element)) ->
                                    ,{<<"Authorizing-ID">>, kapps_call:authorizing_id(Call)}
                                    ,{<<"Loopback-Request-URI">>, <<Number/binary, "@", AccountRealm/binary>>}
                                    ,{<<"Request-URI">>, <<Number/binary, "@", AccountRealm/binary>>}
+                                   ,{<<"Require-Ignore-Early-Media">>, <<"true">>}
+                                   ,{<<"Ignore-Early-Media">>, <<"true">>}
                                    ])
 
                 }
@@ -699,15 +725,15 @@ build_number_endpoint(Number, ?BUILD_ACC(Endpoints, Call, Context, Element)) ->
     lager:info("adding number ~s endpoint", [Number]),
     ?BUILD_ACC([kz_json:from_list(Endpoint) | Endpoints], Call, Context, Element+1).
 
--spec build_sip_endpoint(kz_term:ne_binary(), build_acc()) ->
+-spec build_sip_endpoint(kz_term:ne_binary(), build_acc()) -> build_acc().
+build_sip_endpoint(URI, Acc) ->
+    build_sip_endpoint(URI, sip_uri(URI), Acc).
+
+-spec build_sip_endpoint(kz_term:ne_binary(), {binary(), binary()} | undefined, build_acc()) ->
           build_acc().
-build_sip_endpoint(URI, ?BUILD_ACC(Endpoints, Call, Context, Element)) ->
-    [#uri{user=SipUsername
-         ,domain=SipRealm
-         }
-    ] = nklib_parse_uri:uris(URI),
-
-
+build_sip_endpoint(URI, undefined, ?BUILD_ACC(Endpoints, Call, Context, Element)) ->
+    ?BUILD_ACC(Endpoints, Call, add_invalid_uri_error(Context, URI, Element), Element+1);
+build_sip_endpoint(URI, {SipUsername, SipRealm}, ?BUILD_ACC(Endpoints, Call, Context, Element)) ->
     SIPSettings = kz_json:from_list([{<<"invite_format">>, <<"route">>}
                                     ,{<<"route">>, URI}
                                     ,{<<"realm">>, SipRealm}
@@ -723,68 +749,31 @@ build_sip_endpoint(URI, ?BUILD_ACC(Endpoints, Call, Context, Element)) ->
             ?BUILD_ACC(Endpoints, Call, add_not_found_error(Context, URI, Element), Element+1)
     end.
 
--spec build_endpoint_from_doc(kz_json:object(), build_acc()) -> build_acc().
-build_endpoint_from_doc(Endpoint, ?BUILD_ACC(_, _, _, _)=Acc) ->
-    case kz_doc:is_soft_deleted(Endpoint)
-        orelse kz_doc:is_deleted(Endpoint)
-    of
-        'true' ->
-            lager:info("endpoint ~s is deleted, skipping", [kz_doc:id(Endpoint)]),
-            Acc;
-        'false' ->
-            build_endpoint_from_doc(Endpoint, Acc, kz_doc:type(Endpoint))
+-spec sip_uri(kz_term:ne_binary()) -> {binary(), binary()} | undefined.
+sip_uri(URI) ->
+    try nklib_parse_uri:uris(URI) of
+        [#uri{user=User, domain=Realm}] -> {User, Realm};
+        _Else -> undefined
+    catch
+        _Ex:Err:_ST ->
+            lager:error("invalid uri ~p => ~p / ~p", [URI, _Ex, Err]),
+            kz_log:log_stacktrace(_ST),
+            undefined
     end.
-
--spec build_endpoint_from_doc(kz_json:object(), build_acc(), kz_term:ne_binary()) -> build_acc().
-build_endpoint_from_doc(Device, ?BUILD_ACC(Endpoints, Call, Context, Element), <<"device">>) ->
-    Properties = kz_json:from_list([{<<"source">>, kz_term:to_binary(?MODULE)}]),
-    case kz_endpoint:build(Device, Properties, Call) of
-        {'ok', Legs} -> ?BUILD_ACC(Endpoints ++ Legs, Call, Context, Element+1);
-        {'error', _E} ->
-            lager:info("failed to build endpoint ~s: ~p", [kz_doc:id(Device), _E]),
-            ?BUILD_ACC(Endpoints, Call, add_not_found_error(Context, kz_doc:id(Device), Element), Element+1)
-    end;
-build_endpoint_from_doc(User, ?BUILD_ACC(Endpoints, Call, Context, Element), <<"user">>) ->
-    case maybe_add_user_endpoints(User, Call) of
-        [] ->
-            lager:info("no endpoints found for user ~s", [kz_doc:id(User)]),
-            ?BUILD_ACC(Endpoints, Call, add_no_devices_error(Context, kz_doc:id(User), Element), Element+1);
-        Legs ->
-            ?BUILD_ACC(Legs++Endpoints, Call, Context, Element+1)
-    end;
-build_endpoint_from_doc(Endpoint, ?BUILD_ACC(Endpoints, Call, Context, Element), _Type) ->
-    lager:info("ignoring endpoint type ~s for ~s", [_Type, kz_doc:id(Endpoint)]),
-    ?BUILD_ACC(Endpoints, Call, add_not_found_error(Context, kz_doc:id(Endpoint), Element), Element+1).
-
--spec maybe_add_user_endpoints(kz_json:object(), kapps_call:call()) -> kz_json:objects().
-maybe_add_user_endpoints(User, Call) ->
-    Properties = kz_json:from_list([{<<"source">>, kz_term:to_binary(?MODULE)}]),
-    lists:foldr(fun(EndpointId, Acc) ->
-                        case kz_endpoint:build(EndpointId, Properties, Call) of
-                            {'ok', Endpoint} -> Endpoint ++ Acc;
-                            {'error', _E} -> Acc
-                        end
-                end
-               ,[]
-               ,kz_attributes:owned_by(kz_doc:id(User), <<"device">>, Call)
-               ).
-
--spec add_no_devices_error(cb_context:context(), kz_term:ne_binary(), pos_integer()) -> cb_context:context().
-add_no_devices_error(Context, UserId, Element) when is_integer(Element) ->
-    cb_context:add_validation_error([<<"data">>, <<"endpoints">>, Element]
-                                   ,<<"minItems">>
-                                   ,kz_json:from_list([{<<"message">>, <<"user ", UserId/binary, " failed to resolve to route-able destinations">>}
-                                                      ,{<<"target">>, 1}
-                                                      ])
-                                   ,Context
-                                   ).
-
 
 -spec add_not_found_error(cb_context:context(), kz_term:ne_binary(), pos_integer()) -> cb_context:context().
 add_not_found_error(Context, Id, Index) when is_integer(Index) ->
     cb_context:add_validation_error([<<"data">>, <<"endpoints">>, Index]
                                    ,<<"not_found">>
                                    ,kz_json:from_list([{<<"message">>, <<"ID ", Id/binary, " not found">>}])
+                                   ,Context
+                                   ).
+
+-spec add_invalid_uri_error(cb_context:context(), kz_term:ne_binary(), pos_integer()) -> cb_context:context().
+add_invalid_uri_error(Context, Id, Index) when is_integer(Index) ->
+    cb_context:add_validation_error([<<"data">>, <<"endpoints">>, Index]
+                                   ,<<"not_found">>
+                                   ,kz_json:from_list([{<<"message">>, <<"URI ", Id/binary, " is invalid">>}])
                                    ,Context
                                    ).
 
@@ -1036,8 +1025,20 @@ partition_participants_count(Participants, Fun) ->
 partition_participants(Participants, Fun) ->
     lists:partition(Fun, Participants).
 
--spec search_conferences(cb_context:context()) -> cb_context:context().
-search_conferences(Context) ->
+-spec maybe_add_running_conferences(cb_context:context()) -> cb_context:context().
+maybe_add_running_conferences(Context) ->
+    case maybe_get_read_only_fields(Context) of
+        'undefined' ->
+            add_running_conferences(Context);
+        [] ->
+            Context;
+        Fields ->
+            FieldsFun = kz_view:build_fields_fun(Fields, 'undefined'),
+            add_running_conferences(cb_context:store(Context, 'fields_fun', FieldsFun))
+    end.
+
+-spec add_running_conferences(cb_context:context()) -> cb_context:context().
+add_running_conferences(Context) ->
     AccountId = cb_context:account_id(Context),
     Req = [{<<"Account-ID">>, AccountId}
           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
@@ -1045,7 +1046,7 @@ search_conferences(Context) ->
     case kz_amqp_worker:call_collect(Req, fun kapi_conference:publish_search_req/1, {'ecallmgr', 'true'}) of
         {'error', _E} ->
             lager:debug("error searching conferences for account ~s: ~p", [AccountId, _E]),
-            cb_context:store(Context, 'conferences', kz_json:new());
+            handle_search_resp(Context, [kz_json:new()]);
         {'ok', JObjs} ->
             handle_search_resp(Context, JObjs);
         {'timeout', JObjs} ->
@@ -1053,13 +1054,66 @@ search_conferences(Context) ->
             handle_search_resp(Context, JObjs)
     end.
 
+-spec maybe_get_read_only_fields(cb_context:context()) -> kz_view:fields() | 'undefined'.
+maybe_get_read_only_fields(Context) ->
+    maybe_get_read_only_fields(Context, kz_term:is_true(cb_context:fetch(Context, 'has_fields'))).
+
+-spec maybe_get_read_only_fields(cb_context:context(), boolean()) -> kz_view:fields() | 'undefined'.
+maybe_get_read_only_fields(_, 'false') ->
+    'undefined';
+maybe_get_read_only_fields(Context, 'true') ->
+    get_read_only_fields(cb_context:fetch(Context, 'fields', []), []).
+
+-spec get_read_only_fields(kz_view:fields(), kz_view:fields()) -> kz_view:fields().
+get_read_only_fields([<<"_read_only">>|Fields], Acc) ->
+    get_read_only_fields(Fields, [<<"_read_only">> | Acc]);
+get_read_only_fields([[<<"_read_only">>|_] = Field| Fields], Acc) ->
+    get_read_only_fields(Fields, [Field | Acc]);
+
+get_read_only_fields([{<<"_read_only">>, _} = Field | Fields], Acc) ->
+    get_read_only_fields(Fields, [Field | Acc]);
+get_read_only_fields([[{<<"_read_only">>, _}|_] = Field| Fields], Acc) ->
+    get_read_only_fields(Fields, [Field | Acc]);
+
+get_read_only_fields([], Acc) ->
+    Acc;
+get_read_only_fields([_|Fields], Acc) ->
+    get_read_only_fields(Fields, Acc).
+
 -spec handle_search_resp(cb_context:context(), kz_json:objects()) -> cb_context:context().
 handle_search_resp(Context, JObjs) ->
-    Res = lists:foldl(fun search_conferences_fold/2, kz_json:new(), JObjs),
-    cb_context:store(Context, 'conferences', Res).
+    FieldsFun = cb_context:fetch(Context, 'fields_fun'),
+    RunningConferences = lists:foldl(fun search_conferences_fold/2, kz_json:new(), JObjs),
+    ReadOnly = kz_json:map(fun move_to_read_only/2, RunningConferences),
+    Conferences = [add_realtime_fold(JObj, ReadOnly, FieldsFun) || JObj <-  cb_context:resp_data(Context)],
+    cb_context:set_resp_data(Context, Conferences).
 
 -spec search_conferences_fold(kz_json:object(), kz_json:object()) ->
           kz_json:object().
 search_conferences_fold(JObj, Acc) ->
     V = kz_json:get_json_value(<<"Conferences">>, JObj, kz_json:new()),
     kz_json:merge_jobjs(V, Acc).
+
+-spec move_to_read_only(kz_json:key(), kz_json:object()) ->
+          {kz_json:key(), kz_json:object()}.
+move_to_read_only(Id, Realtime) ->
+    {Id, kz_json:from_list([{<<"_read_only">>, kz_json:normalize(Realtime)}])}.
+
+-spec add_realtime_fold(kzd_conference:doc(), kz_json:object(), kz_view:fields_fun()) -> kz_json:object().
+add_realtime_fold(Conference, ReadOnly, 'undefined') ->
+    Realtime = kz_json:get_value(kz_doc:id(Conference), ReadOnly, empty_realtime_data()),
+    kz_json:merge(Conference, Realtime);
+add_realtime_fold(Conference, ReadOnly, FieldsFun) ->
+    [Realtime] = kz_view:apply_fields_fun(FieldsFun, [kz_json:get_ne_json_value(kz_doc:id(Conference), ReadOnly, empty_realtime_data())]),
+    kz_json:merge(Conference, Realtime).
+
+-spec empty_realtime_data() -> kz_json:object().
+empty_realtime_data() ->
+    kz_json:from_list_recursive(
+      [{<<"_read_only">>
+       ,[{<<"members">>, 0}
+        ,{<<"moderators">>, 0}
+        ,{<<"duration">>, 0}
+        ,{<<"is_locked">>, 'false'}
+        ]
+       }]).

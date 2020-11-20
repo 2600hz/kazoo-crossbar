@@ -506,6 +506,17 @@
             },
             "type": "object"
         },
+        "account_config.voicemail": {
+            "description": "Schema for voicemail account_config",
+            "properties": {
+                "vm_message_forward_type": {
+                    "default": "only_forward",
+                    "description": "Enable or disable the ability to prepend a message when forwarding a voicemail message",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "account_config.webhooks": {
             "description": "Schema for webhooks account_config",
             "properties": {
@@ -1346,6 +1357,32 @@
                     "type": "string"
                 }
             },
+            "type": "object"
+        },
+        "call_reports": {
+            "description": "Schema for a call report",
+            "properties": {
+                "call_id": {
+                    "description": "Call ID for which the quality/issue report was submitted",
+                    "type": "string"
+                },
+                "cdr_id": {
+                    "description": "CDR ID of the call for which the quality/issue report was submitted",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "Description of the issue/steps to reproduce/etc. that may be submitted by, for example, a user",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type of issue that was reported. Must be in the list of allowed types for call reports in system_config",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "call_id",
+                "type"
+            ],
             "type": "object"
         },
         "call_waiting": {
@@ -5087,9 +5124,42 @@
             },
             "type": "object"
         },
+        "conference_auth": {
+            "description": "Schema for conference_auth",
+            "properties": {
+                "account_name": {
+                    "description": "The account name of the conference",
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                },
+                "conference_name": {
+                    "description": "Conference name",
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                },
+                "conference_pin": {
+                    "description": "Conference member pin number",
+                    "pattern": "^[0-9]+$",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "account_name",
+                "conference_pin",
+                "conference_name"
+            ],
+            "type": "object"
+        },
         "conferences": {
             "description": "Schema for conferences",
             "properties": {
+                "allow_shareable_link": {
+                    "default": false,
+                    "description": "Indicates if the conference is reachable using a public link",
+                    "type": "boolean"
+                },
                 "bridge_password": {
                     "description": "the password used for a conference bridge",
                     "type": "string"
@@ -5285,6 +5355,9 @@
                     "type": "boolean"
                 }
             },
+            "required": [
+                "name"
+            ],
             "type": "object"
         },
         "conferences.dial": {
@@ -6906,6 +6979,10 @@
                     "maximum": 4,
                     "minimum": 0,
                     "type": "integer"
+                },
+                "subject": {
+                    "description": "The subject header in an email to fax message",
+                    "type": "string"
                 },
                 "to_name": {
                     "description": "The recipient name for the fax",
@@ -9936,6 +10013,143 @@
             ],
             "type": "object"
         },
+        "registrations": {
+            "description": "Device registration information",
+            "properties": {
+                "account_name": {
+                    "description": "Account Name",
+                    "type": "string"
+                },
+                "account_realm": {
+                    "description": "Account SIP realm",
+                    "type": "string"
+                },
+                "authorizing_id": {
+                    "description": "Registering Device ID",
+                    "type": "string"
+                },
+                "authorizing_type": {
+                    "description": "Type of registered endpoint",
+                    "type": "string"
+                },
+                "bridge_ruri": {
+                    "description": "SIP URI used for bridging to endpoint",
+                    "type": "string"
+                },
+                "call_id": {
+                    "description": "REGISTER Call-ID",
+                    "type": "string"
+                },
+                "contact": {
+                    "description": "SIP Contact header",
+                    "type": "string"
+                },
+                "contact_ip": {
+                    "description": "Contact IP",
+                    "type": "string"
+                },
+                "contact_port": {
+                    "description": "Contact port",
+                    "type": "integer"
+                },
+                "event_timestamp": {
+                    "description": "Timestamp of registration",
+                    "type": "integer"
+                },
+                "expires": {
+                    "description": "Seconds until registration expiration",
+                    "type": "integer"
+                },
+                "first_registration": {
+                    "description": "First-seen registration",
+                    "type": "boolean"
+                },
+                "from_host": {
+                    "description": "SIP From Header Realm",
+                    "type": "string"
+                },
+                "from_user": {
+                    "description": "SIP From Header Username",
+                    "type": "string"
+                },
+                "initial_registration": {
+                    "description": "Timestamp of first registration",
+                    "type": "integer"
+                },
+                "last_registration": {
+                    "description": "Timestamp of latest registration",
+                    "type": "integer"
+                },
+                "original_contact": {
+                    "description": "Orignal SIP Contact",
+                    "type": "string"
+                },
+                "presence_id": {
+                    "description": "Presence ID",
+                    "type": "string"
+                },
+                "proxy_ip": {
+                    "description": "Registrar Proxy IP",
+                    "type": "string"
+                },
+                "proxy_path": {
+                    "description": "Registrar Proxy path",
+                    "type": "string"
+                },
+                "proxy_port": {
+                    "description": "Registrar Proxy port",
+                    "type": "integer"
+                },
+                "proxy_protocol": {
+                    "description": "Registrar Proxy protocol",
+                    "type": "string"
+                },
+                "realm": {
+                    "description": "Account SIP Realm",
+                    "type": "string"
+                },
+                "register_overwrite_notify": {
+                    "description": "Whether to overwrite NOTIFY",
+                    "type": "boolean"
+                },
+                "registrar_node": {
+                    "description": "Registrar Node name",
+                    "type": "string"
+                },
+                "source_ip": {
+                    "description": "Device source IP",
+                    "type": "string"
+                },
+                "source_port": {
+                    "description": "Device source port",
+                    "type": "integer"
+                },
+                "suppress_unregister_notify": {
+                    "description": "Should suppress Unregister notification",
+                    "type": "boolean"
+                },
+                "to_host": {
+                    "description": "SIP To Host",
+                    "type": "string"
+                },
+                "to_user": {
+                    "description": "SIP To Username",
+                    "type": "string"
+                },
+                "user_agent": {
+                    "description": "SIP User-Agent",
+                    "type": "string"
+                },
+                "username": {
+                    "description": "Device username",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "call_id"
+            ],
+            "type": "object"
+        },
         "resource_jobs": {
             "description": "Schema for resource jobs (bulk number uploads)",
             "properties": {
@@ -11824,15 +12038,6 @@
                             "default": false,
                             "description": "send ampq message to notify about voicemail deletion",
                             "type": "boolean"
-                        },
-                        "vm_message_forward_type": {
-                            "default": "only_forward",
-                            "description": "Enable or disable the ability to prepend a message when forwarding a voicemail message",
-                            "enum": [
-                                "only_forward",
-                                "prepend_forward"
-                            ],
-                            "type": "string"
                         }
                     },
                     "type": "object"
@@ -12369,6 +12574,11 @@
                     "description": "crossbar compress response body",
                     "type": "boolean"
                 },
+                "conference_auth_tokens": {
+                    "default": 35,
+                    "description": "crossbar conference_auth_tokens",
+                    "type": "integer"
+                },
                 "default_allow_anonymous_quickcalls": {
                     "default": true,
                     "description": "crossbar default allow anonymous quickcalls",
@@ -12799,6 +13009,52 @@
             },
             "type": "object"
         },
+        "system_config.crossbar.call_reports": {
+            "description": "Schema for crossbar.call_reports system_config",
+            "properties": {
+                "allowed_types": {
+                    "default": [
+                        {
+                            "id": "dropped_call",
+                            "name": "Dropped call"
+                        },
+                        {
+                            "id": "one_way_audio",
+                            "name": "One-way audio"
+                        },
+                        {
+                            "id": "broken_audio",
+                            "name": "Broken audio or bad sound"
+                        },
+                        {
+                            "id": "other",
+                            "name": "Other"
+                        }
+                    ],
+                    "description": "Allowed types for call reports",
+                    "items": {
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name"
+                        ],
+                        "type": "object"
+                    },
+                    "type": "array"
+                }
+            },
+            "required": [
+                "allowed_types"
+            ],
+            "type": "object"
+        },
         "system_config.crossbar.cdrs": {
             "description": "Schema for crossbar.cdrs system_config",
             "properties": {
@@ -12838,6 +13094,21 @@
             },
             "type": "object"
         },
+        "system_config.crossbar.conference_auth": {
+            "description": "Schema for crossbar.conference_auth system_config",
+            "properties": {
+                "conference_public_domain": {
+                    "description": "crossbar conference_auth conference_public_domain",
+                    "type": "string"
+                },
+                "invite_link_allowed_scope": {
+                    "default": "crossbar:conference_join",
+                    "description": "crossbar conference_auth invite_link_allowed_scope",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "system_config.crossbar.contact_list": {
             "description": "Schema for crossbar.contact_list system_config",
             "properties": {
@@ -12860,10 +13131,38 @@
                     "description": "crossbar.devices allow aggregates",
                     "type": "boolean"
                 },
+                "always_registered_device_types": {
+                    "default": [
+                        "application",
+                        "cellphone",
+                        "sip_url",
+                        "landline",
+                        "smartphone"
+                    ],
+                    "description": "crossbar devices always_registered_device_types",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
                 "check_sync_event": {
                     "default": "check-sync",
                     "description": "crossbar devices check_sync_event",
                     "type": "string"
+                },
+                "not_registrable_device_types": {
+                    "default": [
+                        "application",
+                        "cellphone",
+                        "sip_url",
+                        "landline",
+                        "smartphone"
+                    ],
+                    "description": "crossbar devices not_registrable_device_types",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
                 },
                 "provisioner_host": {
                     "description": "crossbar.devices provisioner host",
@@ -17943,6 +18242,21 @@
             },
             "type": "object"
         },
+        "system_config.voicemail": {
+            "description": "Schema for voicemail system_config",
+            "properties": {
+                "vm_message_forward_type": {
+                    "default": "only_forward",
+                    "description": "Enable or disable the ability to prepend a message when forwarding a voicemail message",
+                    "enum": [
+                        "only_forward",
+                        "prepend_forward"
+                    ],
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "system_config.webhooks": {
             "description": "Schema for webhooks system_config",
             "properties": {
@@ -19086,6 +19400,15 @@
                     "default": false,
                     "description": "Transcribe voicemail using ASR engine",
                     "type": "boolean"
+                },
+                "vm_message_forward_type": {
+                    "default": "only_forward",
+                    "description": "Enable or disable the ability to prepend a message when forwarding a voicemail message",
+                    "enum": [
+                        "only_forward",
+                        "prepend_forward"
+                    ],
+                    "type": "string"
                 }
             },
             "required": [
@@ -19320,6 +19643,11 @@
             "properties": {
                 "company_name": {
                     "description": "The company name to display to users",
+                    "type": "string"
+                },
+                "conference_public_domain": {
+                    "description": "This is the whitelabeled domain that conference participants can use to reach the conference through webphone",
+                    "format": "uri",
                     "type": "string"
                 },
                 "domain": {
@@ -20858,6 +21186,48 @@
                 }
             }
         },
+        "/accounts/{ACCOUNT_ID}/call_reports": {
+            "put": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "call_reports",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/call_reports"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/call_reports/allowed_types": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
         "/accounts/{ACCOUNT_ID}/callflows": {
             "get": {
                 "parameters": [
@@ -21459,6 +21829,59 @@
                     },
                     {
                         "$ref": "#/parameters/COMMENT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/conference_auth": {
+            "put": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "conference_auth",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/conference_auth"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/conference_auth/{CONFERENCE_ID}": {
+            "put": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "conference_auth",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/conference_auth"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/CONFERENCE_ID"
                     }
                 ],
                 "responses": {

@@ -693,6 +693,9 @@ content_type_accepted_fold(<<ContentType/binary>>, Acc, FromFun, ClientCT) ->
             lager:debug("skipping content-type: ~p", [{Type, SubType}]),
             Acc
     end;
+content_type_accepted_fold({Type, SubType}=EncType, Acc, FromFun, _ClientCT) ->
+    lager:debug("adding accepted content-type: ~p(~p)", [EncType, FromFun]),
+    [{{Type, SubType, '*'}, FromFun} | Acc];
 content_type_accepted_fold({_,_,_}=EncType, Acc, FromFun, _ClientCT) ->
     lager:debug("adding accepted content-type: ~p(~p)", [EncType, FromFun]),
     [{EncType, FromFun} | Acc].
@@ -992,12 +995,12 @@ get_range(Data, RangeHeader) ->
 resp_error_code_for_range({_Content, _Start, _End, FileLength, FileLength}) -> 200;
 resp_error_code_for_range({_Content, _Start, _End, _Length, _FileLength}) -> 206.
 
--spec send_file(cowboy_req:req(), cb_context:context()) -> api_util:pull_file_response_return().
+-spec send_file(cowboy_req:req(), cb_context:context()) -> api_util:pull_response_return().
 send_file(Req, Context) ->
     lager:debug("run: send_file"),
     api_util:create_pull_response(Req, Context, fun api_util:create_resp_file/2).
 
--spec to_xml(cowboy_req:req(), cb_context:context()) -> api_util:pull_file_response_return().
+-spec to_xml(cowboy_req:req(), cb_context:context()) -> api_util:pull_response_return().
 to_xml(Req, Context) ->
     lager:debug("run: to_xml"),
     api_util:create_pull_response(Req

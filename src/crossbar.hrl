@@ -81,6 +81,7 @@
                          ,'cb_channels'
                          ,'cb_clicktocall'
                          ,'cb_comments'
+                         ,'cb_conference_auth'
                          ,'cb_conferences'
                          ,'cb_configs'
                          ,'cb_connectivity'

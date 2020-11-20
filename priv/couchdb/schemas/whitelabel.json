@@ -8,6 +8,12 @@
             "support_level": "supported",
             "type": "string"
         },
+        "conference_public_domain": {
+            "description": "This is the whitelabeled domain that conference participants can use to reach the conference through webphone",
+            "format": "uri",
+            "support_level": "supported",
+            "type": "string"
+        },
         "domain": {
             "description": "This is the whitelabeled domain that users will be entering to reach the UI",
             "format": "uri",

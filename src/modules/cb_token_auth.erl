@@ -170,7 +170,7 @@ early_authenticate(_Context, _TokenType) -> 'false'.
 -spec early_authenticate_token(cb_context:context(), kz_term:api_binary()) ->
           boolean() |
           {'true', cb_context:context()}.
-early_authenticate_token(Context, AuthToken) when is_binary(AuthToken) ->
+early_authenticate_token(Context, <<AuthToken/binary>>) ->
     validate_auth_token(Context, AuthToken);
 early_authenticate_token(_Context, 'undefined') -> 'false'.
 
@@ -197,11 +197,14 @@ check_auth_token(_Context, 'undefined', MagicPathed) ->
 check_auth_token(Context, AuthToken, _MagicPathed) ->
     validate_auth_token(Context, AuthToken).
 
--spec validate_auth_token(cb_context:context(), kz_term:ne_binary()) ->
+-spec validate_auth_token(cb_context:context(), binary()) ->
           boolean() |
           {'true', cb_context:context()} |
           {'stop', cb_context:context()}.
-validate_auth_token(Context, ?NE_BINARY = AuthToken) ->
+validate_auth_token(_Context, <<>>) ->
+    lager:debug("no auth token supplied"),
+    'false';
+validate_auth_token(Context, <<AuthToken/binary>>) ->
     Options = [{<<"account_id">>, cb_context:req_header(Context, <<"x-auth-account-id">>)}],
     lager:debug("checking auth token"),
     case crossbar_auth:validate_auth_token(AuthToken, props:filter_undefined(Options)) of

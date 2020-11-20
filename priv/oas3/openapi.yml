@@ -58,6 +58,11 @@
   '/accounts/{ACCOUNT_ID}/call_inspector/{CALL_ID}':
     '$ref': >-
       paths/call_inspector.yml#/paths/~1accounts~1{ACCOUNT_ID}~1call_inspector~1{CALL_ID}
+  '/accounts/{ACCOUNT_ID}/call_reports':
+    '$ref': 'paths/call_reports.yml#/paths/~1accounts~1{ACCOUNT_ID}~1call_reports'
+  '/accounts/{ACCOUNT_ID}/call_reports/allowed_types':
+    '$ref': >-
+      paths/call_reports.yml#/paths/~1accounts~1{ACCOUNT_ID}~1call_reports~1allowed_types
   '/accounts/{ACCOUNT_ID}/callflows':
     '$ref': 'paths/callflows.yml#/paths/~1accounts~1{ACCOUNT_ID}~1callflows'
   '/accounts/{ACCOUNT_ID}/callflows/{CALLFLOW_ID}':
@@ -95,6 +100,11 @@
     '$ref': 'paths/comments.yml#/paths/~1accounts~1{ACCOUNT_ID}~1comments'
   '/accounts/{ACCOUNT_ID}/comments/{COMMENT_ID}':
     '$ref': 'paths/comments.yml#/paths/~1accounts~1{ACCOUNT_ID}~1comments~1{COMMENT_ID}'
+  '/accounts/{ACCOUNT_ID}/conference_auth':
+    '$ref': 'paths/conference_auth.yml#/paths/~1accounts~1{ACCOUNT_ID}~1conference_auth'
+  '/accounts/{ACCOUNT_ID}/conference_auth/{CONFERENCE_ID}':
+    '$ref': >-
+      paths/conference_auth.yml#/paths/~1accounts~1{ACCOUNT_ID}~1conference_auth~1{CONFERENCE_ID}
   '/accounts/{ACCOUNT_ID}/conferences':
     '$ref': 'paths/conferences.yml#/paths/~1accounts~1{ACCOUNT_ID}~1conferences'
   '/accounts/{ACCOUNT_ID}/conferences/{CONFERENCE_ID}':

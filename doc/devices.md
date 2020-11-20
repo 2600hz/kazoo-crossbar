@@ -265,6 +265,8 @@ Currently the `call_forward` object allows you to define call forwarding *or* fa
 
 ## Fetch
 
+Lists all devices in an account.
+
 > GET /v2/accounts/{ACCOUNT_ID}/devices
 
 ```shell
@@ -278,11 +280,50 @@ curl -v -X GET \
     "auth_token": "{AUTH_TOKEN}",
     "data": [
         {
+            "id": "4ee2d01d474a92ca299bb311efd23cef",
+            "name": "Device1 Admin",
+            "enabled": true,
+            "flags": [],
+            "features": [],
+            "owner_id": "96f99542f33c180790d1836192300c27",
             "device_type": "sip_device",
-            "enabled": false,
-            "id": "{DEVICE_ID}",
-            "mac_address": "00:04:f2:ab:7e:fd",
-            "name": "MyPolycom"
+            "mac_address": "001122334455",
+            "username": "user_meme"
+        }
+    ],
+    "page_size": 1,
+    "request_id": "{REQUEST_ID}",
+    "revision": "{REVISION}",
+    "status": "success"
+}
+```
+
+### New in Kazoo 5: List devices with their statuses
+
+Using Kazoo 5+, If query string `?with_status=true` is set result will also includes the device registration statuses (see [Fetch registration statuses of all devices](#fetch-registration-statuses-of-all-devices)):
+
+```shell
+curl -v -X GET \
+    -X "X-Auth-Token: {AUTH_TOKEN} \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/devices?with_status=true
+```
+
+```json
+{
+    "auth_token": "{AUTH_TOKEN}",
+    "data": [
+        {
+            "id": "4ee2d01d474a92ca299bb311efd23cef",
+            "name": "Device1 Admin",
+            "enabled": true,
+            "flags": [],
+            "features": [],
+            "owner_id": "96f99542f33c180790d1836192300c27",
+            "device_type": "sip_device",
+            "mac_address": "001122334455",
+            "username": "user_meme",
+            "registrable": true,
+            "registered": true
         }
     ],
     "page_size": 1,
@@ -619,7 +660,18 @@ curl -v -X POST \
 
 ## Fetch registration statuses of all devices
 
-This will fetch the current registrations of any devices. If no devices are registered, an empty list will be returned.
+This will fetch the current registrations of any devices.
+
+
+**New in Kazoo 5:**
+
+This will list all devices including non-registered devices.
+Some device types will never be expected to be registered. This list of device types are stored in System Config `always_registered_device_types` in `crossbar.devices`.
+
+New field `registrable` is added to show if the device is registrable or not.
+
+You can also use `/v2/accounts/{ACCOUNT_ID}/devices?with_status=true` if you need more info about the devices.
+
 
 > GET /v2/accounts/{ACCOUNT_ID}/devices/status
 
@@ -634,8 +686,13 @@ curl -v -X GET \
     "auth_token": "{AUTH_TOKEN}",
     "data": [
         {
-            "device_id": "{DEVICE_ID}",
+            "device_id": "{DEVICE_ID_1}",
+            "registrable": true,
             "registered": true
+        },
+        {
+            "device_id": "{DEVICE_ID_2}",
+            "registrable": false
         }
     ],
     "request_id": "{REQUEST_ID}",
