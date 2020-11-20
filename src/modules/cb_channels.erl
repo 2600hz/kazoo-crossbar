@@ -275,31 +275,28 @@ device_summary(Context, DeviceId) ->
 
 -spec user_summary(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 user_summary(Context, UserId) ->
-    {Endpoints, Context1} = user_endpoints(Context, UserId),
-    case cb_context:has_errors(Context1) of
-        'true' -> Context1;
-        'false' -> maybe_get_user_channels(Context1, Endpoints)
-    end.
+    maybe_get_user_channels(Context, user_endpoints(Context, UserId)).
 
 -spec maybe_get_user_channels(cb_context:context(), kz_json:objects()) -> cb_context:context().
+maybe_get_user_channels(Context, []) ->
+    crossbar_util:response([], Context);
 maybe_get_user_channels(Context, Endpoints) ->
-    case kz_term:is_empty(Endpoints) of
-        'true' -> crossbar_util:response([], Context);
-        'false' ->
-            get_channels(Context
-                        ,Endpoints
-                        ,fun kapi_call:publish_query_user_channels_req/1
-                        )
-    end.
+    get_channels(Context
+                ,Endpoints
+                ,fun kapi_call:publish_query_user_channels_req/1
+                ).
 
--spec user_endpoints(cb_context:context(), kz_term:ne_binary()) ->
-          endpoints_return().
+-spec user_endpoints(cb_context:context(), kz_term:ne_binary()) -> kz_json:objects().
 user_endpoints(Context, UserId) ->
     Options = [{'key', [UserId, <<"device">>]}
               ,'include_docs'
               ],
-    Context1 = crossbar_view:load(Context, <<"attributes/owned">>, Options),
-    {cb_context:doc(Context1), Context1}.
+    case kz_datamgr:get_results(cb_context:db_name(Context), <<"attributes/owned">>, Options) of
+        {'ok', JObjs} -> JObjs;
+        {'error', _Reason} ->
+            lager:debug("failed to list user '~s' devices: ~p", [UserId, _Reason]),
+            []
+    end.
 
 -spec group_summary(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 group_summary(Context, GroupId) ->
@@ -325,8 +322,8 @@ group_endpoints(Context, _GroupId) ->
 group_endpoints_fold(EndpointId, EndpointData, {Acc, Context}) ->
     case kz_json:get_value(<<"type">>, EndpointData) of
         <<"user">> ->
-            {EPs, Context1} = user_endpoints(Context, EndpointId),
-            {EPs ++ Acc, Context1};
+            EPs = user_endpoints(Context, EndpointId),
+            {EPs ++ Acc, Context};
         <<"device">> ->
             Context1 = crossbar_doc:load(EndpointId, Context, ?TYPE_CHECK_OPTION(kzd_devices:type())),
             {[cb_context:doc(Context1) | Acc], Context1};

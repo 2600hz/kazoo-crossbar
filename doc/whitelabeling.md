@@ -11,6 +11,7 @@ Whitelabel settings
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `company_name` | The company name to display to users | `string()` |   | `false` | `supported`
+`conference_public_domain` | This is the whitelabeled domain that conference participants can use to reach the conference through webphone | `string()` |   | `false` | `supported`
 `domain` | This is the whitelabeled domain that users will be entering to reach the UI | `string()` |   | `false` | `supported`
 `fake_api_url` | This is a whitelabeled API URL, primarily used by the developer application | `string()` |   | `false` | `beta`
 `hide_credits` | When checked this hides the credits | `boolean()` | `false` | `false` | `beta`

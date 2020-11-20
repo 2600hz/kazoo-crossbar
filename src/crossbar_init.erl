@@ -33,7 +33,7 @@ default_path() ->
 api_path() ->
     {<<"/:version/[...]">>, [api_version_constraint()], 'api_resource', []}.
 
--spec api_version_constraint() -> cowboy_router:constraint().
+-spec api_version_constraint() -> {'version', cowboy_constraints:constraint()}.
 api_version_constraint() ->
     {'version', fun api_version_constraint/2}.
 

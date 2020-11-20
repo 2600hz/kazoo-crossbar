@@ -40,7 +40,8 @@ build(Context) ->
 
 %% @equiv build_with_mapper(Context, UserMapper, is_defined(Context))
 
--spec build_with_mapper(cb_context:context(), crossbar_view:user_mapper_fun()) -> kz_view:filtermap().
+-spec build_with_mapper(cb_context:context(), crossbar_view:user_mapper_fun()) ->
+          kz_view:filtermap_fun() | 'undefined'.
 build_with_mapper(Context, UserMapper) ->
     build_with_mapper(Context, UserMapper, is_defined(Context)).
 
@@ -50,11 +51,13 @@ build_with_mapper(Context, UserMapper) ->
 %% on the view result.
 %% @end
 %%------------------------------------------------------------------------------
--spec build_with_mapper(cb_context:context(), crossbar_view:user_mapper_fun(), boolean()) -> kz_view:filtermap().
+-spec build_with_mapper(cb_context:context(), crossbar_view:user_mapper_fun(), boolean()) ->
+          kz_view:filtermap_fun() | 'undefined'.
 build_with_mapper(Context, UserMapper, 'false') when is_function(UserMapper, 3) ->
     fun(JObj, Acc) -> UserMapper(Context, JObj, Acc) end;
-build_with_mapper(_, UserMapper, 'false') when UserMapper =:= 'undefined'
-                                               orelse is_function(UserMapper, 1)
+build_with_mapper(_, 'undefined', 'false') ->
+    'undefined';
+build_with_mapper(_, UserMapper, 'false') when is_function(UserMapper, 1)
                                                orelse is_function(UserMapper, 2) ->
     UserMapper;
 build_with_mapper(Context, UserMapper, 'true') ->
@@ -67,8 +70,8 @@ build_with_mapper(Context, UserMapper, 'true') ->
 %%------------------------------------------------------------------------------
 -spec is_defined(cb_context:context()) -> boolean().
 is_defined(Context) ->
-    cb_context:fetch(Context, 'has_qs_filter', 'true') %% set by crossbar_view build load params only
-        andalso kz_json:any(fun is_filter_key/1, cb_context:query_string(Context)).
+    kz_term:is_true(cb_context:fetch(Context, 'has_qs_filter')) %% if set by crossbar_view don't check again
+        orelse kz_json:any(fun is_filter_key/1, cb_context:query_string(Context)).
 
 %%------------------------------------------------------------------------------
 %% @doc Check if only time filters are defined in query string, useful to
@@ -176,8 +179,13 @@ build_filter_map_fun(Context, FilterFun, UserMapper) when is_function(UserMapper
 %% @end
 %%------------------------------------------------------------------------------
 -spec is_filter_key({binary(), any()}) -> boolean().
-is_filter_key({<<"filter_", _/binary>>, _}) -> 'true';
 is_filter_key({<<"filter_not_", _/binary>>, _}) -> 'true';
+is_filter_key({<<"filter_any_">>, _}) -> 'true';
+is_filter_key({<<"filter_array_intersect_all_">>, _}) -> 'true';
+is_filter_key({<<"filter_array_intersect_any_">>, _}) -> 'true';
+is_filter_key({<<"filter_array_intersect_none_">>, _}) -> 'true';
+is_filter_key({<<"filter_none_">>, _}) -> 'true';
+is_filter_key({<<"filter_", _/binary>>, _}) -> 'true';
 is_filter_key({<<"has_key", _/binary>>, _}) -> 'true';
 is_filter_key({<<"key_missing", _/binary>>, _}) -> 'true';
 is_filter_key({<<"has_value", _/binary>>, _}) -> 'true';
@@ -208,6 +216,16 @@ should_filter_doc(Doc, K, V) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec filter_prop(kz_json:object(), kz_term:ne_binary(), any()) -> kz_term:api_boolean().
+filter_prop(Doc, <<"filter_any_", Key/binary>>, Val) ->
+    array_compare(get_binary_value(Doc, Key), Val, fun lists:any/2);
+filter_prop(Doc, <<"filter_array_intersect_all_", Key/binary>>, Val) ->
+    array_compare(get_list_value(Doc, Key), Val, fun lists:all/2);
+filter_prop(Doc, <<"filter_array_intersect_any_", Key/binary>>, Val) ->
+    array_compare(get_list_value(Doc, Key), Val, fun lists:any/2);
+filter_prop(Doc, <<"filter_array_intersect_none_", Key/binary>>, Val) ->
+    not array_compare(get_list_value(Doc, Key), Val, fun lists:all/2);
+filter_prop(Doc, <<"filter_none_", Key/binary>>, Val) ->
+    not array_compare(get_binary_value(Doc, Key), Val, fun lists:any/2);
 filter_prop(Doc, <<"filter_not_", Key/binary>>, Val) ->
     not should_filter(Doc, Key, Val);
 filter_prop(Doc, <<"filter_", Key/binary>>, Val) ->
@@ -254,8 +272,7 @@ should_filter(Val, FilterVal) ->
 
 -spec should_filter(kz_json:object(), kz_term:ne_binary(), kz_json:json_term()) -> boolean().
 should_filter(Doc, Key, Val) ->
-    Keys = binary_key_to_json_key(Key),
-    should_filter(kz_json:get_binary_value(Keys, Doc, <<>>)
+    should_filter(get_binary_value(Doc, Key)
                  ,kz_term:to_binary(Val)
                  ).
 
@@ -272,3 +289,33 @@ has_value(Doc, Key) ->
 -spec binary_key_to_json_key(kz_term:ne_binary()) -> kz_term:ne_binaries().
 binary_key_to_json_key(Key) ->
     binary:split(Key, <<".">>, ['global']).
+
+-spec get_list_value(kz_json:object(), kz_term:ne_binary()) -> kz_json:json_array().
+get_list_value(Doc, Key) ->
+    Keys = binary_key_to_json_key(Key),
+    kz_json:get_list_value(Keys, Doc, []).
+
+-spec get_binary_value(kz_json:object(), kz_term:ne_binary()) -> binary().
+get_binary_value(Doc, Key) ->
+    Keys = binary_key_to_json_key(Key),
+    kz_json:get_binary_value(Keys, Doc, <<>>).
+
+-spec array_compare(kz_json:json_array() | binary(), kz_term:ne_binary() | list(), fun((_, _) -> boolean())) ->
+          boolean().
+array_compare(Val, <<FilterVal/binary>>, Fun) ->
+    try kz_json:unsafe_decode(FilterVal) of
+        List when is_list(List) ->
+            array_compare(Val, List, Fun);
+        _Data ->
+            lager:debug("data is not a list: ~p", [_Data]),
+            'false'
+    catch
+        _Error ->
+            lager:debug("data is not a list: ~p", [FilterVal]),
+            'false'
+    end;
+array_compare(<<Val/binary>>, FilterVal, Fun) when is_list(FilterVal) ->
+    Fun(fun(Elem) -> Elem =:= Val end, FilterVal);
+array_compare(Val, FilterVal, Fun) when is_list(Val)
+                                        andalso is_list(FilterVal) ->
+    Fun(fun(Elem) -> lists:member(Elem, Val) end, FilterVal).

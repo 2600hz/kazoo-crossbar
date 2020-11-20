@@ -312,6 +312,7 @@ generate_email_address(Context) ->
 faxbox_listing(Context) ->
     Options = [{'doc_type', kzd_fax_box:type()}
               ,{'mapper', fun normalize_view_results/2}
+              ,{'field_key', 'filtermap'}
               ,'include_docs'
               ],
     Selector = [{'start', [{<<"doc_type">>, kzd_fax_box:type()}]}

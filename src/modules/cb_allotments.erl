@@ -195,7 +195,7 @@ get_consumed_mode(Context) ->
                      ,maybe_req_seconds(Context, <<"created_to">>)
                      ).
 
--spec get_consumed_mode(kz_term:api_seconds(), kz_term:api_seconds()) -> mode().
+-spec get_consumed_mode(kz_time:api_seconds(), kz_time:api_seconds()) -> mode().
 get_consumed_mode('undefined', 'undefined') ->
     NowDateTime = kz_time:now_s(),
     {<<"cycle">>, NowDateTime, NowDateTime};

@@ -126,6 +126,7 @@ debug_read(Context, ?MATCH_MODB_PREFIX(Year, Month, CallId)) ->
               ,{'endkey', [CallId, kz_json:new()]}
               ,{'mapper', fun normalize_debug_read/2}
               ,{'startkey', [CallId]}
+              ,{'field_key', 'filtermap'}
               ,'include_docs'
               ],
     Context1 = crossbar_view:load(Context, ?CB_DEBUG_LIST, Options),
@@ -139,6 +140,7 @@ debug_read(Context, CallId) ->
     ViewOptions = [{'mapper', fun normalize_debug_read/2}
                   ,{'range_keymap', CallId}
                   ,{'unchunkable', 'true'}
+                  ,{'field_key', 'filtermap'}
                   ,'include_docs'
                   ],
     crossbar_view:load_modb(Context, ?CB_DEBUG_LIST, ViewOptions).
@@ -189,7 +191,7 @@ normalize_debug_results_fold(JObj, {Set, [H|Rest]=JObjAcc}) ->
         'true' -> {Set, [kz_json:merge_jobjs(H, NewJObj)|Rest]}
     end.
 
--spec sort_by_created(kz_json:object(), kz_json:object(), crossbar_view:direction()) -> boolean().
+-spec sort_by_created(kz_json:object(), kz_json:object(), kz_view:direction()) -> boolean().
 sort_by_created(A, B, 'ascending') ->
     kz_json:get_integer_value(<<"created">>, A, 0) < kz_json:get_integer_value(<<"created">>, B, 1);
 sort_by_created(A, B, 'descending') ->

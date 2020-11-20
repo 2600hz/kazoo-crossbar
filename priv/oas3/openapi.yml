@@ -58,6 +58,11 @@
   '/accounts/{ACCOUNT_ID}/call_inspector/{CALL_ID}':
     '$ref': >-
       paths/call_inspector.yml#/paths/~1accounts~1{ACCOUNT_ID}~1call_inspector~1{CALL_ID}
+  '/accounts/{ACCOUNT_ID}/call_reports':
+    '$ref': 'paths/call_reports.yml#/paths/~1accounts~1{ACCOUNT_ID}~1call_reports'
+  '/accounts/{ACCOUNT_ID}/call_reports/allowed_types':
+    '$ref': >-
+      paths/call_reports.yml#/paths/~1accounts~1{ACCOUNT_ID}~1call_reports~1allowed_types
   '/accounts/{ACCOUNT_ID}/callflows':
     '$ref': 'paths/callflows.yml#/paths/~1accounts~1{ACCOUNT_ID}~1callflows'
   '/accounts/{ACCOUNT_ID}/callflows/{CALLFLOW_ID}':
@@ -95,6 +100,11 @@
     '$ref': 'paths/comments.yml#/paths/~1accounts~1{ACCOUNT_ID}~1comments'
   '/accounts/{ACCOUNT_ID}/comments/{COMMENT_ID}':
     '$ref': 'paths/comments.yml#/paths/~1accounts~1{ACCOUNT_ID}~1comments~1{COMMENT_ID}'
+  '/accounts/{ACCOUNT_ID}/conference_auth':
+    '$ref': 'paths/conference_auth.yml#/paths/~1accounts~1{ACCOUNT_ID}~1conference_auth'
+  '/accounts/{ACCOUNT_ID}/conference_auth/{CONFERENCE_ID}':
+    '$ref': >-
+      paths/conference_auth.yml#/paths/~1accounts~1{ACCOUNT_ID}~1conference_auth~1{CONFERENCE_ID}
   '/accounts/{ACCOUNT_ID}/conferences':
     '$ref': 'paths/conferences.yml#/paths/~1accounts~1{ACCOUNT_ID}~1conferences'
   '/accounts/{ACCOUNT_ID}/conferences/{CONFERENCE_ID}':
@@ -449,6 +459,12 @@
   '/accounts/{ACCOUNT_ID}/resources/{RESOURCE_ID}':
     '$ref': >-
       paths/resources.yml#/paths/~1accounts~1{ACCOUNT_ID}~1resources~1{RESOURCE_ID}
+  '/accounts/{ACCOUNT_ID}/scope_restrictions':
+    '$ref': >-
+      paths/scope_restrictions.yml#/paths/~1accounts~1{ACCOUNT_ID}~1scope_restrictions
+  '/accounts/{ACCOUNT_ID}/scope_restrictions/{SCOPE_RESTRICTION}':
+    '$ref': >-
+      paths/scope_restrictions.yml#/paths/~1accounts~1{ACCOUNT_ID}~1scope_restrictions~1{SCOPE_RESTRICTION}
   '/accounts/{ACCOUNT_ID}/search':
     '$ref': 'paths/search.yml#/paths/~1accounts~1{ACCOUNT_ID}~1search'
   '/accounts/{ACCOUNT_ID}/search/multi':
@@ -656,6 +672,10 @@
     '$ref': 'paths/schemas.yml#/paths/~1schemas~1{SCHEMA_NAME}'
   '/schemas/{SCHEMA_NAME}/validation':
     '$ref': 'paths/schemas.yml#/paths/~1schemas~1{SCHEMA_NAME}~1validation'
+  '/scopes':
+    '$ref': 'paths/scopes.yml#/paths/~1scopes'
+  '/scopes/{SCOPE}':
+    '$ref': 'paths/scopes.yml#/paths/~1scopes~1{SCOPE}'
   '/sup/{MODULE}':
     '$ref': 'paths/sup.yml#/paths/~1sup~1{MODULE}'
   '/sup/{MODULE}/{FUNCTION}':

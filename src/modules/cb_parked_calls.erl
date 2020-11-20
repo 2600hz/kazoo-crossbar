@@ -41,6 +41,7 @@ resource_exists() -> 'true'.
 validate(Context) ->
     Options = [{'mapper', fun normalize_view_results/2}
               ,{'doc_type', ?PARKED_CALL_DOC_TYPE}
+              ,{'field_key', 'filtermap'}
               ,'include_docs'
               ],
     Context1 = crossbar_view:load(Context, ?PARKED_CALLS_VIEW, Options),

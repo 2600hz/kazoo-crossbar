@@ -14,6 +14,7 @@
                                   {crossbar_status(), kz_term:proplist(), string(), integer()}.
 
 -type path_token() :: kz_term:ne_binary().
+-type api_path_token() :: kz_term:api_ne_binary().
 -type path_tokens() :: [path_token()].
 
 -type resp_data() :: kz_json:object() | kz_json:objects() |

@@ -175,6 +175,7 @@ validate(Context, SourceService) ->
     ViewOptions = [{'is_chunked', 'true'}
                   ,{'range_keymap', SourceService}
                   ,{'mapper', fun normalize_view_results/2}
+                  ,{'field_key', 'filtermap'}
                   ,'include_docs'
                   ],
     crossbar_view:load_modb(Context, ?VIEW_BY_SOURCE, ViewOptions).
@@ -341,6 +342,7 @@ account_summary(Context, MODB) ->
     Options = [{'databases', [MODB]}
               ,{'group_level', 1}
               ,{'mapper', fun normalize_summary_by_account/2}
+              ,{'field_key', 'filtermap'}
               ,{'range_keymap', 'nil'}
               ],
     fetch_summary(Context, ?VIEW_BY_ACCOUNT, Options).
@@ -478,7 +480,7 @@ normalize_summary_by_account(JObj, Acc) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec normalize_ledger_jobj(kazoo_data:range_key(), kz_json:object()) -> kz_json:object().
+-spec normalize_ledger_jobj(kazoo_data:key_range(), kz_json:object()) -> kz_json:object().
 normalize_ledger_jobj(AccountId, JObj) ->
     AccountJObj = kz_json:from_list([{<<"id">>, AccountId}
                                     ,{<<"name">>, kz_json:get_value(<<"account_name">>, JObj)}

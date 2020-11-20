@@ -538,7 +538,9 @@ summary(Context) ->
 view_account_phone_numbers(Context) ->
     Context1 = crossbar_view:load(rename_qs_filters(Context)
                                  ,?CB_LIST
-                                 ,[{'mapper', fun normalize_view_results/3}]
+                                 ,[{'mapper', fun normalize_view_results/3}
+                                  ,{'no_fields', 'true'}
+                                  ]
                                  ),
     case cb_context:resp_status(Context1) of
         'success' ->
@@ -919,7 +921,7 @@ set_response({'ok', JObjs}, Context, _, _Collection) ->
              ,{<<"error">>, []}
              ]),
     crossbar_util:response(Resp, Context);
-set_response({'ok', [], [Failed]}, Context, _, 'undefined') ->
+set_response({'ok', [], [{_, Failed}]}, Context, _, 'undefined') ->
     %% single number operation
     set_error(Failed, Context);
 set_response({'ok', Success, FailedProp}, Context, _, _Collection) ->
@@ -972,8 +974,7 @@ take_collection_numbers(Context) ->
     }.
 
 -spec release_or_delete(cb_context:context(), kz_term:ne_binary() | kz_term:ne_binaries(), knm_options:options()) ->
-          knm_numbers:result() |
-          knm_numbers:results().
+          knm_numbers:return().
 release_or_delete(Context, Numbers, Options) ->
     case pick_release_or_delete(Context, Options) of
         'delete' -> knm_numbers:delete(Numbers, Options);

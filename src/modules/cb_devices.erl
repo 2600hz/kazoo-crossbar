@@ -47,6 +47,18 @@
 -define(KEY_SIP_USERNAME, [<<"sip">>, <<"username">>]).
 -define(KEY_OUTBOUND_FLAGS, <<"outbound_flags">>).
 
+-define(DEFAULT_NOT_REG_TYPES, [<<"application">>
+                               ,<<"cellphone">>
+                               ,<<"sip_url">>
+                               ,<<"landline">>
+                               ,<<"smartphone">>
+                               ]
+       ).
+
+-define(NOT_REG_TYPES
+       ,kapps_config:get_ne_binaries(?MOD_CONFIG_CAT, <<"not_registrable_device_types">>, ?DEFAULT_NOT_REG_TYPES)
+       ).
+
 %%%=============================================================================
 %%% API
 %%%=============================================================================
@@ -256,20 +268,25 @@ load_device_summary(Context) ->
 -spec load_device_summary(cb_context:context(), req_nouns()) ->
           cb_context:context().
 load_device_summary(Context, [{<<"devices">>, []}, {<<"users">>, [UserId]} | _]) ->
-    Options = [{'doc_type', <<"device">>}
-              ,{'mapper', crossbar_view:get_value_fun()}
-              ],
-    Selector = [{'key', [{<<"doc_type">>, <<"device">>}, {<<"owner_id">>, UserId}]}
+    Selector = [{'key', [{<<"doc_type">>, kzd_devices:type()}, {<<"owner_id">>, UserId}]}
                ],
-    crossbar_view:find(Context, <<"crossbar_listings/by_type_ownerid">>, Selector, Options);
+    WithRegs = kz_term:is_true(cb_context:req_param(Context, <<"with_status">>)),
+    maybe_with_device_status(Context, <<"crossbar_listings/by_type_ownerid">>, Selector, WithRegs);
 load_device_summary(Context, _ReqNouns) ->
-    Options = [{'doc_type', <<"device">>}
+    Selector = [{'start', [{<<"doc_type">>, kzd_devices:type()}]}
+               ,{'end', [{<<"doc_type">>, kzd_devices:type()}]}
+               ],
+    WithRegs = kz_term:is_true(cb_context:req_param(Context, <<"with_status">>)),
+    maybe_with_device_status(Context, <<"crossbar_listings/by_type_id">>, Selector, WithRegs).
+
+maybe_with_device_status(Context, View, Selector, 'true') ->
+    ValueFun = fun(JObj) -> kz_json:get_value(<<"value">>, JObj) end,
+    load_device_status(Context, View, Selector, ValueFun);
+maybe_with_device_status(Context, View, Selector, 'false') ->
+    Options = [{'doc_type', kzd_devices:type()}
               ,{'mapper', crossbar_view:get_value_fun()}
               ],
-    Selector = [{'start', [{<<"doc_type">>, <<"device">>}]}
-               ,{'end', [{<<"doc_type">>, <<"device">>}]}
-               ],
-    crossbar_view:find(Context, <<"crossbar_listings/by_type_id">>, Selector, Options).
+    crossbar_view:find(Context, View, Selector, Options).
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -325,10 +342,50 @@ load_device(DeviceId, Context) ->
 %%------------------------------------------------------------------------------
 -spec load_device_status(cb_context:context()) -> cb_context:context().
 load_device_status(Context) ->
+    Selector = [{'start', [{<<"doc_type">>, kzd_devices:type()}]}
+               ,{'end', [{<<"doc_type">>, kzd_devices:type()}]}
+               ],
+    ValueFun = fun(JObj) -> kz_json:from_list([{<<"device_id">>, kz_doc:id(JObj)}]) end,
+    load_device_status(Context, <<"crossbar_listings/by_type_id">>, Selector, ValueFun).
+
+-spec load_device_status(cb_context:context(), kz_term:ne_binary(), kz_view:selector(), fun((kz_json:object()) -> kz_json:object())) ->
+          cb_context:context().
+load_device_status(Context, View, Selector, ValueFun) ->
+    NotRegTypes = ?NOT_REG_TYPES,
+
     AccountRealm = kzd_accounts:fetch_realm(cb_context:account_id(Context)),
-    RegStatuses = lookup_regs(AccountRealm),
-    lager:debug("reg statuses: ~p", [RegStatuses]),
-    crossbar_util:response(RegStatuses, Context).
+    RegUsernames = lookup_regs(AccountRealm, 'sets'),
+
+    MapperFun = fun(J, A) ->
+                        normalize_reg_devices(J, A, RegUsernames, NotRegTypes, ValueFun, AccountRealm)
+                end,
+    Options = [{'doc_type', kzd_devices:type()}
+              ,{'mapper', MapperFun}
+              ],
+    crossbar_view:find(Context, View, Selector, Options).
+
+-spec normalize_reg_devices(kz_json:object(), kz_json:objects(), gb_sets:set(kz_json:object())
+                           ,kz_term:ne_binaries(), fun((kz_json:object()) -> kz_json:object()), kz_term:ne_binary()
+                           ) -> kz_json:objects().
+normalize_reg_devices(JObj, Acc, RegUsernames, NotRegTypes, ValueFun, AccountRealm) ->
+    Value = ValueFun(JObj),
+    Username = kz_json:get_ne_binary_value([<<"value">>, <<"username">>], JObj),
+
+    case lists:member(kz_json:get_value([<<"value">>, <<"device_type">>], JObj), NotRegTypes) of
+        'true' ->
+            [kzd_registrations:set_registrable(Value, 'false') | Acc];
+        'false' when Username =:= 'undefined' ->
+            Prop = [{fun kzd_registrations:set_registered/2, 'false'}
+                   ,{fun kzd_registrations:set_registrable/2, 'true'}
+                   ],
+            [kz_json:set_values(Prop, Value) | Acc];
+        'false' ->
+            To = <<Username/binary, "@", AccountRealm/binary>>,
+            Prop = [{fun kzd_registrations:set_registered/2, gb_sets:is_member(To, RegUsernames)}
+                   ,{fun kzd_registrations:set_registrable/2, 'true'}
+                   ],
+            [kz_json:set_values(Prop, Value) | Acc]
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc Returns the complete list of registrations in a the first registrar
@@ -339,41 +396,25 @@ load_device_status(Context) ->
 %%------------------------------------------------------------------------------
 -spec lookup_regs(kz_term:ne_binary()) -> kz_json:objects().
 lookup_regs(AccountRealm) ->
-    Req = [{<<"Realm">>, AccountRealm}
-          ,{<<"Fields">>, [<<"Authorizing-ID">>]}
-          | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
-          ],
-    case kz_amqp_worker:call_collect(Req
-                                    ,fun kapi_registration:publish_query_req/1
-                                    ,{'ecallmgr', 'true'}
-                                    )
-    of
-        {'error', _E} ->
-            lager:debug("error getting reg: ~p", [_E]),
-            [];
-        {_, JObjs} ->
-            [kz_json:from_list([{<<"device_id">>, AuthorizingId}
-                               ,{<<"registered">>, 'true'}
-                               ])
-             || AuthorizingId <- extract_device_registrations(JObjs)
-            ]
-    end.
+    lookup_regs(AccountRealm, 'list').
 
--spec extract_device_registrations(kz_json:objects()) -> kz_term:ne_binaries().
-extract_device_registrations(JObjs) ->
-    sets:to_list(extract_device_registrations(JObjs, sets:new())).
+lookup_regs(AccountRealm, ReturnType) ->
+    process_regs(search_registrations(AccountRealm), ReturnType).
 
--spec extract_device_registrations(kz_json:objects(), sets:set()) -> sets:set().
-extract_device_registrations([], Set) -> Set;
-extract_device_registrations([JObj|JObjs], Set) ->
-    Fields = kz_json:get_value(<<"Fields">>, JObj, []),
-    S = lists:foldl(fun(J, S) ->
-                            case kz_json:get_ne_value(<<"Authorizing-ID">>, J) of
-                                'undefined' -> S;
-                                AuthId -> sets:add_element(AuthId, S)
-                            end
-                    end, Set, Fields),
-    extract_device_registrations(JObjs, S).
+-spec process_regs(kz_term:ne_binaries(), 'sets' | 'list') ->
+          kz_json:objects() | gb_sets:set(kz_json:object()).
+process_regs(Registrations, 'sets') ->
+    gb_sets:from_list(Registrations);
+process_regs(Registrations, 'list') ->
+    [kz_json:from_list([{<<"device_id">>, AuthorizingId}
+                       ,{<<"registered">>, 'true'}
+                       ,{<<"registrable">>, 'true'}
+                       ])
+     || AuthorizingId <- Registrations
+    ].
+
+search_registrations(AccountRealm) ->
+    kapi_registration:search_realm_regs(AccountRealm, <<"summary">>).
 
 %%------------------------------------------------------------------------------
 %% @doc Perform actions on a device.
@@ -812,7 +853,7 @@ check_device_schema(DeviceId, Context) ->
 
 -spec on_successful_validation(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
 on_successful_validation('undefined', Context) ->
-    Props = [{<<"pvt_type">>, <<"device">>}],
+    Props = [{<<"pvt_type">>, kzd_devices:type()}],
     cb_context:set_doc(Context, kz_json:set_values(Props, cb_context:doc(Context)));
 on_successful_validation(DeviceId, Context) ->
     crossbar_doc:load_merge(DeviceId, Context, ?TYPE_CHECK_OPTION(kzd_devices:type())).

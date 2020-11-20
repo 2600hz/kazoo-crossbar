@@ -3,6 +3,11 @@
     "_id": "system_config.crossbar",
     "description": "Schema for crossbar system_config",
     "properties": {
+        "allow_fetch_full_docs": {
+            "default": false,
+            "description": "crossbar allow_fetch_full_docs",
+            "type": "boolean"
+        },
         "allow_tracing": {
             "default": false,
             "description": "crossbar allow tracing",
@@ -30,6 +35,11 @@
             "default": true,
             "description": "crossbar compress response body",
             "type": "boolean"
+        },
+        "conference_auth_tokens": {
+            "default": 35,
+            "description": "crossbar conference_auth_tokens",
+            "type": "integer"
         },
         "default_allow_anonymous_quickcalls": {
             "default": true,

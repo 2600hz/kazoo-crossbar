@@ -33,6 +33,10 @@
         "length": {
             "type": "integer"
         },
+        "media_id": {
+            "description": "Media ID of the message",
+            "type": "string"
+        },
         "timestamp": {
             "description": "The UTC timestamp, in Gregorian seconds, that the voicemail was left on",
             "type": "integer"

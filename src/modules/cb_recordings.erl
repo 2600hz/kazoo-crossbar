@@ -130,6 +130,7 @@ recording_summary(Context) ->
     Options = [{'mapper', fun summary_doc_fun/2}
               ,{'range_start_keymap', [UserId]}
               ,{'range_end_keymap', fun(Ts) -> build_end_key(Ts, UserId) end}
+              ,{'field_key', 'filtermap'}
               ,'include_docs'
               ],
     crossbar_view:load_modb(Context, ViewName, Options).
@@ -152,7 +153,7 @@ summary_doc_fun(View, Acc) ->
 attachment_content_type(_Name, Meta, CTs) ->
     [kz_json:get_ne_binary_value(<<"content_type">>, Meta) | CTs].
 
--spec build_end_key(kz_time:gregorian_seconds(), kz_term:api_ne_binary()) -> kazoo_data:range_key().
+-spec build_end_key(kz_time:gregorian_seconds(), kz_term:api_ne_binary()) -> kazoo_data:key_range().
 build_end_key(Timestamp, 'undefined') -> [Timestamp, kz_json:new()];
 build_end_key(Timestamp, UserId) -> [UserId, Timestamp, kz_json:new()].
 

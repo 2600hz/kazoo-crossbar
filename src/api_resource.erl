@@ -693,6 +693,9 @@ content_type_accepted_fold(<<ContentType/binary>>, Acc, FromFun, ClientCT) ->
             lager:debug("skipping content-type: ~p", [{Type, SubType}]),
             Acc
     end;
+content_type_accepted_fold({Type, SubType}=EncType, Acc, FromFun, _ClientCT) ->
+    lager:debug("adding accepted content-type: ~p(~p)", [EncType, FromFun]),
+    [{{Type, SubType, '*'}, FromFun} | Acc];
 content_type_accepted_fold({_,_,_}=EncType, Acc, FromFun, _ClientCT) ->
     lager:debug("adding accepted content-type: ~p(~p)", [EncType, FromFun]),
     [{EncType, FromFun} | Acc].
@@ -992,12 +995,12 @@ get_range(Data, RangeHeader) ->
 resp_error_code_for_range({_Content, _Start, _End, FileLength, FileLength}) -> 200;
 resp_error_code_for_range({_Content, _Start, _End, _Length, _FileLength}) -> 206.
 
--spec send_file(cowboy_req:req(), cb_context:context()) -> api_util:pull_file_response_return().
+-spec send_file(cowboy_req:req(), cb_context:context()) -> api_util:pull_response_return().
 send_file(Req, Context) ->
     lager:debug("run: send_file"),
     api_util:create_pull_response(Req, Context, fun api_util:create_resp_file/2).
 
--spec to_xml(cowboy_req:req(), cb_context:context()) -> api_util:pull_file_response_return().
+-spec to_xml(cowboy_req:req(), cb_context:context()) -> api_util:pull_response_return().
 to_xml(Req, Context) ->
     lager:debug("run: to_xml"),
     api_util:create_pull_response(Req
@@ -1137,12 +1140,30 @@ process_chunk(ChunkMap, Req0, Context0) ->
     lager:debug("(chunked) ran '~s'", [ToFun]),
     case api_util:succeeded(Context1) of
         'true' ->
-            {StartedChunk, Req2, Context2} = send_chunk_response(ToFun, Req1, Context1),
-            {'ok', {ChunkMap#{chunking_started => StartedChunk}, Req2, reset_context_between_chunks(Context2, StartedChunk)}};
+            Context2 = handle_response_data(Context1),
+            {StartedChunk, Req2, Context3} = send_chunk_response(ToFun, Req1, Context2),
+            {'ok', {ChunkMap#{chunking_started => StartedChunk}, Req2, reset_context_between_chunks(Context3, StartedChunk)}};
         'false' ->
             lager:debug("(chunked) '~s' was unsuccessful", [ToFun]),
             {'error', <<"to_fun failed">>}
     end.
+
+-spec handle_response_data(cb_context:context()) -> cb_context:context().
+handle_response_data(Context) ->
+    handle_response_data(Context, cb_context:resp_data(Context)).
+
+handle_response_data(Context, []) ->
+    Context;
+handle_response_data(Context, [JObj|_] = RespData) ->
+    case kz_json:is_json_object(JObj) of
+        'true' ->
+            JObjs = [crossbar_doc:public_and_read_only(J) || J <- RespData],
+            cb_context:set_resp_data(Context, JObjs);
+        'false' ->
+            Context
+    end;
+handle_response_data(Context, _) ->
+    Context.
 
 -spec send_chunk_response(kz_term:ne_binary(), cowboy_req:req(), cb_context:context()) ->
           {boolean(), cowboy_req:req(), cb_context:context()}.

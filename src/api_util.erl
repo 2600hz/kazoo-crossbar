@@ -92,7 +92,8 @@
 -type req_fun_2() :: fun((any(), cowboy_req:req()) -> cowboy_req:req()).
 -type req_fun_3() :: fun((any(), any(), cowboy_req:req()) -> cowboy_req:req()).
 -type req_fun() :: req_fun_1() | req_fun_2() | req_fun_3().
--export_type([req_fun/0
+-export_type([pull_response_return/0
+             ,req_fun/0
              ,req_fun_1/0
              ,req_fun_2/0
              ,req_fun_3/0
@@ -103,6 +104,9 @@
                   {req_fun_2(), any()} |
                   {req_fun_3(), any(), any()}.
 -type req_funs() :: [req_kv()].
+
+-type pull_response() :: kz_term:text() | resp_file().
+-type pull_response_return() :: {pull_response(), cowboy_req:req(), cb_context:context()}.
 
 %%------------------------------------------------------------------------------
 %% @doc Attempts to determine if this is a cross origin resource preflight request
@@ -226,9 +230,9 @@ get_req_data_binding(Context, Req, CT, QS) ->
           {cb_context:context(), cowboy_req:req()} |
           stop_return().
 get_req_data(Context, Req0, 'undefined', QS) ->
-    lager:debug("undefined content type when getting req data, assuming application/json"),
+    lager:debug("undefined content type when getting req data, assuming ~s", [?DEFAULT_CONTENT_TYPE]),
     Ctx = cb_context:set_req_header(Context, <<"content-type">>, ?DEFAULT_CONTENT_TYPE),
-    get_req_data(Ctx, Req0, <<"application/json">>, QS);
+    get_req_data(Ctx, Req0, ?DEFAULT_CONTENT_TYPE, QS);
 get_req_data(Context, Req, <<"multipart/form-data">>, QS) ->
     lager:debug("multipart/form-data content type when getting req data"),
     maybe_extract_multipart(cb_context:set_query_string(Context, QS), Req, QS);
@@ -699,6 +703,8 @@ parse_path_tokens(_Context, [<<"system_configs">>=Mod|T], Events) ->
     [{Mod, T} | Events];
 parse_path_tokens(_Context, [<<"configs">>=Mod|T], Events) ->
     [{Mod, T} | Events];
+parse_path_tokens(_Context, [<<"scopes">>=Mod|T], Events) ->
+    [{Mod, T} | Events];
 parse_path_tokens(_Context, [<<"sup">>=Mod|T], Events) ->
     [{Mod, cb_sup:format_path_tokens(T)} | Events];
 parse_path_tokens(Context, [<<"account">>|T], Events) ->
@@ -968,7 +974,20 @@ get_pretty_print(Req, Context) ->
           {'true', cowboy_req:req(), cb_context:context()} |
           stop_return().
 is_permitted(Req, Context) ->
-    is_permitted_verb(Req, Context, cb_context:req_verb(Context)).
+    is_permitted_scope(Req, Context).
+
+-spec is_permitted_scope(cowboy_req:req(), cb_context:context()) ->
+          {'true', cowboy_req:req(), cb_context:context()} |
+          stop_return().
+is_permitted_scope(Req, Context0) ->
+    lager:debug("checking for enforced scopes"),
+    case maybe_enforce_scopes(Req, Context0) of
+        {'true', Req1, Context1} ->
+            is_permitted_verb(Req1, Context1, cb_context:req_verb(Context1));
+        {'stop', Req1, Context1} ->
+            lager:debug("allowed_scopes stopped"),
+            ?MODULE:stop(Req1, Context1)
+    end.
 
 -spec is_permitted_verb(cowboy_req:req(), cb_context:context(), http_method()) ->
           {'true', cowboy_req:req(), cb_context:context()} |
@@ -1626,21 +1645,19 @@ create_push_response(Req0, Context, Fun) ->
     Req2 = set_resp_headers(Req1, Context),
     {succeeded(Context), cowboy_req:set_resp_body(Content, Req2), Context}.
 
--type pull_response() :: kz_term:text() | resp_file().
-
 %%------------------------------------------------------------------------------
 %% @doc This function will create response expected for a request that
 %% is pulling data (like GET).
 %% @end
 %%------------------------------------------------------------------------------
 -spec create_pull_response(cowboy_req:req(), cb_context:context()) ->
-          {pull_response(), cowboy_req:req(), cb_context:context()} |
+          pull_response_return() |
           stop_return().
 create_pull_response(Req0, Context) ->
     create_pull_response(Req0, Context, fun create_resp_content/2).
 
 -spec create_pull_response(cowboy_req:req(), cb_context:context(), resp_content_fun()) ->
-          {pull_response(), cowboy_req:req(), cb_context:context()} |
+          pull_response_return() |
           stop_return().
 create_pull_response(Req0, Context0, Fun) ->
     {Content, Req1, Context1} =
@@ -1822,10 +1839,11 @@ default_stop(Req0, Context) ->
     lager:debug("ensured CORS headers are on the response"),
 
     Req4 = cowboy_req:set_resp_header(<<"x-request-id">>, cb_context:req_id(Context), Req3),
+    Req5 = set_resp_headers(Req4, Context),
 
     lager:debug("replying with ~p", [StatusCode]),
-    Req5 = cowboy_req:reply(StatusCode, Req4),
-    {'stop', Req5, cb_context:set_resp_status(Context, 'stop')}.
+    Req6 = cowboy_req:reply(StatusCode, Req5),
+    {'stop', Req6, cb_context:set_resp_status(Context, 'stop')}.
 
 -spec create_event_name(cb_context:context(), kz_term:ne_binary() | kz_term:ne_binaries()) -> kz_term:ne_binary().
 create_event_name(Context, Segments) when is_list(Segments) ->
@@ -1844,3 +1862,44 @@ exec_req(Req, [_|_]=Funs) ->
 exec_req_fold({F, V}, Req) -> F(V, Req);
 exec_req_fold({F, K, V}, Req) -> F(K, V, Req);
 exec_req_fold(F, Req) when is_function(F, 1) -> F(Req).
+
+-spec maybe_enforce_scopes(cowboy_req:req(), cb_context:context()) ->
+          {'true', cowboy_req:req(), cb_context:context()} |
+          stop_return().
+maybe_enforce_scopes(Req, Context) ->
+    TokenType = cb_context:auth_token_type(Context),
+    lager:debug("token type is : ~p~n", [cb_context:auth_token_type(Context)]),
+    maybe_enforce_scopes(Req, Context, TokenType).
+
+-spec maybe_enforce_scopes(cowboy_req:req(), cb_context:context(), atom()) ->
+          {'true', cowboy_req:req(), cb_context:context()} |
+          stop_return().
+maybe_enforce_scopes(Req, Context, 'x-auth-token') ->
+    lager:debug("jwt token detected, enforcing scopes"),
+    case kz_json:get_ne_binary_value(<<"method">>, cb_context:auth_doc(Context)) of
+        'undefined' ->
+            {'true', Req, Context};
+        AuthModule ->
+            [{Mod, _Params} | _] = cb_context:req_nouns(Context),
+            Event = create_event_name(Context, <<"allowed_scopes.",Mod/binary>>),
+            RequiredScopes = crossbar_bindings:pmap(Event, AuthModule),
+            enforce_scopes(Req, Context, RequiredScopes)
+    end;
+maybe_enforce_scopes(Req, Context, _TokenType) ->
+    lager:debug("legacy token detected skipping scope enforcement"),
+    {'true', Req, Context}.
+
+-spec enforce_scopes(cowboy_req:req(), cb_context:context(), kz_term:ne_binaries()) ->
+          {'true', cowboy_req:req(), cb_context:context()} |
+          stop_return().
+enforce_scopes(Req, Context, []) ->
+    {'true', Req, Context};
+enforce_scopes(Req, Context, [RequiredScopes|_]) ->
+    case kz_auth_scope:all(cb_context:auth_token(Context), RequiredScopes) of
+        'true' ->
+            lager:debug("all scopes match"),
+            {'true', Req, Context};
+        'false' ->
+            lager:debug("all scopes match failed"),
+            {'stop', Req, Context}
+    end.
