@@ -366,7 +366,7 @@ load_device_status(Context, View, Selector, ValueFun) ->
               ],
     crossbar_view:find(Context, View, Selector, Options).
 
--spec normalize_reg_devices(kz_json:object(), kz_json:objects(), gb_sets:set(kz_json:object())
+-spec normalize_reg_devices(kz_json:object(), kz_json:objects(), gb_sets:set(kz_term:ne_binaries())
                            ,kz_term:ne_binaries(), fun((kz_json:object()) -> kz_json:object()), kz_term:ne_binary()
                            ) -> kz_json:objects().
 normalize_reg_devices(JObj, Acc, RegUsernames, NotRegTypes, ValueFun, AccountRealm) ->
@@ -400,12 +400,14 @@ normalize_reg_devices(JObj, Acc, RegUsernames, NotRegTypes, ValueFun, AccountRea
 lookup_regs(AccountRealm) ->
     lookup_regs(AccountRealm, 'list').
 
+-spec lookup_regs(kz_term:ne_binaries(), 'sets' | 'list') ->
+          kz_json:objects() | gb_sets:set(kz_term:ne_binaries()).
 lookup_regs(AccountRealm, ReturnType) ->
     Regs = search_registrations(AccountRealm),
     process_regs(Regs, ReturnType).
 
 -spec process_regs(kz_term:ne_binaries(), 'sets' | 'list') ->
-          kz_json:objects() | gb_sets:set(kz_json:object()).
+          kz_json:objects() | gb_sets:set(kz_term:ne_binaries()).
 process_regs(Registrations, 'sets') ->
     gb_sets:from_list(Registrations);
 process_regs(Registrations, 'list') ->
@@ -416,6 +418,7 @@ process_regs(Registrations, 'list') ->
      || AuthorizingId <- Registrations
     ].
 
+-spec search_registrations(kz_term:ne_binary()) -> kz_term:ne_binaries().
 search_registrations(AccountRealm) ->
     kapi_registration:search_realm_regs(AccountRealm, <<"summary">>).
 
