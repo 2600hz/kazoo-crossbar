@@ -420,7 +420,9 @@ process_regs(Registrations, 'list') ->
 
 -spec search_registrations(kz_term:ne_binary()) -> kz_term:ne_binaries().
 search_registrations(AccountRealm) ->
-    kapi_registration:search_realm_regs(AccountRealm, <<"summary">>).
+    [kz_term:to_lower_binary(Username)
+     || Username <- kapi_registration:search_realm_regs(AccountRealm, <<"summary">>)
+    ].
 
 %%------------------------------------------------------------------------------
 %% @doc Perform actions on a device.
