@@ -39,6 +39,23 @@ paths:
       summary: Get last_submitted of port_requests
       tags:
         - port_requests
+  /accounts/{ACCOUNT_ID}/port_requests/lnp_lookup:
+    post:
+      operationId: PostAccountsAccountIdPortRequestsLnpLookup
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '../oas3-schemas.yml#/port_requests'
+      responses:
+        200:
+          description: Successful operation
+      summary: Update an instance of port_requests
+      tags:
+        - port_requests
   /accounts/{ACCOUNT_ID}/port_requests/{PORT_REQUEST_ID}:
     delete:
       operationId: DeleteAccountsAccountIdPortRequestsPortRequestId

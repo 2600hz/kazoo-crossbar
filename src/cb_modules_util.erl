@@ -41,6 +41,7 @@
 
 -export([phonebook_port_in/1
         ,phonebook_comment/2
+        ,phonebook_lnp_lookup/1
 
         ,should_send_to_phonebook/1
         ]).
@@ -100,6 +101,10 @@ phonebook_port_in(Context) ->
 -spec phonebook_comment(cb_context:context(), kz_json:objects()) -> knm_phonebook:response().
 phonebook_comment(Context, Comments) ->
     knm_phonebook:maybe_add_comment(cb_context:doc(Context), Comments, phonebook_options(Context)).
+
+-spec phonebook_lnp_lookup(cb_context:context()) -> knm_phonebook:response().
+phonebook_lnp_lookup(Context) ->
+    knm_phonebook:lnp_lookup(cb_context:doc(Context), phonebook_options(Context)).
 
 -spec should_send_to_phonebook(cb_context:context()) -> boolean().
 should_send_to_phonebook(Context) ->

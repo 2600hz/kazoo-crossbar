@@ -29,6 +29,7 @@ Manage and track number port requests through the Port Requests API.
     - [Update](#edit-a-port-request)
     - [Patch](#patch-a-port-request)
     - [Delete](#delete-a-port-request)
+    - [Check Local Number Portability](#check-local-number-portability)
 * Attachment Management
     - [Create](#add-an-attachment-to-a-port-request)
     - [List](#list-attachments-on-a-port-request)
@@ -672,6 +673,66 @@ curl -v -X DELETE \
         "numbers": {
             "+12025559000": {
                 "state": "NY"
+            }
+        },
+        "port_state": "unconfirmed",
+        "_read_only": {
+            "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
+            "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
+        }
+    },
+    "request_id": "{REQUEST_ID}",
+    "revision": "{REVISION}",
+    "status": "success"
+}
+```
+</details>
+
+### Check Local Number Portability
+
+This API is an interface to Local Number Portability (LNP) service providers. During creating Port Request you can use this API to check if numbers are portable, determine their current carrier and which carriers they are portable to.
+
+LNP service providers can be carriers (like Bandwidth) or other services. Calling this API will query all these providers and perform an LNP lookup for all the numbers specified.
+
+> POST /v2/accounts/{ACCOUNT_ID}/port_requests/lnp_lookup
+
+```shell
+curl -v -X POST \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d '{ "data": { "numbers": [ "{PHONE_NUMBER}" ] } }' \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/port_requests/lnp_lookup
+```
+
+
+<details>
+<summary><strong>Sample response</strong></summary>
+
+```json
+{
+    "auth_token": "{AUTH_TOKEN}",
+    "data": {
+        "numbers": {
+            "{PHONE_NUMBER}": {
+                "rate_center": {
+                    "name": "BALTIMORE",
+                    "city": "BALTIMORE",
+                    "state": "MD",
+                    "lata": "238",
+                    "tier": "0"
+                },
+                "losing_carrier": {
+                    "spid": "6529",
+                    "name": "T-Mobile US:6529 - SVR/2",
+                    "is_wireless": true,
+                    "account_number_required": true,
+                    "minimum_porting_interval": "1"
+                },
+                "carriers": [
+                    {
+                        "name": "bandwidth",
+                        "portability": true
+                    }
+                ]
             }
         },
         "port_state": "unconfirmed",
