@@ -357,6 +357,9 @@
   '/accounts/{ACCOUNT_ID}/port_requests/last_submitted':
     '$ref': >-
       paths/port_requests.yml#/paths/~1accounts~1{ACCOUNT_ID}~1port_requests~1last_submitted
+  '/accounts/{ACCOUNT_ID}/port_requests/lnp_lookup':
+    '$ref': >-
+      paths/port_requests.yml#/paths/~1accounts~1{ACCOUNT_ID}~1port_requests~1lnp_lookup
   '/accounts/{ACCOUNT_ID}/port_requests/{PORT_REQUEST_ID}':
     '$ref': >-
       paths/port_requests.yml#/paths/~1accounts~1{ACCOUNT_ID}~1port_requests~1{PORT_REQUEST_ID}

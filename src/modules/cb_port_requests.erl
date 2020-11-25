@@ -61,6 +61,7 @@
 -define(PATH_TOKEN_LOA, <<"loa">>).
 -define(PATH_TOKEN_TIMELINE, <<"timeline">>).
 -define(PATH_TOKEN_LAST_SUBMITTED, <<"last_submitted">>).
+-define(PATH_LNP_LOOKUP, <<"lnp_lookup">>).
 
 -define(REQ_TRANSITION, <<"reason">>).
 
@@ -131,6 +132,8 @@ allowed_methods() ->
 -spec allowed_methods(path_token()) -> http_methods().
 allowed_methods(?PATH_TOKEN_LAST_SUBMITTED) ->
     [?HTTP_GET];
+allowed_methods(?PATH_LNP_LOOKUP) ->
+    [?HTTP_POST];
 allowed_methods(_PortRequestId) ->
     [?HTTP_GET, ?HTTP_POST, ?HTTP_PATCH, ?HTTP_DELETE].
 
@@ -267,6 +270,8 @@ validate_port_requests(Context, ?HTTP_PUT) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
+validate(Context, ?PATH_LNP_LOOKUP) ->
+    cb_context:validate_request_data(<<"lnp_lookup_req">>, Context, fun validate_lnp_lookup/1);
 validate(Context, Id) ->
     Comments = kzd_port_requests:comments(cb_context:req_data(Context), []),
     Setters = [{fun cb_context:store/3, 'req_comments', Comments}
@@ -413,6 +418,17 @@ patch(Context, Id, NewState=?PORT_CANCELED) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec post(cb_context:context(), path_token()) -> cb_context:context().
+post(Context, ?PATH_LNP_LOOKUP) ->
+    case cb_modules_util:phonebook_lnp_lookup(Context) of
+        {'ok', 'disabled'} ->
+            lager:debug("phonebook is disabled"),
+            cb_context:add_system_error('datastore_fault', Context);
+        {'ok', Response} ->
+            Data = kz_json:get_value(<<"data">>, Response, kz_json:new()),
+            crossbar_doc:handle_datamgr_success(Data, Context);
+        {'error', Error} ->
+            handle_phonebook_error(Context, Error)
+    end;
 post(Context, Id) ->
     save_and_send_comments(Context, Id, get_new_comments(Context)).
 
@@ -534,6 +550,12 @@ date_as_configured_timezone(Date, Time, FromTimezone) ->
 %%% Phonebook functions
 %%%=============================================================================
 
+
+%% Adding a second to transition timestamp, because the port is just transitioned
+%% to submitted and it is immediately transitioning to rejected so if the seconds are same
+%% this could cause the UI to not showing the 'Fix' button.
+-define(IMMEDIATELY_REJECTION_FUDGE_SECONDS, 1).
+
 %%------------------------------------------------------------------------------
 %% @doc
 %% @end
@@ -542,40 +564,8 @@ date_as_configured_timezone(Date, Time, FromTimezone) ->
 handle_phonebook_error(Context, #{code := Code
                                  ,payload := Payload
                                  ,reason := 'bad_phonebook'
-                                 }=Error) ->
-    Env = cb_context:resp_envelope(Context),
-    Env1 = kz_json:set_values([{<<"passthrough">>, 'true'}
-                              ,{<<"error_format">>, <<"phonebook">>}
-                              ], Env),
-    Setters = [{fun cb_context:set_resp_error_code/2, Code}
-              ,{fun cb_context:set_resp_status/2, 'error'}
-              ,{fun cb_context:set_resp_error_msg/2, <<"request is rejected by port automation system">>}
-              ,{fun cb_context:set_validation_errors/2, kz_json:get_value(<<"data">>, Payload, kz_json:new())}
-              ,{fun cb_context:set_resp_envelope/2, Env1}
-              ],
-    Context1 = maybe_reject_port(Context, Error),
-    case cb_context:resp_status(Context1) of
-        'success' ->
-            %% returning successful failure
-            Context1;
-        _ ->
-            %% for port_in: even rejecting the port is failed, shame!
-            %% for add_comment: to let client know why comment did not added
-            cb_context:setters(Context, Setters)
-    end;
-handle_phonebook_error(Context, #{payload := Payload}) ->
-    cb_context:add_system_error('datastore_fault', kz_json:get_value(<<"message">>, Payload), Context).
-
-%% Adding a second to transition timestamp, because the port is just transitioned
-%% to submitted and it is immediately transitioning to rejected so if the seconds are same
-%% this could cause the UI to not showing the 'Fix' button.
--define(IMMEDIATELY_REJECTION_FUDGE_SECONDS, 1).
-
--spec maybe_reject_port(cb_context:context(), knm_phonebook:errors()) -> cb_context:context().
-maybe_reject_port(Context, #{code := Code
-                            ,req_type := 'port_in'
-                            ,payload := Payload
-                            }) ->
+                                 ,req_type := 'port_in'
+                                 }) ->
     lager:debug("phonebook submission failed, rejecting the port request"),
     Reason = <<"There was some issue with your port request. Please wait while we investigate the issue.">>,
     PhonebookPayload = kz_json:from_list(
@@ -623,11 +613,39 @@ maybe_reject_port(Context, #{code := Code
             lager:warning("failed to reject port request, halp"),
             Context1
     end;
-maybe_reject_port(Context, _) ->
-    %% changing resp_status so we return phonebook error above why adding comment is failed
-    Context1 = cb_context:store(Context, 'req_comments', []),
-    cb_context:add_system_error('datastore_fault', <<"unable to submit comment to carrier">>, Context1).
+handle_phonebook_error(Context, #{code := Code
+                                 ,payload := Payload
+                                 ,reason := 'bad_phonebook'
+                                 }=Error) ->
+    Env = cb_context:resp_envelope(Context),
+    Env1 = kz_json:set_values([{<<"passthrough">>, 'true'}
+                              ,{<<"error_format">>, <<"phonebook">>}
+                              ], Env),
+    Setters = [{fun cb_context:set_resp_error_code/2, Code}
+              ,{fun cb_context:set_resp_status/2, 'error'}
+              ,{fun cb_context:set_resp_error_msg/2, phonebook_error_message(Error)}
+              ,{fun cb_context:set_validation_errors/2, kz_json:get_value(<<"data">>, Payload, kz_json:new())}
+              ,{fun cb_context:set_resp_envelope/2, Env1}
+              ,{fun cb_context:store/3, 'req_comments', []}
+              ],
 
+    %% for port_in: even rejecting the port is failed, shame!
+    %% for add_comment: to let client know why comment did not added
+    cb_context:setters(Context, Setters);
+handle_phonebook_error(Context, #{payload := Payload}=_Error) ->
+    cb_context:add_system_error('datastore_fault', kz_json:get_value(<<"message">>, Payload), Context).
+
+phonebook_error_message(#{req_type := 'lnp_lookup'}) ->
+    <<"unable to submit lnp lookup request to carrier">>;
+phonebook_error_message(#{req_type := 'add_comment'}) ->
+    <<"unable to submit comment to carrier">>;
+phonebook_error_message(_) ->
+    <<"request is rejected by port automation system">>.
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
 -spec handle_phonebook_response(cb_context:context(), kz_json:object()) -> cb_context:context().
 handle_phonebook_response(Context, Response) ->
     Data = kz_json:get_value(<<"data">>, Response, kz_json:new()),
@@ -693,6 +711,14 @@ patch_then_validate_then_maybe_transition(Context, PortId, ToState) ->
     Context1 = cb_context:setters(Context, Setters),
     LoadOptions = ?TYPE_CHECK_OPTION(?TYPE_PORT_REQUEST),
     crossbar_doc:patch_and_validate(PortId, set_port_authority(Context1), ValidateFun, LoadOptions).
+
+-spec validate_lnp_lookup(cb_context:context()) -> cb_context:context().
+validate_lnp_lookup(Context) ->
+    JObj = cb_context:req_data(Context),
+    Numbers = [knm_converters:normalize(Number)
+               || Number <- kzd_lnp_lookup_req:numbers(JObj)
+              ],
+    crossbar_doc:handle_datamgr_success(kzd_lnp_lookup_req:set_numbers(JObj, Numbers), Context).
 
 %%%=============================================================================
 %%% Internal Validate functions

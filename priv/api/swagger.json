@@ -7461,6 +7461,23 @@
             ],
             "type": "object"
         },
+        "lnp_lookup_req": {
+            "description": "Schema for a lnp lookup request",
+            "properties": {
+                "numbers": {
+                    "description": "The numbers to LNP lookup",
+                    "items": {
+                        "pattern": "\\+?[0-9]+",
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "required": [
+                "numbers"
+            ],
+            "type": "object"
+        },
         "mailbox_message": {
             "description": "Schema for mailbox message",
             "properties": {
@@ -25799,6 +25816,31 @@
         "/accounts/{ACCOUNT_ID}/port_requests/last_submitted": {
             "get": {
                 "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/port_requests/lnp_lookup": {
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "port_requests",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/port_requests"
+                        }
+                    },
                     {
                         "$ref": "#/parameters/auth_token_header"
                     },
