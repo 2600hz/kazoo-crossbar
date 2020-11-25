@@ -9958,6 +9958,10 @@
 'system_config.cdr':
   'description': Schema for cdr system_config
   'properties':
+    'cdr_handler':
+      'default': cdr_report
+      'description': cdr cdr_handler
+      'type': string
     'ignore_apps':
       'default':
         - milliwatt

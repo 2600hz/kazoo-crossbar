@@ -55,6 +55,8 @@ build_with_mapper(Context, UserMapper) ->
           kz_view:filtermap_fun() | 'undefined'.
 build_with_mapper(Context, UserMapper, 'false') when is_function(UserMapper, 3) ->
     fun(JObj, Acc) -> UserMapper(Context, JObj, Acc) end;
+build_with_mapper(Context, {'context', UserMapper}, 'false') when is_function(UserMapper, 2) ->
+    fun(JObjs) -> UserMapper(Context, JObjs) end;
 build_with_mapper(_, 'undefined', 'false') ->
     'undefined';
 build_with_mapper(_, UserMapper, 'false') when is_function(UserMapper, 1)
@@ -158,6 +160,14 @@ build_filter_map_fun(_, FilterFun, UserMapper) when is_function(UserMapper, 1) -
                             FilterFun(kz_json:get_json_value(<<"doc">>, JObj))
                         ],
             UserMapper(Filtered0)
+    end;
+build_filter_map_fun(Context, FilterFun, {'context', UserMapper}) when is_function(UserMapper, 2) ->
+    fun(JObjs) ->
+            Filtered = [JObj
+                        || JObj <- JObjs,
+                           FilterFun(kz_json:get_json_value(<<"doc">>, JObj))
+                       ],
+            UserMapper(Context, Filtered)
     end;
 build_filter_map_fun(_, FilterFun, UserMapper) when is_function(UserMapper, 2) ->
     fun(JObj, Acc) ->

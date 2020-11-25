@@ -80,14 +80,16 @@
 %% use {@link suffix_key_fun}. If the view doesn't need any start/end key you can set this `nil' to bypass setting
 %% timestamp as key.
 
+-type mapper_error() :: cb_context:context().
 -type user_mapper_fun() :: 'undefined' |
-                           fun((kz_json:objects()) -> kz_json:objects() | {'error', any()}) |
-                           fun((kz_json:object(), kz_json:objects()) -> kz_json:objects() | {'error', any()}) |
-                           fun((cb_context:context(), kz_json:object(), kz_json:objects()) -> kz_json:objects() | {'error', any()}).
+                           fun((kz_json:objects()) -> kz_json:objects() | {'error', mapper_error()}) |
+                           fun((kz_json:object(), kz_json:objects()) -> kz_json:objects() | {'error', mapper_error()}) |
+                           fun((cb_context:context(), kz_json:object(), kz_json:objects()) -> kz_json:objects() | {'error', mapper_error()}) |
+                           {'context', fun(({cb_context:context(), kz_json:objects()}) -> kz_json:objects() | {'error', mapper_error()})}.
 %% A function to filter/map view result. For use in Crossbar modules to call {@link crossbar_view} functions.
 -type mapper_fun() :: 'undefined' |
-                      fun((kz_json:objects()) -> kz_json:objects() | {'error', any()}) |
-                      fun((kz_json:object(), kz_json:objects()) -> kz_json:objects() | {'error', any()}).
+                      fun((kz_json:objects()) -> kz_json:objects() | {'error', mapper_error()}) |
+                      fun((kz_json:object(), kz_json:objects()) -> kz_json:objects() | {'error', mapper_error()}).
 %% A function to filter/map view result. Internal to {@link crossbar_view}.
 
 -type options() :: kz_view:options() |
@@ -318,11 +320,6 @@ build_cursor_options(Context, Options, NoDesignModule, IsTimeQuery) ->
                           ,{'verbose_log', 'true'}
                           ]),
         add_user_params(Context, CursorOptions, Options, IsTimeQuery)
-    of
-        {'ok', _}=OK ->
-            OK;
-        {'error', Ctx} ->
-            Ctx
     catch
         'throw':{'error', ErrorMsg} ->
             {'error', cb_context:add_system_error(404, 'faulty_request', ErrorMsg, Context)}
@@ -744,8 +741,7 @@ handle_load_view(Context, View, Cursor, 'false') ->
             Envelope = kz_json:set_values(kz_view_cursor:bookmark_compat(NewCursor), cb_context:resp_envelope(Context)),
             crossbar_doc:handle_datamgr_success(JObjs, cb_context:set_resp_envelope(Context, Envelope));
         {'error', Reason} ->
-            lager:debug("cursor failed: ~p", [Reason]),
-            crossbar_doc:handle_datamgr_errors(Reason, View, Context)
+            handle_datamgr_errors(Reason, View, Context)
     end.
 
 -spec next_batch(cb_context:context(), kz_view_cursor:cursor()) ->
@@ -755,8 +751,18 @@ next_batch(Context, Cursor) ->
     case kz_view_cursor:next_batch(Cursor) of
         {'ok', _}=OK -> OK;
         {'error', Reason} ->
+            {'error', handle_datamgr_errors(Reason, View, Context)}
+    end.
+
+-spec handle_datamgr_errors(kazoo_data:data_errors() | cb_context:context(), kz_term:ne_binary(), cb_context:context()) ->
+          cb_context:context().
+handle_datamgr_errors(Reason, View, Context) ->
+    case cb_context:is_context(Reason) of
+        'true' ->
+            Reason;
+        'false' ->
             lager:debug("cursor failed: ~p", [Reason]),
-            {'error', crossbar_doc:handle_datamgr_errors(Reason, View, Context)}
+            crossbar_doc:handle_datamgr_errors(Reason, View, Context)
     end.
 
 %% start/end, range keys {{{
