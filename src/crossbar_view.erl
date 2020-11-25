@@ -322,7 +322,10 @@ build_cursor_options(Context, Options, NoDesignModule, IsTimeQuery) ->
         add_user_params(Context, CursorOptions, Options, IsTimeQuery)
     catch
         'throw':{'error', ErrorMsg} ->
-            {'error', cb_context:add_system_error(404, 'faulty_request', ErrorMsg, Context)}
+            {'error', cb_context:add_system_error(404, 'faulty_request', ErrorMsg, Context)};
+        _E:_T:ST ->
+            kz_log:log_stacktrace(ST, "crashed when building crusor options: ~p:~p", [_E, _T]),
+            {'error', cb_context:add_system_error('unspecified_fault', Context)}
     end.
 
 -spec add_user_params(cb_context:context(), kz_view:options(), options(), boolean()) -> maybe_load_params().
@@ -441,7 +444,7 @@ maybe_add_full_docs_options(Context, CursorOptions, CbViewOptions, 'true') ->
         {_, 'true'} ->
             FilterMap = crossbar_filter:build_with_mapper(Context, get_doc_fun(), 'true'),
             {Context, props:set_value('filtermap', FilterMap, CursorOptions)};
-        {_p, 'false'} ->
+        {_, 'false'} ->
             {Context, props:set_value('filtermap', get_doc_fun(), CursorOptions)}
     end;
 maybe_add_full_docs_options(Context, CursorOptions, CbViewOptions, 'false') ->
@@ -510,54 +513,109 @@ module_allows_include_docs([{Endpoint, _} | _]) ->
     Module = <<"cb_", Endpoint/binary>>,
     kz_term:is_true(kapps_config:is_true(?CONFIG_CAT, [<<"allowed_modules_fetch_full_docs">>, Module])).
 
--spec get_fields(cb_context:context()) -> kz_view:fields().
+-spec get_fields(cb_context:context()) -> kz_view:fields() | 'undefined'.
 get_fields(Context) ->
     case kz_json:get_value(<<"fields">>, cb_context:query_string(Context)) of
-        'undefined' -> [];
+        'undefined' -> 'undefined';
         <<Fields/binary>> ->
-            try kz_json:unsafe_decode(Fields) of
-                List when is_list(List) ->
-                    normalize_fields(List);
-                <<Binary/binary>> ->
-                    normalize_fields(binary:split(Binary, <<",">>, ['global']));
-                _Data ->
-                    lager:debug("fields qs is not a list: ~p", [_Data]),
-                    []
+            try normalize_fields(decode_fields(Fields))
             catch
-                _ ->
-                    lager:debug("fields qs is not a list: ~p", [Fields]),
-                    []
+                _E:_T:ST ->
+                    kz_log:log_stacktrace(ST, "normalizing fields crashed with ~p:~p, fields qs is not valid: ~p"
+                                         ,[_E, _T, Fields]
+                                         ),
+                    throw({'error', <<"invalid fields query string">>})
             end;
         _Other ->
-            lager:debug("fields qs is not a list: ~p", [_Other]),
-            []
+            lager:debug("fields qs is not valid json term: ~p", [_Other]),
+            throw({'error', <<"invalid fields query string">>})
     end.
 
--spec normalize_fields(kz_term:ne_binaries()) -> kz_view:fields().
+-spec decode_fields(binary()) -> kz_view:fields().
+decode_fields(Fields) ->
+    case kz_json:unsafe_decode(Fields) of
+        [] ->
+            [];
+        [Thing|_] = List ->
+            case kz_json:is_json_object(Thing) of
+                'true' -> kz_json:flatten_deep(List);
+                'false' -> List
+            end;
+        <<Binary/binary>> ->
+            binary:split(Binary, <<",">>, ['global']);
+        JObj ->
+            'true' = kz_json:is_json_object(JObj),
+            kz_json:flatten_deep(JObj)
+    end.
+
+-spec normalize_fields(kz_view:fields()) -> kz_view:fields() | 'undefined'.
+normalize_fields([]) ->
+    'undefined';
 normalize_fields(List) ->
-    Fields = [normalize_field(F) || F <- List,
-                                    is_valid_field(F)
-             ],
     %% technically we don't need to add _id here, kz_view will add it for us,
-    %% but we are doing this because we store fields in context modules like
-    %% cb_cdrs can use normalized fields from context when generating CSV headers.
-    case lists:member(<<"_id">>, Fields) of
-        'false' ->
-            lists:usort([<<"_id">> | Fields]);
-        'true' ->
-            lists:usort(Fields)
+    %% but we are doing this because we store fields in context and to let modules like
+    %% cb_cdrs use normalized fields from context when  need it.
+    case lists:foldl(fun normalize_fields/2, [], List) of
+        [] -> 'undefined';
+        Fields ->
+            case props:get_value(<<"_id">>, Fields) of
+                'undefined' ->
+                    lists:usort([<<"_id">> | Fields]);
+                _ ->
+                    lists:usort(Fields)
+            end
     end.
 
-is_valid_field(<<"_id">>) ->
-    'true';
-is_valid_field(<<Field/binary>>) ->
-    not kz_doc:is_private_key(Field);
-is_valid_field(_Field) ->
-    'false'.
+-spec normalize_fields(kz_view:fields(), kz_view:fields()) -> kz_view:fields().
+normalize_fields([], Acc) ->
+    Acc;
+%% handling _id and _read_only
+normalize_fields(Field = <<"_id">>, Acc) ->
+    [Field | Acc];
+normalize_fields(<<"id">>, Acc) ->
+    [<<"_id">> | Acc];
+normalize_fields(Field = <<"_read_only">>, Acc) ->
+    [Field | Acc];
+normalize_fields([<<"_read_only">>|_] = Field, Acc) ->
+    [Field | Acc];
+%% handling `{_id, boolean()}' and `{_read_only, boolean()}'
+normalize_fields({<<"_id">> = Field, Bool}, Acc) ->
+    'true' = kz_term:is_boolean(Bool),
+    [{Field, kz_term:is_true(Bool)}|Acc];
+normalize_fields({<<"id">>, Bool}, Acc) ->
+    'true' = kz_term:is_boolean(Bool),
+    [{<<"_id">>, kz_term:is_true(Bool)} | Acc];
+normalize_fields({<<"_read_only">> = Field, Bool}, Acc) ->
+    'true' = kz_term:is_boolean(Bool),
+    [{Field, kz_term:is_true(Bool)}|Acc];
 
-normalize_field(<<"_id">>) -> <<"_id">>;
-normalize_field(<<"id">>) -> <<"_id">>;
-normalize_field(Field) -> binary:split(Field, <<".">>, ['global']).
+normalize_fields(<<Field/binary>>, Acc) ->
+    Path = binary:split(Field, <<".">>, ['global']),
+    case is_valid_field(Path) of
+        'true' ->
+            [Path | Acc];
+        'false' ->
+            Acc
+    end;
+normalize_fields({<<Field/binary>>, Bool}, Acc) ->
+    'true' = kz_term:is_boolean(Bool),
+    Path = binary:split(Field, <<".">>, ['global']),
+    case is_valid_field(Path) of
+        'true' ->
+            [{Path, kz_term:is_true(Bool)}  | Acc];
+        'false' ->
+            Acc
+    end.
+
+-spec is_valid_field(kz_json:path()) -> boolean().
+is_valid_field([]) ->
+    'false';
+is_valid_field([<<"_read_only">>|Path]) ->
+    kz_term:is_ne_binaries(Path);
+is_valid_field([Key|Path]) ->
+    kz_term:is_ne_binary(Key)
+        andalso not kz_doc:is_private_key(Key)
+        andalso kz_term:is_ne_binaries(Path).
 
 %%------------------------------------------------------------------------------
 %% @doc
