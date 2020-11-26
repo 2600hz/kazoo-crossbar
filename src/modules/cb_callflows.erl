@@ -244,10 +244,6 @@ track_assignment('post', Context) ->
 
     Updates = cb_modules_util:apply_assignment_updates(Unassigned ++ Assigned, Context),
 
-    ?DEV_LOG("~nOld ~p~nNew ~p~nUnassigned ~p~nAssigned ~p~nUpdates ~p~n"
-            ,[OldNums, NewNums, Unassigned, Assigned, Updates]
-            ),
-
     cb_modules_util:log_assignment_updates(Updates);
 track_assignment('put', Context) ->
     NewNums = kz_json:get_value(<<"numbers">>, cb_context:doc(Context), []),
