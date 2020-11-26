@@ -503,8 +503,8 @@ validate_request(AccountId, Context) ->
     ParentId = get_parent_id_from_req(Context),
     case kzd_accounts:validate(ParentId, AccountId, ReqJObj) of
         {'true', AccountJObj} ->
-            NewAccountJObj = maybe_add_pvt_fields(AccountId, AccountJObj),
-            Context1 = cb_context:update_successfully_validated_request(cb_context:store(Context, 'db_doc', NewAccountJObj), NewAccountJObj),
+            {OldDoc, NewAccountJObj} = maybe_add_pvt_fields(AccountId, AccountJObj),
+            Context1 = cb_context:update_successfully_validated_request(cb_context:store(Context, 'db_doc', OldDoc), NewAccountJObj),
             extra_validation(AccountId, Context1);
         {'validation_errors', ValidationErrors} ->
             cb_context:add_doc_validation_errors(Context, ValidationErrors);
