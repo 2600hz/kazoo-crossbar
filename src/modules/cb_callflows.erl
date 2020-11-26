@@ -198,7 +198,7 @@ validate_request('undefined', Context) ->
 validate_request(CallflowId, Context) ->
     %% load for type check, store db_doc and properly updating services
     Context1 = load_callflow(CallflowId, Context, 'false'),
-    case cb_context:resp_status(Context) of
+    case cb_context:resp_status(Context1) of
         'success' ->
             validate_callflow_request(CallflowId, Context1);
         _ ->
