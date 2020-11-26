@@ -503,8 +503,8 @@ validate_request(AccountId, Context) ->
     ParentId = get_parent_id_from_req(Context),
     case kzd_accounts:validate(ParentId, AccountId, ReqJObj) of
         {'true', AccountJObj} ->
-            NewAccountJObj = maybe_add_pvt_fields(AccountId, AccountJObj),
-            Context1 = cb_context:update_successfully_validated_request(Context, NewAccountJObj),
+            {OldDoc, NewAccountJObj} = maybe_add_pvt_fields(AccountId, AccountJObj),
+            Context1 = cb_context:update_successfully_validated_request(cb_context:store(Context, 'db_doc', OldDoc), NewAccountJObj),
             extra_validation(AccountId, Context1);
         {'validation_errors', ValidationErrors} ->
             cb_context:add_doc_validation_errors(Context, ValidationErrors);
@@ -516,13 +516,13 @@ validate_request(AccountId, Context) ->
             cb_context:add_system_error(Error, Message, Context)
     end.
 
--spec maybe_add_pvt_fields(kz_term:api_ne_binary(), kzd_accounts:doc()) -> kz_json:object().
+-spec maybe_add_pvt_fields(kz_term:api_ne_binary(), kzd_accounts:doc()) -> {kz_term:api_object(), kz_json:object()}.
 maybe_add_pvt_fields('undefined', AccountJObj) -> %% New account (create)
-    AccountJObj;
+    {'undefined', AccountJObj};
 maybe_add_pvt_fields(AccountId, AccountJObj) -> %% Existing account (update)
     {'ok', Existing} = kzd_accounts:fetch(AccountId),
     %% Merge private_fields into req obj in order to allow checks to read and use them when needed.
-    kz_json:merge(kz_doc:private_fields(Existing), AccountJObj).
+    {Existing, kz_json:merge(kz_doc:private_fields(Existing), AccountJObj)}.
 
 -spec get_parent_id_from_req(cb_context:context()) -> kz_term:api_ne_binary().
 get_parent_id_from_req(Context) ->
