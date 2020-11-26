@@ -193,7 +193,8 @@ validate_request(CallflowId, Context) ->
     case kzd_callflows:validate(AccountId, CallflowId, ReqJObj) of
         {'true', CallflowJObj} ->
             lager:debug("successfully validated callflow object"),
-            cb_context:update_successfully_validated_request(Context, CallflowJObj);
+            {OldDoc, NewDoc} = maybe_add_pvt_fields(AccountId, CallflowId, CallflowJObj),
+            cb_context:update_successfully_validated_request(cb_context:store(Context, 'db_doc', OldDoc), NewDoc);
         {'validation_errors', ValidationErrors} ->
             lager:info("validation errors on callflow"),
             cb_context:add_doc_validation_errors(Context, ValidationErrors);
@@ -204,6 +205,14 @@ validate_request(CallflowId, Context) ->
             lager:info("system error validating callflow: ~p, ~p", [Error, Message]),
             cb_context:add_system_error(Error, Message, Context)
     end.
+
+-spec maybe_add_pvt_fields(kz_term:ne_binary(), kz_term:api_ne_binary(), kzd_accounts:doc()) -> {kz_term:api_object(), kz_json:object()}.
+maybe_add_pvt_fields(_, 'undefined', NewJObj) -> %% New (create)
+    {'undefined', NewJObj};
+maybe_add_pvt_fields(AccountId, CallflowId, NewJObj) -> %% Existing (update)
+    {'ok', Existing} = kzd_callflows:fetch(AccountId, CallflowId),
+    %% Merge private_fields into req obj in order to allow checks to read and use them when needed.
+    {Existing, kz_json:merge(kz_doc:private_fields(Existing), NewJObj)}.
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -234,6 +243,11 @@ track_assignment('post', Context) ->
                 ],
 
     Updates = cb_modules_util:apply_assignment_updates(Unassigned ++ Assigned, Context),
+
+    ?DEV_LOG("~nOld ~p~nNew ~p~nUnassigned ~p~nAssigned ~p~nUpdates ~p~n"
+            ,[OldNums, NewNums, Unassigned, Assigned, Updates]
+            ),
+
     cb_modules_util:log_assignment_updates(Updates);
 track_assignment('put', Context) ->
     NewNums = kz_json:get_value(<<"numbers">>, cb_context:doc(Context), []),
