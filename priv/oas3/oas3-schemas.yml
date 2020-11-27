@@ -11730,6 +11730,14 @@
       'description': whether to use the trie to store rates in the VM
       'type': boolean
   'type': object
+'system_config.interaction':
+  'description': Schema for interaction system_config
+  'properties':
+    'process_conference':
+      'default': true
+      'description': interaction process_conference
+      'type': boolean
+  'type': object
 'system_config.ips':
   'description': Schema for ips system_config
   'properties':
