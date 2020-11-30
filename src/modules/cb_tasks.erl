@@ -506,7 +506,8 @@ read_doc(TaskId, Context, AccountId) ->
               ,{'databases', [?KZ_TASKS_DB]}
               ,{'mapper', crossbar_view:get_value_fun()}
               ],
-    handle_read_result(TaskId, Context, crossbar_view:load(Context, ?KZ_TASKS_BY_ACCOUNT, Options)).
+    ReadResult = crossbar_view:load(Context, ?KZ_TASKS_BY_ACCOUNT, Options),
+    handle_read_result(TaskId, Context, ReadResult).
 
 handle_read_result(TaskId, OrigContext, ReadContext) ->
     case cb_context:resp_data(ReadContext) of
