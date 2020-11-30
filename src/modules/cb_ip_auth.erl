@@ -33,7 +33,7 @@
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec init() -> ok.
+-spec init() -> 'ok'.
 init() ->
     _ = crossbar_bindings:bind(<<"*.authenticate">>, ?MODULE, 'authenticate'),
     _ = crossbar_bindings:bind(<<"*.authorize">>, ?MODULE, 'authorize'),
@@ -41,7 +41,7 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.resource_exists.ip_auth">>, ?MODULE, 'resource_exists'),
     _ = crossbar_bindings:bind(<<"*.validate.ip_auth">>, ?MODULE, 'validate'),
     _ = crossbar_bindings:bind(<<"*.execute.put.ip_auth">>, ?MODULE, 'put'),
-    ok.
+    'ok'.
 
 %%------------------------------------------------------------------------------
 %% @doc This function determines the verbs that are appropriate for the
@@ -143,7 +143,7 @@ authenticate_ip(_, _, 'true') ->
     {'error', 'invalid_credentials'};
 authenticate_ip(Context, IpKey, 'false') ->
     ViewOptions = [{'key', IpKey}
-                  ,[{'databases', [?KZ_ACCOUNTS_DB]}]
+                  ,{'databases', [?KZ_ACCOUNTS_DB]}
                   ],
     Context1 = crossbar_view:load(Context, ?AGG_VIEW_IP, ViewOptions),
     authenticate_view(Context1, cb_context:resp_status(Context1), cb_context:doc(Context1)).
