@@ -306,9 +306,10 @@ get_id_fun() -> fun(JObj, Acc) -> [kz_doc:id(JObj)|Acc] end.
 -spec build_cursor_options(cb_context:context(), options(), boolean(), boolean()) -> maybe_load_params().
 build_cursor_options(Context, Options, NoDesignModule, IsTimeQuery) ->
     try
+        Bookmark = cb_context:req_value(Context, <<"bookmark">>, 'undefined'),
         CursorOptions = props:filter_undefined(
                           [{'batch_size', get_batch_size(Context, Options)}
-                          ,{'bookmark', cb_context:req_value(Context, <<"bookmark">>, 'undefined')}
+                          ,{'bookmark', Bookmark}
                           ,{'databases', props:get_value('databases', Options)}
                           ,{'direction', direction(Context, Options)}
                           ,{'key_min_length', props:get_value('key_min_length', Options)}
@@ -975,7 +976,9 @@ build_start_end_keys(Context, Options) ->
 
 maybe_keymap(Context, Options, 'undefined', Key, KeyKeymap) ->
     UserParams = props:get_value('user_params', Options),
-    map_keymap(Context, Options, props:get_value(Key, Options, props:get_value(KeyKeymap, UserParams)));
+    ValueKeymap = props:get_value(KeyKeymap, UserParams),
+    Value = props:get_value(Key, Options, ValueKeymap),
+    map_keymap(Context, Options, Value);
 maybe_keymap(Context, Options, KeyMap, _, _) ->
     map_keymap(Context, Options, KeyMap).
 

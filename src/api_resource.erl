@@ -199,28 +199,38 @@ maybe_start_trace('true') ->
 
 -spec maybe_decode_start_key(cb_context:context()) -> cb_context:context().
 maybe_decode_start_key(Context) ->
-    case cb_context:req_value(Context, <<"bookmark">>, cb_context:req_value(Context, <<"start_key">>)) of
-        'undefined' -> Context;
-        Value ->
-            QS = cb_context:query_string(Context),
-            ReqData = cb_context:req_data(Context),
-            ReqJson = cb_context:req_json(Context),
+    maybe_decode_bookmark(Context, cb_context:req_value(Context, <<"bookmark">>)).
 
-            ToDelete = [<<"start_key">>, <<"bookmark">>],
+maybe_decode_bookmark(Context, 'undefined') ->
+    maybe_decode_start_key(Context, cb_context:req_value(Context, <<"start_key">>));
+maybe_decode_bookmark(Context, Bookmark) ->
+    decode_bookmark(Context, Bookmark).
 
-            NewReqData = case kz_json:is_json_object(ReqData) of
-                             'true' -> kz_json:delete_keys(ToDelete, ReqData);
-                             'false' -> ReqData
-                         end,
-            Bookmark = decode_bookmark(Value),
-            NewQS = kz_json:set_value(<<"bookmark">>, Bookmark, QS),
+maybe_decode_start_key(Context, 'undefined') -> Context;
+maybe_decode_start_key(Context, StartKey) ->
+    decode_bookmark(Context, StartKey).
 
-            Setters = [{fun cb_context:set_req_data/2, NewReqData}
-                      ,{fun cb_context:set_query_string/2, NewQS}
-                      ,{fun cb_context:set_req_json/2, kz_json:delete_keys(ToDelete, ReqJson)}
-                      ],
-            cb_context:setters(Context, Setters)
-    end.
+decode_bookmark(Context, Bookmark) ->
+    QS = cb_context:query_string(Context),
+    ReqData = cb_context:req_data(Context),
+    ReqJson = cb_context:req_json(Context),
+
+    ToDelete = [<<"start_key">>, <<"bookmark">>],
+
+    NewReqData = case kz_json:is_json_object(ReqData) of
+                     'true' -> kz_json:delete_keys(ToDelete, ReqData);
+                     'false' -> ReqData
+                 end,
+    Decoded = decode_bookmark(Bookmark),
+
+    NewQS = kz_json:set_value(<<"bookmark">>, Decoded, QS),
+
+    Setters = [{fun cb_context:set_req_data/2, NewReqData}
+              ,{fun cb_context:set_query_string/2, NewQS}
+              ,{fun cb_context:set_req_json/2, kz_json:delete_keys(ToDelete, ReqJson)}
+              ],
+    cb_context:setters(Context, Setters).
+
 
 %% @doc
 %% Bookmark should be opaque, but until poeple start using bookmark
@@ -235,7 +245,7 @@ decode_bookmark(Encoded) ->
     try kz_view_cursor:decode_bookmark(Encoded) of
         <<StartKey/binary>> -> [{'next_startkey', StartKey}];
         Bookmark when is_list(Bookmark) -> Bookmark
-    catch _:_ -> Encoded
+    catch _E:_R -> []
     end.
 
 -spec metrics() -> {non_neg_integer(), non_neg_integer()}.
