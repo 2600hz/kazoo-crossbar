@@ -106,7 +106,7 @@ post(Context, _) ->
     Doc = crossbar_doc:update_pvt_parameters(cb_context:doc(Context), Context),
     case kzd_trunkstore:save(Doc) of
         {ok, Saved} ->
-            C1 = cb_context:set_doc(Context, Saved),
+            C1 = crossbar_doc:handle_datamgr_success(Saved, Context),
             'ok' = track_assignment('post', C1),
             C1;
         {error, Error} ->
@@ -124,7 +124,7 @@ put(Context) ->
     case kzd_trunkstore:save(Doc) of
         {ok, Saved} ->
             _ = registration_update(Context),
-            cb_context:set_doc(Context, Saved);
+            crossbar_doc:handle_datamgr_success(Saved, Context);
         {error, Error} ->
             lager:error("trunkstore save => ~p", [Error]),
             cb_context:add_system_error('datastore_fault', Context)
