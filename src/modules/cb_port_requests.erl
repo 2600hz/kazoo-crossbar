@@ -1390,7 +1390,7 @@ load_attachment(AttachmentId, Context) ->
                                            ),
     Headers =
         #{<<"content-disposition">> => <<"attachment; filename=", AttachmentId/binary>>
-         ,<<"content-type">> => kz_doc:attachment_content_type(cb_context:doc(Context), AttachmentId)
+         ,<<"content-type">> => kz_doc:attachment_content_type(cb_context:doc(Context1), AttachmentId)
          },
     cb_context:add_resp_headers(Context1, Headers).
 
