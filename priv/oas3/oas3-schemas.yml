@@ -4542,6 +4542,11 @@
                 'description': 'The time, in seconds, to wait for an answer from the server'
                 'type': integer
             'type': object
+          'server_id':
+            'description': Unique Identifier for the Server
+            'manLength': 32
+            'minLength': 32
+            'type': string
         'required':
           - auth
         'type': object

@@ -103,13 +103,15 @@ validate_connectivity_pbx(Context, Id, ?HTTP_DELETE) ->
 
 -spec post(cb_context:context(), path_token()) -> cb_context:context().
 post(Context, _) ->
-    Context1 = crossbar_doc:save(Context),
-    case cb_context:resp_status(Context1) of
-        'success' ->
-            _UnusedContext = maybe_aggregate_device(Context1),
-            'ok' = track_assignment('post', Context),
-            Context1;
-        _Status -> Context1
+    Doc = crossbar_doc:update_pvt_parameters(cb_context:doc(Context), Context),
+    case kzd_trunkstore:save(Doc) of
+        {ok, Saved} ->
+            C1 = cb_context:set_doc(Context, Saved),
+            'ok' = track_assignment('post', C1),
+            C1;
+        {error, Error} ->
+            lager:error("trunkstore save => ~p", [Error]),
+            cb_context:add_system_error('datastore_fault', Context)
     end.
 
 -spec patch(cb_context:context(), path_token()) -> cb_context:context().
@@ -118,22 +120,23 @@ patch(Context, Id) ->
 
 -spec put(cb_context:context()) -> cb_context:context().
 put(Context) ->
-    Context1 = crossbar_doc:save(Context),
-    case cb_context:resp_status(Context1) of
-        'success' ->
-            registration_update(Context),
-            _UnusedContext = maybe_aggregate_device(Context1),
-            Context1;
-        _Status -> Context1
+    Doc = crossbar_doc:update_pvt_parameters(cb_context:doc(Context), Context),
+    case kzd_trunkstore:save(Doc) of
+        {ok, Saved} ->
+            _ = registration_update(Context),
+            cb_context:set_doc(Context, Saved);
+        {error, Error} ->
+            lager:error("trunkstore save => ~p", [Error]),
+            cb_context:add_system_error('datastore_fault', Context)
     end.
 
 -spec delete(cb_context:context(), path_token()) -> cb_context:context().
-delete(Context, _) ->
+delete(Context, Id) ->
     Context1 = crossbar_doc:delete(Context),
     case cb_context:resp_status(Context1) of
         'success' ->
             registration_update(Context),
-            _UnusedContext = remove_aggregate(Context1),
+            _ = kzd_trunkserver:delete(cb_context:account_id(Context), Id),
             'ok' = track_assignment('delete', Context),
             Context1;
         _Status -> Context1
@@ -273,51 +276,3 @@ summary(Context) ->
                ,{'end', [{<<"doc_type">>, <<"sys_info">>}]}
                ],
     crossbar_view:find(Context, <<"crossbar_listings/by_type_id">>, Selector, Options).
-
-%%------------------------------------------------------------------------------
-%% @doc
-%% @end
-%%------------------------------------------------------------------------------
--spec maybe_aggregate_device(cb_context:context()) -> cb_context:context().
-maybe_aggregate_device(Context) ->
-    Device = cb_context:doc(Context),
-    Fun = fun(Server) ->
-                  kz_json:get_ne_binary_value([<<"auth">>, <<"auth_method">>], Server) =:= <<"IP">>
-          end,
-    case lists:any(Fun, kzd_trunkstore:servers(Device)) of
-        'true' -> aggregate_device(Context);
-        'false' -> remove_aggregate(Context)
-    end.
-
--spec aggregate_device(cb_context:context()) -> cb_context:context().
-aggregate_device(Context) ->
-    Device = cb_context:doc(Context),
-    lager:debug("adding connectivity to the sip auth aggregate"),
-    Doc = kz_doc:delete_revision(Device),
-    Update = kz_json:to_proplist(kz_json:flatten(Doc)),
-    UpdateOptions = [{'update', Update}
-                    ,{'create', []}
-                    ,{'ensure_saved', 'true'}
-                    ],
-    case kz_datamgr:update_doc(?KZ_SIP_DB, kz_doc:id(Device), UpdateOptions) of
-        {'ok', _} ->
-            _ = kz_amqp_worker:cast(kz_api:default_headers(?APP_NAME, ?APP_VERSION), fun kapi_trusted:publish_reload/1),
-            Context;
-        {'error', _R} ->
-            lager:debug("failed to aggregate device: ~p", [_R]),
-            crossbar_util:response_db_fatal(Context)
-    end.
-
-%%------------------------------------------------------------------------------
-%% @doc
-%% @end
-%%------------------------------------------------------------------------------
--spec remove_aggregate(cb_context:context()) -> cb_context:context().
-remove_aggregate(Context) ->
-    Device = cb_context:doc(Context),
-    case kz_datamgr:del_doc(?KZ_SIP_DB, kz_doc:id(Device)) of
-        {'error', 'not_found'} -> Context;
-        {'ok', _JObj} ->
-            _ = kz_amqp_worker:cast(kz_api:default_headers(?APP_NAME, ?APP_VERSION), fun kapi_trusted:publish_reload/1),
-            Context
-    end.

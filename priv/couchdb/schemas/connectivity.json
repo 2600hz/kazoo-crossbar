@@ -272,6 +272,12 @@
                             }
                         },
                         "type": "object"
+                    },
+                    "server_id": {
+                        "description": "Unique Identifier for the Server",
+                        "manLength": 32,
+                        "minLength": 32,
+                        "type": "string"
                     }
                 },
                 "required": [
