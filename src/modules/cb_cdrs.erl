@@ -474,7 +474,10 @@ apply_row_mapper(_, F, JObj, Timestamp, _Context) ->
 -spec col_pretty_print(kz_json:object(), kz_time:gregorian_seconds(), cb_context:context()) -> kz_term:ne_binary().
 col_pretty_print(_JObj, Timestamp, Context) ->
     UTCSecondsOffset = cb_context:req_value(Context, ?KEY_UTC_OFFSET),
-    kz_time:pretty_print_datetime(handle_utc_time_offset(Timestamp, UTCSecondsOffset)).
+    %% maintain compatibility with old format.
+    %% NOTE: kzd_cdrs:col_pretty_print/3 is using the new format kz_time:pretty_print_datetime/2 with underscore
+    %% as a separator and timezone at the end.
+    kz_time:pretty_print_datetime_legacy(handle_utc_time_offset(Timestamp, UTCSecondsOffset)).
 
 -spec maybe_filter_empties(kz_json:json_proplist(), boolean()) -> kz_json:json_proplist().
 maybe_filter_empties(Rows, 'true') ->
