@@ -258,7 +258,7 @@ post(Context, ?RECOVERY) ->
             crossbar_auth:create_auth_token(Context1, ?MODULE);
         {'error', Reason} ->
             lager:debug("failed to update user doc: ~p", [Reason]),
-            crossbar_doc:handle_datamgr_errors(Reason, Context)
+            crossbar_doc:handle_datamgr_errors(Reason, kz_doc:id(UserDoc), Context)
     end.
 
 %%%=============================================================================
