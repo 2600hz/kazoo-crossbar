@@ -2020,6 +2020,10 @@
         "callflows.branch_variable": {
             "description": "Validator for the branch_variable callflow data object",
             "properties": {
+                "id": {
+                    "description": "if using the doc scope, a doc id is required",
+                    "type": "string"
+                },
                 "scope": {
                     "default": "custom_channel_vars",
                     "description": "specifies where the variable is defined",
@@ -2028,7 +2032,8 @@
                         "custom_channel_vars",
                         "device",
                         "merged",
-                        "user"
+                        "user",
+                        "doc"
                     ],
                     "type": "string"
                 },
@@ -2037,9 +2042,21 @@
                     "type": "boolean"
                 },
                 "variable": {
-                    "default": "",
-                    "description": "specifies the name of variable/property that should be looked up",
-                    "type": "string"
+                    "description": "specifies the name or path to the variable that should be looked up",
+                    "oneOf": [
+                        {
+                            "default": "",
+                            "description": "specifies the name of variable/property that should be looked up",
+                            "type": "string"
+                        },
+                        {
+                            "description": "specifies a json path to the variable/property that should be looked up",
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        }
+                    ]
                 }
             },
             "required": [
