@@ -1694,8 +1694,9 @@
   'description': Validator for the callflow_inline callflow data object
   'properties':
     'flow':
-      'description': A custom call flow to execute
-      'type': object
+      '$ref': '#/callflows.action'
+      'description': |-
+        A callflow node defines a module to execute, data to provide to that module, and zero or more children to branch to
     'skip_module':
       'description': |-
         When set to true this callflow action is skipped, advancing to the wildcard branch (if any)
