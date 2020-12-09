@@ -563,8 +563,8 @@ summary(Context) ->
 -spec summary_view_options(cb_context:context()) -> crossbar_view:options().
 summary_view_options(Context) ->
     AccountId = cb_context:account_id(Context),
-    [{'startkey', [AccountId, kz_time:now_s(), kz_json:new()]}
-    ,{'endkey', [AccountId]}
+    [{'startkey', [AccountId]}
+    ,{'endkey', [AccountId, kz_time:now_s(), kz_json:new()]}
     ,{'databases', [?KZ_TASKS_DB]}
     ,{'mapper', crossbar_view:get_value_fun()}
     ,'descending'
