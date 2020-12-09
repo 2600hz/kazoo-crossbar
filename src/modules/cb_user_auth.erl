@@ -246,14 +246,20 @@ put(Context, ?RECOVERY) ->
 -spec post(cb_context:context(), path_token()) -> cb_context:context().
 post(Context, ?RECOVERY) ->
     _ = cb_context:put_reqid(Context),
-    Context1 = crossbar_doc:save(Context),
-    DocForCreation =
-        kz_json:from_list(
-          [{<<"account_id">>, kzs_util:format_account_id(cb_context:db_name(Context1))}
-          ,{<<"owner_id">>, kz_doc:id(cb_context:doc(Context1))}
-          ]),
-    Context2 = cb_context:set_doc(Context1, DocForCreation),
-    crossbar_auth:create_auth_token(Context2, ?MODULE).
+    UserDoc = crossbar_doc:update_pvt_parameters(cb_context:doc(Context), Context),
+    case kz_datamgr:save_doc(cb_context:account_id(Context), UserDoc) of
+        {'ok', NewDoc} ->
+            DocForCreation =
+                kz_json:from_list(
+                  [{<<"account_id">>, cb_context:account_id(Context)}
+                  ,{<<"owner_id">>, kz_doc:id(NewDoc)}
+                  ]),
+            Context1 = cb_context:set_doc(crossbar_doc:handle_datamgr_success(NewDoc, Context), DocForCreation),
+            crossbar_auth:create_auth_token(Context1, ?MODULE);
+        {'error', Reason} ->
+            lager:debug("failed to update user doc: ~p", [Reason]),
+            crossbar_doc:handle_datamgr_errors(Reason, kz_doc:id(UserDoc), Context)
+    end.
 
 %%%=============================================================================
 %%% Internal functions
@@ -555,24 +561,20 @@ save_reset_id_then_send_email(Context) ->
 -spec maybe_load_user_doc_via_reset_id(cb_context:context()) -> cb_context:context().
 maybe_load_user_doc_via_reset_id(Context) ->
     ResetId = kz_json:get_ne_binary_value(?RESET_ID, cb_context:req_data(Context)),
-    MoDb = ?MATCH_MODB_SUFFIX_ENCODED(A, B, Rest, _Y, _M) = reset_id(ResetId),
+    MoDb = reset_id(ResetId),
     AuthType = <<"user_auth_recovery_reset">>,
     lager:debug("looking up password reset doc: ~s", [ResetId]),
     case kazoo_modb:open_doc(MoDb, ResetId) of
         {'ok', ResetIdDoc} ->
             lager:debug("found password reset doc"),
-            AccountDb = ?MATCH_ACCOUNT_ENCODED(A, B, Rest),
+            AccountId = kzs_util:format_account_id(MoDb),
             Context1 = crossbar_doc:load(kz_json:get_value(<<"pvt_userid">>, ResetIdDoc)
-                                        ,cb_context:set_db_name(Context, AccountDb)
+                                        ,cb_context:set_db_name(Context, AccountId)
                                         ,?TYPE_CHECK_OPTION(kzd_users:type())
                                         ),
-            NewUserDoc =
-                kz_json:set_value(<<"require_password_update">>, 'true', cb_context:doc(Context1)),
-            cb_context:setters(Context1, [{fun cb_context:set_resp_status/2, 'success'}
-                                         ,{fun cb_context:set_doc/2, NewUserDoc}
-                                         ,{fun cb_context:store/3, 'auth_type', AuthType}
-                                         ]);
-        _ ->
+            maybe_load_user_doc_via_reset_id(Context1, AccountId, ResetId, cb_context:resp_status(Context1));
+        {'error', _Reason} ->
+            lager:debug("failed to find password recovery with reset_id ~s: ~p", [ResetId, _Reason]),
             Reason = <<"The provided reset_id did not resolve to any user">>,
             Msg = kz_json:from_list(
                     [{<<"message">>, Reason}
@@ -581,6 +583,21 @@ maybe_load_user_doc_via_reset_id(Context) ->
             crossbar_auth:log_failed_auth(?MODULE, AuthType, Reason, Context),
             cb_context:add_validation_error(<<"user">>, <<"not_found">>, Msg, Context)
     end.
+
+maybe_load_user_doc_via_reset_id(Context, AccountId, _ResetId, 'success') ->
+    NewUserDoc = kz_json:set_value(<<"require_password_update">>, 'true', cb_context:doc(Context)),
+    cb_context:setters(Context, [{fun cb_context:set_doc/2, NewUserDoc}
+                                ,{fun cb_context:store/3, 'auth_type', <<"user_auth_recovery_reset">>}
+                                ,{fun cb_context:set_account_id/2, AccountId}
+                                ]);
+maybe_load_user_doc_via_reset_id(Context, _, ResetId, _) ->
+    Reason = <<"The provided reset_id did not resolve to any user">>,
+    Msg = kz_json:from_list(
+            [{<<"message">>, Reason}
+            ,{<<"cause">>, ResetId}
+            ]),
+    crossbar_auth:log_failed_auth(?MODULE, <<"user_auth_recovery_reset">>, Reason, Context),
+    cb_context:add_validation_error(<<"user">>, <<"not_found">>, Msg, Context).
 
 -spec reset_id(kz_term:ne_binary()) -> kz_term:ne_binary().
 reset_id(?MATCH_MODB_SUFFIX_ENCODED(A, B, Rest, YYYY, MM)) ->
