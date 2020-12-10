@@ -8,6 +8,19 @@
             "description": "callflow allow_authz_context_overrides",
             "type": "boolean"
         },
+        "allowed_branch_doc_types": {
+            "default": [
+                "users",
+                "devices",
+                "locations",
+                "groups"
+            ],
+            "description": "callflow allowed_branch_doc_types",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
         "authz_contexts": {
             "default": [],
             "description": "callflow authz_contexts",
