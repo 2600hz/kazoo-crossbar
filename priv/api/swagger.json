@@ -6178,7 +6178,8 @@
                             "description": "Method of authentication",
                             "enum": [
                                 "password",
-                                "ip"
+                                "ip",
+                                "authorization"
                             ],
                             "type": "string"
                         },
