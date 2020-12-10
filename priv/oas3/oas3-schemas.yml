@@ -2479,10 +2479,8 @@
             'description': |-
               The email address/user ID or the list of email addresses/user IDs based on specified type
             'oneOf':
-              - 'format': email
-                'type': string
+              - 'type': string
               - 'items':
-                  'format': email
                   'type': string
                 'type': array
           'type':
