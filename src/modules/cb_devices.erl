@@ -532,16 +532,21 @@ prepare_device_realm(_DeviceId, Context) ->
 %%------------------------------------------------------------------------------
 -spec prepare_provisioner_fields(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
 prepare_provisioner_fields(_DeviceId, Context) ->
-    Keys = [<<"combo_keys">>
-           ,<<"feature_keys">>
+    maybe_prepare_provisioner_fields(Context, cb_context:req_data(Context)).
+
+maybe_prepare_provisioner_fields(Context, ReqData) ->
+    maybe_prepare_provisioner_fields(Context, ReqData, kzd_devices:provision(ReqData)).
+
+maybe_prepare_provisioner_fields(Context, ReqData, 'undefined') ->
+    update_req_with_provisioner_fields(Context, ReqData, ReqData);
+maybe_prepare_provisioner_fields(Context, ReqData, _Provision) ->
+    Funs = [{fun kzd_devices:provision_combo_keys/1, fun kzd_devices:set_provision_combo_keys/2}
+           ,{fun kzd_devices:provision_feature_keys/1, fun kzd_devices:set_provision_feature_keys/2}
            ],
-    ReqData = cb_context:req_data(Context),
-    JObj = case cb_context:req_value(Context, <<"provision">>) of
-               'undefined' -> ReqData;
-               Provision ->
-                   NewData = prune_null_provisioner_fields(Keys, Provision),
-                   kz_json:set_value(<<"provision">>, NewData, ReqData)
-           end,
+    JObj = lists:foldl(fun prune_null_provisioner_field/2, ReqData, Funs),
+    update_req_with_provisioner_fields(Context, ReqData, JObj).
+
+update_req_with_provisioner_fields(Context, ReqData, JObj) ->
     Setters = [{fun cb_context:set_req_data/2, JObj}
               ,{fun cb_context:store/3
                ,'unfiltered_req_data'
@@ -550,15 +555,16 @@ prepare_provisioner_fields(_DeviceId, Context) ->
               ],
     cb_context:setters(Context, Setters).
 
--spec prune_null_provisioner_fields(kz_json:keys(), kz_json:object()) -> kz_json:object().
-prune_null_provisioner_fields([], JObj) -> JObj;
-prune_null_provisioner_fields([Key|Keys], JObj) ->
-    case kz_json:get_value(Key, JObj) of
-        'undefined' -> prune_null_provisioner_fields(Keys, JObj);
+-type getter_fun() :: fun((kzd_devices:doc()) -> kz_json:api_json_term()).
+-type setter_fun() :: fun((kzd_devices:doc(), kz_json:api_json_term()) -> kzd_devices:doc()).
+-spec prune_null_provisioner_field({getter_fun(), setter_fun()}, kzd_devices:doc()) ->
+          kzd_devices:doc().
+prune_null_provisioner_field({Getter, Setter}, ReqData) ->
+    case Getter(ReqData) of
+        'undefined' -> ReqData;
         Value ->
-            NewValue = kz_json:filter(fun filter_null_fields/1, Value),
-            NewJObj = kz_json:set_value(Key, NewValue, JObj),
-            prune_null_provisioner_fields(Keys, NewJObj)
+            FilteredValue = kz_json:filter(fun filter_null_fields/1, Value),
+            Setter(ReqData, FilteredValue)
     end.
 
 -spec filter_null_fields(kz_json:json_terms()) -> boolean().
