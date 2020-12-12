@@ -2,9 +2,39 @@
     "$schema": "http://json-schema.org/draft-04/schema#",
     "_id": "callflows.callflow",
     "description": "Validator for the callflow callflow data object",
+    "oneOf": [
+        {
+            "required": [
+                "id"
+            ]
+        },
+        {
+            "required": [
+                "doc_id",
+                "path"
+            ]
+        },
+        {
+            "required": [
+                "flow"
+            ]
+        }
+    ],
     "properties": {
+        "doc_id": {
+            "description": "a document ID of an allowed document to store a callflow ID",
+            "type": "string"
+        },
+        "flow": {
+            "$ref": "#/definitions/callflows.action",
+            "description": "A callflow node defines a module to execute, data to provide to that module, and zero or more children to branch to"
+        },
         "id": {
             "description": "The Callflow ID to branch to",
+            "type": "string"
+        },
+        "path": {
+            "description": "a path to a variable in an allowed document containing a callflow ID",
             "type": "string"
         },
         "skip_module": {
