@@ -1,7 +1,39 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "_id": "callflows.callflow",
-    "description": "Validator for the callflow callflow data object",
+    "description": "Validator for the callflow data object",
+    "properties": {
+        "doc_id": {
+            "description": "A document ID of an allowed document to store a callflow ID",
+            "type": "string"
+        },
+        "flow": {
+            "$ref": ""callflows.action",
+            "description": "A callflow node defines a module to execute, data to provide to that module, and zero or more children to branch to"
+        },
+        "id": {
+            "description": "The Callflow ID to branch to",
+            "type": "string"
+        },
+        "path": {
+            "description": "The name or path to the variable that should be looked up",
+            "oneOf": [
+                {
+                    "description": "The name of variable/property that should be looked up",
+                    "type": "string"
+                },
+                {
+                    "description": "Specifies a json path to the variable/property that should be looked up",
+                    "items": [],
+                    "type": "array"
+                }
+             ]
+        },
+        "skip_module": {
+            "description": "When set to true this callflow action is skipped, advancing to the wildcard branch (if any)",
+            "type": "boolean"
+        }
+    },
     "oneOf": [
         {
             "required": [
@@ -20,27 +52,5 @@
             ]
         }
     ],
-    "properties": {
-        "doc_id": {
-            "description": "a document ID of an allowed document to store a callflow ID",
-            "type": "string"
-        },
-        "flow": {
-            "$ref": "#/definitions/callflows.action",
-            "description": "A callflow node defines a module to execute, data to provide to that module, and zero or more children to branch to"
-        },
-        "id": {
-            "description": "The Callflow ID to branch to",
-            "type": "string"
-        },
-        "path": {
-            "description": "a path to a variable in an allowed document containing a callflow ID",
-            "type": "string"
-        },
-        "skip_module": {
-            "description": "When set to true this callflow action is skipped, advancing to the wildcard branch (if any)",
-            "type": "boolean"
-        }
-    },
     "type": "object"
 }
