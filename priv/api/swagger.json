@@ -2080,11 +2080,51 @@
             "type": "object"
         },
         "callflows.callflow": {
-            "description": "Validator for the callflow callflow data object",
+            "description": "Validator for the callflow data object",
+            "oneOf": [
+                {
+                    "required": [
+                        "id"
+                    ]
+                },
+                {
+                    "required": [
+                        "doc_id",
+                        "path"
+                    ]
+                },
+                {
+                    "required": [
+                        "flow"
+                    ]
+                }
+            ],
             "properties": {
+                "doc_id": {
+                    "description": "A document ID of an allowed document to store a callflow ID",
+                    "type": "string"
+                },
+                "flow": {
+                    "$ref": "#/definitions/callflows.action",
+                    "description": "A callflow node defines a module to execute, data to provide to that module, and zero or more children to branch to"
+                },
                 "id": {
                     "description": "The Callflow ID to branch to",
                     "type": "string"
+                },
+                "path": {
+                    "description": "The name or path to the variable that should be looked up",
+                    "oneOf": [
+                        {
+                            "description": "The name of variable/property that should be looked up",
+                            "type": "string"
+                        },
+                        {
+                            "description": "Specifies a json path to the variable/property that should be looked up",
+                            "items": [],
+                            "type": "array"
+                        }
+                    ]
                 },
                 "skip_module": {
                     "description": "When set to true this callflow action is skipped, advancing to the wildcard branch (if any)",
@@ -11846,6 +11886,19 @@
                     "default": false,
                     "description": "callflow allow_authz_context_overrides",
                     "type": "boolean"
+                },
+                "allowed_branch_doc_types": {
+                    "default": [
+                        "user",
+                        "device",
+                        "location",
+                        "group"
+                    ],
+                    "description": "callflow allowed_branch_doc_types",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
                 },
                 "authz_contexts": {
                     "default": [],
