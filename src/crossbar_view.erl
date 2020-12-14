@@ -386,6 +386,7 @@ merge_options(Context, CursorOptions, Options) ->
                     ,fun maybe_set_log_prefix/2
                     ,fun maybe_set_include_docs/2
                     ,fun set_context_vars/2
+                    ,fun has_valid_dbs/2
                     ]).
 
 -spec add_time_range(context_options(), options()) -> maybe_load_params().
@@ -480,6 +481,21 @@ set_context_vars({Context, Options}, _CbViewOptions) ->
               ,{fun cb_context:set_resp_status/2, 'success'}
               ],
     {'ok', {cb_context:setters(Context, Setters), Options}}.
+
+-spec has_valid_dbs(context_options(), options()) -> {'ok', context_options()}.
+has_valid_dbs({Context, Options}, _CbViewOptions) ->
+    case props:get_value('databases', Options) of
+        'undefined' ->
+            {'ok', {Context, props:set_value('databases', [cb_context:db_name(Context)], Options)}};
+        [] ->
+            {'error', cb_context:add_system_error('invalid_db_name', 'undefined', cb_context:set_db_name(Context, <<>>))};
+        Dbs when is_list(Dbs) ->
+            {'ok', {Context, Options}};
+        <<Db/binary>> ->
+            {'ok', {Context, props:set_value('databases', [Db], Options)}};
+        Invalid ->
+            {'error', cb_context:add_system_error('invalid_db_name', 'undefined', cb_context:set_db_name(Context, Invalid))}
+    end.
 
 -spec cleanse_options(context_options(), options()) -> {'ok', context_options()}.
 cleanse_options({Context, CursorOptions}, Options) ->
