@@ -411,7 +411,8 @@ build_prepare_docs_options(Context, Options) ->
     TimeFilterKey = props:get_ne_binary_value('time_filter_key', Options, <<"created">>),
     ShouldFilter = (HasQSFilter
                     andalso not props:is_true('no_filter', Options, 'false')
-                   ) orelse props:is_true('run_mapper', Options, 'false'),
+                   )
+        orelse props:is_true('run_mapper', Options, 'false'),
 
     Fields = get_fields(Context),
     FieldKey = props:get_value('field_key', Options, <<"doc">>),
@@ -569,7 +570,7 @@ has_qs_filter(Context, Options) ->
         'undefined' ->
             IsTimeQuery = props:is_true('is_time_query', Options, 'false'),
             TimeFilterKey = props:get_ne_binary_value('time_filter_key', Options, <<"created">>),
-             has_qs_filter(Context, TimeFilterKey, IsTimeQuery);
+            has_qs_filter(Context, TimeFilterKey, IsTimeQuery);
         HasQSFilter ->
             HasQSFilter
     end.
