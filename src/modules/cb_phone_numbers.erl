@@ -504,10 +504,10 @@ maybe_find_port_number(Context, Number, 'true') ->
     end.
 
 -spec port_number_summary(kz_json:object(), cb_context:context(), boolean()) -> cb_context:context().
-port_number_summary(PhoneNumber, Context, 'true') ->
-    crossbar_util:response(PhoneNumber, Context);
-port_number_summary(PhoneNumber, Context, 'false') ->
-    reply_number_not_found(PhoneNumber, Context).
+port_number_summary(PhoneNumberJObj, Context, 'true') ->
+    crossbar_util:response(PhoneNumberJObj, Context);
+port_number_summary(PhoneNumberJObj, Context, 'false') ->
+    reply_number_not_found(PhoneNumberJObj, Context).
 
 -spec normalize_port_number(kz_json:object(), kz_term:ne_binary(), kz_term:ne_binary()) ->
           knm_phone_number:return().
@@ -969,13 +969,16 @@ set_error(_, Data, Context) ->
             cb_context:add_system_error('unspecified_fault', Context)
     end.
 
--spec reply_number_not_found(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
-reply_number_not_found(Number, Context) ->
+-spec reply_number_not_found(kz_term:ne_binary() | kz_json:object(), cb_context:context()) ->
+          cb_context:context().
+reply_number_not_found(<<Number/binary>>, Context) ->
     Msg = kz_json:from_list([{<<"message">>, <<"bad identifier">>}
                             ,{<<"not_found">>, <<"The number could not be found">>}
                             ,{<<"cause">>, Number}
                             ]),
-    cb_context:add_system_error('bad_identifier', Msg, Context).
+    cb_context:add_system_error('bad_identifier', Msg, Context);
+reply_number_not_found(PhoneNumberJObj, Context) ->
+    reply_number_not_found(kz_doc:id(PhoneNumberJObj), Context).
 
 %%------------------------------------------------------------------------------
 %% @doc

@@ -400,7 +400,8 @@
                     "description": "Method of authentication",
                     "enum": [
                         "password",
-                        "ip"
+                        "ip",
+                        "authorization"
                     ],
                     "support_level": "supported",
                     "type": "string"

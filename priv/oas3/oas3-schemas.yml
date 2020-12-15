@@ -4909,6 +4909,7 @@
           'enum':
             - password
             - ip
+            - authorization
           'type': string
           'x-support_level': supported
         'number':
