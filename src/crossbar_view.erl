@@ -856,12 +856,33 @@ get_range_yodbs(Context, Options) ->
           cb_context:context().
 load_view(_, _, {'error', Context}) ->
     Context;
-load_view(View, Selector, {'ok', {Context, Options}}) ->
-    case cb_context:fetch(Context, 'crossbar_view_extra') of
+load_view(View, Selector, {'ok', ContextOptions}) ->
+    case has_valid_dbs(ContextOptions) of
+        {'ok', {Context, Options}} ->
+            Extra = cb_context:fetch(Context, 'crossbar_view_extra'),
+            maybe_apply_extra(Context, View, Selector, Options, Extra);
+        {'error', ErrorContext} ->
+            ErrorContext
+    end.
+
+maybe_apply_extra(Context, View, Selector, Options, 'undefined') ->
+    load_view({'ok', {Context, View, Selector, Options}});
+maybe_apply_extra(Context, View, Selector, Options, Fun) ->
+    load_view(Fun(Context, View, Selector, Options)).
+
+-spec has_valid_dbs(context_options()) -> maybe_load_params().
+has_valid_dbs({Context, Options}) ->
+    case props:get_value('databases', Options) of
         'undefined' ->
-            load_view({'ok', {Context, View, Selector, Options}});
-        Fun ->
-            load_view(Fun(Context, View, Selector, Options))
+            {'ok', {Context, props:set_value('databases', [cb_context:db_name(Context)], Options)}};
+        [] ->
+            {'error', cb_context:add_system_error('invalid_db_name', 'undefined', cb_context:set_db_name(Context, <<>>))};
+        Dbs when is_list(Dbs) ->
+            {'ok', {Context, Options}};
+        <<Db/binary>> ->
+            {'ok', {Context, props:set_value('databases', [Db], Options)}};
+        Invalid ->
+            {'error', cb_context:add_system_error('invalid_db_name', 'undefined', cb_context:set_db_name(Context, Invalid))}
     end.
 
 load_view({'ok', {Context, View, Selector, Options}}) ->
