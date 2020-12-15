@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2020, 2600Hz
+%%% @copyright (C) 2012-2021, 2600Hz
 %%% @doc Upload a rate deck, query rates for a given DID
 %%% @author James Aimonetti
 %%%
@@ -188,19 +188,46 @@ ratedeck_db(Context) ->
 
 -spec post(cb_context:context(), path_token()) -> cb_context:context().
 post(Context, _RateId) ->
-    crossbar_doc:save(Context).
+    try_save_conflict(Context).
 
 -spec patch(cb_context:context(), path_token()) -> cb_context:context().
 patch(Context, _RateId) ->
-    crossbar_doc:save(Context).
+    try_save_conflict(Context).
 
 -spec put(cb_context:context()) -> cb_context:context().
 put(Context) ->
-    crossbar_doc:save(Context).
+    try_save_conflict(Context).
 
 -spec delete(cb_context:context(), path_token()) -> cb_context:context().
 delete(Context, _RateId) ->
     crossbar_doc:delete(Context).
+
+-spec try_save_conflict(cb_context:context()) -> cb_context:context().
+try_save_conflict(C) ->
+    %% load_merge below will open the doc even if soft-deleted.
+    %% Since we want to allow re-save soft-deleted remove the key
+    %% from doc in case load_merge opened a soft-deleted doc.
+    Doc = kz_json:delete_key(<<"pvt_deleted">>, cb_context:doc(C)),
+    Context = crossbar_doc:save(cb_context:set_doc(C, Doc)),
+    case cb_context:resp_status(Context) of
+        'success' -> Context;
+        _ ->
+            try_save_conflict(Context
+                             ,cb_context:resp_error_code(Context)
+                             ,cb_context:resp_error_msg(Context)
+                             )
+    end.
+
+-spec try_save_conflict(cb_context:context(), integer(), kz_term:api_ne_binary()) -> cb_context:context().
+try_save_conflict(Context, 409, <<"datastore_conflict">>) ->
+    %% if a rate was deleted allow to create it again on conflict
+    Doc = kz_json:delete_key(<<"pvt_deleted">>, kz_doc:delete_revision(cb_context:doc(Context))),
+    DocId = kz_doc:id(Doc, kz_binary:rand_hex(16)),
+
+    lager:debug("saving rates ~s resulted in conflict, trying to update", [DocId]),
+    crossbar_doc:update(Context, DocId, kz_json:to_proplist(kz_json:flatten(Doc)), [], [{'deleted', 'true'}]);
+try_save_conflict(Context, _, _) ->
+    Context.
 
 -spec validate_number(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
 validate_number(Phonenumber, Context) ->
@@ -269,7 +296,8 @@ on_successful_validation('undefined', Context) ->
                      ),
     cb_context:set_doc(Context, Doc);
 on_successful_validation(Id, Context) ->
-    crossbar_doc:load_merge(Id, Context, ?TYPE_CHECK_OPTION(<<"rate">>)).
+    %% if a rate was deleted allow to create it again on conflict
+    crossbar_doc:load_merge(Id, Context, [{'deleted', 'true'} | ?TYPE_CHECK_OPTION(<<"rate">>)]).
 
 -spec ensure_routes_set(kz_json:object()) -> kz_json:object().
 ensure_routes_set(Rate) ->
