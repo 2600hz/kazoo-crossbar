@@ -573,7 +573,7 @@ handle_phonebook_error(Context, #{code := Code
                          ,{<<"payload">>, Payload}
                          ]),
     CommentText = kz_term:to_binary(
-                    ["Phonebook/carrier reject to submit port request.\n "
+                    ["Carrier rejected port request submission. Phonebook error:\n"
                     ,kz_json:encode(Payload, ['pretty'])
                     ]),
     Comment = kz_doc:setters(
@@ -589,10 +589,10 @@ handle_phonebook_error(Context, #{code := Code
                                                    ,Reason
                                                    ,kz_time:now_s() + ?IMMEDIATELY_REJECTION_FUDGE_SECONDS
                                                    ),
-    Context1 = move_state(Context, ?PORT_REJECTED, Metadata),
+    Options = [{'is_phonebook', 'true'}],
+    Context1 = move_state(Context, ?PORT_REJECTED, Metadata, Options),
     case cb_context:resp_status(Context1) of
         'success' ->
-            send_port_comment_notifications(Context, kz_doc:id(cb_context:doc(Context)), [Comment]),
             Doc = cb_context:doc(Context1),
             DocSetters = [{fun kzd_port_requests:set_comments/2, kzd_port_requests:comments(Doc, []) ++ [Comment]}
                          ,{fun kzd_port_requests:set_pvt_last_phonebook_error/2, PhonebookPayload}
@@ -603,6 +603,7 @@ handle_phonebook_error(Context, #{code := Code
             Context2 = save(cb_context:setters(Context1, CtxSetters)),
             case cb_context:resp_status(Context2) of
                 'success' ->
+                    send_port_comment_notifications(Context, kz_doc:id(cb_context:doc(Context)), [Comment]),
                     lager:debug("congratulation, port submission has been successfully rejected"),
                     Context2;
                 _ ->
@@ -610,7 +611,7 @@ handle_phonebook_error(Context, #{code := Code
                     Context2
             end;
         _ ->
-            lager:warning("failed to reject port request, halp"),
+            lager:warning("failed to move port to rejected state, halp"),
             Context1
     end;
 handle_phonebook_error(Context, #{code := Code
@@ -1403,13 +1404,16 @@ maybe_move_state(Context, PortState, 'success') ->
                                                    ,cb_context:auth_user_id(Context)
                                                    ,cb_context:req_value(Context, ?REQ_TRANSITION)
                                                    ),
-    move_state(Context, PortState, Metadata);
+    move_state(Context, PortState, Metadata, []);
 maybe_move_state(Context, _, _) ->
     Context.
 
--spec move_state(cb_context:context(), kz_term:ne_binary(), knm_port_request:transition_metadata()) -> cb_context:context().
-move_state(Context, PortState, Metadata) ->
-    try knm_port_request:attempt_transition(cb_context:doc(Context), Metadata, PortState) of
+-spec move_state(cb_context:context(), kz_term:ne_binary(), knm_port_request:transition_metadata(), kz_term:proplist()) -> cb_context:context().
+move_state(Context, PortState, Metadata, Options0) ->
+    Options = [{'port_authority_id', cb_context:fetch(Context, 'port_authority_id')}
+              | Options0
+              ],
+    try knm_port_request:attempt_transition(cb_context:doc(Context), Metadata, PortState, Options) of
         {'ok', PortRequest} ->
             lager:debug("loaded new port request state ~s", [PortState]),
             cb_context:set_doc(Context, PortRequest);
