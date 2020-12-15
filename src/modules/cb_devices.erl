@@ -400,7 +400,7 @@ normalize_reg_devices(JObj, Acc, RegUsernames, NotRegTypes, ValueFun, AccountRea
 lookup_regs(AccountRealm) ->
     lookup_regs(AccountRealm, 'list').
 
--spec lookup_regs(kz_term:ne_binaries(), 'sets' | 'list') ->
+-spec lookup_regs(kz_term:ne_binary(), 'sets' | 'list') ->
           kz_json:objects() | gb_sets:set(kz_term:ne_binaries()).
 lookup_regs(AccountRealm, ReturnType) ->
     Regs = search_registrations(AccountRealm),
@@ -716,30 +716,23 @@ get_current_mac_address(_DeviceId, Context) ->
 %%------------------------------------------------------------------------------
 -spec validate_device_creds(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
 validate_device_creds(DeviceId, Context) ->
-    AccountRealm = kzd_accounts:fetch_realm(cb_context:account_id(Context)),
-    Realm = cb_context:req_value(Context, ?KEY_SIP_REALM, AccountRealm),
-    case cb_context:req_value(Context, ?KEY_SIP_METHOD, <<"password">>) of
+    ReqData = cb_context:req_data(Context),
+
+    case kzd_devices:sip_method(ReqData, <<"password">>) of
         <<"password">> ->
-            check_device_password(Realm, DeviceId, Context);
+            check_device_password(DeviceId, Context, ReqData);
         <<"ip">> ->
-            IP = cb_context:req_value(Context, ?KEY_SIP_IP),
-            check_device_ip(IP, DeviceId, Context);
-        Else ->
-            Msg =
-                kz_json:from_list([{<<"message">>, <<"SIP authentication method is invalid">>}
-                                  ,{<<"target">>, [<<"password">>, <<"ip">>]}
-                                  ,{<<"cause">>, Else}
-                                  ]),
-            cb_context:add_validation_error(?KEY_SIP_METHOD
-                                           ,<<"enum">>
-                                           ,Msg
-                                           ,Context
-                                           )
+            check_device_ip(kzd_devices:sip_ip(ReqData), DeviceId, Context);
+        _Else ->
+            Context
     end.
 
--spec check_device_password(kz_term:ne_binary(), kz_term:api_binary(), cb_context:context()) -> cb_context:context().
-check_device_password(Realm, DeviceId, Context) ->
-    Username = cb_context:req_value(Context, ?KEY_SIP_USERNAME),
+-spec check_device_password(kz_term:api_ne_binary(), cb_context:context(), kz_json:object()) ->
+          cb_context:context().
+check_device_password(DeviceId, Context, ReqData) ->
+    Realm = kzd_devices:sip_realm(ReqData, cb_context:account_realm(Context)),
+    Username = kzd_devices:sip_username(ReqData),
+
     case check_sip_creds_unique(cb_context:account_id(Context), Realm, Username, DeviceId) of
         'true' -> Context;
         'false' ->
@@ -759,11 +752,11 @@ check_device_password(Realm, DeviceId, Context) ->
 %% no account id and no doc id (ie initial create with no account)
 check_sip_creds_unique('undefined', _, _, 'undefined') -> 'true';
 check_sip_creds_unique(AccountId, Realm, Username, DeviceId) ->
-    is_creds_locally_unique(AccountId, Username, DeviceId)
-        andalso is_creds_global_unique(Realm, Username, DeviceId).
+    are_creds_locally_unique(AccountId, Username, DeviceId)
+        andalso are_creds_global_unique(Realm, Username, DeviceId).
 
--spec is_creds_locally_unique(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) -> boolean().
-is_creds_locally_unique(AccountId, Username, DeviceId) ->
+-spec are_creds_locally_unique(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) -> boolean().
+are_creds_locally_unique(AccountId, Username, DeviceId) ->
     ViewOptions = [{'key', kz_term:to_lower_binary(Username)}],
     case kz_datamgr:get_results(AccountId, <<"devices/sip_credentials">>, ViewOptions) of
         {'ok', []} -> 'true';
@@ -772,8 +765,8 @@ is_creds_locally_unique(AccountId, Username, DeviceId) ->
         _ -> 'false'
     end.
 
--spec is_creds_global_unique(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) -> boolean().
-is_creds_global_unique(Realm, Username, DeviceId) ->
+-spec are_creds_global_unique(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) -> boolean().
+are_creds_global_unique(Realm, Username, DeviceId) ->
     ViewOptions = [{'key', [kz_term:to_lower_binary(Realm)
                            ,kz_term:to_lower_binary(Username)
                            ]

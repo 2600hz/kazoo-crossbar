@@ -236,11 +236,11 @@ token_auth_expiry(Method, AuthConfig) ->
     Path = method_config_path(Method, <<"token_auth_expiry_s">>),
     case kz_json:get_integer_value(Path, AuthConfig, 0) of
         TokenExp when TokenExp > 0 ->
-            erlang:system_time('seconds') + TokenExp;
+            kz_time:current_unix_tstamp() + TokenExp;
         _ ->
             case ?DEFAULT_AUTH_EXPIRY of
                 TokenExp when TokenExp > 0 ->
-                    erlang:system_time('seconds') + TokenExp;
+                    kz_time:current_unix_tstamp() + TokenExp;
                 _ -> 'undefined'
             end
     end.
