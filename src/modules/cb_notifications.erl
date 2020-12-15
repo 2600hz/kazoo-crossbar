@@ -1221,39 +1221,34 @@ summary(Context) ->
 
 -spec summary_available(cb_context:context()) -> cb_context:context().
 summary_available(Context) ->
-    case fetch_available(Context) of
-        {'ok', Available} -> crossbar_doc:handle_json_success(Available, Context);
-        _ -> fetch_summary_available(Context)
+    case kz_cache:fetch_local(?CACHE_NAME, {?MODULE, 'available'}) of
+        {'ok', JObjs} ->
+            handle_available(Context, JObjs);
+        {'error', _} ->
+            fetch_summary_available(Context)
     end.
 
 -spec fetch_summary_available(cb_context:context()) -> cb_context:context().
 fetch_summary_available(Context) ->
-    ViewOptions = [{'databases', [?KZ_CONFIG_DB]}
-                  ,{'mapper', select_normalize_fun(Context)}
-                  ,{'should_paginate', 'false'}
-                  ,{'unchunkable', 'true'}
-                  ,{'field_key', 'filtermap'}
-                  ],
-    Context1 = crossbar_view:load(Context, ?CB_LIST, ViewOptions),
-    case cb_context:resp_status(Context1) of
-        'success' ->
-            cache_available(Context1),
-            Context1;
-        _ ->
-            Context1
+    ViewOpts = [{'no_design_module', 'true'}
+               ,'include_docs'
+               ],
+    case kz_view:find(?KZ_CONFIG_DB, ?CB_LIST, [], ViewOpts) of
+        {'ok', JObjs} ->
+            CacheProp = [{'origin', [{'db', cb_context:db_name(Context), kz_notification:pvt_type()}]}],
+            _ = kz_cache:store_local(?CACHE_NAME, {?MODULE, 'available'}, JObjs, CacheProp),
+            handle_available(Context, JObjs);
+        {'error', Error} ->
+            crossbar_doc:handle_datamgr_errors(Error, ?CB_LIST, Context)
     end.
 
--spec cache_available(cb_context:context()) -> 'ok'.
-cache_available(Context) ->
-    case cb_context:fetch(Context, 'fields') of
-        'undefined' ->
-            kz_cache:store_local(?CACHE_NAME
-                                ,{?MODULE, 'available'}
-                                ,cb_context:doc(Context)
-                                ,[{'origin', [{'db', cb_context:db_name(Context), kz_notification:pvt_type()}]}]
-                                );
-        _ -> 'ok'
-    end.
+-spec handle_available(cb_context:context(), kz_json:objects()) -> cb_context:context().
+handle_available(Context, JObjs) ->
+    Options = [{'mapper', select_normalize_fun(Context)}
+              ,{'run_mapper', 'true'}
+              ,{'field_key', 'filtermap'}
+              ],
+    crossbar_view:prepare_docs(cb_context:set_doc(Context, JObjs), Options).
 
 -spec flush() -> non_neg_integer().
 flush() ->
@@ -1263,22 +1258,9 @@ flush() ->
 is_cache_key({?MODULE, 'available'}, _) -> 'true';
 is_cache_key(_K, _V) -> 'false'.
 
--spec fetch_available(cb_context:context()) ->
-          {'ok', kz_json:objects()} |
-          {any(), pid()} |
-          {'error', 'not_found'}.
-fetch_available(Context) ->
-    case kz_json:get_value(<<"fields">>, cb_context:query_string(Context)) of
-        'undefined' ->
-            kz_cache:fetch_local(?CACHE_NAME, {?MODULE, 'available'});
-        _ ->
-            {'error', 'not_found'}
-    end.
-
 -spec summary_account(cb_context:context()) -> cb_context:context().
 summary_account(Context) ->
     Options = [{'mapper', select_normalize_fun(Context)}
-              ,{'no_filter', 'true'}
               ,{'should_paginate', 'false'}
               ,{'unchunkable', 'true'}
               ,{'field_key', 'filtermap'}
@@ -1314,7 +1296,10 @@ merge_available(AccountAvailable, Available) ->
 -spec merge_fold(kz_json:object(), kz_json:objects()) -> kz_json:objects().
 merge_fold(Overridden, Acc) ->
     Id = kz_doc:id(Overridden),
-    case lists:partition(fun(JObj) -> kz_doc:id(JObj) =:= Id end, Acc) of
+    case lists:partition(fun(JObj) ->
+                                 kz_doc:id(JObj) =:= Id
+                         end, Acc)
+    of
         {[Master], Filtered} ->
             Values = [{<<"friendly_name">>, kz_json:get_value(<<"friendly_name">>, Master)}
                      ,{<<"macros">>, kz_json:get_value(<<"macros">>, Master)}
@@ -1336,21 +1321,21 @@ select_normalize_fun(Context) ->
 
 -spec normalize_available_admin(kz_json:object(), kz_json:objects()) -> kz_json:objects().
 normalize_available_admin(JObj, Acc) ->
-    Value = kz_json:get_first_defined([<<"doc">>, <<"value">>], JObj),
-    case kz_notification:category(Value) of
+    Doc = kz_json:get_json_value(<<"doc">>, JObj, JObj),
+    case kz_notification:category(Doc) of
         <<"skel">> -> Acc;
-        _Category -> [Value | Acc]
+        _Category -> [Doc | Acc]
     end.
 
 -spec normalize_available_non_admin(cb_context:context(), kz_json:object(), kz_json:objects()) ->
           kz_json:objects().
 normalize_available_non_admin(Context, JObj, Acc) ->
-    Value = kz_json:get_first_defined([<<"doc">>, <<"value">>], JObj),
-    case kz_notification:category(Value) of
+    Doc = kz_json:get_json_value(<<"doc">>, JObj, JObj),
+    case kz_notification:category(Doc) of
         <<"system">> -> Acc;
         <<"skel">> -> Acc;
-        <<"port">> -> normalize_available_port(Value, Acc, Context);
-        _Category -> [Value | Acc]
+        <<"port">> -> normalize_available_port(Doc, Acc, Context);
+        _Category -> [Doc | Acc]
     end.
 
 -spec normalize_available_port(kz_json:object(), kz_json:objects(), cb_context:context()) ->

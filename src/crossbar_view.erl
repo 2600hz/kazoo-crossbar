@@ -17,6 +17,8 @@
         ,load_modb/2, load_modb/3
         ,load_yodb/2, load_yodb/3
 
+        ,prepare_docs/1, prepare_docs/2
+
         ,direction/1, direction/2
 
         ,get_page_size/2
@@ -37,7 +39,7 @@
 
 %% too many types {{{
 -define(USER_PARAMS_ONLY,
-        ['ascending', 'databases', 'no_filter', 'no_fields'
+        ['ascending', 'databases', 'no_filter', 'no_fields', 'run_mapper'
 
          %% non-range query
         ,'end_keymap', 'keymap', 'start_keymap'
@@ -48,7 +50,7 @@
          %% ranged query
         ,'created_to', 'created_from', 'max_range'
         ,'range_end_keymap', 'time_filter_key', 'range_keymap', 'range_start_keymap'
-        ,'should_paginate'
+        ,'should_paginate', 'is_time_query'
 
          %% start/end key length fixer
         ,'key_min_length'
@@ -98,6 +100,7 @@
                     {'no_filter', boolean()} |
                     {'no_fields', boolean()} |
                     {'unchunkable', boolean()} |
+                    {'run_mapper', boolean()} |
 
                     %% for non-ranged query
                     {'end_keymap', keymap()} |
@@ -116,6 +119,7 @@
                     {'time_filter_key', kz_term:ne_binary()} |
                     {'range_start_keymap', range_keymap()} |
                     {'should_paginate', boolean()} |
+                    {'is_time_query', boolean()} |
 
                     %% start/end key length fixer
                     {'key_min_length', pos_integer()}
@@ -205,6 +209,57 @@ load_yodb(Context, View, Options) ->
 find(Context, View, Selector, Options) ->
     Build = build_cursor_options(Context, Options, 'false', 'false'),
     load_view(View, Selector, build_range_keys(Build)).
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec prepare_docs(cb_context:context()) -> cb_context:context().
+prepare_docs(Context) ->
+    prepare_docs(Context, []).
+
+-spec prepare_docs(cb_context:context(), options()) -> cb_context:context().
+prepare_docs(Context, Options) ->
+    %% TODO: how to honoring page size? start/end/bookmark keys? chunking?
+    try build_prepare_docs_options(Context, Options) of
+        {'ok', {NewContext, CursorOptions}} ->
+            do_prepare_docs(NewContext, CursorOptions, cb_context:doc(Context))
+    catch
+        'throw':{'error', ErrorMsg} ->
+            {'error', cb_context:add_system_error(404, 'faulty_request', ErrorMsg, Context)};
+        _E:_T:ST ->
+            kz_log:log_stacktrace(ST, "crashed when running prepare_docs: ~p:~p", [_E, _T]),
+            {'error', cb_context:add_system_error('unspecified_fault', Context)}
+    end.
+
+do_prepare_docs(Context, CursorOptions, JObjs) ->
+    ShouldFields = props:is_true(['user_params', 'should_fields'], CursorOptions, 'false'),
+    FilterMap = props:get_value('filtermap', CursorOptions, fun kz_term:identity/1),
+    case kz_view:apply_filtermap(FilterMap, JObjs) of
+        {'error', Error} ->
+            case cb_context:is_context(Error) of
+                'true' -> Error;
+                'false' ->
+                    crossbar_doc:handle_datamgr_errors(Error, 'undefined', Context)
+            end;
+        FilteredJObjs ->
+            maybe_apply_fields(Context, CursorOptions, FilteredJObjs, ShouldFields)
+    end.
+
+maybe_apply_fields(Context, CursorOptions, JObjs, 'true') ->
+    Fields = props:get_value('fields', CursorOptions),
+    FieldKey = props:get_value('field_key', CursorOptions),
+
+    case kz_view:build_fields_fun(Fields, FieldKey) of
+        'undefined' ->
+            crossbar_doc:handle_datamgr_success(JObjs, Context);
+        FieldsFun ->
+            FieldsJObjs = kz_view:apply_fields_fun(FieldsFun, JObjs),
+            crossbar_doc:handle_datamgr_success(FieldsJObjs, Context)
+    end;
+maybe_apply_fields(Context, _, JObjs, 'false') ->
+    crossbar_doc:handle_datamgr_success(JObjs, Context).
+
 
 %% build options funs {{{
 %%------------------------------------------------------------------------------
@@ -305,6 +360,7 @@ get_id_fun() -> fun(JObj, Acc) -> [kz_doc:id(JObj)|Acc] end.
 %%------------------------------------------------------------------------------
 -spec build_cursor_options(cb_context:context(), options(), boolean(), boolean()) -> maybe_load_params().
 build_cursor_options(Context, Options, NoDesignModule, IsTimeQuery) ->
+    NewOptions = props:set_value('is_time_query', IsTimeQuery, Options),
     try
         Bookmark = cb_context:req_value(Context, <<"bookmark">>, 'undefined'),
         CursorOptions = props:filter_undefined(
@@ -320,7 +376,7 @@ build_cursor_options(Context, Options, NoDesignModule, IsTimeQuery) ->
                           ,{'page_size', get_page_size(Context, Options)}
                           ,{'verbose_log', 'true'}
                           ]),
-        add_user_params(Context, CursorOptions, Options, IsTimeQuery)
+        add_user_params(Context, CursorOptions, NewOptions)
     catch
         'throw':{'error', ErrorMsg} ->
             {'error', cb_context:add_system_error(404, 'faulty_request', ErrorMsg, Context)};
@@ -329,12 +385,34 @@ build_cursor_options(Context, Options, NoDesignModule, IsTimeQuery) ->
             {'error', cb_context:add_system_error('unspecified_fault', Context)}
     end.
 
--spec add_user_params(cb_context:context(), kz_view:options(), options(), boolean()) -> maybe_load_params().
-add_user_params(Context, CursorOptions, Options, IsTimeQuery) ->
+
+-spec add_user_params(cb_context:context(), kz_view:options(), options()) -> maybe_load_params().
+add_user_params(Context, CursorOptions0, Options) ->
+    {'ok', {NewContext, CursorOptions1}} = build_prepare_docs_options(Context, Options),
+
+    UserParams = [{'is_chunked', is_chunked(Context, Options)}
+                 ,{'should_paginate', cb_context:should_paginate(Context)}
+                 | [{K, V}
+                    || {K, V} <- Options,
+                       lists:member(K, ?USER_PARAMS_ONLY)
+                   ] ++ props:get_value('user_params', CursorOptions1, [])
+                 ],
+    CursorProp =
+        props:set_values([{'user_params',  UserParams}
+                         ]
+                        ,CursorOptions1
+                        ),
+    merge_options(NewContext, props:set_values(CursorProp, CursorOptions0), Options).
+
+-spec build_prepare_docs_options(cb_context:context(), options()) -> maybe_load_params().
+build_prepare_docs_options(Context, Options) ->
+    IsTimeQuery = props:is_true('is_time_query', Options, 'false'),
+    HasQSFilter = has_qs_filter(Context, Options),
     TimeFilterKey = props:get_ne_binary_value('time_filter_key', Options, <<"created">>),
-    HasQSFilter = has_qs_filter(Context, TimeFilterKey, IsTimeQuery),
-    ShouldFilter = HasQSFilter
-        andalso not props:is_true('no_filter', Options, 'false'),
+    ShouldFilter = (HasQSFilter
+                    andalso not props:is_true('no_filter', Options, 'false')
+                   )
+        orelse props:is_true('run_mapper', Options, 'false'),
 
     Fields = get_fields(Context),
     FieldKey = props:get_value('field_key', Options, <<"doc">>),
@@ -358,22 +436,16 @@ add_user_params(Context, CursorOptions, Options, IsTimeQuery) ->
     UserParams = [{'has_fields', HasFields}
                  ,{'has_full_docs', HasFullDocs}
                  ,{'has_qs_filter', HasQSFilter}
-                 ,{'is_chunked', is_chunked(Context, Options)}
                  ,{'is_time_query', IsTimeQuery}
-                 ,{'should_paginate', cb_context:should_paginate(Context)}
                  ,{'should_filter', ShouldFilter}
                  ,{'should_fields', ShouldFields}
                  ,{'should_full_docs', ShouldFullDocs}
                  ,{'time_filter_key', TimeFilterKey}
-                 | [{K, V}
-                    || {K, V} <- Options,
-                       lists:member(K, ?USER_PARAMS_ONLY)
-                   ]
                  ],
-    CursorProp = [{'field_key', FieldKey}
-                 ,{'user_params',  UserParams}
-                 ],
-    merge_options(NewContext, props:set_values(CursorProp, CursorOptions), Options).
+    CursorOptions = [{'field_key', FieldKey}
+                    ,{'user_params',  UserParams}
+                    ],
+    add_filtermap_fields_options({NewContext, CursorOptions}, Options).
 
 
 -spec merge_options(cb_context:context(), kz_view:options(), options()) -> maybe_load_params().
@@ -382,7 +454,6 @@ merge_options(Context, CursorOptions, Options) ->
                    ,Options
                    ,[fun cleanse_options/2
                     ,fun add_time_range/2
-                    ,fun add_filtermap_fields_options/2
                     ,fun maybe_set_log_prefix/2
                     ,fun maybe_set_include_docs/2
                     ,fun set_context_vars/2
@@ -411,48 +482,48 @@ add_filtermap_fields_options({Context, CursorOptions}, Options) ->
     end.
 
 -spec add_fields_options(cb_context:context(), kz_view:options(), options()) ->  context_options().
-add_fields_options(Context, CursorOptions0, Options) ->
+add_fields_options(Context, CursorOptions0, CbViewOptions) ->
     Fields = cb_context:fetch(Context, 'fields'),
+    UserMapper = props:get_value('mapper', CbViewOptions),
     CursorOptions = [{'fields', Fields}
                     | CursorOptions0
                     ],
-    case {props:get_value('field_key', CursorOptions)
-         ,props:is_true(['user_params', 'should_filter'], CursorOptions, 'false')
-         }
-    of
-        {'filtermap', ShouldFilter} ->
-            UserMapper = props:get_value('mapper', Options),
-            FilterMap = crossbar_filter:build_with_mapper(Context, UserMapper, ShouldFilter),
-            {Context, props:set_value('filtermap', FilterMap, CursorOptions)};
-        {_, 'true'} ->
-            %% this only builds filtermap fun with crossbar qs filter
-            FilterFunOnly = crossbar_filter:build_with_mapper(Context, 'undefined', 'true'),
-            {Context, props:set_value('filtermap', FilterFunOnly, CursorOptions)};
-        {_, 'false'} ->
-            {Context, CursorOptions}
+
+    %% this only builds filtermap fun with crossbar qs filter
+    %% if has_qs_filter and filter_key is filtermap
+    case build_filtermap(Context, CursorOptions, UserMapper) of
+        'undefined' ->
+            {Context, CursorOptions};
+        FilterMap ->
+            {Context, props:set_value('filtermap', FilterMap, CursorOptions)}
     end.
 
 -spec maybe_add_full_docs_options(cb_context:context(), kz_view:options(), options(), boolean()) -> context_options().
 maybe_add_full_docs_options(Context, CursorOptions, CbViewOptions, 'true') ->
-    case {props:get_value('field_key', CursorOptions)
-         ,props:is_true(['user_params', 'should_filter'], CursorOptions, 'false')
-         }
-    of
-        {'filtermap', ShouldFilter} ->
-            UserMapper = props:get_value('mapper', CbViewOptions),
-            FilterMap = crossbar_filter:build_with_mapper(Context, UserMapper, ShouldFilter),
-            {Context, props:set_value('filtermap', FilterMap, CursorOptions)};
-        {_, 'true'} ->
-            FilterMap = crossbar_filter:build_with_mapper(Context, get_doc_fun(), 'true'),
-            {Context, props:set_value('filtermap', FilterMap, CursorOptions)};
-        {_, 'false'} ->
-            {Context, props:set_value('filtermap', get_doc_fun(), CursorOptions)}
-    end;
+    UserMapper = props:get_value('mapper', CbViewOptions),
+    FilterMap = build_filtermap(Context, CursorOptions, UserMapper, get_doc_fun()),
+    {Context, props:set_value('filtermap', FilterMap, CursorOptions)};
 maybe_add_full_docs_options(Context, CursorOptions, CbViewOptions, 'false') ->
     UserMapper = props:get_value('mapper', CbViewOptions),
     ShouldFilter = props:is_true(['user_params', 'should_filter'], CursorOptions, 'false'),
     FilterMap = crossbar_filter:build_with_mapper(Context, UserMapper, ShouldFilter),
     {Context, props:set_value('filtermap', FilterMap, CursorOptions)}.
+
+build_filtermap(Context, Options, UserMapper) ->
+    build_filtermap(Context, Options, UserMapper, 'undefined').
+
+build_filtermap(Context, Options, UserMapper, Default) ->
+    case {props:get_value('field_key', Options)
+         ,props:is_true(['user_params', 'should_filter'], Options)
+         }
+    of
+        {'filtermap', ShouldFilter} ->
+            crossbar_filter:build_with_mapper(Context, UserMapper, ShouldFilter);
+        {_, 'true'} ->
+            crossbar_filter:build_with_mapper(Context, Default, 'true');
+        {_, 'false'} ->
+            Default
+    end.
 
 -spec maybe_set_include_docs(context_options(), options()) -> {'ok', context_options()}.
 maybe_set_include_docs({Context, CursorOptions}, _Options) ->
@@ -493,6 +564,16 @@ cleanse_options({Context, CursorOptions}, Options) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
+-spec has_qs_filter(cb_context:context(), options()) -> boolean().
+has_qs_filter(Context, Options) ->
+    case cb_context:fetch(Context, 'has_qs_filter') of
+        'undefined' ->
+            IsTimeQuery = props:is_true('is_time_query', Options, 'false'),
+            TimeFilterKey = props:get_ne_binary_value('time_filter_key', Options, <<"created">>),
+            has_qs_filter(Context, TimeFilterKey, IsTimeQuery);
+        HasQSFilter ->
+            HasQSFilter
+    end.
 -spec has_qs_filter(cb_context:context(), kz_term:ne_binary(), boolean()) -> boolean().
 has_qs_filter(Context, TimeFilterKey, 'true') ->
     crossbar_filter:is_defined(Context)
@@ -502,10 +583,15 @@ has_qs_filter(Context, _, 'false') ->
 
 -spec has_full_docs(cb_context:context()) -> boolean().
 has_full_docs(Context) ->
-    kz_term:is_true(cb_context:req_param(Context, <<"full_docs">>, 'false'))
-        andalso (kapps_config:is_true(?CONFIG_CAT, <<"allow_fetch_full_docs">>, 'false')
-                 orelse module_allows_include_docs(cb_context:req_nouns(Context))
-                ).
+    case cb_context:fetch(Context, 'has_full_docs') of
+        'undefined' ->
+            kz_term:is_true(cb_context:req_param(Context, <<"full_docs">>, 'false'))
+                andalso (kapps_config:is_true(?CONFIG_CAT, <<"allow_fetch_full_docs">>, 'false')
+                         orelse module_allows_include_docs(cb_context:req_nouns(Context))
+                        );
+        HasFullDocs ->
+            HasFullDocs
+    end.
 
 -spec module_allows_include_docs(req_nouns()) -> boolean().
 module_allows_include_docs([]) ->
@@ -514,23 +600,29 @@ module_allows_include_docs([{Endpoint, _} | _]) ->
     Module = <<"cb_", Endpoint/binary>>,
     kz_term:is_true(kapps_config:is_true(?CONFIG_CAT, [<<"allowed_modules_fetch_full_docs">>, Module])).
 
--spec get_fields(cb_context:context()) -> kz_view:fields() | 'undefined'.
+-spec get_fields(cb_context:context()) -> kz_view:fields().
 get_fields(Context) ->
-    case kz_json:get_value(<<"fields">>, cb_context:query_string(Context)) of
-        'undefined' -> 'undefined';
-        <<Fields/binary>> ->
-            try normalize_fields(decode_fields(Fields))
-            catch
-                _E:_T:ST ->
-                    kz_log:log_stacktrace(ST, "normalizing fields crashed with ~p:~p, fields qs is not valid: ~p"
-                                         ,[_E, _T, Fields]
-                                         ),
-                    throw({'error', <<"invalid fields query string">>})
-            end;
-        _Other ->
-            lager:debug("fields qs is not valid json term: ~p", [_Other]),
+    QSFields = kz_json:get_value(<<"fields">>, cb_context:query_string(Context)),
+    Fields = cb_context:fetch(Context, 'fields'),
+    get_fields(Fields, QSFields).
+
+-spec get_fields(kz_view:fields(), kz_term:api_ne_binary()) -> kz_view:fields().
+get_fields('undefined', 'undefined') ->
+    [];
+get_fields(Fields, 'undefined') ->
+    Fields;
+get_fields(_, <<Fields/binary>>) ->
+    try normalize_fields(decode_fields(Fields))
+    catch
+        _E:_T:ST ->
+            kz_log:log_stacktrace(ST, "normalizing fields crashed with ~p:~p, fields qs is not valid: ~p"
+                                 ,[_E, _T, Fields]
+                                 ),
             throw({'error', <<"invalid fields query string">>})
-    end.
+    end;
+get_fields(_, _Other) ->
+    lager:debug("fields qs is not valid json term: ~p", [_Other]),
+    throw({'error', <<"invalid fields query string">>}).
 
 -spec decode_fields(binary()) -> kz_view:fields().
 decode_fields(Fields) ->
@@ -549,15 +641,13 @@ decode_fields(Fields) ->
             kz_json:flatten_deep(JObj)
     end.
 
--spec normalize_fields(kz_view:fields()) -> kz_view:fields() | 'undefined'.
-normalize_fields([]) ->
-    'undefined';
+-spec normalize_fields(kz_view:fields()) -> kz_view:fields().
 normalize_fields(List) ->
     %% technically we don't need to add _id here, kz_view will add it for us,
     %% but we are doing this because we store fields in context and to let modules like
     %% cb_cdrs use normalized fields from context when  need it.
     case lists:foldl(fun normalize_fields/2, [], List) of
-        [] -> 'undefined';
+        [] -> [];
         Fields ->
             case props:get_value(<<"_id">>, Fields) of
                 'undefined' ->
