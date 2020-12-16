@@ -17572,6 +17572,10 @@
                 "asr_profanity_filter": {
                     "description": "speech ibm asr_profanity_filter",
                     "type": "boolean"
+                },
+                "asr_smart_formatting": {
+                    "description": "speech ibm asr_smart_formatting",
+                    "type": "boolean"
                 }
             },
             "type": "object"
