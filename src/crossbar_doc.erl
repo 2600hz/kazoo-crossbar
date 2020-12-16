@@ -544,7 +544,7 @@ delete_if_empty_attachments(AccountDb, _DocId, {'ok', JObj}) ->
             lager:debug("no attachment for ~s document, deleting doc", [_DocId]);
         Attachments ->
             lager:debug("document ~s has ~b attachments, not deleting doc"
-                       ,[_DocId, length(Attachments)]
+                       ,[_DocId, length(kz_json:get_keys(Attachments))]
                        )
     end;
 delete_if_empty_attachments(_, _DocId, {'error', _Reason}) ->
