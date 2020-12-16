@@ -529,7 +529,7 @@ maybe_delete_doc(Context, DocOrId, Options) ->
         {'false', 'true'} ->
             lager:debug("maybe deleting document ~s if doc has no other attachments", [kz_doc:id(DocOrId)]),
             AccountDb = cb_context:db_name(Context),
-            delete_if_empty_attachments(AccountDb, kz_doc:id(DocOrId), DocOrId);
+            delete_if_empty_attachments(AccountDb, kz_doc:id(DocOrId), {'ok', DocOrId});
         {'false', 'false'} ->
             lager:debug("maybe deleting document ~s if doc has no other attachments", [DocOrId]),
             AccountDb = cb_context:db_name(Context),
