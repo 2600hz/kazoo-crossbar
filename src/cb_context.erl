@@ -544,7 +544,7 @@ set_account_name(#cb_context{}=Context, Name) ->
 set_user_id(#cb_context{}=Context, UserId) ->
     Context#cb_context{user_id=UserId}.
 
--spec set_db_name(context(), kz_term:ne_binary()) -> context().
+-spec set_db_name(context(), kz_term:api_binary()) -> context().
 set_db_name(#cb_context{}=Context, DbName) ->
     Context#cb_context{db_name=DbName}.
 
@@ -1084,8 +1084,8 @@ add_system_error('disabled', Context) ->
 add_system_error(Error, Context) ->
     build_system_error(500, Error, kz_term:to_binary(Error), Context).
 
--spec add_system_error(atom() | binary(), kz_term:ne_binary() | kz_json:object(), context()) -> context().
-add_system_error(Error, <<_/binary>>=Message, Context) ->
+-spec add_system_error(atom() | binary(), kz_term:api_ne_binary() | kz_json:object(), context()) -> context().
+add_system_error(Error, <<Message/binary>>, Context) ->
     JObj = kz_json:from_list([{<<"message">>, Message}]),
     add_system_error(Error, JObj, Context);
 add_system_error(Error, Props, Context) when is_list(Props) ->
