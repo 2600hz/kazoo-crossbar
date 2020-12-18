@@ -9882,6 +9882,10 @@
 'system_config.callflow.menu':
   'description': Schema for callflow.menu system_config
   'properties':
+    'max_wait_for_attachments_ms':
+      'default': 5000
+      'description': callflow menu max_wait_for_attachments_ms
+      'type': integer
     'min_greeting_length':
       'default': 1500
       'description': callflow.menu minimum greeting length
