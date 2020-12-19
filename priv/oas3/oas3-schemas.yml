@@ -9882,6 +9882,10 @@
 'system_config.callflow.menu':
   'description': Schema for callflow.menu system_config
   'properties':
+    'max_wait_for_attachments_ms':
+      'default': 5000
+      'description': callflow menu max_wait_for_attachments_ms
+      'type': integer
     'min_greeting_length':
       'default': 1500
       'description': callflow.menu minimum greeting length
@@ -14334,6 +14338,31 @@
       'description': |-
         Controls whether we should send bill reminder for the accounts a few days before due date
       'type': boolean
+  'type': object
+'system_config.tasks.cleanup':
+  'description': Schema for tasks.cleanup system_config
+  'properties':
+    'cleanup_dbs':
+      'default':
+        'classifications':
+          - account
+          - modb
+          - yodb
+          - ratedeck
+          - resource_selectors
+        'databases':
+          - alerts
+          - accounts
+          - system_config
+          - system_data
+          - functions
+          - system_media
+          - offnet
+          - port_requests
+          - sip_auth
+          - webhooks
+      'description': tasks cleanup cleanup_dbs
+      'type': object
   'type': object
 'system_config.tasks.fax_cleanup':
   'description': Schema for tasks.fax_cleanup system_config
