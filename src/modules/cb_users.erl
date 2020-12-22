@@ -430,7 +430,7 @@ maybe_send_email(Context) ->
 send_email(Context) ->
     lager:debug("trying to publish new user notification"),
     Doc = cb_context:doc(Context),
-    ReqData = cb_context:req_data(Context),
+    ReqData = cb_context:fetch(Context, <<"req_password">>),
     Req = [{<<"Account-ID">>, cb_context:account_id(Context)}
           ,{<<"User-ID">>, kz_doc:id(Doc)}
           ,{<<"Password">>, kz_json:get_value(<<"password">>, ReqData)}
@@ -522,9 +522,11 @@ validate_patch(UserId, Context) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec validate_request(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
-validate_request(UserId, Context) ->
-    ReqJObj = cb_context:req_data(Context),
-    AccountId = cb_context:account_id(Context),
+validate_request(UserId, Context0) ->
+    ReqJObj = cb_context:req_data(Context0),
+    AccountId = cb_context:account_id(Context0),
+
+    Context = cb_context:store(Context0, <<"req_password">>, kz_json:get_value(<<"password">>, ReqJObj)),
 
     case kzd_users:validate(AccountId, UserId, ReqJObj) of
         {'true', UserJObj} when is_binary(UserId) ->
