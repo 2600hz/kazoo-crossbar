@@ -430,10 +430,9 @@ maybe_send_email(Context) ->
 send_email(Context) ->
     lager:debug("trying to publish new user notification"),
     Doc = cb_context:doc(Context),
-    ReqData = cb_context:fetch(Context, <<"req_password">>),
     Req = [{<<"Account-ID">>, cb_context:account_id(Context)}
           ,{<<"User-ID">>, kz_doc:id(Doc)}
-          ,{<<"Password">>, kz_json:get_value(<<"password">>, ReqData)}
+          ,{<<"Password">>, cb_context:fetch(Context, <<"req_password">>)}
           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
     kapps_notify_publisher:cast(Req, fun kapi_notifications:publish_new_user/1).
