@@ -5267,8 +5267,10 @@
             'enum':
               - H261
               - H263
+              - H263+
               - H264
               - VP8
+              - VP9
             'type': string
           'type': array
           'uniqueItems': true
