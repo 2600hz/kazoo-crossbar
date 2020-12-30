@@ -178,9 +178,8 @@ validate_transaction(Context, ?MATCH_MODB_PREFIX(_, _, _)=Id, ?HTTP_GET) ->
         {'error', Reason} ->
             crossbar_doc:handle_datamgr_errors(Reason, Id, Context)
     end;
-validate_transaction(Context, _, ?HTTP_GET) ->
-    Message = kz_json:from_list([{<<"message">>, <<"invalid transaction id">>}]),
-    cb_context:add_validation_error(<<"transaction_id">>, <<"invalid">>, Message, Context).
+validate_transaction(Context, Id, ?HTTP_GET) ->
+    crossbar_util:response_bad_identifier(Id, Context).
 
 -spec validate_refund(cb_context:context(), kz_term:api_float()) -> cb_context:context().
 validate_refund(Context, 'undefined') ->
