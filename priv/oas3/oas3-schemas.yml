@@ -695,28 +695,7 @@
       'minLength': 2
       'type': string
     'i18n':
-      'description': Application translation
-      'type': object
-      'x-patternProperties':
-        '[a-z]{2}\-[A-Z]{2}':
-          'properties':
-            'description':
-              'minLength': 3
-              'type': string
-            'extended_description':
-              'type': string
-            'features':
-              'items':
-                'type': string
-              'type': array
-            'label':
-              'maxLength': 64
-              'minLength': 3
-              'type': string
-          'required':
-            - description
-            - label
-          'type': object
+      '$ref': '#/app_i18n'
     'icon':
       'description': Application icon
       'type': string
@@ -777,6 +756,51 @@
     - name
     - price
     - version
+  'type': object
+'app_i18n':
+  'description': Application translation
+  'type': object
+  'x-patternProperties':
+    '[a-z]{2}\-[A-Z]{2}':
+      'properties':
+        'description':
+          'minLength': 3
+          'type': string
+        'extended_description':
+          'type': string
+        'features':
+          'items':
+            'type': string
+          'type': array
+        'icon':
+          'description': I18N application icon attachment name
+          'type': string
+        'label':
+          'maxLength': 64
+          'minLength': 3
+          'type': string
+        'screenshots':
+          'items':
+            'type': string
+          'type': array
+        'urls':
+          'type': object
+      'required':
+        - description
+        - label
+      'type': object
+'app_whitelabel':
+  'description': Application Whitelabel
+  'properties':
+    'i18n':
+      '$ref': '#/app_i18n'
+    'icon':
+      'description': Application icon
+      'type': string
+    'screenshots':
+      'items':
+        'type': string
+      'type': array
   'type': object
 'audit_logs':
   'description': Audit log of what caused a billing event to occur

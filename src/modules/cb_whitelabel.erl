@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Account module
 %%% @author Jon Blanton <jon@2600hz.com>
 %%%
@@ -24,6 +24,7 @@
         ,delete/1
 
         ,acceptable_content_types/0
+        ,find_whitelabel_from_domain/2
         ]).
 
 -include("crossbar.hrl").
@@ -547,7 +548,7 @@ test_network_options(Context) ->
           cb_context:context().
 validate_domain(Context, Domain, ?HTTP_GET) ->
     case cb_context:account_id(Context) of
-        'undefined' -> find_whitelabel_meta(Context, Domain);
+        'undefined' -> find_whitelabel_from_domain(Context, Domain);
         _AccountId -> load_whitelabel_meta(Context, ?WHITELABEL_ID)
     end.
 
@@ -619,8 +620,8 @@ find_whitelabel(Context, Domain) ->
 load_whitelabel_meta(Context, WhitelabelId) ->
     crossbar_doc:load(WhitelabelId, Context, ?TYPE_CHECK_OPTION(<<"whitelabel">>)).
 
--spec find_whitelabel_meta(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
-find_whitelabel_meta(Context, Domain) ->
+-spec find_whitelabel_from_domain(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+find_whitelabel_from_domain(Context, Domain) ->
     Context1 = find_whitelabel(Context, Domain),
     case cb_context:resp_status(Context1) of
         'success' -> load_whitelabel_meta(Context1, ?WHITELABEL_ID);
@@ -641,7 +642,7 @@ load_whitelabel_binary(Context, AttachType) ->
 
 -spec find_whitelabel_binary(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) -> cb_context:context().
 find_whitelabel_binary(Context, Domain, AttachType) ->
-    Context1 = find_whitelabel_meta(Context, Domain),
+    Context1 = find_whitelabel_from_domain(Context, Domain),
     case kz_doc:id(cb_context:doc(Context)) =:= ?WHITELABEL_ID
         orelse cb_context:resp_status(Context1) =:= 'success'
     of
@@ -652,7 +653,7 @@ find_whitelabel_binary(Context, Domain, AttachType) ->
 -spec find_whitelabel_binary_meta(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) ->
           'undefined' | {kz_term:ne_binary(), kz_json:object()}.
 find_whitelabel_binary_meta(Context, Domain, AttachType) ->
-    Context1 = find_whitelabel_meta(Context, Domain),
+    Context1 = find_whitelabel_from_domain(Context, Domain),
     case kz_doc:id(cb_context:doc(Context)) =:= ?WHITELABEL_ID
         orelse cb_context:resp_status(Context1) =:= 'success'
     of

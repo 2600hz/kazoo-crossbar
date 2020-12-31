@@ -325,7 +325,8 @@ load_docs(Context, Filter)
           cb_context:context().
 load_attachment({DocType, DocId}, AName, Options, Context) ->
     load_attachment(DocId, AName, [{'doc_type', DocType} | Options], Context);
-load_attachment(<<DocId/binary>>, AName, Options, Context) ->
+load_attachment(<<DocId/binary>>, AName, AttachmentOptions, Context) ->
+    Options = props:delete_keys(['extra_resp_headers'], AttachmentOptions),
     case kz_datamgr:fetch_attachment(cb_context:db_name(Context), DocId, AName, Options) of
         {'error', Error} ->
             handle_datamgr_errors(Error, <<DocId/binary, "/", AName/binary>>, Context);
@@ -334,19 +335,42 @@ load_attachment(<<DocId/binary>>, AName, Options, Context) ->
                        ,[AName, DocId, cb_context:db_name(Context)]
                        ),
             Context1 = load(DocId, Context, Options),
-            'success' = cb_context:resp_status(Context1),
-
-            CT = kz_doc:attachment_content_type(cb_context:doc(Context1), AName, <<"application/octet-stream">>),
-            lager:debug("adding content type ~s from attachment ~s", [CT, AName]),
-
-            cb_context:setters(Context1
-                              ,[{fun cb_context:set_resp_data/2, AttachBin}
-                               ,{fun cb_context:set_resp_etag/2, rev_to_etag(cb_context:doc(Context1))}
-                               ,{fun cb_context:add_resp_headers/2, #{<<"content-type">> => CT}}
-                               ])
+            attachment_response(Context1, DocId, AttachBin, AName, AttachmentOptions, cb_context:resp_status(Context1))
     end;
 load_attachment(Doc, AName, Options, Context) ->
     load_attachment({kz_doc:type(Doc), kz_doc:id(Doc)}, AName, Options, Context).
+
+-spec attachment_response(cb_context:context(), kz_term:ne_binary(), binary(), kz_term:ne_binary(), kz_term:proplist(), crossbar_status()) ->
+          cb_context:context().
+attachment_response(Context, DocId, AttachBin, AName, Options, 'success') ->
+    Headers = attachemnt_resp_headers(Context, DocId, AName, Options),
+    cb_context:setters(Context
+                      ,[{fun cb_context:set_resp_data/2, AttachBin}
+                       ,{fun cb_context:set_resp_etag/2, rev_to_etag(cb_context:doc(Context))}
+                       ,{fun cb_context:add_resp_headers/2, Headers}
+                       ]);
+attachment_response(Context, _, _, _, _, _) ->
+    Context.
+
+-spec attachemnt_resp_headers(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:proplist()) ->
+          cowboy:http_headers().
+attachemnt_resp_headers(Context, DocId, AName, Options) ->
+    Headers = maps:from_list(props:get_value('extra_resp_headers', Options, [])),
+    CT = kz_doc:attachment_content_type(cb_context:doc(Context)
+                                       ,AName
+                                       ,maps:get(<<"content-type">>, Headers, <<"application/octet-stream">>)
+                                       ),
+    Medianame = case kz_mime:to_extension(CT) of
+                    <<>> -> DocId;
+                    Ext -> <<DocId/binary, ".", Ext/binary>>
+                end,
+    CD = maps:get(<<"content-disposition">>, Headers, <<"attachment; filename=", Medianame/binary>>),
+
+    lager:debug("adding content type ~s from attachment ~s", [CT, AName]),
+
+    Headers#{<<"content-disposition">> => CD
+            ,<<"content-type">> => CT
+            }.
 
 %% @equiv save(Context, [])
 

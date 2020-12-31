@@ -24,37 +24,7 @@
             "type": "string"
         },
         "i18n": {
-            "description": "Application translation",
-            "patternProperties": {
-                "[a-z]{2}\\-[A-Z]{2}": {
-                    "properties": {
-                        "description": {
-                            "minLength": 3,
-                            "type": "string"
-                        },
-                        "extended_description": {
-                            "type": "string"
-                        },
-                        "features": {
-                            "items": {
-                                "type": "string"
-                            },
-                            "type": "array"
-                        },
-                        "label": {
-                            "maxLength": 64,
-                            "minLength": 3,
-                            "type": "string"
-                        }
-                    },
-                    "required": [
-                        "description",
-                        "label"
-                    ],
-                    "type": "object"
-                }
-            },
-            "type": "object"
+            "$ref": "app_i18n"
         },
         "icon": {
             "description": "Application icon",

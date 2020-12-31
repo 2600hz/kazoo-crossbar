@@ -1,58 +1,116 @@
+# Apps Store
 
-### Apps Store
+Apps Store API lists UI applications allowed by your service plan.
 
-Apps Store list apps allowed  by your service plan.
+## Apps Structure
 
-#### Apps Structure
+Application document are added by system admin in and are not modifiable. They can only be accessed through API.
 
-Cannot be modified, only accessible by GET requests.
+### Schema
 
-Ex:
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`allowed_users` | User type allowed to access the app | `string('specific' | 'all' | 'admins')` |   | `false` |
+`api_url` | Application api url | `string()` |   | `true` |
+`author` | Application author | `string(2..64)` |   | `true` |
+`i18n` | Application translation | [#/definitions/app_i18n](#app_i18n) |   | `true` |
+`icon` | Application icon | `string()` |   | `true` |
+`license` | Application license | `string()` |   | `true` |
+`masqueradable` | Whether an application is masqueradable or not | `boolean()` | `true` | `false` |
+`name` | Application name | `string(3..64)` |   | `true` |
+`phase` | Application test phase | `string('alpha' | 'beta' | 'gold')` |   | `false` |
+`price` | Application price | `number()` |   | `true` |
+`published` | is the app published | `boolean()` |   | `false` |
+`screenshots.[]` |   | `string()` |   | `false` |
+`screenshots` |   | `array(string())` |   | `false` |
+`source_url` | Application source url | `string()` |   | `false` |
+`tags.[]` |   | `string()` |   | `false` |
+`tags` |   | `array(string())` |   | `false` |
+`urls` |   | `object()` |   | `false` |
+`users.[]` |   | `string()` |   | `false` |
+`users` | User IDs authorized to use the app (when allowed_users = 'specific') | `array(string())` |   | `false` |
+`version` | Application version | `string()` |   | `true` |
 
-```json
-{
-    "name": "numbers",
-    "i18n": {
-        "en-US": {
-            "label": "Number Manager",
-            "description": "Number Manager app allows you to easily buy, port and manage all numbers in your account.",
-            "extended_description": "When you're managing a PBX or running a business there are more numbers in your hands than you can manage. Number Manager allows you to easily purchase and delete numbers, port numbers away from other carriers, and assign them to your own clients.",
-            "features": ["Purchase new numbers", "Delete numbers", "Port numbers from other carriers", "Set a Caller ID for each number", "Set a Failover Number", "Associate e911 address to each number"]
-        }
-    },
-    "tags": ["reseller", "developer"],
-    "icon": "NumberManager_app.png",
-    "api_url": "http://{{SERVER}}:8000/v2/",
-    "source_url": "http://{{SERVER}}/monster-apps/numbers",
-    "author": "2600Hz",
-    "version": "1.0",
-    "license": "-",
-    "price": 0,
-    "screenshots": ["numbermanager1.png", "numbermanager2.png", "numbermanager3.png"],
-    "urls": {
-        "documentation": "{documentation_url}",
-        "howto": "{howto_video_url}"
-    },
-    "id": "d5c75363d3d188f08dfcf5f5b80f645f"
-}
+### app_i18n schema
+
+Application translation
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`[a-z]{2}\-[A-Z]{2}.description` |   | `string(3..)` |   | `false` |
+`[a-z]{2}\-[A-Z]{2}.extended_description` |   | `string()` |   | `false` |
+`[a-z]{2}\-[A-Z]{2}.features.[]` |   | `string()` |   | `false` |
+`[a-z]{2}\-[A-Z]{2}.features` |   | `array(string())` |   | `false` |
+`[a-z]{2}\-[A-Z]{2}.icon` | I18N application icon attachment name | `string()` |   | `false` |
+`[a-z]{2}\-[A-Z]{2}.label` |   | `string(3..64)` |   | `false` |
+`[a-z]{2}\-[A-Z]{2}.screenshots.[]` |   | `string()` |   | `false` |
+`[a-z]{2}\-[A-Z]{2}.screenshots` |   | `array(string())` |   | `false` |
+`[a-z]{2}\-[A-Z]{2}.urls` |   | `object()` |   | `false` |
+`[a-z]{2}\-[A-Z]{2}` |   | `object()` |   | `false` |
+
+
+
+### App Internationalization (i18n)
+
+App documents may have internationalization of their metadata like description or name/label or screenshots. The language code are standard `two_letter_language_code-CAPITAL_TWO_LETTER_COUNTRY_CODE` for example `en-US`.
+
+!!! note
+    `icon` and `screenshot` in `i18n.en-US` section of app document has priority over their counterparts on the root of the document. For example if screenshots defined in both places ONLY values from `i18n.en-US.screenshots` will honored!
+
+### Branding Apps
+
+Re-seller can change `i18n` section of the app documents to their needs. See below for API `override` endpoint. This whitelabel overrides will be saved in their account database. When listing or getting apps metadata these whitelabeled data will merged.
+
+Please note that these overrides has priority over default values from master account.
+
+### Getting brand or language specific icon or screenshots
+
+Clients can request languages specific screenshots or icon by requesting the desired language in URL:
+
+```
+GET /v2/accounts/{{account_id}}/i18n/de-DE/apps_store/{{app_id}}/screenshot/{{screenshot_index}
 ```
 
-##### Install Master applications
+For getting branded icon or screenshots client can include whitelabel domain in the request:
 
-Assuming you've installed your Monster applications to `/path/to/monster-ui/apps`, you can run the following SUP command on the {{SERVER}}:
+```
+GET /v2/whitelabel/{{domain}}/apps_store/screenshot/{{screenshot_index}}
+```
 
-    sup crossbar_maintenance init_apps '/path/to/monster-ui/apps' 'http://your.api.{{SERVER}}:8000/v2'
+Combining these together:
+
+```
+GET /v2/whitelabel/{{domain}}/i18n/de-DE/apps_store/{{app_id}}/screenshot/{{screenshot_index}
+```
+
+### Install Master applications
+
+This is for system administrator when they initializing the system for the first time or after update. This will install the app in the system for master account so they can used and install to other accounts using API.
+
+Assuming you've installed your Monster applications to `/path/to/monster-ui/apps`, you can run the following SUP command on the to add them into the system. The URL at the end is address that Crossbar API URL that the apps will be accessible:
+
+```bash
+sup crossbar_maintenance init_apps '/path/to/monster-ui/apps' 'http://your.api.{{SERVER}}:8000/v2'
+```
 
 This will load the apps (and let you know which apps it couldn't automatically load) into the master account (including icons, if present). For any apps that failed to be loaded automatically, you can follow the manual instructions below.
 
 If you want to install a single Monster application:
 
-    sup crossbar_maintenance init_app '/path/to/monster-ui/apps/{{APP}}' 'http://{{SERVER}}:8000/v2'
+```bash
+sup crossbar_maintenance init_app '/path/to/monster-ui/apps/{{APP}}' 'http://{{SERVER}}:8000/v2'
+```
 
+In the future after updating system (monster-ui packages) you may use this command to install/upgrade the apps metadata as they change. This also is useful if you need to change the `api_url` later on:
 
-#### App Permission
+```bash
+sup crossbar_maintenance refresh_apps '/path/to/monster-ui/apps' 'http://your.api.{{SERVER}}:8000/v2'
+```
 
-This is located on the account document.
+### App Permission
+
+Blacklisting apps and user base permission is configurable using this API endpoint. The values are store in a document in the account's DB. If an app is blacklisted, it won't be accessible by any users of the account.
 
 ```json
 {
@@ -73,7 +131,10 @@ This is located on the account document.
         "{{application_id}}": {
             "allowed_users": "all"
         }
-    }
+    },
+    "blacklist": [
+        "{{application_id}}"
+    ]
 }
 ```
 
@@ -84,7 +145,7 @@ This is located on the account document.
 | All  | Everyone in the account  | all
 | Admins | Only Admins  | admins
 
-#### Fetch App(s):
+## Fetch App(s):
 
 > GET /v2/accounts/{ACCOUNT_ID}/apps_store
 
@@ -105,7 +166,7 @@ curl -v -X GET \
 }
 ```
 
-#### Install App:
+## Install App for an account:
 
 > PUT /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}
 
@@ -129,7 +190,7 @@ curl -v -X PUT \
 ```
 
 
-#### Update an App permission:
+## Update an App permission:
 
 > POST /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}
 
@@ -151,7 +212,7 @@ curl -v -X POST \
 }
 ```
 
-#### Uninstall an App:
+## Uninstall an App from an account:
 
 > DELETE /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}
 
@@ -170,7 +231,7 @@ curl -v -X DELETE \
 }
 ```
 
-#### Fetch App icon
+## Fetch App icon
 
 > GET /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/icon
 
@@ -183,7 +244,7 @@ curl -v -X GET \
 Streams application icon back.
 
 
-#### Fetch App screen shots
+## Fetch App screen shots
 
 > GET /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/screenshot/{APP_SCREENSHOT_INDEX}
 
@@ -195,7 +256,7 @@ curl -v -X GET \
 
 Streams application screenshot number `{APP_SCREENSHOT_INDEX}` back.
 
-#### Get Blacklist
+## Get Blacklist
 
 > GET /v2/accounts/{ACCOUNT_ID}/apps_store/blacklist
 
@@ -219,7 +280,7 @@ curl -v -X GET \
 }
 ```
 
-#### Update Blacklist
+## Update Blacklist
 
 > POST /v2/accounts/{ACCOUNT_ID}/apps_store/blacklist
 
@@ -243,4 +304,106 @@ curl -v -X POST \
     },
     "status": "success"
 }
+```
+
+## Fetch app whitelabel overrides
+
+> GET /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override
+
+```shell
+curl -v -X GET \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override
+```
+
+## Create app whitelabel overrides
+
+> PUT /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override
+
+```shell
+curl -v -X PUT \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override
+```
+
+## Change app whitelabel overrides
+
+> POST /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override
+
+```shell
+curl -v -X POST \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override
+```
+
+## Remove app whitelabel overrides
+
+> DELETE /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override
+
+```shell
+curl -v -X DELETE \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override
+```
+
+## Fetch branded icon
+
+> GET /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/icon
+
+```shell
+curl -v -X GET \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/icon
+```
+
+## Change branded icon
+
+> POST /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/icon
+
+```shell
+curl -v -X POST \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/icon
+```
+
+## Remove branded icon
+
+> DELETE /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/icon
+
+```shell
+curl -v -X DELETE \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/icon
+```
+
+## Fetch branded screenshot at an index
+
+> GET /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/screenshot/{APP_SCREENSHOT_INDEX}
+
+```shell
+curl -v -X GET \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/screenshot/{APP_SCREENSHOT_INDEX}
+```
+
+## Change branded screenshot
+
+You must supply the same filename in the request to replace the old image. Otherwise this will be added as a new screenshot.
+
+> POST /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/screenshot
+
+```shell
+curl -v -X POST \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/screenshot
+```
+
+## Remove branded screenshot at an index
+
+> DELETE /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/screenshot/{APP_SCREENSHOT_INDEX}
+
+```shell
+curl -v -X DELETE \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/screenshot/{APP_SCREENSHOT_INDEX}
 ```

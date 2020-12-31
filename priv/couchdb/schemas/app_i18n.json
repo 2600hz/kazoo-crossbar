@@ -1,0 +1,48 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "_id": "app_i18n",
+    "description": "Application translation",
+    "patternProperties": {
+        "[a-z]{2}\\-[A-Z]{2}": {
+            "properties": {
+                "description": {
+                    "minLength": 3,
+                    "type": "string"
+                },
+                "extended_description": {
+                    "type": "string"
+                },
+                "features": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "icon": {
+                    "description": "I18N application icon attachment name",
+                    "type": "string"
+                },
+                "label": {
+                    "maxLength": 64,
+                    "minLength": 3,
+                    "type": "string"
+                },
+                "screenshots": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "urls": {
+                    "type": "object"
+                }
+            },
+            "required": [
+                "description",
+                "label"
+            ],
+            "type": "object"
+        }
+    },
+    "type": "object"
+}

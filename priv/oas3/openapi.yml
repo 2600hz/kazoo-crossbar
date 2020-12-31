@@ -36,6 +36,18 @@
   '/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/icon':
     '$ref': >-
       paths/apps_store.yml#/paths/~1accounts~1{ACCOUNT_ID}~1apps_store~1{APP_ID}~1icon
+  '/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override':
+    '$ref': >-
+      paths/apps_store.yml#/paths/~1accounts~1{ACCOUNT_ID}~1apps_store~1{APP_ID}~1override
+  '/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/icon':
+    '$ref': >-
+      paths/apps_store.yml#/paths/~1accounts~1{ACCOUNT_ID}~1apps_store~1{APP_ID}~1override~1icon
+  '/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/screenshot':
+    '$ref': >-
+      paths/apps_store.yml#/paths/~1accounts~1{ACCOUNT_ID}~1apps_store~1{APP_ID}~1override~1screenshot
+  '/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/screenshot/{APP_SCREENSHOT_INDEX}':
+    '$ref': >-
+      paths/apps_store.yml#/paths/~1accounts~1{ACCOUNT_ID}~1apps_store~1{APP_ID}~1override~1screenshot~1{APP_SCREENSHOT_INDEX}
   '/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/screenshot/{APP_SCREENSHOT_INDEX}':
     '$ref': >-
       paths/apps_store.yml#/paths/~1accounts~1{ACCOUNT_ID}~1apps_store~1{APP_ID}~1screenshot~1{APP_SCREENSHOT_INDEX}
@@ -190,6 +202,8 @@
     '$ref': 'paths/groups.yml#/paths/~1accounts~1{ACCOUNT_ID}~1groups~1{GROUP_ID}'
   '/accounts/{ACCOUNT_ID}/hotdesks':
     '$ref': 'paths/hotdesks.yml#/paths/~1accounts~1{ACCOUNT_ID}~1hotdesks'
+  '/accounts/{ACCOUNT_ID}/i18n/{LANGUAGE}':
+    '$ref': 'paths/i18n.yml#/paths/~1accounts~1{ACCOUNT_ID}~1i18n~1{LANGUAGE}'
   '/accounts/{ACCOUNT_ID}/ips':
     '$ref': 'paths/ips.yml#/paths/~1accounts~1{ACCOUNT_ID}~1ips'
   '/accounts/{ACCOUNT_ID}/ips/assigned':
