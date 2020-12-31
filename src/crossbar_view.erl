@@ -876,13 +876,13 @@ has_valid_dbs({Context, Options}) ->
         'undefined' ->
             {'ok', {Context, props:set_value('databases', [cb_context:db_name(Context)], Options)}};
         [] ->
-            {'error', cb_context:add_system_error('invalid_db_name', 'undefined', cb_context:set_db_name(Context, <<>>))};
+            {'error', cb_context:add_system_error('invalid_db_name', cb_context:set_db_name(Context, <<>>))};
         Dbs when is_list(Dbs) ->
             {'ok', {Context, Options}};
         <<Db/binary>> ->
             {'ok', {Context, props:set_value('databases', [Db], Options)}};
         Invalid ->
-            {'error', cb_context:add_system_error('invalid_db_name', 'undefined', cb_context:set_db_name(Context, Invalid))}
+            {'error', cb_context:add_system_error('invalid_db_name', cb_context:set_db_name(Context, Invalid))}
     end.
 
 load_view({'ok', {Context, View, Selector, Options}}) ->
