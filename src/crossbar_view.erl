@@ -35,6 +35,11 @@
 
 -export([find/4]).
 
+-ifdef(TEST).
+-export([has_valid_dbs/1
+        ]).
+-endif.
+
 -include("crossbar.hrl").
 
 %% too many types {{{
@@ -877,7 +882,7 @@ has_valid_dbs({Context, Options}) ->
             {'ok', {Context, props:set_value('databases', [cb_context:db_name(Context)], Options)}};
         [] ->
             {'error', cb_context:add_system_error('invalid_db_name', cb_context:set_db_name(Context, <<>>))};
-        Dbs when is_list(Dbs) ->
+        [<<_/binary>> | _] ->
             {'ok', {Context, Options}};
         <<Db/binary>> ->
             {'ok', {Context, props:set_value('databases', [Db], Options)}};
