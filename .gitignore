@@ -20,6 +20,7 @@
 *.dump
 *.swp
 
+cover/
 *.coverdata
 
 /.edts
