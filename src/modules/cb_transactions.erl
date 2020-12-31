@@ -170,14 +170,16 @@ validate_transaction(Context, ?REFUND, ?HTTP_PUT) ->
 validate_transaction(Context, ?SALE, ?HTTP_PUT) ->
     Amount = kz_json:get_float_value(<<"amount">>, cb_context:req_data(Context)),
     validate_sale(Context, Amount);
-validate_transaction(Context, Id, ?HTTP_GET) ->
+validate_transaction(Context, ?MATCH_MODB_PREFIX(_, _, _)=Id, ?HTTP_GET) ->
     AccountId = cb_context:account_id(Context),
     case kz_transaction:fetch(AccountId, Id) of
         {'ok', Transaction} ->
             crossbar_doc:handle_json_success(kz_transaction:public_json(Transaction), Context);
         {'error', Reason} ->
             crossbar_doc:handle_datamgr_errors(Reason, Id, Context)
-    end.
+    end;
+validate_transaction(Context, Id, ?HTTP_GET) ->
+    crossbar_util:response_bad_identifier(Id, Context).
 
 -spec validate_refund(cb_context:context(), kz_term:api_float()) -> cb_context:context().
 validate_refund(Context, 'undefined') ->
