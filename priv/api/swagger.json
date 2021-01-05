@@ -18561,6 +18561,13 @@
                     "description": "The date that any recurrence should be calculated as ending on",
                     "type": "integer"
                 },
+                "exclude": {
+                    "description": "Exclude specific dates (ISO8601 format) for recurring, non-linear rules, e.g: [\"20210106\", \"20210206\"]",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
                 "flags": {
                     "description": "Flags set by external applications",
                     "items": {
