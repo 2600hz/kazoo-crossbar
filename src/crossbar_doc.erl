@@ -322,7 +322,8 @@ load_attachment({DocType, DocId}, AName, Options, Context) ->
     load_attachment(DocId, AName, [{'doc_type', DocType} | Options], Context);
 load_attachment(<<DocId/binary>>, AName, Options, Context) ->
     case kz_datamgr:fetch_attachment(cb_context:db_name(Context), DocId, AName, Options) of
-        {'error', Error} -> handle_datamgr_errors(Error, DocId, Context);
+        {'error', Error} ->
+            handle_datamgr_errors(Error, <<DocId/binary, "/", AName/binary>>, Context);
         {'ok', AttachBin} ->
             lager:debug("loaded attachment ~s from doc ~s from db ~s"
                        ,[AName, DocId, cb_context:db_name(Context)]
@@ -476,67 +477,80 @@ save_attachment(DocId, Name, Contents, Context, Options) ->
     AName = kz_binary:clean(Name),
 
     case kz_datamgr:put_attachment(cb_context:db_name(Context), DocId, AName, Contents, Opts1) of
-        {'error', 'conflict'=Error} ->
+        {'error', 'conflict'} ->
             lager:debug("saving attachment resulted in a conflict, checking for validity"),
-            Context1 = load(DocId, Context, [{'use_cache', 'false'} | Options]),
-            case kz_doc:attachment(cb_context:doc(Context1), AName) of
-                'undefined' ->
-                    lager:debug("attachment does appear to be missing, reporting error"),
-                    _ = maybe_delete_doc(Context, DocId),
-                    handle_datamgr_errors(Error, AName, Context);
-                _Attachment ->
-                    lager:debug("attachment ~s was in _attachments, considering it successful", [AName]),
-                    {'ok', Rev1} = kz_datamgr:lookup_doc_rev(cb_context:db_name(Context), DocId),
-                    cb_context:setters(Context
-                                      ,[{fun cb_context:set_doc/2, kz_json:new()}
-                                       ,{fun cb_context:set_resp_status/2, 'success'}
-                                       ,{fun cb_context:set_resp_data/2, kz_json:new()}
-                                       ,{fun cb_context:set_resp_etag/2, rev_to_etag(Rev1)}
-                                       ])
-            end;
+            %% flushing the cache to force fetching the new doc
+            %% and making sure the cache is updated. Next get attachment request (if any) then
+            %% have the correct document to fetch attachments.
+            kzs_cache:flush_cache_doc(cb_context:db_name(Context), DocId),
+            Context1 = load(DocId, Context, props:delete('content_type', Options)),
+            check_attachment_conflict(Context1, AName, Options, cb_context:resp_status(Context1));
         {'error', Error} ->
             lager:debug("error putting attachment into ~s: ~p"
                        ,[cb_context:db_name(Context), Error]
                        ),
-            _ = maybe_delete_doc(Context, DocId),
+            maybe_delete_doc(Context, DocId, Options),
             handle_datamgr_errors(Error, AName, Context);
         {'ok', _Res, _Params} ->
             lager:debug("saved attachment ~s to doc ~s to db ~s"
                        ,[AName, DocId, cb_context:db_name(Context)]
                        ),
             lager:debug("attachment params: ~p", [_Params]),
-            handle_saved_attachment(Context, DocId);
+            load(DocId, Context);
         {'ok', _Res} ->
             lager:debug("saved attachment ~s to doc ~s to db ~s"
                        ,[AName, DocId, cb_context:db_name(Context)]
                        ),
-            handle_saved_attachment(Context, DocId)
+            load(DocId, Context)
     end.
 
-handle_saved_attachment(Context, DocId) ->
-    load(DocId, Context).
+-spec check_attachment_conflict(cb_context:context(), kz_term:ne_binary(), kz_term:proplist(), crossbar_status()) ->
+          cb_context:context().
+check_attachment_conflict(Context, AName, Options, 'success') ->
+    case kz_doc:attachment(cb_context:doc(Context), AName) of
+        'undefined' ->
+            lager:debug("attachment does appear to be missing, reporting error"),
+            maybe_delete_doc(Context, cb_context:doc(Context), Options),
+            handle_datamgr_errors('conflict', AName, Context);
+        _Attachment ->
+            lager:debug("attachment ~s was in document, considering it successful", [AName]),
+            Context
+    end;
+check_attachment_conflict(Context, _, _, _) ->
+    Context.
 
--spec maybe_delete_doc(cb_context:context(), kz_term:ne_binary()) ->
-          {'ok', 'non_empty'} |
-          {'ok', kz_json:object()} |
-          kz_datamgr:data_error().
-maybe_delete_doc(Context, DocId) ->
-    AccountDb = cb_context:db_name(Context),
-    case kz_datamgr:open_doc(AccountDb, DocId) of
-        {'error', _}=Error -> Error;
-        {'ok', JObj} ->
-            delete_if_empty_attachments(AccountDb, JObj)
+-spec maybe_delete_doc(cb_context:context(), kz_term:ne_binary() | kz_json:object(), kz_term:proplist()) -> 'ok'.
+maybe_delete_doc(Context, DocOrId, Options) ->
+    case {props:is_true('keep_doc', Options, 'false')
+         ,kz_json:is_json_object(DocOrId)
+         }
+    of
+        {'true', _} -> 'ok';
+        {'false', 'true'} ->
+            lager:debug("maybe deleting document ~s if doc has no other attachments", [kz_doc:id(DocOrId)]),
+            AccountDb = cb_context:db_name(Context),
+            delete_if_empty_attachments(AccountDb, kz_doc:id(DocOrId), {'ok', DocOrId});
+        {'false', 'false'} ->
+            lager:debug("maybe deleting document ~s if doc has no other attachments", [DocOrId]),
+            AccountDb = cb_context:db_name(Context),
+            delete_if_empty_attachments(AccountDb, DocOrId, kz_datamgr:open_doc(AccountDb, DocOrId))
     end.
 
--spec delete_if_empty_attachments(kz_term:ne_binary(), kz_json:object()) ->
-          {'ok', 'non_empty'} |
-          {'ok', kz_json:object()} |
-          kz_datamgr:data_error().
-delete_if_empty_attachments(AccountDb, JObj) ->
+-spec delete_if_empty_attachments(kz_term:ne_binary(), kz_term:ne_binary(), {'ok', kz_json:object()} | kz_datamgr:data_error()) -> 'ok'.
+delete_if_empty_attachments(AccountDb, _DocId, {'ok', JObj}) ->
     case kz_doc:attachments(JObj) of
-        'undefined' -> kz_datamgr:del_doc(AccountDb, JObj);
-        _Attachments -> {'ok', 'non_empty'}
-    end.
+        'undefined' ->
+            _ = kz_datamgr:del_doc(AccountDb, JObj),
+            lager:debug("no attachment for ~s document, deleting doc", [_DocId]);
+        Attachments ->
+            lager:debug("document ~s has ~b attachments, not deleting doc"
+                       ,[_DocId, length(kz_json:get_keys(Attachments))]
+                       )
+    end;
+delete_if_empty_attachments(_, _DocId, {'error', _Reason}) ->
+    lager:debug("failed to open doc ~s and check if it has attachments: ~p"
+               ,[_DocId, _Reason]
+               ).
 
 %% @equiv delete(Context, cb_context:should_soft_delete(Context))
 -spec delete(cb_context:context()) -> cb_context:context().

@@ -99,6 +99,16 @@ curl -v -X DELETE \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/port_requests/{PORT_REQUEST_ID}
 ```
 
+## Change
+
+> POST /v2/accounts/{ACCOUNT_ID}/port_requests/lnp_lookup
+
+```shell
+curl -v -X POST \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/port_requests/lnp_lookup
+```
+
 ## Fetch
 
 > GET /v2/accounts/{ACCOUNT_ID}/port_requests/last_submitted

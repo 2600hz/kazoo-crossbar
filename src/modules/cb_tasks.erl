@@ -506,7 +506,8 @@ read_doc(TaskId, Context, AccountId) ->
               ,{'databases', [?KZ_TASKS_DB]}
               ,{'mapper', crossbar_view:get_value_fun()}
               ],
-    handle_read_result(TaskId, Context, crossbar_view:load(Context, ?KZ_TASKS_BY_ACCOUNT, Options)).
+    ReadResult = crossbar_view:load(Context, ?KZ_TASKS_BY_ACCOUNT, Options),
+    handle_read_result(TaskId, Context, ReadResult).
 
 handle_read_result(TaskId, OrigContext, ReadContext) ->
     case cb_context:resp_data(ReadContext) of
@@ -557,14 +558,17 @@ read_attachment_file(TaskId, Context, AttachmentName) ->
 %%------------------------------------------------------------------------------
 -spec summary(cb_context:context()) -> cb_context:context().
 summary(Context) ->
+    crossbar_view:load(Context, ?KZ_TASKS_BY_CREATED, summary_view_options(Context)).
+
+-spec summary_view_options(cb_context:context()) -> crossbar_view:options().
+summary_view_options(Context) ->
     AccountId = cb_context:account_id(Context),
-    ViewOptions = [{'startkey', [AccountId, kz_time:now_s(), kz_json:new()]}
-                  ,{'endkey', [AccountId]}
-                  ,{'databases', [?KZ_TASKS_DB]}
-                  ,{'mapper', crossbar_view:get_value_fun()}
-                  ,'descending'
-                  ],
-    crossbar_view:load(Context, ?KZ_TASKS_BY_CREATED, ViewOptions).
+    [{'startkey', [AccountId]}
+    ,{'endkey', [AccountId, kz_time:now_s(), kz_json:new()]}
+    ,{'databases', [?KZ_TASKS_DB]}
+    ,{'mapper', crossbar_view:get_value_fun()}
+    ,'descending'
+    ].
 
 -spec req_content_type(cb_context:context()) -> kz_term:ne_binary().
 req_content_type(Context) ->

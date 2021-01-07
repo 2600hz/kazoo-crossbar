@@ -23,8 +23,6 @@
         ,resource_exists/0, resource_exists/1, resource_exists/2
         ,content_types_provided/1, content_types_provided/2, content_types_provided/3
         ,validate/1, validate/2, validate/3
-        ,to_json/1
-        ,to_csv/1
         ]).
 
 -ifdef(TEST).
@@ -70,31 +68,8 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.allowed_methods.cdrs">>, ?MODULE, 'allowed_methods'),
     _ = crossbar_bindings:bind(<<"*.resource_exists.cdrs">>, ?MODULE, 'resource_exists'),
     _ = crossbar_bindings:bind(<<"*.content_types_provided.cdrs">>, ?MODULE, 'content_types_provided'),
-    _ = crossbar_bindings:bind(<<"*.to_json.get.cdrs">>, ?MODULE, 'to_json'),
-    _ = crossbar_bindings:bind(<<"*.to_csv.get.cdrs">>, ?MODULE, 'to_csv'),
     _ = crossbar_bindings:bind(<<"*.validate.cdrs">>, ?MODULE, 'validate'),
     'ok'.
-
--spec to_json(cb_cowboy_payload()) -> cb_cowboy_payload().
-to_json({Req, Context}) ->
-    {Req, to_response(Context, <<"json">>, cb_context:req_nouns(Context))}.
-
--spec to_csv(cb_cowboy_payload()) -> cb_cowboy_payload().
-to_csv({Req, Context}) ->
-    {Req, to_response(Context, <<"csv">>, cb_context:req_nouns(Context))}.
-
--spec to_response(cb_context:context(), kz_term:ne_binary(), req_nouns()) ->
-          cb_context:context().
-to_response(Context, _, [{<<"cdrs">>, []}, {?KZ_ACCOUNTS_DB, _}|_]) ->
-    Context;
-to_response(Context, _, [{<<"cdrs">>, []}, {<<"users">>, _}|_]) ->
-    Context;
-to_response(Context, RespType, [{<<"cdrs">>, [?PATH_INTERACTION]}, {?KZ_ACCOUNTS_DB, _}|_]) ->
-    load_chunked_cdrs(Context, RespType);
-to_response(Context, RespType, [{<<"cdrs">>, [?PATH_INTERACTION]}, {<<"users">>, _}|_]) ->
-    load_chunked_cdrs(Context, RespType);
-to_response(Context, _, _) ->
-    Context.
 
 %%------------------------------------------------------------------------------
 %% @doc This function determines the verbs that are appropriate for the
@@ -221,6 +196,7 @@ load_chunk_view(Context, ViewName, Options0) ->
     AuthAccountId = cb_context:auth_account_id(Context),
 
     Setters = [{fun cb_context:store/3, 'is_reseller', kz_services_reseller:is_reseller(AuthAccountId)}
+              ,{fun cb_context:store/3, 'accept_type', accept_type(Context)}
               ],
     Options = [{'is_chunked', 'true'}
               ,{'batch_size', ?MAX_BULK}
@@ -280,9 +256,12 @@ load_cdr_summary(Context) ->
     case cb_context:resp_status(C1) of
         'success' ->
             JObjs = cb_context:resp_data(C1),
-            cb_context:set_resp_data(C1, lists:foldl(fun merge_cdr_summary/2, kz_json:new(), JObjs));
+            cb_context:set_resp_data(C1, merge_cdr_summaries(JObjs));
         _ -> C1
     end.
+
+merge_cdr_summaries(JObjs) ->
+    lists:foldl(fun merge_cdr_summary/2, kz_json:new(), JObjs).
 
 -spec merge_cdr_summary(kz_json:object(), kz_json:objects()) -> kz_json:object().
 merge_cdr_summary(JObj1, JObj2) ->
@@ -334,6 +313,7 @@ get_view_options([{<<"cdrs">>, [?PATH_INTERACTION]}, {?KZ_ACCOUNTS_DB, _}|_]) ->
        ,{'reduce', 'true'}
        ,{'no_filter', 'true'}
        ,{'no_fields', 'true'}
+       ,{'mapper', {'context', fun load_chunked_cdrs/2}}
        | maybe_add_stale_to_options(?STALE_CDR)
        ])
     };
@@ -348,6 +328,7 @@ get_view_options([{<<"cdrs">>, [?PATH_INTERACTION]}, {<<"users">>, [OwnerId]}|_]
        ,{'reduce', 'true'}
        ,{'no_filter', 'true'}
        ,{'no_fields', 'true'}
+       ,{'mapper', {'context', fun load_chunked_cdrs/2}}
        | maybe_add_stale_to_options(?STALE_CDR)
        ])
     };
@@ -366,33 +347,57 @@ cdrs_listing_mapper(Context, JObj, Acc) ->
 %% @doc Loads CDR docs from database and normalized the them.
 %% @end
 %%------------------------------------------------------------------------------
--spec load_chunked_cdrs(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
-load_chunked_cdrs(Context, RespType) ->
-    QS = cb_context:query_string(Context),
+-spec load_chunked_cdrs(cb_context:context(), kz_json:objects()) ->
+          kz_json:objects() |
+          {'error', cb_context:context()}.
+load_chunked_cdrs(Context0, JObjs) ->
+    RespType = cb_context:fetch(Context0, 'accept_type'),
+    QS = cb_context:query_string(Context0),
     %% range keys are using interaction_time, crossbar_filter for create_* is using pvt_created
     %% and interaction_time could be before pvt_created
-    C1 = cb_context:set_query_string(Context, kz_json:delete_keys([<<"created_from">>, <<"create_to">>], QS)),
-    load_chunked_cdrs(C1, RespType, cb_context:resp_data(Context)).
+    Context = cb_context:set_query_string(Context0, kz_json:delete_keys([<<"created_from">>, <<"create_to">>], QS)),
 
--spec load_chunked_cdrs(cb_context:context(), kz_term:ne_binary(), kz_json:objects()) -> cb_context:context().
-load_chunked_cdrs(Context, RespType, RespData) ->
-    AccountId = cb_context:account_id(Context),
-    Fun = fun(JObj, Acc) -> split_to_modbs(AccountId, kz_doc:id(JObj), Acc) end,
-    MapIds = lists:foldl(Fun, #{}, RespData),
+    SplitIds = split_to_modbs(cb_context:account_id(Context), JObjs, #{}),
 
-    C1 = cb_context:set_resp_data(Context, []),
-    try maps:fold(fun(Db, Ids, C) -> load_chunked_cdr_ids(C, RespType, Db, Ids) end, C1, MapIds)
+
+    ContextSetter = [{fun cb_context:set_resp_data/2, []}
+                    ,{fun cb_context:set_resp_status/2, 'success'}
+                    ],
+    C1 = cb_context:setters(Context, ContextSetter),
+    try load_chunked_cdr_ids(C1, RespType, SplitIds) of
+        FetchedContext ->
+            case cb_context:resp_status(FetchedContext) of
+                'success' ->
+                    cb_context:resp_data(FetchedContext);
+                _ ->
+                    {'error', FetchedContext}
+            end
     catch
         _T:_E:ST ->
+            lager:debug("exception when loading cdr chunks. {~p, ~p}", [_T, _E]),
             kz_log:log_stacktrace(ST, "exception when loading cdr chunks. {~p, ~p}", [_T, _E]),
-            cb_context:add_system_error('datastore_fault', Context)
+            {'error', cb_context:add_system_error('datastore_fault', Context)}
     end.
 
-%% if request is not chunked, map Ids to MODBs
--spec split_to_modbs(kz_term:ne_binary(), kz_term:ne_binary(), map()) -> map().
-split_to_modbs(AccountId, ?MATCH_MODB_PREFIX(Year, Month, _)=Id, Map) ->
+load_chunked_cdr_ids(Context, RespType, SplitIds) ->
+    lists:foldl(fun({Db, Ids}, Ctx) -> load_chunked_cdr_ids(Ctx, RespType, Db, Ids) end
+               ,Context
+               ,SplitIds
+               ).
+
+-spec split_to_modbs(kz_term:ne_binary(), kz_json:objects(), map()) -> kz_term:proplist().
+split_to_modbs(_, [], Map) ->
+    %% resp_data is already sorted so Ids are already sorted,
+    %% but since items sort in map can be unspecefied we're doing
+    %% a sort here to sort first level of proplist which is dbs
+    lists:reverse(lists:sort(maps:to_list(Map)));
+split_to_modbs(AccountId, [JObj|JObjs], Map) ->
+    ?MATCH_MODB_PREFIX(Year, Month, _) = Id = kz_doc:id(JObj),
     Db = kazoo_modb:get_modb(AccountId, Year, Month),
-    maps:update_with(Db, fun(List) -> List ++ [Id] end, [Id], Map).
+    split_to_modbs(AccountId
+                  ,JObjs
+                  ,maps:update_with(Db, fun(List) -> List ++ [Id] end, [Id], Map)
+                  ).
 
 -spec load_chunked_cdr_ids(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binaries()) -> cb_context:context().
 load_chunked_cdr_ids(Context, RespType, Db, Ids) ->
@@ -412,8 +417,7 @@ load_chunked_cdr_ids(Context, RespType, Db, Ids, 'success') ->
                         %% otherwise run filters against doc for inclusion
                         crossbar_filter:by_doc(kz_json:get_json_value(<<"doc">>, Result), Context)
                     ],
-            RespAcc = cb_context:resp_data(Context),
-            maybe_add_csv_header(Context, RespType, RespAcc ++ Resp0);
+            cb_context:set_resp_data(Context, cb_context:resp_data(Context) ++ Resp0);
         {'error', Reason} ->
             lager:debug("failed to load cdrs doc from ~s: ~p", [Db, Reason]),
             crossbar_doc:handle_datamgr_errors(Reason, <<"load_cdrs">>, Context)
@@ -470,40 +474,16 @@ apply_row_mapper(_, F, JObj, Timestamp, _Context) ->
 -spec col_pretty_print(kz_json:object(), kz_time:gregorian_seconds(), cb_context:context()) -> kz_term:ne_binary().
 col_pretty_print(_JObj, Timestamp, Context) ->
     UTCSecondsOffset = cb_context:req_value(Context, ?KEY_UTC_OFFSET),
-    kz_time:pretty_print_datetime(handle_utc_time_offset(Timestamp, UTCSecondsOffset)).
+    %% maintain compatibility with old format.
+    %% NOTE: kzd_cdrs:col_pretty_print/3 is using the new format kz_time:pretty_print_datetime/2 with underscore
+    %% as a separator and timezone at the end.
+    kz_time:pretty_print_datetime_legacy(handle_utc_time_offset(Timestamp, UTCSecondsOffset)).
 
 -spec maybe_filter_empties(kz_json:json_proplist(), boolean()) -> kz_json:json_proplist().
 maybe_filter_empties(Rows, 'true') ->
     props:filter_empty_strings(Rows);
 maybe_filter_empties(Rows, 'false') ->
     Rows.
-
--spec maybe_add_csv_header(cb_context:context(), kz_term:ne_binary(), kz_json:objects() | kz_term:binaries()) -> cb_context:context().
-maybe_add_csv_header(Context, _, []) ->
-    Context;
-maybe_add_csv_header(Context, <<"json">>, Data) ->
-    cb_context:set_resp_data(Context, Data);
-maybe_add_csv_header(Context, <<"csv">>, [Head | Tail]=Data) ->
-    %% sorry, if you have requested fields, then you are on your own to
-    %% deal with headers.
-    case {cb_context:fetch(Context, 'chunking_started')
-         ,cb_context:fetch(Context, 'fields_fun') =:= 'undefined'
-         }
-    of
-        {'true', _} ->
-            cb_context:set_resp_data(Context, Data);
-        {'false', 'true'} ->
-            CSVHeader = kz_binary:join([K || {K, _Fun} <- csv_rows(Context)]
-                                      ,<<",">>
-                                      ),
-            cb_context:set_resp_data(Context, [<<CSVHeader/binary, "\r\n", Head/binary>> | Tail]);
-        {'false', 'false'} ->
-            CSVHeader = kz_binary:join([key_to_binary(K) || K <- cb_context:fetch(Context, 'fields', [])], <<",">>),
-            cb_context:set_resp_data(Context, [<<CSVHeader/binary, "\r\n", Head/binary>> | Tail])
-    end.
-
-key_to_binary(K) when is_list(K) -> kz_binary:join(K, <<".">>);
-key_to_binary(K) -> K.
 
 csv_rows(Context) ->
     kzd_cdrs:csv_headers(cb_context:fetch(Context, 'is_reseller', 'false')).
@@ -563,3 +543,39 @@ load_legs(Id, Context) ->
           kz_json:objects().
 normalize_leg_view_results(JObj, Acc) ->
     Acc ++ [kz_json:get_json_value(<<"doc">>, JObj)].
+
+-spec accept_type(cb_context:context()) -> kz_term:api_ne_binary().
+accept_type(Context) ->
+    accept_type(cb_context:req_header(Context, <<"accept">>)
+               ,cb_context:req_value(Context, <<"accept">>)
+               ).
+
+-spec accept_type(kz_term:api_ne_binary(), kz_term:api_ne_binary()) -> kz_term:ne_binary().
+accept_type('undefined', 'undefined') -> <<"json">>;
+accept_type(Header, 'undefined') -> normalize_accept_type(cb_modules_util:parse_media_type(Header));
+accept_type(_Header, <<"csv">>) -> <<"text/csv">>;
+accept_type(_Header, Tunneled) -> normalize_accept_type(cb_modules_util:parse_media_type(Tunneled)).
+
+-spec normalize_accept_type({'error', 'badarg'} | media_values()) ->
+          kz_term:ne_binary().
+normalize_accept_type({'error', 'badarg'}) ->
+    lager:info("failed to parse the accept header, assuming json"),
+    <<"json">>;
+normalize_accept_type([?MEDIA_VALUE(<<"application">>, <<"json">>, _, _, _)|_]) ->
+    <<"json">>;
+normalize_accept_type([?MEDIA_VALUE(<<"application">>, <<"x-json">>, _, _, _)|_]) ->
+    <<"json">>;
+normalize_accept_type([?MEDIA_VALUE(<<"*">>, <<"*">>, _, _, _)|_]) ->
+    <<"json">>;
+normalize_accept_type([?MEDIA_VALUE(<<"text">>, <<"csv">>, _, _, _)|_]) ->
+    <<"csv">>;
+normalize_accept_type([?MEDIA_VALUE(<<"text">>, <<"comma-separated-values">>, _, _, _)|_]) ->
+    <<"csv">>;
+normalize_accept_type([?MEDIA_VALUE(<<"application">>, <<"octet-stream">>, _, _, _)|_]) ->
+    <<"csv">>;
+normalize_accept_type([_Accept|Accepts]) ->
+    lager:debug("failed to handle accept value ~p, assuming json", [_Accept]),
+    normalize_accept_type(Accepts);
+normalize_accept_type([]) ->
+    lager:info("failed to find valid accept value, assuming json"),
+    <<"json">>.

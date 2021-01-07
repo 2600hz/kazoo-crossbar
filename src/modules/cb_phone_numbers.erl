@@ -459,7 +459,7 @@ delete(Context, Number) ->
                 andalso knm_errors:error(Error) == <<"invalid_state_transition">>
                 andalso knm_errors:cause(Error) == <<"from available to released">>
             of
-                'true' -> reply_number_not_found(Context);
+                'true' -> reply_number_not_found(Number, Context);
                 'false' -> set_response(Result, Context, CB)
             end;
         Else ->
@@ -485,14 +485,14 @@ summary(Context, Number) ->
 
 -spec maybe_find_port_number(cb_context:context(), kz_term:ne_binary(), boolean()) ->
           cb_context:context().
-maybe_find_port_number(Context, _Number, 'false') ->
-    reply_number_not_found(Context);
+maybe_find_port_number(Context, Number, 'false') ->
+    reply_number_not_found(Number, Context);
 maybe_find_port_number(Context, Number, 'true') ->
     Num = knm_converters:normalize(Number),
     ViewOption = [{'key', [cb_context:account_id(Context), Num]}
                  ],
     case kz_datamgr:get_single_result(?KZ_PORT_REQUESTS_DB, ?PORT_NUM_LISTING, ViewOption) of
-        {'error', _} -> reply_number_not_found(Context);
+        {'error', _} -> reply_number_not_found(Number, Context);
         {'ok', Result} ->
             Port = kz_json:get_value(<<"value">>, Result),
             {'ok', PN} = normalize_port_number(Port, Num, cb_context:auth_account_id(Context)),
@@ -504,10 +504,10 @@ maybe_find_port_number(Context, Number, 'true') ->
     end.
 
 -spec port_number_summary(kz_json:object(), cb_context:context(), boolean()) -> cb_context:context().
-port_number_summary(PhoneNumber, Context, 'true') ->
-    crossbar_util:response(PhoneNumber, Context);
-port_number_summary(_PhoneNumber, Context, 'false') ->
-    reply_number_not_found(Context).
+port_number_summary(PhoneNumberJObj, Context, 'true') ->
+    crossbar_util:response(PhoneNumberJObj, Context);
+port_number_summary(PhoneNumberJObj, Context, 'false') ->
+    reply_number_not_found(PhoneNumberJObj, Context).
 
 -spec normalize_port_number(kz_json:object(), kz_term:ne_binary(), kz_term:ne_binary()) ->
           knm_phone_number:return().
@@ -876,7 +876,7 @@ identify(Context, Num) ->
                      ]),
             crossbar_util:response_400(<<"client error">>, Data, Context);
         {'error', 'not_found'} ->
-            reply_number_not_found(Context);
+            reply_number_not_found(Num, Context);
         {'error', Reason} ->
             crossbar_util:response_400(<<"client error">>, kz_term:to_binary(Reason), Context)
     end.
@@ -921,14 +921,14 @@ set_response({'ok', JObjs}, Context, _, _Collection) ->
              ,{<<"error">>, []}
              ]),
     crossbar_util:response(Resp, Context);
-set_response({'ok', [], [{_, Failed}]}, Context, _, 'undefined') ->
+set_response({'ok', [], [{Number, Failed}]}, Context, _, 'undefined') ->
     %% single number operation
-    set_error(Failed, Context);
+    set_error(Number, Failed, Context);
 set_response({'ok', Success, FailedProp}, Context, _, _Collection) ->
     %% collection operation (multi numbers)
     Resp = kz_json:from_list(
              [{<<"success">>, kz_json:from_list([{kz_doc:id(JObj), JObj} || JObj <- Success])}
-             ,{<<"error">>, kz_json:from_list(FailedProp)}
+             ,{<<"error">>, normalize_knm_error(FailedProp)}
              ]),
     crossbar_util:response(Resp, Context);
 set_response({'dry_run', Quotes}, Context, CB, _Collection) ->
@@ -937,13 +937,27 @@ set_response({'dry_run', Quotes}, Context, CB, _Collection) ->
         'true' -> CB()
     end.
 
--spec set_error(knm_errors:reason(), cb_context:context()) -> cb_context:context().
-set_error('not_found', Context) ->
-    reply_number_not_found(Context);
-set_error(Data, Context) when is_atom(Data) ->
-    lager:debug("error: ~p", [Data]),
-    crossbar_util:response_400(<<"client error">>, Data, Context);
-set_error(Data, Context) ->
+-spec normalize_knm_error(knm_errors:proplist()) -> kz_json:object().
+normalize_knm_error(FailedProp) ->
+    kz_json:from_list(
+      lists:map(fun({Number, Error}) when is_atom(Error) ->
+                        {Number, knm_errors:to_json(Error, Number)};
+                   (Other) -> Other
+                end
+               ,FailedProp
+               )
+     ).
+
+-spec set_error(kz_term:ne_binary(), knm_errors:reason(), cb_context:context()) -> cb_context:context().
+set_error(Number, 'not_found', Context) ->
+    reply_number_not_found(Number, Context);
+set_error(Number, Reason, Context) when is_atom(Reason) ->
+    Data = knm_errors:to_json(Reason, Number),
+    Code = knm_errors:code(Data),
+    Msg = knm_errors:error(Data),
+    lager:debug("error ~p: ~p", [Code, Msg]),
+    cb_context:add_system_error(Code, Msg, Data, Context);
+set_error(_, Data, Context) ->
     case kz_json:is_json_object(Data) of
         'true' ->
             Code = knm_errors:code(Data),
@@ -955,12 +969,16 @@ set_error(Data, Context) ->
             cb_context:add_system_error('unspecified_fault', Context)
     end.
 
--spec reply_number_not_found(cb_context:context()) -> cb_context:context().
-reply_number_not_found(Context) ->
+-spec reply_number_not_found(kz_term:ne_binary() | kz_json:object(), cb_context:context()) ->
+          cb_context:context().
+reply_number_not_found(<<Number/binary>>, Context) ->
     Msg = kz_json:from_list([{<<"message">>, <<"bad identifier">>}
                             ,{<<"not_found">>, <<"The number could not be found">>}
+                            ,{<<"cause">>, Number}
                             ]),
-    cb_context:add_system_error('bad_identifier', Msg, Context).
+    cb_context:add_system_error('bad_identifier', Msg, Context);
+reply_number_not_found(PhoneNumberJObj, Context) ->
+    reply_number_not_found(kz_doc:id(PhoneNumberJObj), Context).
 
 %%------------------------------------------------------------------------------
 %% @doc

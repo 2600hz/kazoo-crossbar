@@ -2479,10 +2479,8 @@
             'description': |-
               The email address/user ID or the list of email addresses/user IDs based on specified type
             'oneOf':
-              - 'format': email
-                'type': string
+              - 'type': string
               - 'items':
-                  'format': email
                   'type': string
                 'type': array
           'type':
@@ -4542,6 +4540,11 @@
                 'description': 'The time, in seconds, to wait for an answer from the server'
                 'type': integer
             'type': object
+          'server_id':
+            'description': Unique Identifier for the Server
+            'manLength': 32
+            'minLength': 32
+            'type': string
         'required':
           - auth
         'type': object
@@ -4904,6 +4907,7 @@
           'enum':
             - password
             - ip
+            - authorization
           'type': string
           'x-support_level': supported
         'number':
@@ -5263,8 +5267,10 @@
             'enum':
               - H261
               - H263
+              - H263+
               - H264
               - VP8
+              - VP9
             'type': string
           'type': array
           'uniqueItems': true
@@ -5925,6 +5931,18 @@
       'type': string
   'required':
     - name
+  'type': object
+'lnp_lookup_req':
+  'description': Schema for a lnp lookup request
+  'properties':
+    'numbers':
+      'description': The numbers to LNP lookup
+      'items':
+        'pattern': '\+?[0-9]+'
+        'type': string
+      'type': array
+  'required':
+    - numbers
   'type': object
 'mailbox_message':
   'description': Schema for mailbox message
@@ -9866,6 +9884,10 @@
 'system_config.callflow.menu':
   'description': Schema for callflow.menu system_config
   'properties':
+    'max_wait_for_attachments_ms':
+      'default': 5000
+      'description': callflow menu max_wait_for_attachments_ms
+      'type': integer
     'min_greeting_length':
       'default': 1500
       'description': callflow.menu minimum greeting length
@@ -9958,6 +9980,10 @@
 'system_config.cdr':
   'description': Schema for cdr system_config
   'properties':
+    'cdr_handler':
+      'default': cdr_report
+      'description': cdr cdr_handler
+      'type': string
     'ignore_apps':
       'default':
         - milliwatt
@@ -10105,6 +10131,10 @@
       'default': |-
         tone_stream://v=-7;>=2;+=.1;%(300,0,523,440);v=-7;>=3;+=.1;%(800,0,349,440)
       'description': conferences exit tone
+      'type': string
+    'inter_server_extension':
+      'default': conference
+      'description': conferences inter_server_extension
       'type': string
     'moderator_entry_tone':
       'default': |-
@@ -11712,6 +11742,14 @@
     'use_trie':
       'default': false
       'description': whether to use the trie to store rates in the VM
+      'type': boolean
+  'type': object
+'system_config.interaction':
+  'description': Schema for interaction system_config
+  'properties':
+    'process_conference':
+      'default': true
+      'description': interaction process_conference
       'type': boolean
   'type': object
 'system_config.ips':
@@ -13954,6 +13992,23 @@
   'required':
     - asr_api_key
   'type': object
+'system_config.speech.ibm':
+  'description': Schema for speech.ibm system_config
+  'properties':
+    'asr_api_key':
+      'description': speech ibm asr_api_key
+      'type': string
+    'asr_model':
+      'default': en-US_NarrowbandModel
+      'description': speech ibm asr_model
+      'type': string
+    'asr_profanity_filter':
+      'description': speech ibm asr_profanity_filter
+      'type': boolean
+    'asr_smart_formatting':
+      'description': speech ibm asr_smart_formatting
+      'type': boolean
+  'type': object
 'system_config.stepswitch':
   'description': Schema for stepswitch system_config
   'properties':
@@ -14286,6 +14341,31 @@
         Controls whether we should send bill reminder for the accounts a few days before due date
       'type': boolean
   'type': object
+'system_config.tasks.cleanup':
+  'description': Schema for tasks.cleanup system_config
+  'properties':
+    'cleanup_dbs':
+      'default':
+        'classifications':
+          - account
+          - modb
+          - yodb
+          - ratedeck
+          - resource_selectors
+        'databases':
+          - alerts
+          - accounts
+          - system_config
+          - system_data
+          - functions
+          - system_media
+          - offnet
+          - port_requests
+          - sip_auth
+          - webhooks
+      'description': tasks cleanup cleanup_dbs
+      'type': object
+  'type': object
 'system_config.tasks.fax_cleanup':
   'description': Schema for tasks.fax_cleanup system_config
   'properties':
@@ -14446,6 +14526,57 @@
 'system_config.teletype':
   'description': Schema for teletype system_config
   'properties':
+    'autoload_modules':
+      'default':
+        - teletype_account_zone_change
+        - teletype_bill_reminder
+        - teletype_cf_notification
+        - teletype_cnam_request
+        - teletype_customer_update
+        - teletype_denied_emergency_bridge
+        - teletype_deregister
+        - teletype_desktop_app_welcome
+        - teletype_desktop_webphone_enabled
+        - teletype_emergency_bridge
+        - teletype_fax_inbound_error_to_email
+        - teletype_fax_inbound_error_to_email_filtered
+        - teletype_fax_inbound_to_email
+        - teletype_fax_outbound_error_to_email
+        - teletype_fax_outbound_smtp_error_to_email
+        - teletype_fax_outbound_to_email
+        - teletype_first_occurrence
+        - teletype_low_balance
+        - teletype_missed_call
+        - teletype_new_account
+        - teletype_new_user
+        - teletype_number_feature_manual_action
+        - teletype_password_recovery
+        - teletype_port_cancel
+        - teletype_port_comment
+        - teletype_ported
+        - teletype_port_pending
+        - teletype_port_rejected
+        - teletype_port_request_admin
+        - teletype_port_request
+        - teletype_port_scheduled
+        - teletype_port_unconfirmed
+        - teletype_service_added
+        - teletype_system_alert
+        - teletype_topup
+        - teletype_transaction
+        - teletype_transaction_failed
+        - teletype_voicemail_deleted
+        - teletype_voicemail_full
+        - teletype_voicemail_to_email
+        - teletype_webhook_disabled
+      'description': teletype autoload_modules
+      'items':
+        'type': string
+      'type': array
+    'backoff_fudge_ms':
+      'default': 5000
+      'description': teletype backoff_fudge_ms
+      'type': integer
     'iterate_over_bcc':
       'default': true
       'description': teletype iterate over bcc
@@ -14459,6 +14590,10 @@
       'default': 50
       'description': teletype render farm workers
       'type': integer
+    'use_federated_listener':
+      'default': false
+      'description': teletype use_federated_listener
+      'type': boolean
   'type': object
 'system_config.token_buckets':
   'description': Schema for token_buckets system_config

@@ -91,11 +91,11 @@ thing_doc(Context) ->
     thing_doc(Context, cb_context:req_nouns(Context)).
 
 -spec thing_doc(cb_context:context(), req_nouns()) -> cb_context:context().
-thing_doc(Context, [{<<"metaflows">>, []}, {<<"devices">>, ThingId} | _]) ->
+thing_doc(Context, [{<<"metaflows">>, []}, {<<"devices">>, [ThingId]} | _]) ->
     load_thing_doc(Context, ThingId, kzd_devices:type());
-thing_doc(Context, [{<<"metaflows">>, []}, {<<"users">>, ThingId} | _]) ->
+thing_doc(Context, [{<<"metaflows">>, []}, {<<"users">>, [ThingId]} | _]) ->
     load_thing_doc(Context, ThingId, kzd_users:type());
-thing_doc(Context, [{<<"metaflows">>, []}, {<<"accounts">>, ThingId}]) ->
+thing_doc(Context, [{<<"metaflows">>, []}, {<<"accounts">>, [ThingId]}]) ->
     load_thing_doc(Context, ThingId, kzd_accounts:type());
 thing_doc(Context, _) ->
     crossbar_util:response_bad_identifier(<<"account, user or device ID is missing from url">>, Context).
