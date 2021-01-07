@@ -78,7 +78,6 @@ allowed_methods(_AppId, ?SCREENSHOT, _AppScreenshotIndex) ->
 %% '''
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec resource_exists() -> 'true'.
 resource_exists() -> 'true'.
 
@@ -95,7 +94,6 @@ resource_exists(_, _, _) -> 'true'.
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec content_types_provided(cb_context:context(), path_token(), path_token()) ->
           cb_context:context().
 content_types_provided(Context, Id, ?ICON) ->
@@ -136,7 +134,6 @@ content_types_provided(Context, _, _, _) -> Context.
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec authenticate(cb_context:context()) -> boolean().
 authenticate(Context) ->
     authenticate_nouns(cb_context:req_verb(Context), cb_context:req_nouns(Context)).
@@ -193,11 +190,9 @@ authorize_nouns(_Verb, _Nouns) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec validate(cb_context:context()) -> cb_context:context().
 validate(Context) ->
     load_apps(Context).
-
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, ?BLACKLIST) ->
@@ -386,17 +381,16 @@ can_modify(Context, Id) ->
 load_apps(Context) ->
     AccountId = cb_context:account_id(Context),
     Apps = cb_apps_util:allowed_apps(AccountId),
-    cb_context:setters(Context
-                      ,[{fun cb_context:set_resp_status/2, 'success'}
-                       ,{fun cb_context:set_resp_data/2, normalize_apps_result(Apps)}
-                       ]
-                      ).
+    Options = [{'mapper', fun normalize_apps_result/1}
+              ,{'run_mapper', 'true'}
+              ,{'field_key', 'filtermap'}
+              ],
+    crossbar_view:prepare_docs(cb_context:set_doc(Context, Apps), Options).
 
 %%------------------------------------------------------------------------------
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec normalize_apps_result(kz_json:objects()) -> kz_json:objects().
 normalize_apps_result(Apps) ->
     normalize_apps_result(Apps, []).
@@ -407,22 +401,22 @@ normalize_apps_result([App|Apps], Acc) ->
     case kzd_app:is_published(App) of
         'false' -> normalize_apps_result(Apps, Acc);
         'true' ->
-            JObj =
-                kz_json:from_list(
-                  [{<<"id">>, kz_doc:id(App)}
-                  ,{<<"name">>, kzd_app:name(App)}
-                  ,{<<"i18n">>, kzd_app:i18n(App)}
-                  ,{<<"tags">>, kzd_app:tags(App)}
-                  ,{<<"api_url">>, kzd_app:api_url(App)}
-                  ,{<<"source_url">>, kzd_app:source_url(App)}
-                  ,{<<"account_id">>, kzd_app:account_id(App)}
-                  ,{<<"users">>, kzd_app:users(App)}
-                  ,{<<"allowed_users">>, kzd_app:allowed_users(App)}
-                  ,{<<"masqueradable">>, kzd_app:masqueradable(App)}
-                  ,{<<"phase">>, kzd_app:phase(App)}
-                  ,{<<"extends">>, kzd_app:extends(App)}
-                  ]),
-            normalize_apps_result(Apps, [JObj|Acc])
+            Prop = [{<<"id">>, kz_doc:id(App)}
+                   ,{<<"name">>, kzd_app:name(App)}
+                   ,{<<"i18n">>, kzd_app:i18n(App)}
+                   ,{<<"tags">>, kzd_app:tags(App)}
+                   ,{<<"api_url">>, kzd_app:api_url(App)}
+                   ,{<<"source_url">>, kzd_app:source_url(App)}
+                   ,{<<"account_id">>, kzd_app:account_id(App)}
+                   ,{<<"users">>, kzd_app:users(App)}
+                   ,{<<"allowed_users">>, kzd_app:allowed_users(App)}
+                   ,{<<"masqueradable">>, kzd_app:masqueradable(App)}
+                   ,{<<"phase">>, kzd_app:phase(App)}
+                   ,{<<"extends">>, kzd_app:extends(App)}
+                   ,{<<"screenshots">>, kzd_app:screenshots(App)}
+                   ,{<<"icon">>, kzd_app:icon(App)}
+                   ],
+            normalize_apps_result(Apps, [kz_json:set_values(Prop, kz_json:new()) | Acc])
     end.
 
 %%------------------------------------------------------------------------------
@@ -607,7 +601,6 @@ load_apps_store(Context) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec get_attachment(cb_context:context(), kz_term:ne_binary()) ->
           cb_context:context().
 get_attachment(Context, Id) ->
