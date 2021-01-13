@@ -2772,6 +2772,10 @@
                     "description": "If any leg rejects the call, cancel all other legs",
                     "type": "boolean"
                 },
+                "group_id": {
+                    "description": "ID of the group",
+                    "type": "string"
+                },
                 "id": {
                     "description": "Group ID",
                     "type": "string"
@@ -17577,10 +17581,12 @@
                     "type": "string"
                 },
                 "asr_profanity_filter": {
+                    "default": true,
                     "description": "speech ibm asr_profanity_filter",
                     "type": "boolean"
                 },
                 "asr_smart_formatting": {
+                    "default": true,
                     "description": "speech ibm asr_smart_formatting",
                     "type": "boolean"
                 }

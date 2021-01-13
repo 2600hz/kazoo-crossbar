@@ -16,6 +16,10 @@
             "description": "If any leg rejects the call, cancel all other legs",
             "type": "boolean"
         },
+        "group_id": {
+            "description": "ID of the group",
+            "type": "string"
+        },
         "id": {
             "description": "Group ID",
             "type": "string"
