@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc CDR
 %%% Read only access to CDR docs
 %%%
@@ -592,8 +592,8 @@ filter_pvt_fields_legs(Context) ->
     JObjs = cb_context:resp_data(Context),
     cb_context:set_resp_data(Context, remove_pvt_ccvs(JObjs, [])).
 
--spec remove_pvt_ccvs(kz_call_event:payload(), list()) ->
-          kz_call_event:payload().
+-spec remove_pvt_ccvs(kz_json:objects(), kz_json:objects()) ->
+          kz_json:objects().
 remove_pvt_ccvs([JObj| JObjs], Acc) ->
     CCVs = kz_json:get_json_value(<<"custom_channel_vars">>, JObj, kz_json:new()),
     CCVs1 = kz_json:foldl(fun update_ccvs_foldl/3, CCVs, CCVs),
@@ -601,7 +601,7 @@ remove_pvt_ccvs([JObj| JObjs], Acc) ->
     remove_pvt_ccvs(JObjs, [NewJObj | Acc]);
 remove_pvt_ccvs([], Acc) -> Acc.
 
--spec update_ccvs_foldl(kz_json:get_key(), kz_json:json_term(), {kz_call_event:payload(), kz_json:object()}) ->
+-spec update_ccvs_foldl(kz_json:get_key(), kz_json:json_term(), kz_json:object()) ->
           {kz_call_event:payload(), kz_json:object()}.
 update_ccvs_foldl(Key, _,  CCVs) ->
     case kz_doc:is_private_key(Key) of
