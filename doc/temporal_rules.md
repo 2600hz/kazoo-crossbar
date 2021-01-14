@@ -16,6 +16,8 @@ Key | Description | Type | Default | Required | Support Level
 `days` | The recurrence days for this rule | `array(integer())` |   | `false` | `supported`
 `enabled` | Whether the rule is enabled | `boolean()` |   | `false` |  
 `end_date` | The date that any recurrence should be calculated as ending on | `integer()` |   | `false` | `supported`
+`exclude.[]` |   | `string()` |   | `false` |  
+`exclude` | Exclude specific dates (ISO8601 format) for recurring, non-linear rules, e.g: ["20210106", "20210206"] | `array(string())` |   | `false` |  
 `flags.[]` |   | `string()` |   | `false` | `supported`
 `flags` | Flags set by external applications | `array(string())` |   | `false` | `supported`
 `interval` | The recurrence interval for this rule | `integer()` | `1` | `false` | `supported`
@@ -53,6 +55,53 @@ When `cycle` is `date`, the rule only considers `start_date` and matches it agai
 #### `days`
 
 The `days` array is only valid when `cycle` is `yearly` or `monthly`.
+
+#### `exclude`
+
+The `exclude` array adds the ability to have a way to exclude an specific date, for example: If a recurring holiday is created for 'Christmas', but it is not intended to be applied for a specific year, the `exclude` field can be use to exclude that date instead of creating multiple rules for this.
+
+Here is an example:
+
+A recurring holiday for labor day (First Monday of September) is created, it should be used every year, but in 2022 that holiday is not going to be given to employees so it can be excluded. Instead of creating 2 new rules, one for 2021 and one starting 2023, the same rule can be used by excluding the date when this holiday happens on 2022, like the example below:
+
+
+> PUT /v2/accounts/{ACCOUNT_ID}/temporal_rules
+
+```shell
+curl -v -X PUT \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d '{"data":{"name":"Labor Day","cycle":"yearly","interval":1,"month":9,"type":"main_holidays","ordinal":"first","wdays":["monday"],"exclude":["20220905"]}}'
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/temporal_rules
+```
+```json
+{
+    "version": "5.0.47",
+    "timestamp": "2021-01-12T20:50:24Z",
+    "node": "{NODE}",
+    "request_id": "{REQUEST_ID}",
+    "tokens": {
+        "consumed": 1,
+        "remaining": 100
+    },
+    "auth_token": "{AUTH_TOKEN}",
+    "data": {
+        "name": "Labor Day",
+        "cycle": "yearly",
+        "interval": 1,
+        "month": 9,
+        "type": "main_holidays",
+        "ordinal": "first",
+        "wdays": [
+            "monday"
+        ],
+        "exclude":["20220905"],
+        "start_date": 62586115200,
+        "id": "{TEMPORAL_RULE_ID}"
+    },
+    "revision": "{REVISION}",
+    "status": "success"
+}
+```
 
 ## Fetch
 
