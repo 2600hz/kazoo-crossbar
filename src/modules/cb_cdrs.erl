@@ -602,7 +602,7 @@ remove_pvt_ccvs([JObj| JObjs], Acc) ->
 remove_pvt_ccvs([], Acc) -> Acc.
 
 -spec update_ccvs_foldl(kz_json:get_key(), kz_json:json_term(), kz_json:object()) ->
-          {kz_call_event:payload(), kz_json:object()}.
+          kz_json:object().
 update_ccvs_foldl(Key, _,  CCVs) ->
     case kz_doc:is_private_key(Key) of
         'false' -> CCVs;
