@@ -502,7 +502,8 @@ load_cdr(?MATCH_MODB_PREFIX(Year, Month, _Day) = CDRId, Context) ->
     AccountId = cb_context:account_id(Context),
     AccountDb = kazoo_modb:get_modb(AccountId, kz_term:to_integer(Year), kz_term:to_integer(Month)),
     Context1 = cb_context:set_db_name(Context, AccountDb),
-    crossbar_doc:load({kzd_cdrs:type(), CDRId}, Context1, ?TYPE_CHECK_OPTION(kzd_cdrs:type()));
+    Context2 = crossbar_doc:load({kzd_cdrs:type(), CDRId}, Context1, ?TYPE_CHECK_OPTION(kzd_cdrs:type())),
+    filter_pvt_fields_cdr(Context2);
 load_cdr(CDRId, Context) ->
     lager:debug("error loading cdr by id ~p", [CDRId]),
     crossbar_util:response('error', <<"could not find cdr with supplied id">>, 404, Context).
@@ -535,7 +536,8 @@ load_legs(<<BinTimestamp:11/binary, "-", _Key/binary>>=InteractionId, Context) -
               ,{'max_range', ?MOD_MAX_RANGE}
               ,'include_docs'
               ],
-    crossbar_view:load_modb(Context, ?CB_INTERACTION_LIST_BY_ID, Options);
+    Context1 = crossbar_view:load_modb(Context, ?CB_INTERACTION_LIST_BY_ID, Options),
+    filter_pvt_fields_legs(Context1);
 load_legs(Id, Context) ->
     crossbar_util:response_bad_identifier(Id, Context).
 
@@ -579,3 +581,30 @@ normalize_accept_type([_Accept|Accepts]) ->
 normalize_accept_type([]) ->
     lager:info("failed to find valid accept value, assuming json"),
     <<"json">>.
+
+-spec filter_pvt_fields_cdr(cb_context:context()) -> cb_context:context().
+filter_pvt_fields_cdr(Context) ->
+    JObj = cb_context:resp_data(Context),
+    cb_context:set_resp_data(Context, remove_pvt_ccvs([JObj], [])).
+
+-spec filter_pvt_fields_legs(cb_context:context()) -> cb_context:context().
+filter_pvt_fields_legs(Context) ->
+    JObjs = cb_context:resp_data(Context),
+    cb_context:set_resp_data(Context, remove_pvt_ccvs(JObjs, [])).
+
+-spec remove_pvt_ccvs(kz_call_event:payload(), list()) ->
+          kz_call_event:payload().
+remove_pvt_ccvs([JObj| JObjs], Acc) ->
+    CCVs = kz_json:get_json_value(<<"custom_channel_vars">>, JObj, kz_json:new()),
+    CCVs1 = kz_json:foldl(fun update_ccvs_foldl/3, CCVs, CCVs),
+    NewJObj = kz_json:set_value(<<"custom_channel_vars">>, CCVs1, JObj),
+    remove_pvt_ccvs(JObjs, [NewJObj | Acc]);
+remove_pvt_ccvs([], Acc) -> Acc.
+
+-spec update_ccvs_foldl(kz_json:get_key(), kz_json:json_term(), {kz_call_event:payload(), kz_json:object()}) ->
+          {kz_call_event:payload(), kz_json:object()}.
+update_ccvs_foldl(Key, _,  CCVs) ->
+    case kz_doc:is_private_key(Key) of
+        'false' -> CCVs;
+        'true' -> kz_json:delete_key(Key, CCVs)
+    end.
