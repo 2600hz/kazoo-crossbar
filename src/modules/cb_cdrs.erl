@@ -581,16 +581,24 @@ normalize_accept_type([_Accept|Accepts]) ->
 normalize_accept_type([]) ->
     lager:info("failed to find valid accept value, assuming json"),
     <<"json">>.
-    
+
 -spec filter_pvt_fields_cdr(cb_context:context()) -> cb_context:context().
 filter_pvt_fields_cdr(Context) ->
-    JObj = cb_context:resp_data(Context),
-    cb_context:set_resp_data(Context, remove_pvt_ccvs(JObj)).
+    case cb_context:resp_status(Context) of
+        'success' ->
+            JObj = cb_context:resp_data(Context),
+            cb_context:set_resp_data(Context, remove_pvt_ccvs(JObj));
+        _ -> Context
+    end.
 
 -spec filter_pvt_fields_legs(cb_context:context()) -> cb_context:context().
 filter_pvt_fields_legs(Context) ->
-    JObjs = cb_context:resp_data(Context),
-    cb_context:set_resp_data(Context, [remove_pvt_ccvs(JObj) || JObj <- JObjs]).
+    case cb_context:resp_status(Context) of
+        'success' ->
+            JObjs = cb_context:resp_data(Context),
+            cb_context:set_resp_data(Context, [remove_pvt_ccvs(JObj) || JObj <- JObjs]);
+        _ -> Context
+    end.
 
 -spec remove_pvt_ccvs(kz_json:objects()) -> kz_json:objects().
 remove_pvt_ccvs(JObj) ->
