@@ -581,30 +581,18 @@ normalize_accept_type([_Accept|Accepts]) ->
 normalize_accept_type([]) ->
     lager:info("failed to find valid accept value, assuming json"),
     <<"json">>.
-
+    
 -spec filter_pvt_fields_cdr(cb_context:context()) -> cb_context:context().
 filter_pvt_fields_cdr(Context) ->
     JObj = cb_context:resp_data(Context),
-    cb_context:set_resp_data(Context, remove_pvt_ccvs([JObj], [])).
+    cb_context:set_resp_data(Context, remove_pvt_ccvs(JObj)).
 
 -spec filter_pvt_fields_legs(cb_context:context()) -> cb_context:context().
 filter_pvt_fields_legs(Context) ->
     JObjs = cb_context:resp_data(Context),
-    cb_context:set_resp_data(Context, remove_pvt_ccvs(JObjs, [])).
+    cb_context:set_resp_data(Context, [remove_pvt_ccvs(JObj) || JObj <- JObjs]).
 
--spec remove_pvt_ccvs(kz_json:objects(), kz_json:objects()) ->
-          kz_json:objects().
-remove_pvt_ccvs([JObj| JObjs], Acc) ->
+-spec remove_pvt_ccvs(kz_json:objects()) -> kz_json:objects().
+remove_pvt_ccvs(JObj) ->
     CCVs = kz_json:get_json_value(<<"custom_channel_vars">>, JObj, kz_json:new()),
-    CCVs1 = kz_json:foldl(fun update_ccvs_foldl/3, CCVs, CCVs),
-    NewJObj = kz_json:set_value(<<"custom_channel_vars">>, CCVs1, JObj),
-    remove_pvt_ccvs(JObjs, [NewJObj | Acc]);
-remove_pvt_ccvs([], Acc) -> Acc.
-
--spec update_ccvs_foldl(kz_json:get_key(), kz_json:json_term(), kz_json:object()) ->
-          kz_json:object().
-update_ccvs_foldl(Key, _,  CCVs) ->
-    case kz_doc:is_private_key(Key) of
-        'false' -> CCVs;
-        'true' -> kz_json:delete_key(Key, CCVs)
-    end.
+    kz_json:set_value(<<"custom_channel_vars">>, kz_doc:public_fields(CCVs), JObj).
