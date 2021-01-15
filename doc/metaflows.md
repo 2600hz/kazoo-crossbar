@@ -135,4 +135,66 @@ If you want to assign metaflows to a particular user or device, the API commands
 
 ## Metaflow actions
 
-To see what actions can be set in a metaflow, look at the relevant documentation in [Konami](/applications/konami/doc/README.md)
+To see what actions can be set in a metaflow, look at the relevant documentation in [Konami-Pro](https://github.com/2600hz/kazoo-konami-pro/tree/master/doc)
+
+## Configure and use `record_call` actions via Metaflows
+
+Let us say we have call recording enabled (or can be enabled on-demand) and we want to be able to pause recording when collecting
+sensitive data like credit card numbers and then be able to resume the recording once finished collecting sensitive data. For that
+purpose *mask* and *unmask* actions can be configured and used via Metaflows API.
+
+Scenario: *Alice* calls *Bob* and Bob has Metaflows configured for start, mask, unmask, and stop record_call module's actions. The
+following configuration is being used for configuring Bob's Metaflows:
+
+```shell
+$ cat metaflows.json
+```
+```json
+{"data": {
+    "binding_digit": "*",
+    "numbers": {
+        "71": {
+            "module": "record_call",
+            "data": {
+                "action": "start"
+            }
+        },
+        "72": {
+            "module":"record_call",
+            "data": {
+                "action":"mask"
+            }
+        },
+        "73": {
+            "module":"record_call",
+            "data": {
+                "action":"unmask"
+            }
+        },
+        "74": {
+            "module":"record_call",
+            "data": {
+                "action":"stop"
+            }
+        }
+    }
+}}
+```
+
+```shell
+curl -vX POST \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d "@/path/to/metaflows.json" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{BOBs_USER_ID}/metaflows
+```
+
+After running that command Bob will have the following DTMF codes available:
+`*71` -> Start recording
+`*72` -> Mask/pause recording
+`*73` -> Unmask/resume recording
+`*74` -> Stop recording
+
+So Alice calls Bob and at some point of the conversation Bob asks Alice for sensitive data so Bob presses `*72` (assuming the call
+is being already recorded) to run `mask` action to avoid that portion of the call to be included on the final recording, once
+sensitive data collection is finished Bob presses `*73` to run `unmask` action to resume the recording and everything after unmask
+action is going to be included on the final recording.
