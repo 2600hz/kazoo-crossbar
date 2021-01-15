@@ -135,7 +135,7 @@ If you want to assign metaflows to a particular user or device, the API commands
 
 ## Metaflow actions
 
-To see what actions can be set in a metaflow, look at the relevant documentation in [Konami-Pro](https://github.com/2600hz/kazoo-konami-pro/tree/master/doc)
+To see what actions can be set in a metaflow, look at the relevant documentation in [Konami](https://github.com/kazoo-community/kazoo-konami/tree/master/doc)
 
 ## Configure and use `record_call` actions via Metaflows
 
@@ -189,9 +189,13 @@ curl -vX POST \
 ```
 
 After running that command Bob will have the following DTMF codes available:
+
 `*71` -> Start recording
+
 `*72` -> Mask/pause recording
+
 `*73` -> Unmask/resume recording
+
 `*74` -> Stop recording
 
 So Alice calls Bob and at some point of the conversation Bob asks Alice for sensitive data so Bob presses `*72` (assuming the call
