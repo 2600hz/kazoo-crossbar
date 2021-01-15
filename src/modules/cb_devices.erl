@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Devices module
 %%% Handle client requests for device documents
 %%%
@@ -463,9 +463,9 @@ get_device_type(Context) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec get_mac_address(cb_context:context()) -> kz_term:api_binary().
+-spec get_mac_address(cb_context:context()) -> kz_term:api_ne_binary().
 get_mac_address(Context) ->
-    provisioner_util:cleanse_mac_address(
+    kz_network_utils:cleanse_mac_address(
       cb_context:req_value(Context, ?KEY_MAC_ADDRESS)
      ).
 
@@ -489,9 +489,7 @@ prepare_mac_address(_DeviceId, Context) ->
     case get_mac_address(Context) of
         'undefined' -> Context;
         MacAddress ->
-            JObj = kzd_devices:set_mac_address(cb_context:req_data(Context)
-                                              ,MacAddress
-                                              ),
+            JObj = kzd_devices:set_mac_address(cb_context:req_data(Context), MacAddress),
             cb_context:set_req_data(Context, JObj)
     end.
 
@@ -671,22 +669,18 @@ validate_mac_address(DeviceId, Context) ->
         'true' -> Context
     end.
 
--spec check_mac_address(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
+-spec check_mac_address(kz_term:api_ne_binary(), cb_context:context()) -> cb_context:context().
 check_mac_address(_DeviceId, Context) ->
     MacAddress = get_mac_address(Context),
     case unique_mac_address(MacAddress, Context) of
-        'false' -> error_used_mac_address(Context);
+        'false' ->
+            Msg = kz_json:from_list(
+                    [{<<"message">>, <<"MAC address already in use">>}
+                    ,{<<"cause">>, MacAddress}
+                    ]),
+            cb_context:add_validation_error(?KEY_MAC_ADDRESS, <<"unique">>, Msg, Context);
         'true' -> Context
     end.
-
--spec error_used_mac_address(cb_context:context()) -> cb_context:context().
-error_used_mac_address(Context) ->
-    MacAddress = get_mac_address(Context),
-    Msg = kz_json:from_list(
-            [{<<"message">>, <<"MAC address already in use">>}
-            ,{<<"cause">>, MacAddress}
-            ]),
-    cb_context:add_validation_error(?KEY_MAC_ADDRESS, <<"unique">>, Msg, Context).
 
 -spec unique_mac_address(kz_term:api_binary(), cb_context:context()) -> boolean().
 unique_mac_address('undefined', _Context) -> 'true';
@@ -701,9 +695,9 @@ get_mac_addresses(DbName) ->
                {'ok', AdJObj} -> kz_datamgr:get_result_keys(AdJObj);
                _ -> []
            end,
-    [provisioner_util:cleanse_mac_address(MAC) || MAC <- MACs].
+    [kz_network_utils:cleanse_mac_address(MAC) || MAC <- MACs].
 
--spec get_current_mac_address(kz_term:api_binary(), cb_context:context()) -> kz_term:api_binary().
+-spec get_current_mac_address(kz_term:api_binary(), cb_context:context()) -> kz_term:api_ne_binary().
 get_current_mac_address('undefined', _Context) ->
     'undefined';
 get_current_mac_address(_DeviceId, Context) ->
