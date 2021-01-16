@@ -894,7 +894,7 @@ create_auth_token(Context, AuthModule, JObj) ->
             cb_context:add_system_error('invalid_credentials', Context)
     end.
 
--spec get_token_restrictions(atom(), kz_term:ne_binary(), kz_term:ne_binary()) ->
+-spec get_token_restrictions(atom(), kz_term:api_ne_binary(), kz_term:api_ne_binary()) ->
           kz_term:api_object().
 get_token_restrictions(AuthModule, AccountId, OwnerId) ->
     case kzd_accounts:is_superduper_admin(AccountId) of
@@ -927,7 +927,9 @@ get_system_token_restrictions(AuthModule) ->
         MethodRestrictions -> MethodRestrictions
     end.
 
--spec get_account_token_restrictions(kz_term:ne_binary(), atom()) -> kz_term:api_object().
+-spec get_account_token_restrictions(kz_term:api_ne_binary(), atom()) -> kz_term:api_object().
+get_account_token_restrictions('undefined', _) ->
+    'undefined';
 get_account_token_restrictions(AccountId, AuthModule) ->
     AccountDB = kzs_util:format_account_db(AccountId),
     case kz_datamgr:open_cache_doc(AccountDB, ?CB_ACCOUNT_TOKEN_RESTRICTIONS) of
