@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -12,35 +12,59 @@
 -include_lib("eunit/include/eunit.hrl").
 
 has_valid_dbs_test_() ->
-    Test = fun crossbar_view:has_valid_dbs/1,
-    Options = fun(Dbs) -> [{'databases', Dbs}] end,
     Context = cb_context:new(),
-    AssertInvalid = fun(Dbs) -> ?_assert(check_invalid_db_response(Test({Context, Options(Dbs)}))) end,
-    AssertValid = fun(Dbs) -> ?_assert(check_valid_db_response(Test({Context, Options(Dbs)}))) end,
+    EmptyDbContext = cb_context:set_db_name(Context, <<>>),
+    DbContext = cb_context:set_db_name(Context, <<"system_config">>),
 
     [{"Invalid databases value"
-     ,[AssertInvalid([])
-      ,AssertInvalid("invalid-db-name")
-      ,AssertInvalid(["invalid-db-name"])
-      ,AssertInvalid('invalid-db-name')
-      ,AssertInvalid(['invalid-db-name'])
+     ,[?_assertEqual({'error', <<"invalid_db_name">>}
+                    ,get_valid_databases(
+                       crossbar_view:has_valid_dbs({Context, []})
+                      )
+                    )
+      ,?_assertEqual({'error', <<"invalid_db_name">>}
+                    ,get_valid_databases(
+                       crossbar_view:has_valid_dbs({Context, [{'databases', [<<>>]}]})
+                      )
+                    )
+      ,?_assertEqual({'error', <<"internal_error">>}
+                    ,get_valid_databases(
+                       crossbar_view:has_valid_dbs({Context, [{'databases', 'atom'}]})
+                      )
+                    )
+      ,?_assertEqual({'error', <<"invalid_db_name">>}
+                    ,get_valid_databases(
+                       crossbar_view:has_valid_dbs({EmptyDbContext, [{'databases', ['marble']}]})
+                      )
+                    )
+      ,?_assertEqual({'error', <<"invalid_db_name">>}
+                    ,get_valid_databases(
+                       crossbar_view:has_valid_dbs({EmptyDbContext, [{'databases', <<>>}]})
+                      )
+                    )
       ]
      }
     ,{"Valid databases value"
-     ,[AssertValid(<<"valid-db-name">>)
-      ,AssertValid([<<"valid-db-name">>])
+     ,[?_assertEqual({'ok', {<<"system_config">>, [<<"system_config">>]}}
+                    ,get_valid_databases(
+                       crossbar_view:has_valid_dbs({DbContext, [{'databases', <<>>}]})
+                      )
+                    )
+      ,?_assertEqual({'ok', {<<"system_config">>, [<<"port_requests">>]}}
+                    ,get_valid_databases(
+                       crossbar_view:has_valid_dbs({DbContext, [{'databases', <<"port_requests">>}]})
+                      )
+                    )
+      ,?_assertEqual({'ok', {<<"system_config">>, [<<"port_requests">>]}}
+                    ,get_valid_databases(
+                       crossbar_view:has_valid_dbs({DbContext, [{'databases', [<<"port_requests">>]}]})
+                      )
+                    )
       ]
      }
     ].
 
-check_invalid_db_response({'error', Context}) ->
-    ErrorMsg = <<"invalid_db_name">>,
-    'error' = cb_context:resp_status(Context),
-    500 = cb_context:resp_error_code(Context),
-    'true' = kz_json:are_equal(cb_context:resp_data(Context)
-                              ,kz_json:from_list([{<<"message">>, ErrorMsg}])
-                              ),
-    ErrorMsg =:= cb_context:resp_error_msg(Context).
-
-check_valid_db_response({'ok', {_Context, _Options}}) ->
-    'true'.
+get_valid_databases({'error', Context}) ->
+    {cb_context:resp_status(Context), cb_context:resp_error_msg(Context)};
+get_valid_databases({'ok', {Context, Options}}) ->
+    {'ok', {cb_context:db_name(Context), props:get_value('databases', Options)}}.
