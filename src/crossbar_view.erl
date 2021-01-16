@@ -371,7 +371,10 @@ build_cursor_options(Context, Options, NoDesignModule, IsTimeQuery) ->
         CursorOptions = props:filter_undefined(
                           [{'batch_size', get_batch_size(Context, Options)}
                           ,{'bookmark', Bookmark}
-                          ,{'databases', get_databases(Options)}
+                           %% Please don't change the next line again next time.
+                           %% we can't use default empty list for databases here, we need it to be undefined
+                           %% so modb and yodb functions will build db ranges.
+                          ,{'databases', props:get_value('databases', Options)}
                           ,{'direction', direction(Context, Options)}
                           ,{'key_min_length', props:get_value('key_min_length', Options)}
                           ,{'lager_prefix', "(crossbar)"}
