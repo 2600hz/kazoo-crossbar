@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2020, 2600Hz
+%%% @copyright (C) 2010-2021, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
 %%% @author Karl Anderson
@@ -953,12 +953,18 @@ get_priv_level_restrictions(Restrictions, PrivLevel) ->
     end.
 
 -spec get_scope_restrictions(kz_term:api_object()) -> kz_term:api_object().
+get_scope_restrictions('undefined') ->
+    'undefined';
 get_scope_restrictions(AuthDoc) ->
     AccountId = kz_json:get_ne_binary_value(<<"account_id">>, AuthDoc),
     OwnerId = kz_json:get_ne_binary_value(<<"owner_id">>, AuthDoc),
     get_scope_restrictions(AccountId, OwnerId).
 
--spec get_scope_restrictions(kz_term:ne_binary(), kz_term:ne_binary()) -> kz_term:api_object().
+-spec get_scope_restrictions(kz_term:api_ne_binary(), kz_term:api_ne_binary()) -> kz_term:api_object().
+get_scope_restrictions('undefined', _) ->
+    'undefined';
+get_scope_restrictions(_, 'undefined') ->
+    'undefined';
 get_scope_restrictions(AccountId, OwnerId) ->
     AccountDB = kzs_util:format_account_db(AccountId),
     case kz_datamgr:open_cache_doc(AccountDB, OwnerId) of
