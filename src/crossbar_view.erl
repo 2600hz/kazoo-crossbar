@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2020, 2600Hz
+%%% @copyright (C) 2010-2021, 2600Hz
 %%% @doc
 %%% @author Roman Galeev
 %%% @author Hesaam Farhang
@@ -371,6 +371,9 @@ build_cursor_options(Context, Options, NoDesignModule, IsTimeQuery) ->
         CursorOptions = props:filter_undefined(
                           [{'batch_size', get_batch_size(Context, Options)}
                           ,{'bookmark', Bookmark}
+                           %% Please don't change the next line again next time.
+                           %% we can't use default empty list for databases here, we need it to be undefined
+                           %% so modb and yodb functions will build db ranges.
                           ,{'databases', props:get_value('databases', Options)}
                           ,{'direction', direction(Context, Options)}
                           ,{'key_min_length', props:get_value('key_min_length', Options)}
@@ -877,17 +880,33 @@ maybe_apply_extra(Context, View, Selector, Options, Fun) ->
 
 -spec has_valid_dbs(context_options()) -> maybe_load_params().
 has_valid_dbs({Context, Options}) ->
-    case props:get_value('databases', Options) of
-        'undefined' ->
+    DbName = cb_context:db_name(Context),
+    case {get_databases(Options)
+         ,kz_term:is_ne_binary(DbName)
+         }
+    of
+        {[], 'false'} ->
+            lager:debug("can not find any databases in options or context"),
+            {'error', cb_context:add_system_error('invalid_db_name', Context)};
+        {[], 'true'} ->
+            lager:debug("using database from context"),
             {'ok', {Context, props:set_value('databases', [cb_context:db_name(Context)], Options)}};
-        [] ->
-            {'error', cb_context:add_system_error('invalid_db_name', cb_context:set_db_name(Context, <<>>))};
-        [<<_/binary>> | _] ->
-            {'ok', {Context, Options}};
-        <<Db/binary>> ->
-            {'ok', {Context, props:set_value('databases', [Db], Options)}};
+        {Dbs, _} when is_list(Dbs) ->
+            lager:debug("using databases from option"),
+            {'ok', {Context, props:set_value('databases', Dbs, Options)}};
+        {Invalid, _} ->
+            lager:debug("invalid databases set in options: ~p", [Invalid]),
+            {'error', cb_context:add_system_error('internal_error', Context)}
+    end.
+
+get_databases(Options) ->
+    case props:get_value('databases', Options, []) of
+        <<>> -> [];
+        <<Db/binary>> -> [Db];
+        Dbs when is_list(Dbs) ->
+            [Db || Db <- Dbs, kz_term:is_ne_binary(Db)];
         Invalid ->
-            {'error', cb_context:add_system_error('invalid_db_name', cb_context:set_db_name(Context, Invalid))}
+            Invalid
     end.
 
 load_view({'ok', {Context, View, Selector, Options}}) ->

@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Account IP auth module
 %%% @author Karl Anderson
 %%% @author Peter Defebvre
@@ -145,7 +145,7 @@ authenticate_ip(Context, IpKey, 'false') ->
     ViewOptions = [{'key', IpKey}
                   ,{'databases', [?KZ_ACCOUNTS_DB]}
                   ],
-    Context1 = crossbar_view:load(Context, ?AGG_VIEW_IP, ViewOptions),
+    Context1 = crossbar_view:load(cb_context:set_db_name(Context, ?KZ_ACCOUNTS_DB), ?AGG_VIEW_IP, ViewOptions),
     authenticate_view(Context1, cb_context:resp_status(Context1), cb_context:doc(Context1)).
 
 -spec authenticate_view(cb_context:context(), crossbar_status(), kz_json:objects()) ->
