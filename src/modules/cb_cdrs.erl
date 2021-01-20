@@ -503,7 +503,7 @@ load_cdr(?MATCH_MODB_PREFIX(Year, Month, _Day) = CDRId, Context) ->
     AccountDb = kazoo_modb:get_modb(AccountId, kz_term:to_integer(Year), kz_term:to_integer(Month)),
     Context1 = cb_context:set_db_name(Context, AccountDb),
     Context2 = crossbar_doc:load({kzd_cdrs:type(), CDRId}, Context1, ?TYPE_CHECK_OPTION(kzd_cdrs:type())),
-    filter_pvt_fields_cdr(Context2);
+    filter_pvt_fields(Context2);
 load_cdr(CDRId, Context) ->
     lager:debug("error loading cdr by id ~p", [CDRId]),
     crossbar_util:response('error', <<"could not find cdr with supplied id">>, 404, Context).
@@ -536,15 +536,14 @@ load_legs(<<BinTimestamp:11/binary, "-", _Key/binary>>=InteractionId, Context) -
               ,{'max_range', ?MOD_MAX_RANGE}
               ,'include_docs'
               ],
-    Context1 = crossbar_view:load_modb(Context, ?CB_INTERACTION_LIST_BY_ID, Options),
-    filter_pvt_fields_legs(Context1);
+    crossbar_view:load_modb(Context, ?CB_INTERACTION_LIST_BY_ID, Options);
 load_legs(Id, Context) ->
     crossbar_util:response_bad_identifier(Id, Context).
 
 -spec normalize_leg_view_results(kz_json:object(), kz_json:objects()) ->
           kz_json:objects().
 normalize_leg_view_results(JObj, Acc) ->
-    Acc ++ [kz_json:get_json_value(<<"doc">>, JObj)].
+    Acc ++ [remove_pvt_ccvs(kz_json:get_json_value(<<"doc">>)), JObj].
 
 -spec accept_type(cb_context:context()) -> kz_term:api_ne_binary().
 accept_type(Context) ->
@@ -582,21 +581,12 @@ normalize_accept_type([]) ->
     lager:info("failed to find valid accept value, assuming json"),
     <<"json">>.
 
--spec filter_pvt_fields_cdr(cb_context:context()) -> cb_context:context().
-filter_pvt_fields_cdr(Context) ->
+-spec filter_pvt_fields(cb_context:context()) -> cb_context:context().
+filter_pvt_fields(Context) ->
     case cb_context:resp_status(Context) of
         'success' ->
             JObj = cb_context:resp_data(Context),
             cb_context:set_resp_data(Context, remove_pvt_ccvs(JObj));
-        _ -> Context
-    end.
-
--spec filter_pvt_fields_legs(cb_context:context()) -> cb_context:context().
-filter_pvt_fields_legs(Context) ->
-    case cb_context:resp_status(Context) of
-        'success' ->
-            JObjs = cb_context:resp_data(Context),
-            cb_context:set_resp_data(Context, [remove_pvt_ccvs(JObj) || JObj <- JObjs]);
         _ -> Context
     end.
 
