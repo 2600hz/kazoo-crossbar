@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc CDR
 %%% Read only access to CDR docs
 %%%
@@ -502,7 +502,8 @@ load_cdr(?MATCH_MODB_PREFIX(Year, Month, _Day) = CDRId, Context) ->
     AccountId = cb_context:account_id(Context),
     AccountDb = kazoo_modb:get_modb(AccountId, kz_term:to_integer(Year), kz_term:to_integer(Month)),
     Context1 = cb_context:set_db_name(Context, AccountDb),
-    crossbar_doc:load({kzd_cdrs:type(), CDRId}, Context1, ?TYPE_CHECK_OPTION(kzd_cdrs:type()));
+    Context2 = crossbar_doc:load({kzd_cdrs:type(), CDRId}, Context1, ?TYPE_CHECK_OPTION(kzd_cdrs:type())),
+    filter_pvt_fields(Context2);
 load_cdr(CDRId, Context) ->
     lager:debug("error loading cdr by id ~p", [CDRId]),
     crossbar_util:response('error', <<"could not find cdr with supplied id">>, 404, Context).
@@ -542,7 +543,7 @@ load_legs(Id, Context) ->
 -spec normalize_leg_view_results(kz_json:object(), kz_json:objects()) ->
           kz_json:objects().
 normalize_leg_view_results(JObj, Acc) ->
-    Acc ++ [kz_json:get_json_value(<<"doc">>, JObj)].
+    Acc ++ [remove_pvt_ccvs(kz_json:get_json_value(<<"doc">>, JObj))].
 
 -spec accept_type(cb_context:context()) -> kz_term:api_ne_binary().
 accept_type(Context) ->
@@ -579,3 +580,17 @@ normalize_accept_type([_Accept|Accepts]) ->
 normalize_accept_type([]) ->
     lager:info("failed to find valid accept value, assuming json"),
     <<"json">>.
+
+-spec filter_pvt_fields(cb_context:context()) -> cb_context:context().
+filter_pvt_fields(Context) ->
+    case cb_context:resp_status(Context) of
+        'success' ->
+            JObj = cb_context:resp_data(Context),
+            cb_context:set_resp_data(Context, remove_pvt_ccvs(JObj));
+        _ -> Context
+    end.
+
+-spec remove_pvt_ccvs(kz_json:objects()) -> kz_json:objects().
+remove_pvt_ccvs(JObj) ->
+    CCVs = kz_json:get_json_value(<<"custom_channel_vars">>, JObj, kz_json:new()),
+    kz_json:set_value(<<"custom_channel_vars">>, kz_doc:public_fields(CCVs), JObj).
