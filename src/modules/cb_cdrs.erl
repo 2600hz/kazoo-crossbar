@@ -543,7 +543,7 @@ load_legs(Id, Context) ->
 -spec normalize_leg_view_results(kz_json:object(), kz_json:objects()) ->
           kz_json:objects().
 normalize_leg_view_results(JObj, Acc) ->
-    Acc ++ [remove_pvt_ccvs(kz_json:get_json_value(<<"doc">>)), JObj].
+    Acc ++ [remove_pvt_ccvs(kz_json:get_json_value(<<"doc">>, JObj))].
 
 -spec accept_type(cb_context:context()) -> kz_term:api_ne_binary().
 accept_type(Context) ->
