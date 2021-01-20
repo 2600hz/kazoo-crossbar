@@ -226,15 +226,15 @@ prepare_docs(Context) ->
 -spec prepare_docs(cb_context:context(), options()) -> cb_context:context().
 prepare_docs(Context, Options) ->
     %% TODO: how to honoring page size? start/end/bookmark keys? chunking?
-    try build_prepare_docs_options(Context, Options) of
-        {'ok', {NewContext, CursorOptions}} ->
-            do_prepare_docs(NewContext, CursorOptions, cb_context:doc(Context))
+    try
+        {'ok', {NewContext, CursorOptions}} = build_prepare_docs_options(Context, Options),
+        do_prepare_docs(NewContext, CursorOptions, cb_context:doc(Context))
     catch
         'throw':{'error', ErrorMsg} ->
-            {'error', cb_context:add_system_error(404, 'faulty_request', ErrorMsg, Context)};
+            cb_context:add_system_error(404, 'faulty_request', ErrorMsg, Context);
         _E:_T:ST ->
             kz_log:log_stacktrace(ST, "crashed when running prepare_docs: ~p:~p", [_E, _T]),
-            {'error', cb_context:add_system_error('unspecified_fault', Context)}
+            cb_context:add_system_error('unspecified_fault', Context)
     end.
 
 do_prepare_docs(Context, CursorOptions, JObjs) ->
@@ -620,12 +620,11 @@ get_fields('undefined', 'undefined') ->
 get_fields(Fields, 'undefined') ->
     Fields;
 get_fields(_, <<Fields/binary>>) ->
+    lager:debug("normalizing found fields in query string: ~p", [Fields]),
     try normalize_fields(decode_fields(Fields))
     catch
         _E:_T:ST ->
-            kz_log:log_stacktrace(ST, "normalizing fields crashed with ~p:~p, fields qs is not valid: ~p"
-                                 ,[_E, _T, Fields]
-                                 ),
+            kz_log:log_stacktrace(ST, "normalizing fields crashed with ~p:~p", [_E, _T]),
             throw({'error', <<"invalid fields query string">>})
     end;
 get_fields(_, _Other) ->
