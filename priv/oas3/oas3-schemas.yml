@@ -2209,6 +2209,9 @@
     'fail_on_single_reject':
       'description': 'If any leg rejects the call, cancel all other legs'
       'type': boolean
+    'group_id':
+      'description': ID of the group
+      'type': string
     'id':
       'description': Group ID
       'type': string
@@ -14003,9 +14006,11 @@
       'description': speech ibm asr_model
       'type': string
     'asr_profanity_filter':
+      'default': true
       'description': speech ibm asr_profanity_filter
       'type': boolean
     'asr_smart_formatting':
+      'default': true
       'description': speech ibm asr_smart_formatting
       'type': boolean
   'type': object
@@ -14795,6 +14800,12 @@
       'description': The date that any recurrence should be calculated as ending on
       'type': integer
       'x-support_level': supported
+    'exclude':
+      'description': |-
+        Exclude specific dates (ISO8601 format) for recurring, non-linear rules, e.g: ["20210106", "20210206"]
+      'items':
+        'type': string
+      'type': array
     'flags':
       'description': Flags set by external applications
       'items':

@@ -14,6 +14,8 @@ Key | Description | Type | Default | Required | Support Level
 `days` | The recurrence days for this rule | `array(integer())` |   | `false` | `supported`
 `enabled` | Whether the rule is enabled | `boolean()` |   | `false` |  
 `end_date` | The date that any recurrence should be calculated as ending on | `integer()` |   | `false` | `supported`
+`exclude.[]` |   | `string()` |   | `false` |  
+`exclude` | Exclude specific dates (ISO8601 format) for recurring, non-linear rules, e.g: ["20210106", "20210206"] | `array(string())` |   | `false` |  
 `flags.[]` |   | `string()` |   | `false` | `supported`
 `flags` | Flags set by external applications | `array(string())` |   | `false` | `supported`
 `interval` | The recurrence interval for this rule | `integer()` | `1` | `false` | `supported`
