@@ -1289,7 +1289,7 @@ cleanup_file(ConnPid, File) ->
         'ok' ->
             lager:debug("deleted file ~s after ~pms", [File, kz_time:elapsed_ms(Start)]);
         {'error', 'enoent'} ->
-            lager:debug("file ~s not found after ~pms", [File, kz_time:elapsed_ms(Start)])
+            lager:error("file ~s not found after ~pms", [File, kz_time:elapsed_ms(Start)])
     end.
 
 wait_for_exit(ConnPid, Ref) ->
