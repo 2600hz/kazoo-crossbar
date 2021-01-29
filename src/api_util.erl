@@ -1285,8 +1285,12 @@ cleanup_file(ConnPid, File) ->
 
     wait_for_exit(ConnPid, Ref),
 
-    'ok' = file:delete(File),
-    lager:debug("deleted file ~s after ~pms", [File, kz_time:elapsed_ms(Start)]).
+    case file:delete(File) of
+        'ok' ->
+            lager:debug("deleted file ~s after ~pms", [File, kz_time:elapsed_ms(Start)]);
+        {'error', 'enoent'} ->
+            lager:debug("file ~s not found after ~pms", [File, kz_time:elapsed_ms(Start)])
+    end.
 
 wait_for_exit(ConnPid, Ref) ->
     receive
