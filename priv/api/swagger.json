@@ -4399,6 +4399,56 @@
             },
             "type": "object"
         },
+        "callflows.tones": {
+            "description": "Validator for the tones callflow data object",
+            "properties": {
+                "skip_module": {
+                    "description": "When set to true this callflow action is skipped, advancing to the wildcard branch (if any)",
+                    "type": "boolean"
+                },
+                "tones": {
+                    "description": "list of tones to play to caller",
+                    "items": {
+                        "properties": {
+                            "duration_off": {
+                                "description": "duration, in milliseconds, for tone to be off",
+                                "type": "integer"
+                            },
+                            "duration_on": {
+                                "description": "duration, in milliseconds, for the tone to be on",
+                                "type": "integer"
+                            },
+                            "frequencies": {
+                                "description": "list of Frequencies to play",
+                                "items": {
+                                    "description": "Frequency, in Hz, to play",
+                                    "type": "integer"
+                                },
+                                "minItems": 1,
+                                "type": "array"
+                            },
+                            "repeat": {
+                                "description": "How many times to loop the tones",
+                                "type": "integer"
+                            },
+                            "volume": {
+                                "description": "Volume, in dB. 0 = max, negative = quieter",
+                                "maximum": 0,
+                                "type": "integer"
+                            }
+                        },
+                        "required": [
+                            "frequencies",
+                            "duration_off",
+                            "duration_on"
+                        ],
+                        "type": "object"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
         "callflows.transfer": {
             "description": "Validator for the transfer callflow data object",
             "properties": {
@@ -13964,6 +14014,11 @@
                     "default": "%(2000,4000,440,480)",
                     "description": "ecallmgr default ringback",
                     "type": "string"
+                },
+                "destroyed_channel_cleanup_ms": {
+                    "default": 5000,
+                    "description": "ecallmgr destroyed_channel_cleanup_ms",
+                    "type": "integer"
                 },
                 "event_stream_idle_alert": {
                     "default": 0,

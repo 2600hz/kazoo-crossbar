@@ -201,6 +201,11 @@
             "description": "ecallmgr default ringback",
             "type": "string"
         },
+        "destroyed_channel_cleanup_ms": {
+            "default": 5000,
+            "description": "ecallmgr destroyed_channel_cleanup_ms",
+            "type": "integer"
+        },
         "event_stream_idle_alert": {
             "default": 0,
             "description": "ecallmgr event stream idle alert",
