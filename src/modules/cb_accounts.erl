@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Account module
 %%% Handle client requests for account documents
 %%%
@@ -400,13 +400,15 @@ delete(Context, Account) ->
             _ = cb_mobile_manager:delete_account(Context1),
             Context1;
         {'error', Errors} when is_list(Errors) ->
-            lists:foldl(fun({'error', Msg, Code}, C) ->
-                                crossbar_util:response('error', Msg, Code, C)
+            lager:info("errors deleting account: ~p", [Errors]),
+            lists:foldl(fun({Reason, Msg}, C) ->
+                                cb_context:add_system_error(Reason, kz_json:from_list([{<<"cause">>, Msg}]), C)
                         end
                        ,Context
                        ,Errors
                        );
         {'error', Error} ->
+            lager:info("error deleting account: ~p", [Error]),
             crossbar_doc:handle_datamgr_errors(Error, Account, Context)
     end.
 

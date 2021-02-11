@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -14,6 +14,8 @@
 
 -export([start_link/0
         ,start_mod/1, stop_mod/1
+
+        ,crossbar_routes/0
         ]).
 
 -include("crossbar.hrl").
@@ -190,8 +192,7 @@ maybe_start_plaintext(Dispatch, IP) ->
                                                       ]
                                     ,'num_acceptors' => Workers
                                     }
-                                  ,#{'env' => #{'dispatch' => Dispatch
-                                               }
+                                  ,#{'env' => #{'dispatch' => Dispatch}
                                     ,'stream_handlers' => maybe_add_compression_handler()
                                     ,'shutdown_timeout' => ReqTimeout
                                     ,'idle_timeout' => IdleTimeout
