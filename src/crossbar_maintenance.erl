@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2020, 2600Hz
+%%% @copyright (C) 2012-2021, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%%
@@ -814,17 +814,16 @@ rename_and_refresh_app(AppPath, PreviousName) ->
 rename_and_refresh_app(AppPath, PreviousName, AppUrl) ->
     ?SUP_LOG_INFO("trying to rename and refresh ~s app from ~s~n", [PreviousName, AppPath]),
     {'ok', MasterAccountDb} = kapps_util:get_master_account_db(),
-    case {find_metadata(AppPath), find_app(MasterAccountDb, PreviousName)} of
-        {{'ok', MetaData}, {'ok', JObj}} ->
+    {'ok', MetaData} = find_metadata(AppPath),
+    case find_app(MasterAccountDb, PreviousName) of
+        {'ok', JObj} ->
             maybe_update_app(AppPath
                             ,maybe_set_api_url(AppUrl, MetaData)
                             ,?REFRESH_APP_KEYS
                             ,MasterAccountDb
                             ,kz_json:get_json_value(<<"doc">>, JObj)
                             );
-        {{'error', Error}, _} ->
-            ?SUP_LOG_INFO(" failed to find metadata from ~s: ~p", [AppPath, Error]);
-        {_, {'error', Error}} ->
+        {'error', Error} ->
             ?SUP_LOG_INFO(" failed to find app ~s: ~p", [PreviousName, Error])
     end.
 
