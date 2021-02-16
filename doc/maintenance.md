@@ -9,6 +9,7 @@
 | `apps/0`                              |                                         | Fetch and print all known Apps' metadata                                                             |
 | `create_account/4`                    | `(AccountName,Realm,Username,Password)` | Create an account - typically used for the master account                                            |
 | `db_init/0`                           |                                         | Updates system schemas using files in Crossbar `priv' folder during startup                          |
+| `delete_app/1`                        | `(AppName)`                             | Delete app's metadata by name                                                                        |
 | `demote_account/1`                    | `(AccountId)`                           | Remove `superduper_admin` status from the account                                                    |
 | `descendants_count/0`                 |                                         | Reconciles all accounts' descendant count                                                            |
 | `descendants_count/1`                 | `(AccountId)`                           | Reconciles an account's descendant count                                                             |
@@ -35,8 +36,8 @@
 | `refresh_apps/1`                      | `(AppsPath)`                            | Updates all apps' metadata                                                                           |
 | `refresh_apps/2`                      | `(AppsPath,AppUrl)`                     | Updates all apps' metadata and API URL                                                               |
 | `register_views/0`                    |                                         | Registers Crossbar's CouchDB views into the `system_data` database                                   |
-| `rename_and_refresh_app/2`            | `(AppPath,PreviousName)`                | Renames and updates app's metadata |
-| `rename_and_refresh_app/3`            | `(AppPath,PreviousName,AppUrl)`         | Renames and updates app's metadata and API URL |
+| `rename_and_refresh_app/2`            | `(AppPath,PreviousName)`                | Renames and updates app's metadata                                                                   |
+| `rename_and_refresh_app/3`            | `(AppPath,PreviousName,AppUrl)`         | Renames and updates app's metadata and API URL                                                       |
 | `running_modules/0`                   |                                         | Lists the currently running API endpoints                                                            |
 | `set_app_description/2`               | `(AppId,Value)`                         | Updates the app's description metadata                                                               |
 | `set_app_extended_description/2`      | `(AppId,Value)`                         | Updates the app's extended description metadata                                                      |

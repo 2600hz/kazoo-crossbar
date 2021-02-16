@@ -9,6 +9,7 @@
 | `create_account/5` | `(AccountName,Realm,Username,Password,AccountId)` | |
 | `create_account/6` | `(AccountName,Realm,Username,Password,AccountId,UserId)` | |
 | `db_init/0` |  | |
+| `delete_app/1` | `(AppName)` | |
 | `demote_account/1` | `(AccountId)` | |
 | `descendants_count/0` |  | |
 | `descendants_count/1` | `(AccountId)` | |

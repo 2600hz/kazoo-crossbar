@@ -41,6 +41,7 @@
 
 -export([init_apps/1, init_apps/2
         ,init_app/1, init_app/2
+        ,delete_app/1
         ,refresh_apps/1, refresh_apps/2
         ,refresh_app/1, refresh_app/2
         ,rename_and_refresh_app/2, rename_and_refresh_app/3
@@ -767,6 +768,25 @@ init_app(AppPath, AppUrl) ->
     ?SUP_LOG_INFO("trying to init app from ~s~n", [AppPath]),
     maybe_update_app(AppPath, AppUrl, Keys).
 
+-spec delete_app(kz_term:api_binary()) -> 'ok'.
+delete_app(AppName) ->
+    ?SUP_LOG_INFO("trying to delete ~s app~n", [AppName]),
+    {'ok', MasterAccountDb} = kapps_util:get_master_account_db(),
+    case find_app(MasterAccountDb, AppName) of
+        {'ok', JObj} ->
+            delete_app(AppName, MasterAccountDb, JObj);
+        {'error', Error} ->
+            ?SUP_LOG_INFO(" failed to delete ~s app: ~p~n", [AppName, Error])
+    end.
+
+-spec delete_app(kz_term:ne_binary(), kz_term:ne_binary(), kz_json:object()) -> 'ok'.
+delete_app(AppName, MasterAccountDb, JObj) ->
+    ?SUP_LOG_INFO(" ~s app found, deleting it~n", [AppName]),
+    case kz_datamgr:del_doc(MasterAccountDb, JObj) of
+        {'ok', _} -> ?SUP_LOG_INFO(" ~s app deleted successfully~n", [AppName]);
+        {'error', Error} -> ?SUP_LOG_INFO(" failed to delete ~s app: ~p~n", [AppName, Error])
+    end.
+
 -spec refresh_apps(file:name()) -> 'ok'.
 refresh_apps(AppsPath) ->
     refresh_apps(AppsPath, 'undefined').
@@ -792,10 +812,10 @@ rename_and_refresh_app(AppPath, PreviousName) ->
 
 -spec rename_and_refresh_app(file:filename_all(), kz_term:api_binary(), kz_term:api_binary()) -> 'ok'.
 rename_and_refresh_app(AppPath, PreviousName, AppUrl) ->
-    ?SUP_LOG_INFO("trying to rename and refresh *~s* app from ~s~n", [PreviousName, AppPath]),
+    ?SUP_LOG_INFO("trying to rename and refresh ~s app from ~s~n", [PreviousName, AppPath]),
+    {'ok', MasterAccountDb} = kapps_util:get_master_account_db(),
     case {find_metadata(AppPath), find_app(MasterAccountDb, PreviousName)} of
         {{'ok', MetaData}, {'ok', JObj}} ->
-            {'ok', MasterAccountDb} = kapps_util:get_master_account_db(),
             maybe_update_app(AppPath
                             ,maybe_set_api_url(AppUrl, MetaData)
                             ,?REFRESH_APP_KEYS
