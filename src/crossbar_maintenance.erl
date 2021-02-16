@@ -43,6 +43,7 @@
         ,init_app/1, init_app/2
         ,refresh_apps/1, refresh_apps/2
         ,refresh_app/1, refresh_app/2
+        ,rename_and_refresh_app/2, rename_and_refresh_app/3
         ,apps/0
         ,app/1
         ,set_app_field/3
@@ -785,6 +786,28 @@ refresh_app(AppPath, AppUrl) ->
     ?SUP_LOG_INFO("trying to refresh app from ~s~n", [AppPath]),
     maybe_update_app(AppPath, AppUrl, ?REFRESH_APP_KEYS).
 
+-spec rename_and_refresh_app(file:filename_all(), kz_term:api_binary()) -> 'ok'.
+rename_and_refresh_app(AppPath, PreviousName) ->
+    rename_and_refresh_app(AppPath, PreviousName, 'undefined').
+
+-spec rename_and_refresh_app(file:filename_all(), kz_term:api_binary(), kz_term:api_binary()) -> 'ok'.
+rename_and_refresh_app(AppPath, PreviousName, AppUrl) ->
+    ?SUP_LOG_INFO("trying to rename and refresh *~s* app from ~s~n", [PreviousName, AppPath]),
+    case {find_metadata(AppPath), find_app(MasterAccountDb, PreviousName)} of
+        {{'ok', MetaData}, {'ok', JObj}} ->
+            {'ok', MasterAccountDb} = kapps_util:get_master_account_db(),
+            maybe_update_app(AppPath
+                            ,maybe_set_api_url(AppUrl, MetaData)
+                            ,?REFRESH_APP_KEYS
+                            ,MasterAccountDb
+                            ,kz_json:get_json_value(<<"doc">>, JObj)
+                            );
+        {{'error', Error}, _} ->
+            ?SUP_LOG_INFO(" failed to find metadata from ~s: ~p", [AppPath, Error]);
+        {_, {'error', Error}} ->
+            ?SUP_LOG_INFO(" failed to find app ~s: ~p", [PreviousName, Error])
+    end.
+
 -spec find_apps(file:name()) -> [file:name()].
 find_apps(AppsPath) ->
     AccFun =
@@ -804,18 +827,8 @@ find_apps(AppsPath) ->
 
 -spec maybe_update_app(file:filename_all(), kz_term:api_binary(), kz_term:ne_binaries()) -> 'ok'.
 maybe_update_app(AppPath, AppUrl, Keys) ->
-    try find_metadata(AppPath) of
-        {'ok', MetaData} ->
-            maybe_create_app(AppPath, maybe_set_api_url(AppUrl, MetaData), Keys);
-        {'invalid_data', _E} ->
-            ?SUP_LOG_INFO("  failed to validate app data ~s: ~p~n", [AppPath, _E])
-    catch
-        'error':{'badmatch', {'error', 'enoent'}} ->
-            ?SUP_LOG_INFO("  failed to incorporate app because there was no app.json in ~s~n"
-                         ,[filename:join([AppPath, <<"metadata">>])]);
-        'error':_E ->
-            ?SUP_LOG_INFO("  failed to find metadata in ~s: ~p~n", [AppPath, _E])
-    end.
+    {'ok', MetaData} = find_metadata(AppPath),
+    maybe_create_app(AppPath, maybe_set_api_url(AppUrl, MetaData), Keys).
 
 -spec maybe_set_api_url(kz_term:api_binary(), kz_json:object()) -> kz_json:object().
 maybe_set_api_url('undefined', MetaData) ->
@@ -980,12 +993,25 @@ read_image(File) ->
           {'ok', kz_json:object()} |
           {'invalid_data', kz_term:proplist()}.
 find_metadata(AppPath) ->
-    {'ok', Bin} = file:read_file(filename:join([AppPath, <<"metadata">>, <<"app.json">>])),
-    JSON = kz_json:decode(Bin),
-    case kz_json_schema:validate(<<"app">>, kz_doc:public_fields(JSON)) of
-        {'ok', _} -> {'ok', JSON};
-        {'error', Errors} ->
-            {'invalid_data', [Error || {'data_invalid', _, Error, _, _} <- Errors]}
+    try
+        {'ok', Bin} = file:read_file(filename:join([AppPath, <<"metadata">>, <<"app.json">>])),
+        JSON = kz_json:decode(Bin),
+        case kz_json_schema:validate(<<"app">>, kz_doc:public_fields(JSON)) of
+            {'ok', _} -> {'ok', JSON};
+            {'error', Errors} ->
+                ?SUP_LOG_INFO("  failed to validate app data ~s: ~p~n"
+                             ,[AppPath, Errors]
+                             ),
+                {'error', Errors}
+        end
+    catch
+        'error':{'badmatch', {'error', 'enoent'} = Err} ->
+            ?SUP_LOG_INFO("  failed to incorporate app because there was no app.json in ~s~n"
+                         ,[filename:join([AppPath, <<"metadata">>])]),
+            Err;
+        'error':_E ->
+            ?SUP_LOG_INFO("  failed to find metadata in ~s: ~p~n", [AppPath, _E]),
+            {'error', _E}
     end.
 
 -spec apps() -> 'no_return'.

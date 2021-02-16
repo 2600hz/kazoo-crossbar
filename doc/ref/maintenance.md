@@ -35,6 +35,8 @@
 | `refresh_apps/1` | `(AppsPath)` | |
 | `refresh_apps/2` | `(AppsPath,AppUrl)` | |
 | `register_views/0` |  | |
+| `rename_and_refresh_app/2` | `(AppPath,PreviousName)` | |
+| `rename_and_refresh_app/3` | `(AppPath,PreviousName,AppUrl)` | |
 | `running_modules/0` |  | |
 | `set_app_description/2` | `(AppId,Value)` | |
 | `set_app_extended_description/2` | `(AppId,Value)` | |
