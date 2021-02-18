@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -177,7 +177,7 @@ read(Context, CallId) ->
 channels_query(CallId) ->
     Req = [{<<"Call-ID">>, CallId}
           ,{<<"Fields">>, <<"all">>}
-          ,{<<"Active-Only">>, 'true'}
+          ,{<<"Active-Only">>, 'false'}
           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
 
