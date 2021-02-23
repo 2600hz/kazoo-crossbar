@@ -432,41 +432,75 @@ extract_file(Context, ContentType, Req0) ->
           {cb_context:context(), cowboy_req:req()} |
           stop_return().
 handle_file_contents(Context, ContentType, Req, FileContents) ->
-    MultiPartHeaders = cb_context:fetch(Context, <<"multipart_headers">>, #{}),
+    MultiPartHeaders0 = cb_context:fetch(Context, <<"multipart_headers">>, #{}),
+    MultiPartHeaders = maps:merge(MultiPartHeaders0
+                                 ,#{<<"content_type">> => ContentType
+                                   ,<<"content_length">> =>
+                                   maps:get(<<"content-length">>, MultiPartHeaders0, cowboy_req:header(<<"content-length">>, Req))
+                                   }
+                                 ),
     %% http://tools.ietf.org/html/rfc2045#page-17
     TransferKey = <<"content-transfer-encoding">>,
 
     case maps:get(TransferKey, MultiPartHeaders, cowboy_req:header(TransferKey, Req)) of
         <<"base64">> ->
             lager:debug("base64 encoded request coming in"),
-            decode_base64(Context, ContentType, Req, FileContents);
+            decode_base64(Context, ContentType, Req, FileContents, MultiPartHeaders);
         _Else ->
             lager:debug("unexpected transfer encoding: '~s'", [_Else]),
-            ContentLength = maps:get(<<"content-length">>, MultiPartHeaders, cowboy_req:header(<<"content-length">>, Req)),
-            FileHeaders = kz_json:from_list([{<<"content_type">>, ContentType}
-                                            ,{<<"content_length">>, ContentLength}
-                                            ]),
+            FileHeaders = kz_json:from_map(MultiPartHeaders),
             FileJObj = kz_json:from_list([{<<"headers">>, FileHeaders}
                                          ,{<<"contents">>, FileContents}
                                          ]),
             lager:debug("request is a file upload of type: ~s", [ContentType]),
 
-            Filename = uploaded_filename(Context),
+            Filename = uploaded_filename(Context, ContentType, Req, MultiPartHeaders),
             {cb_context:add_req_file(Context, {Filename, FileJObj}), Req}
     end.
 
--spec uploaded_filename(cb_context:context()) -> kz_term:ne_binary().
-uploaded_filename(Context) ->
+-spec uploaded_filename(cb_context:context(), kz_term:ne_binary(), cowboy_req:req(), cow_multipart:headers()) -> kz_term:ne_binary().
+uploaded_filename(Context, ContentType, Req, MultiPartHeaders) ->
     case cb_context:req_value(Context, <<"filename">>) of
-        'undefined' -> default_filename();
+        'undefined' ->
+            Disposition = maps:get(<<"content-disposition">>, MultiPartHeaders, cowboy_req:header(<<"content-disposition">>, Req)),
+            maybe_use_disposition_filename(ContentType, Disposition);
         Filename ->
             lager:debug("found filename on request: ~s", [Filename]),
             Filename
     end.
 
--spec default_filename() -> kz_term:ne_binary().
-default_filename() ->
-    <<"uploaded_file_", (kz_term:to_binary(kz_time:now_s()))/binary>>.
+maybe_use_disposition_filename(ContentType, 'undefined') ->
+    default_filename(ContentType);
+maybe_use_disposition_filename(ContentType, ContentDisposition) ->
+    get_filename_disposition(ContentType, binary:split(ContentDisposition, <<$;>>, ['global'])).
+
+get_filename_disposition(ContentType, []) ->
+    default_filename(ContentType);
+get_filename_disposition(ContentType, [Bin|Bins]) ->
+    case binary:replace(Bin, [<<$\s>>, <<$">>], <<>>, ['global']) of
+        <<"filename=", Filename/binary>> ->
+            case kz_term:is_ne_binary(Filename) of
+                'true' -> maybe_add_extension(Filename, ContentType);
+                'false' -> default_filename(ContentType)
+            end;
+        _ ->
+            get_filename_disposition(ContentType, Bins)
+    end.
+
+-spec default_filename(kz_term:ne_binary()) -> kz_term:ne_binary().
+default_filename(ContentType) ->
+    maybe_add_extension(<<"uploaded_file_", (kz_term:to_binary(kz_time:now_s()))/binary>>, ContentType).
+
+-spec maybe_add_extension(kz_term:ne_binary(), kz_term:ne_binary()) -> kz_term:ne_binary().
+maybe_add_extension(A, CT) ->
+    case kz_term:is_empty(filename:extension(A)) of
+        'false' -> A;
+        'true' ->
+            case kz_mime:to_extension(CT) of
+                <<>> -> A;
+                Ext -> <<A/binary, ".", Ext/binary>>
+            end
+    end.
 
 -spec decode_base64(cb_context:context(), kz_term:ne_binary(), cowboy_req:req()) ->
           {cb_context:context(), cowboy_req:req()} |
@@ -483,6 +517,20 @@ decode_base64(Context, CT, Req0) ->
           {cb_context:context(), cowboy_req:req()} |
           stop_return().
 decode_base64(Context, CT, Req, Base64Data) ->
+    %% same as handle_file_contents/4
+    MultiPartHeaders0 = cb_context:fetch(Context, <<"multipart_headers">>, #{}),
+    MultiPartHeaders = maps:merge(MultiPartHeaders0
+                                 ,#{<<"content_type">> => CT
+                                   ,<<"content_length">> =>
+                                   maps:get(<<"content-length">>, MultiPartHeaders0, cowboy_req:header(<<"content-length">>, Req))
+                                   }
+                                 ),
+    decode_base64(Context, CT, Req, Base64Data, MultiPartHeaders).
+
+-spec decode_base64(cb_context:context(), kz_term:ne_binary(), cowboy_req:req(), binary(), cow_multipart:headers()) ->
+          {cb_context:context(), cowboy_req:req()} |
+          stop_return().
+decode_base64(Context, CT, Req, Base64Data, MultiPartHeaders) ->
     try kz_attachment:decode_base64(Base64Data) of
         {EncodedType, FileContents} ->
             ContentType = case EncodedType of
@@ -491,14 +539,19 @@ decode_base64(Context, CT, Req, Base64Data) ->
                               <<"application/base64">> -> <<"application/octet-stream">>;
                               Else -> Else
                           end,
-            Headers = kz_json:from_list([{<<"content_type">>, ContentType}
-                                        ,{<<"content_length">>, byte_size(FileContents)}
-                                        ]),
+            Headers = kz_json:from_map(
+                        maps:merge(MultiPartHeaders
+                                  ,#{<<"content_type">> => ContentType
+                                    ,<<"content_length">> => byte_size(FileContents)
+                                    }
+                                  )
+                       ),
             FileJObj = kz_json:from_list([{<<"headers">>, Headers}
                                          ,{<<"contents">>, FileContents}
                                          ]),
-            lager:debug("request is a base64 file upload of type: ~s", [ContentType]),
-            {cb_context:add_req_file(Context, {default_filename(), FileJObj}), Req}
+            Filename = uploaded_filename(Context, ContentType, Req, MultiPartHeaders),
+            lager:debug("request is a base64 file upload of type: ~s (~s)", [Filename, ContentType]),
+            {cb_context:add_req_file(Context, {Filename, FileJObj}), Req}
     catch
         _T:_E ->
             lager:debug("failed to decode base64 data: ~p:~p", [_T,_E]),
