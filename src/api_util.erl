@@ -1224,6 +1224,8 @@ execute_request(Req, Context) ->
             {'false', Req, Context}
     end.
 
+-define(EXECUTE_ERROR_MSG, <<"request execution failed">>).
+
 -spec execute_request(cowboy_req:req(), cb_context:context(), kz_term:ne_binary(), kz_term:ne_binaries(), http_method()) ->
           {boolean() | 'stop', cowboy_req:req(), cb_context:context()}.
 execute_request(Req, Context, Mod, Params, Verb) ->
@@ -1231,14 +1233,19 @@ execute_request(Req, Context, Mod, Params, Verb) ->
                                        ,kz_term:to_lower_binary(Verb)
                                        ,Mod
                                        ]),
-    Payload = [Context | Params],
+    Setters = [{fun cb_context:set_resp_status/2, 'fatal'}
+              ,{fun cb_context:set_resp_error_msg/2, ?EXECUTE_ERROR_MSG}
+              ,{fun cb_context:set_resp_error_code/2, 500}
+              ],
+    Context1 = cb_context:setters(Context, Setters),
+    Payload = [Context1 | Params],
     Context2 = crossbar_bindings:fold(Event, Payload),
 
     case cb_context:is_context(Context2) of
         'true' ->
             execute_request_results(Req, Context2, cb_context:resp_status(Context2));
         'false' ->
-            execute_request_failure(Req, Context, Context2)
+            execute_request_failure(Req, Context1, Context2)
     end.
 
 -spec execute_request_failure(cowboy_req:req(), cb_context:context(), any()) ->
@@ -1256,8 +1263,19 @@ execute_request_results(Req, Context, 'success') ->
     {'true', Req, Context};
 execute_request_results(Req, Context, 'accepted') ->
     {'true', Req, Context};
-execute_request_results(Req, Context, _RespStatus) ->
-    ?MODULE:stop(Req, Context).
+execute_request_results(Req, Context, RespStatus) ->
+    case {RespStatus
+         ,cb_context:resp_error_msg(Context)
+         ,cb_context:resp_error_code(Context)
+         }
+    of
+        {'fatal', ?EXECUTE_ERROR_MSG, 500} ->
+            %% binding fold is crashed, wiping the resp data so we don't leak
+            %% possible sensitive or immature response
+            ?MODULE:stop(Req, cb_context:set_resp_data(Context, kz_json:new()));
+        _ ->
+            ?MODULE:stop(Req, Context)
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc This function runs the request terminated bindings at the conclusion

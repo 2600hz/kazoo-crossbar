@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Crossbar API for system configs.
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -251,7 +251,7 @@ patch(Context, Id, Node) ->
           cb_context:context().
 delete(Context, _Id) ->
     _ = crossbar_doc:delete(Context, ?HARD_DELETE),
-    Context.
+    cb_context:set_resp_status(Context, 'success').
 
 -spec delete(cb_context:context(), path_token(), path_token()) ->
           cb_context:context().

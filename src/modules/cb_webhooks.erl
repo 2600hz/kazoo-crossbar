@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Handle CRUD operations for Webhooks
 %%% @author James Aimonetti
 %%%
@@ -298,7 +298,7 @@ validate_patch(Context, WebhookId) ->
 
 -spec post(cb_context:context(), path_token()) -> cb_context:context().
 post(Context, _Id) ->
-    Context1 = maybe_update_hook(Context),
+    Context1 = maybe_enable_webhook(Context),
     crossbar_doc:save(cb_context:set_db_name(Context1, ?KZ_WEBHOOKS_DB)).
 
 -spec put(cb_context:context()) -> cb_context:context().
@@ -616,8 +616,8 @@ get_hook_definition(HookEvent, MasterDb) ->
 %% fields related to the auto-disabling
 %% @end
 %%------------------------------------------------------------------------------
--spec maybe_update_hook(cb_context:context()) -> cb_context:context().
-maybe_update_hook(Context) ->
+-spec maybe_enable_webhook(cb_context:context()) -> cb_context:context().
+maybe_enable_webhook(Context) ->
     Doc = cb_context:doc(Context),
     case kzd_webhooks:enabled(Doc) of
         'false' -> Context;

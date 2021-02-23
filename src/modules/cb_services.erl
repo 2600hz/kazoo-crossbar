@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc
 %%% @author Peter Defebvre
 %%% @author Karl Anderson
@@ -488,7 +488,7 @@ post(Context, ?TOPUP) ->
             cb_context:add_system_error('unspecified_fault', Context)
     end;
 post(Context, ?QUOTE) ->
-    Context;
+    cb_context:set_resp_status(Context, 'success');
 post(Context, ?OVERRIDES) ->
     Overrides = cb_context:req_data(Context),
     pipe_services(Context

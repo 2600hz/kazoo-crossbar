@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Handle client requests for connectivity documents
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -107,7 +107,7 @@ post(Context, _) ->
     case kzd_trunkstore:save(Doc) of
         {ok, Saved} ->
             C1 = crossbar_doc:handle_datamgr_success(Saved, Context),
-            'ok' = track_assignment('post', C1),
+            track_assignment('post', C1),
             C1;
         {error, Error} ->
             lager:error("trunkstore save => ~p", [Error]),
@@ -137,7 +137,7 @@ delete(Context, Id) ->
         'success' ->
             registration_update(Context),
             _ = kzd_trunkserver:delete(cb_context:account_id(Context), Id),
-            'ok' = track_assignment('delete', Context),
+            track_assignment('delete', Context),
             Context1;
         _Status -> Context1
     end.

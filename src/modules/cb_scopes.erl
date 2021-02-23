@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Manage system_auth scopes
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -136,7 +136,7 @@ validate_scope(Context, Scope, ?HTTP_POST) ->
 validate_request(Context) ->
     validate_request(Context, 'undefined').
 
--spec validate_request(cb_context:context(), path_token()) -> cb_context:context().
+-spec validate_request(cb_context:context(), api_path_token()) -> cb_context:context().
 validate_request(Context, Scope) ->
     OnSuccess = fun(C) -> on_successful_validation(C, Scope) end,
     cb_context:validate_request_data(?SCHEMA, Context, OnSuccess).
@@ -157,7 +157,7 @@ on_successful_validation(Context, Scope) ->
 %%------------------------------------------------------------------------------
 -spec post(cb_context:context(), path_token()) -> cb_context:context().
 post(Context, _Scope) ->
-    save_scope(Context).
+    crossbar_doc:save(Context).
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -165,7 +165,7 @@ post(Context, _Scope) ->
 %%------------------------------------------------------------------------------
 -spec put(cb_context:context()) -> cb_context:context().
 put(Context) ->
-    save_scope(Context).
+    crossbar_doc:save(Context).
 
 -spec delete(cb_context:context(), path_token()) -> cb_context:context().
 delete(Context, _) ->
@@ -181,14 +181,6 @@ set_to_system_auth_db(Context) ->
                       ,[{fun cb_context:set_db_name/2, ?SCOPES_CAT}
                        ,{fun cb_context:set_account_id/2, cb_context:auth_account_id(Context)}
                        ]).
-
-%%------------------------------------------------------------------------------
-%% @doc
-%% @end
-%%------------------------------------------------------------------------------
--spec save_scope(cb_context:context()) -> cb_context:context().
-save_scope(Context) ->
-    crossbar_doc:save(Context).
 
 %%------------------------------------------------------------------------------
 %% @doc returns summary of system scope(s)

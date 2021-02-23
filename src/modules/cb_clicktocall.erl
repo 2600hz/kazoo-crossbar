@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Click to call
 %%% Allow embedded HTML forms (or other ways to POST to the URL)
 %%% and create a call.
@@ -201,7 +201,7 @@ post(Context, _) ->
 
 -spec post(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 post(Context, _, ?CONNECT_CALL) ->
-    Context.
+    cb_context:set_resp_status(Context, 'success').
 
 -spec patch(cb_context:context(), path_token()) -> cb_context:context().
 patch(Context, _) ->

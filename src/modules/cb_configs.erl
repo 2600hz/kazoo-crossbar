@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -107,7 +107,7 @@ post(Context, ConfigId) ->
 -spec delete(cb_context:context(), path_token()) -> cb_context:context().
 delete(Context, _ConfigId) ->
     case strip_id(cb_context:doc(Context)) of
-        ?EMPTY_JSON_OBJECT -> Context;
+        ?EMPTY_JSON_OBJECT -> cb_context:set_resp_status(Context, 'success');
         _ -> crossbar_doc:delete(Context, ?HARD_DELETE)
     end.
 
@@ -120,7 +120,7 @@ set_config_to_context(ConfigId, Context) ->
 set_id(ConfigId, JObj) -> kz_json:set_value(<<"id">>, kapps_config_util:account_doc_id(ConfigId), JObj).
 
 -spec strip_id(kz_json:object()) -> kz_json:object().
-strip_id(JObj) -> kz_json:delete_key(<<"id">>, JObj, prune).
+strip_id(JObj) -> kz_json:delete_key(<<"id">>, JObj, 'prune').
 
 -spec maybe_save_or_delete(cb_context:context(), path_token()) -> cb_context:context().
 maybe_save_or_delete(Context, ConfigId) ->
@@ -133,4 +133,9 @@ maybe_save_or_delete(Context, ConfigId) ->
             {Diff, _} ->
                 crossbar_doc:save(Context, kz_json:merge(Stored, Diff), [])
         end,
-    set_config_to_context(ConfigId, UpdatedContext).
+    case cb_context:resp_status(UpdatedContext) of
+        'success' ->
+            set_config_to_context(ConfigId, UpdatedContext);
+        _ ->
+            UpdatedContext
+    end.

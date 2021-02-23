@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Handle client requests for phone_number documents
 %%% @author Pierre Fenoll
 %%%
@@ -367,20 +367,36 @@ patch(Context, TaskId) ->
     Req = [{<<"Task-ID">>, TaskId}
           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
-    {'ok', Resp} =
-        kz_amqp_worker:call(Req
-                           ,fun kapi_tasks:publish_start_req/1
-                           ,fun kapi_tasks:start_resp_v/1
-                           ),
+    Resp = kz_amqp_worker:call(Req
+                              ,fun kapi_tasks:publish_start_req/1
+                              ,fun kapi_tasks:start_resp_v/1
+                              ),
+    handle_resp(Context, TaskId, Resp).
+
+-spec handle_resp(cb_context:context(), path_token(), kz_amqp_worker:request_return()) ->
+          cb_context:context().
+handle_resp(Context, TaskId, {'ok', Resp}) ->
     case kz_json:get_value(<<"Reply">>, Resp) of
         <<"already_started">> ->
-            Msg = kz_json:from_list([{<<"reason">>, <<"task already started">>}
+            Msg = kz_json:from_list([{<<"reason">>, <<"task is started and running">>}
                                     ,{<<"cause">>, TaskId}
                                     ]),
             cb_context:add_system_error('bad_identifier', Msg, Context);
         Task ->
             crossbar_util:response(Task, Context)
-    end.
+    end;
+handle_resp(Context, _, {'returned', _Request, BasicReturn}) ->
+    lager:debug("no tasks apps running: ~p", [BasicReturn]),
+    crossbar_util:response('error', <<"The backend is not configured for this request">>, 500, Context);
+handle_resp(Context, _, {'timeout', _Timeout}) ->
+    lager:debug("timed out waiting for a response: ~p", [_Timeout]),
+    crossbar_util:response_datastore_timeout(Context);
+handle_resp(Context, _, {'error', 'timeout'}) ->
+    lager:debug("timed out waiting for a response"),
+    crossbar_util:response_datastore_timeout(Context);
+handle_resp(Context, _, {'error', _E}) ->
+    lager:debug("error with request: ~p", [_E]),
+    crossbar_util:response('error', <<"Request failed on the backend">>, 500, Context).
 
 -spec patch(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 patch(Context, TaskId, ?PATH_STOP) ->
@@ -398,7 +414,7 @@ patch(Context, TaskId, ?PATH_STOP) ->
                     [{<<"reason">>, <<"task is not running">>}
                     ,{<<"cause">>, TaskId}
                     ]),
-            cb_context:add_system_error(bad_identifier, Msg, Context)
+            cb_context:add_system_error('bad_identifier', Msg, Context)
     end.
 
 %%------------------------------------------------------------------------------
@@ -410,21 +426,12 @@ delete(Context, TaskId) ->
     Req = [{<<"Task-ID">>, TaskId}
           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
-    {'ok', Resp} =
+    Resp =
         kz_amqp_worker:call(Req
                            ,fun kapi_tasks:publish_remove_req/1
                            ,fun kapi_tasks:remove_resp_v/1
                            ),
-    case kz_json:get_value(<<"Reply">>, Resp) of
-        <<"task_running">> ->
-            Msg = kz_json:from_list([{<<"message">>, <<"task is running">>}
-                                    ,{<<"cause">>, TaskId}
-                                    ]),
-            cb_context:add_system_error('bad_identifier', Msg, Context);
-        Task ->
-            crossbar_util:response(Task, Context)
-    end.
-
+    handle_resp(Context, TaskId, Resp).
 
 %%%=============================================================================
 %%% Internal functions

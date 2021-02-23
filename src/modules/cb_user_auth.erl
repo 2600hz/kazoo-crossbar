@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc User auth module
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -271,20 +271,18 @@ post(Context, ?RECOVERY) ->
 %%------------------------------------------------------------------------------
 -spec maybe_include_claims(cb_context:context()) -> cb_context:context().
 maybe_include_claims(Context) ->
-    Scopes = maybe_fetch_scopes(Context),
-    case Scopes of
+    case maybe_fetch_scopes(Context) of
         'undefined' -> Context;
         Scopes when is_list(Scopes) ->
             DocWithClaims =
-                kz_json:set_value(
-                  [<<"Claims">>, <<"scope">>]
-                 ,kz_auth_scope:to_str(Scopes)
-                 ,cb_context:doc(Context)
-                 ),
+                kz_json:set_value([<<"Claims">>, <<"scope">>]
+                                 ,kz_auth_scope:to_str(Scopes)
+                                 ,cb_context:doc(Context)
+                                 ),
             cb_context:set_doc(Context, DocWithClaims)
     end.
 
--spec maybe_fetch_scopes(cb_context:context()) -> kz_term:api_ne_binary().
+-spec maybe_fetch_scopes(cb_context:context()) -> kz_term:api_ne_binaries().
 maybe_fetch_scopes(Context) ->
     AccountId = kz_json:get_ne_binary_value(<<"account_id">>, cb_context:doc(Context)),
     OwnerId = kz_json:get_ne_binary_value(<<"owner_id">>, cb_context:doc(Context)),

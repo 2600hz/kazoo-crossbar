@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -419,7 +419,7 @@ post(Context, ?CUSTOMER_UPDATE, ?MESSAGE) ->
     of
         {'ok', _Resp} ->
             lager:debug("published customer_update notification"),
-            Context;
+            cb_context:set_resp_status(Context, 'success');
         {'error', _E} ->
             lager:debug("failed to publish_customer update notification: ~p", [_E]),
             crossbar_util:response('error', <<"Failed to send message">>, Context)

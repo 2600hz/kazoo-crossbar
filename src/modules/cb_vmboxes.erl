@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc VMBoxes module
 %%% Handle client requests for vmbox documents
 %%%
@@ -340,10 +340,7 @@ load_or_upload(BoxId, MediaId, Context, ?HTTP_GET) ->
 post(Context, _BoxId) ->
     DbDoc = cb_context:fetch(Context, 'db_doc'),
     VMBoxMsgs = kz_json:get_list_value(?VM_KEY_MESSAGES, DbDoc),
-    C1 = crossbar_doc:save(check_mailbox_for_messages_array(Context, VMBoxMsgs)),
-
-    %% remove messages array to not let it exposed
-    crossbar_util:response(kz_json:delete_key(?VM_KEY_MESSAGES, cb_context:resp_data(C1)), C1).
+    crossbar_doc:save(check_mailbox_for_messages_array(Context, VMBoxMsgs)).
 
 -spec post(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 post(Context, OldBoxId, ?MESSAGES_RESOURCE) ->
@@ -368,7 +365,7 @@ post(Context, OldBoxId, ?MESSAGES_RESOURCE) ->
 
 -spec post(cb_context:context(), path_token(), path_token(), path_token()) -> cb_context:context().
 post(Context, _BoxId, ?MESSAGES_RESOURCE, ?BIN_DATA) ->
-    Context;
+    cb_context:set_resp_status(Context, 'success');
 post(Context, OldBoxId, ?MESSAGES_RESOURCE, MediaId) ->
     AccountId = cb_context:account_id(Context),
     case kz_json:get_value(<<"source_id">>, cb_context:req_data(Context)) of
@@ -422,7 +419,7 @@ delete(Context, BoxId) ->
     AccountId = cb_context:account_id(Context),
     Msgs = kvm_messages:get(AccountId, BoxId),
     MsgIds = [kzd_box_message:media_id(M) || M <- Msgs],
-    'ok' = maybe_publish_voicemail_deleted(AccountId, BoxId, MsgIds),
+    maybe_publish_voicemail_deleted(AccountId, BoxId, MsgIds),
     _ = kvm_messages:change_folder(?VM_FOLDER_DELETED, MsgIds, AccountId, BoxId, add_pvt_auth_funs(Context)),
     C = crossbar_doc:delete(Context),
     update_mwi(C, BoxId).
@@ -431,7 +428,7 @@ delete(Context, BoxId) ->
 delete(Context, BoxId, ?MESSAGES_RESOURCE) ->
     AccountId = cb_context:account_id(Context),
     MsgIds = cb_context:resp_data(Context),
-    'ok' = maybe_publish_voicemail_deleted(AccountId, BoxId, MsgIds),
+    maybe_publish_voicemail_deleted(AccountId, BoxId, MsgIds),
     Result = kvm_messages:change_folder({?VM_FOLDER_DELETED, 'true'}, MsgIds, AccountId, BoxId, add_pvt_auth_funs(Context)),
     C = crossbar_util:response(Result, Context),
     update_mwi(C, BoxId).
@@ -439,7 +436,7 @@ delete(Context, BoxId, ?MESSAGES_RESOURCE) ->
 -spec delete(cb_context:context(), path_token(), path_token(), path_token()) -> cb_context:context().
 delete(Context, BoxId, ?MESSAGES_RESOURCE, MediaId) ->
     AccountId = cb_context:account_id(Context),
-    'ok' = maybe_publish_voicemail_deleted(AccountId, BoxId, [MediaId]),
+    maybe_publish_voicemail_deleted(AccountId, BoxId, [MediaId]),
     case kvm_message:change_folder({?VM_FOLDER_DELETED, 'true'}, MediaId, AccountId, BoxId, add_pvt_auth_funs(Context)) of
         {'ok', Message} ->
             C = crossbar_util:response(Message, Context),
@@ -456,10 +453,7 @@ delete(Context, BoxId, ?MESSAGES_RESOURCE, MediaId) ->
 patch(Context, _Id) ->
     DbDoc = cb_context:fetch(Context, 'db_doc'),
     VMBoxMsgs = kz_json:get_list_value(?VM_KEY_MESSAGES, DbDoc),
-    C1 = crossbar_doc:save(check_mailbox_for_messages_array(Context, VMBoxMsgs)),
-
-    %% remove messages array to not let it exposed
-    crossbar_util:response(kz_json:delete_key(?VM_KEY_MESSAGES, cb_context:resp_data(C1)), C1).
+    crossbar_doc:save(check_mailbox_for_messages_array(Context, VMBoxMsgs)).
 
 %%%=============================================================================
 %%% Internal functions
@@ -527,7 +521,13 @@ maybe_save_attachment(Context) ->
     maybe_save_attachment(Context, cb_context:resp_status(Context)).
 
 maybe_save_attachment(Context, 'success') ->
-    save_attachment(crossbar_util:maybe_remove_attachments(Context), cb_context:req_files(Context));
+    Context1 = crossbar_util:maybe_remove_attachments(Context),
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            save_attachment(Context, cb_context:req_files(Context));
+        _ ->
+            Context1
+    end;
 maybe_save_attachment(Context, _Error) ->
     lager:info("saving message metadata failed"),
     Context.

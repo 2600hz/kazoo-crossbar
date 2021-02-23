@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc
 %%% @author Peter Defebvre
 %%%
@@ -417,7 +417,7 @@ assign_ips(Context) ->
 -spec assign_ips(cb_context:context(), kz_json:objects()) -> cb_context:context().
 assign_ips(Context, []) ->
     _ = crossbar_services:reconcile(cb_context:account_id(Context)),
-    Context;
+    cb_context:set_resp_status(Context, 'success');
 assign_ips(Context, [JObj|JObjs]) ->
     Context1 =
         case kz_ip:assign(cb_context:account_id(Context), JObj) of
@@ -515,7 +515,7 @@ release_ips(Context) ->
 -spec release_ips(cb_context:context(), kz_json:objects()) -> cb_context:context().
 release_ips(Context, []) ->
     _ = crossbar_services:reconcile(cb_context:account_id(Context)),
-    Context;
+    cb_context:set_resp_status(Context, 'success');
 release_ips(Context, [JObj|JObjs]) ->
     Context1 =
         case kz_ip:release(kz_doc:id(JObj)) of

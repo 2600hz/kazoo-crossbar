@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2020, 2600Hz
+%%% @copyright (C) 2012-2021, 2600Hz
 %%% @doc
 %%% @author Dinkor Media Group (Sergey Korobkov)
 %%%
@@ -281,7 +281,12 @@ update_allotments(Context) ->
     Allotments = cb_context:req_data(Context),
     NewDoc = kzd_limits:set_pvt_allotments(Doc, Allotments),
     Context1 = crossbar_doc:save(cb_context:set_doc(Context, NewDoc)),
-    cb_context:set_resp_data(Context1, Allotments).
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            cb_context:set_resp_data(Context1, Allotments);
+        _ ->
+            Context1
+    end.
 
 -spec cycle_start(kz_term:api_ne_binary(), kz_time:datetime() | kz_time:gregorian_seconds()) -> kz_time:gregorian_seconds().
 cycle_start(Cycle, Seconds) when is_integer(Seconds) ->

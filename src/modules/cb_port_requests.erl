@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2013-2020, 2600Hz
+%%% @copyright (C) 2013-2021, 2600Hz
 %%% @doc Handles port request life cycles
 %%% See doc/port_requests.md
 %%%
@@ -353,7 +353,9 @@ validate_attachment(Context, Id, AttachmentId, ?HTTP_DELETE) ->
 -spec get(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 get(Context, Id, ?PATH_TOKEN_LOA) ->
     lager:debug("load LOA for ~s", [Id]),
-    cb_context:set_resp_data(Context, kz_json:encode(cb_context:doc(Context))).
+    cb_context:set_resp_data(cb_context:set_resp_status(Context, 'success')
+                            ,kz_json:encode(cb_context:doc(Context))
+                            ).
 
 %%------------------------------------------------------------------------------
 %% @doc If the HTTP verb is PUT, execute the actual action, usually a db save.

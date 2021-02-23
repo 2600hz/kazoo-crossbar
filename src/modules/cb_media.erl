@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Account module
 %%% Store/retrieve media files
 %%%
@@ -452,7 +452,8 @@ create_update_tts(Context, <<"create">>) ->
     C1 = update_and_save_tts_doc(Context),
     maybe_update_media_file(C1, <<"create">>, 'true', cb_context:resp_status(C1));
 create_update_tts(Context, <<"update">>) ->
-    maybe_update_media_file(Context, <<"update">>, is_tts_changed(cb_context:doc(Context)), cb_context:resp_status(Context)).
+    Context1 = cb_context:set_resp_status(Context, 'success'),
+    maybe_update_media_file(Context1, <<"update">>, is_tts_changed(cb_context:doc(Context1)), cb_context:resp_status(Context1)).
 
 -spec maybe_update_media_file(cb_context:context(), kz_term:ne_binary(), boolean(), crossbar_status()) ->
           cb_context:context().
@@ -463,10 +464,9 @@ maybe_update_media_file(Context, CreateOrUpdate, 'true', 'success') ->
 
     try kazoo_tts:create(Text, Voice) of
         {'error', Reason} ->
-            _ = maybe_delete_tts(Context, kz_term:to_binary(Reason), CreateOrUpdate),
-            crossbar_util:response('error', kz_term:to_binary(Reason), Context);
+            maybe_delete_tts(Context, kz_term:to_binary(Reason), CreateOrUpdate);
         {'error', 'tts_provider_failure', Reason} ->
-            _ = maybe_delete_tts(Context, kz_term:to_binary(Reason), CreateOrUpdate);
+            maybe_delete_tts(Context, kz_term:to_binary(Reason), CreateOrUpdate);
         {'ok', ContentType, Content} ->
             MediaId = kz_doc:id(JObj),
             Headers = kz_json:from_list([{<<"content_type">>, ContentType}
@@ -518,8 +518,8 @@ update_and_save_tts_doc(Context) ->
 maybe_delete_tts(Context, Reason, <<"create">>) ->
     _ = crossbar_doc:delete(Context),
     crossbar_util:response('error', Reason, Context);
-maybe_delete_tts(Context, _, <<"update">>) ->
-    Context.
+maybe_delete_tts(Context, Reason, <<"update">>) ->
+    crossbar_util:response('error', Reason, Context).
 
 -spec delete_type(boolean() | cb_context:context()) -> ?HARD_DELETE | ?SOFT_DELETE.
 delete_type('true') ->
@@ -803,7 +803,7 @@ update_media_binary(Context, MediaId) ->
 
 -spec update_media_binary(cb_context:context(), path_token(), req_files()) ->
           cb_context:context().
-update_media_binary(Context, _MediaId, []) -> Context;
+update_media_binary(Context, _MediaId, []) -> cb_context:set_resp_status(Context, 'success');
 update_media_binary(Context, MediaId, [{Filename, FileObj}|Files]) ->
     Contents = kz_json:get_value(<<"contents">>, FileObj),
     CT = kz_json:get_value([<<"headers">>, <<"content_type">>], FileObj),

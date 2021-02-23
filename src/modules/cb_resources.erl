@@ -467,11 +467,14 @@ collection_process(Context) ->
 
     case kz_term:is_empty(kz_json:get_value(<<"errors">>, RespData)) of
         'true' -> collection_process(Context, kz_json:get_value(?KEY_SUCCESS, RespData));
-        'false' -> cb_context:set_resp_data(Context, kz_json:delete_key(?KEY_SUCCESS, RespData))
+        'false' ->
+            cb_context:set_resp_data(cb_context:set_resp_status(Context, 'success')
+                                    ,kz_json:delete_key(?KEY_SUCCESS, RespData)
+                                    )
     end.
 
 -spec collection_process(cb_context:context(), kz_json:objects()) -> cb_context:context().
-collection_process(Context, []) -> Context;
+collection_process(Context, []) -> cb_context:set_resp_status(Context, 'success');
 collection_process(Context, Successes) ->
     Resources = kz_json:values(Successes),
     lists:foreach(fun (R) -> lager:debug("save ~p", [R]) end, Resources),
@@ -483,7 +486,7 @@ collection_process(Context, Successes) ->
                                      ),
             _ = reload_trusted(),
             summary(Context1);
-        _Status -> 'ok'
+        _Status -> Context1
     end.
 
 maybe_aggregate_resources('true', Resources) ->

@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Manage scope restrictions
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -136,7 +136,7 @@ on_successful_validation(Context, ScopeRestriction) ->
 %%------------------------------------------------------------------------------
 -spec post(cb_context:context(), path_token()) -> cb_context:context().
 post(Context, _ScopeRestriction) ->
-    save_scope_restriction(Context).
+    crossbar_doc:save(Context).
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -144,19 +144,11 @@ post(Context, _ScopeRestriction) ->
 %%------------------------------------------------------------------------------
 -spec put(cb_context:context()) -> cb_context:context().
 put(Context) ->
-    save_scope_restriction(Context).
+    crossbar_doc:save(Context).
 
 -spec delete(cb_context:context(), path_token()) -> cb_context:context().
 delete(Context, _) ->
     crossbar_doc:delete(Context).
-
-%%------------------------------------------------------------------------------
-%% @doc
-%% @end
-%%------------------------------------------------------------------------------
--spec save_scope_restriction(cb_context:context()) -> cb_context:context().
-save_scope_restriction(Context) ->
-    crossbar_doc:save(Context).
 
 %%------------------------------------------------------------------------------
 %% @doc returns summary of scope restrictions

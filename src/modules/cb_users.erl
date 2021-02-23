@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Users module
 %%% Handle client requests for user documents
 %%%
@@ -285,7 +285,7 @@ post(Context, UserId, ?PHOTO) ->
     Headers = kz_json:get_value(<<"headers">>, FileObj),
     CT = kz_json:get_value(<<"content_type">>, Headers),
     Content = kz_json:get_value(<<"contents">>, FileObj),
-    Opts = [{'content_type', CT} | ?TYPE_CHECK_OPTION(kzd_users:type())],
+    Opts = [{'content_type', CT}],
     crossbar_doc:save_attachment(UserId, ?PHOTO, Content, Context, Opts).
 
 %%------------------------------------------------------------------------------

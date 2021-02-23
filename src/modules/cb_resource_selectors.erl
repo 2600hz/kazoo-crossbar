@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2020, 2600Hz
+%%% @copyright (C) 2012-2021, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -190,16 +190,8 @@ validate_doc(Context, UUID, ?HTTP_DELETE) ->
 
 -spec post(cb_context:context(), path_token()) -> cb_context:context().
 post(Context, ?RULES) ->
-    post_rules(Context);
+    crossbar_doc:save(Context);
 post(Context, _UUID) ->
-    post_doc(Context).
-
--spec post_rules(cb_context:context()) -> cb_context:context().
-post_rules(Context) ->
-    crossbar_doc:save(Context).
-
--spec post_doc(cb_context:context()) -> cb_context:context().
-post_doc(Context) ->
     crossbar_doc:save(Context).
 
 -spec set_selectors_db(cb_context:context()) -> cb_context:context().

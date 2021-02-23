@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc API resource
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -901,6 +901,8 @@ to_json(Req0, Context0, 'undefined') ->
         _ ->
             lager:debug("run: to_json"),
             Event = to_fun_event_name(<<"to_json">>, Context0),
+            %% TODO: set resp_error_status to fatal so if binding crashed
+            %% the result has correct status instead of false successful.
             {Req1, Context1} = crossbar_bindings:fold(Event, {Req0, Context0}),
             api_util:create_pull_response(Req1, Context1)
     end;

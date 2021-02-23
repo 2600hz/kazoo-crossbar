@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Match list module
 %%% Handle client requests for match list documents, api v2
 %%%
@@ -202,7 +202,12 @@ validate_doc(Id, Type, Context) ->
 delete(Context, ListId) ->
     _ = delete(Context, ListId, ?ENTRIES),
     Context1 = crossbar_doc:load(ListId, Context, ?TYPE_CHECK_OPTION(?TYPE_LIST_ENTRY)),
-    crossbar_doc:delete(Context1).
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            crossbar_doc:delete(Context1);
+        _ ->
+            Context1
+    end.
 
 -spec delete(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 delete(Context, _ListId, ?ENTRIES) ->
@@ -210,7 +215,7 @@ delete(Context, _ListId, ?ENTRIES) ->
     AccountDb = kzs_util:format_account_db(cb_context:db_name(Context)),
     %% do we need 'soft' delete as in crossbar_doc?
     _ = kz_datamgr:del_docs(AccountDb, Docs),
-    Context.
+    cb_context:set_resp_status(Context, 'success').
 
 -spec delete(cb_context:context(), path_token(), path_token(), path_token()) -> cb_context:context().
 delete(Context, _ListId, ?ENTRIES, _EntryId) ->

@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc
 %%% @author Daniel Finke
 %%%
@@ -382,7 +382,8 @@ send_token_info(Context, Token, Claims) ->
 
 
 -spec put(cb_context:context()) -> cb_context:context().
-put(Context) -> Context.
+put(Context) ->
+    cb_context:set_resp_status(Context, 'success').
 
 -spec put(cb_context:context(), path_token()) -> cb_context:context().
 put(Context, ?AUTHORIZE_PATH) ->
@@ -399,15 +400,15 @@ put(Context, ?LINKS_PATH, AuthId) ->
     AccountId = cb_context:auth_account_id(Context),
     OwnerId = cb_context:auth_user_id(Context),
     case kz_auth:link(AccountId, OwnerId, AuthId) of
-        'ok' -> Context;
+        'ok' -> cb_context:set_resp_status(Context, 'success');
         {'error', Error} -> cb_context:add_system_error(Error, Context)
     end;
 put(Context, ?KEYS_PATH, _KeyId) ->
-    Context.
+    cb_context:set_resp_status(Context, 'success').
 
 -spec post(cb_context:context(), path_token()) -> cb_context:context().
 post(Context, ?TOKENINFO_PATH) ->
-    Context.
+    cb_context:set_resp_status(Context, 'success').
 
 -spec post(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 post(Context, ?APPS_PATH, _Id) ->
@@ -418,7 +419,7 @@ post(Context, ?PROVIDERS_PATH, _Id) ->
 -spec delete(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 delete(Context, ?LINKS_PATH, AuthId) ->
     case kz_auth:unlink(AuthId) of
-        'ok' -> Context;
+        'ok' -> cb_context:set_resp_status(Context, 'success');
         {'error', Error} -> cb_context:add_system_error(Error, Context)
     end;
 delete(Context, ?APPS_PATH, _Id) ->

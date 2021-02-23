@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc storage
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -251,7 +251,7 @@ delete(Context, ?PLANS_TOKEN, _PlanId) ->
 delete_account(Context, AccountId) ->
     lager:debug("account ~s deleted, removing any storage plans", [AccountId]),
     delete_account_storage(AccountId),
-    Context.
+    cb_context:set_resp_status(Context, 'success').
 
 -spec delete_account_storage(kz_term:ne_binary()) -> 'ok'.
 delete_account_storage(AccountId) ->

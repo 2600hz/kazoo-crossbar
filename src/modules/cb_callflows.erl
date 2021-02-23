@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Callflow gen server for CRUD
 %%% @author Vladimir Darmin
 %%% @author James Aimonetti
@@ -118,7 +118,7 @@ post(Context, _CallflowId) ->
     Context1 = crossbar_doc:save(Context),
     case cb_context:resp_status(Context1) of
         'success' ->
-            'ok' = track_assignment('post', Context),
+            track_assignment('post', Context),
             Context1;
         _Status -> Context1
     end.
@@ -133,7 +133,7 @@ put(Context) ->
     Context1 = crossbar_doc:save(Context),
     case cb_context:resp_status(Context1) of
         'success' ->
-            'ok' = track_assignment('put', Context),
+            track_assignment('put', Context),
             Context1;
         _Status -> Context1
     end.
@@ -143,7 +143,7 @@ delete(Context, _CallflowId) ->
     Context1 = crossbar_doc:delete(Context),
     case cb_context:resp_status(Context1) of
         'success' ->
-            'ok' = track_assignment('delete', Context),
+            track_assignment('delete', Context),
             Context1;
         _Status -> Context1
     end.
@@ -236,7 +236,7 @@ validate_patch(CallflowId, Context) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec track_assignment(atom(), cb_context:context()) -> 'ok' | 'error'.
+-spec track_assignment(atom(), cb_context:context()) -> 'ok'.
 track_assignment('post', Context) ->
     NewNums = kzd_callflows:numbers(cb_context:doc(Context)),
     OldNums = kzd_callflows:numbers(cb_context:fetch(Context, 'db_doc')),

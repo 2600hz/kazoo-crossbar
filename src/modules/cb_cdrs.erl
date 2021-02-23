@@ -590,7 +590,7 @@ filter_pvt_fields(Context) ->
         _ -> Context
     end.
 
--spec remove_pvt_ccvs(kz_json:objects()) -> kz_json:objects().
+-spec remove_pvt_ccvs(kz_json:object()) -> kz_json:object().
 remove_pvt_ccvs(JObj) ->
     CCVs = kz_json:get_json_value(<<"custom_channel_vars">>, JObj, kz_json:new()),
     kz_json:set_value(<<"custom_channel_vars">>, kz_doc:public_fields(CCVs), JObj).

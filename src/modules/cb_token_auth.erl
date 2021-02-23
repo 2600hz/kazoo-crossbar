@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Token auth module
 %%% This is a simple auth mechanism, once the user has acquired an
 %%% auth token this module will allow access.  This module should be
@@ -91,9 +91,9 @@ delete(Context) ->
                                ,{fun cb_context:set_auth_token/2, 'undefined'}
                                ,{fun cb_context:set_auth_account_id/2, 'undefined'}
                                ]);
-        {'error', _E} ->
-            lager:debug("failed to delete auth token ~s: ~p", [AuthToken, _E]),
-            Context
+        {'error', Error} ->
+            lager:debug("failed to delete auth token ~s: ~p", [AuthToken, Error]),
+            crossbar_doc:handle_datamgr_errors(Error, AuthToken, Context)
     end.
 
 %%------------------------------------------------------------------------------

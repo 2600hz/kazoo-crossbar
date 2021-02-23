@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2020, 2600Hz
+%%% @copyright (C) 2012-2021, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%%
@@ -321,14 +321,24 @@ validate_inbox_fax_action(Action, Id, Context) ->
 -spec put(cb_context:context()) -> cb_context:context().
 put(Context) ->
     NewContext = crossbar_doc:save(Context),
-    _ = kz_process:spawn(fun maybe_save_attachment/1, [NewContext]),
-    crossbar_util:response_202(<<"processing fax attachments">>, cb_context:doc(NewContext), NewContext).
+    case cb_context:resp_status(NewContext) of
+        'success' ->
+            _ = kz_process:spawn(fun maybe_save_attachment/1, [NewContext]),
+            crossbar_util:response_202(<<"processing fax attachments">>, cb_context:doc(NewContext), NewContext);
+        _ ->
+            NewContext
+    end.
 
 -spec put(cb_context:context(), path_token()) -> cb_context:context().
 put(Context, ?OUTGOING) ->
     NewContext = crossbar_doc:save(Context),
-    _ = kz_process:spawn(fun maybe_save_attachment/1, [NewContext]),
-    crossbar_util:response_202(<<"processing fax attachments">>, cb_context:doc(NewContext), NewContext).
+    case cb_context:resp_status(NewContext) of
+        'success' ->
+            _ = kz_process:spawn(fun maybe_save_attachment/1, [NewContext]),
+            crossbar_util:response_202(<<"processing fax attachments">>, cb_context:doc(NewContext), NewContext);
+        _ ->
+            NewContext
+    end.
 
 -spec put(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 put(Context, ?OUTBOX, Id) ->
@@ -349,6 +359,7 @@ delete(Context, _, _Id) ->
 -spec delete(cb_context:context(), path_token(), path_token(), path_token()) -> cb_context:context().
 delete(Context, _, Id, ?ATTACHMENT) ->
     ANames = kz_doc:attachment_names(cb_context:doc(Context)),
+    %% TODO: maybe check result of each attachment deletion?
     lists:foldl(fun(AName, Ctx) ->
                         crossbar_doc:delete_attachment(Id, AName, Ctx)
                 end

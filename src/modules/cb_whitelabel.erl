@@ -772,13 +772,17 @@ update_whitelabel_binary(AttachType, WhitelabelId, Context) ->
                     kz_doc:delete_attachment(JObj, AttachmentId)
             end,
     Context1 = crossbar_doc:save(cb_context:set_doc(Context, JObj1)),
-
-    crossbar_doc:save_attachment(WhitelabelId
-                                ,attachment_name(AttachType, Filename, CT)
-                                ,Contents
-                                ,Context1
-                                ,Opts
-                                ).
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            crossbar_doc:save_attachment(WhitelabelId
+                                        ,attachment_name(AttachType, Filename, CT)
+                                        ,Contents
+                                        ,Context1
+                                        ,Opts
+                                        );
+        _ ->
+            Context1
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc Generate an attachment name if one is not provided and ensure
@@ -836,6 +840,7 @@ is_domain_unique(AccountId, Domain) ->
 -spec maybe_update_account_definition(cb_context:context()) -> cb_context:context().
 maybe_update_account_definition(Context) ->
     maybe_update_account_definition(Context, cb_context:resp_status(Context)).
+
 maybe_update_account_definition(Context, 'success') ->
     Context1 = crossbar_doc:load(cb_context:account_id(Context), Context, ?TYPE_CHECK_OPTION(kzd_accounts:type())),
     case cb_context:resp_status(Context1) of
