@@ -80,6 +80,7 @@ curl -v -X GET \
 
 ```shell
 curl -v -X PUT \
+    -H "Content-Type:application/json" \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     -d '{"data":{"name":"{NAME}, "auth_required":false, "extension":"{EXTENSION}"}}'
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/clicktocall
@@ -140,6 +141,7 @@ curl -v -X GET \
 
 ```shell
 curl -v -X POST \
+    -H "Content-Type:application/json" \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/clicktocall/{C2C_ID}
 ```
@@ -150,6 +152,7 @@ curl -v -X POST \
 
 ```shell
 curl -v -X PATCH \
+    -H "Content-Type:application/json" \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/clicktocall/{C2C_ID}
 ```
@@ -160,6 +163,7 @@ curl -v -X PATCH \
 
 ```shell
 curl -v -X DELETE \
+    -H "Content-Type:application/json" \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/clicktocall/{C2C_ID}
 ```
@@ -253,6 +257,7 @@ Will return immediately with a 202
 
 ```shell
 curl -v -X POST \
+    -H "Content-Type:application/json" \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/clicktocall/{C2C_ID}/connect
 ```
