@@ -85,7 +85,9 @@ curl -v -X GET \
 
 ```shell
 curl -v -X PUT \
+    -H "Content-Type:application/json" \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d '{"data":{"name":"{NAME}", "numbers":["NUMBER"], "patterns":["PATTERN"]}}'
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/callflows
 ```
 
@@ -115,7 +117,9 @@ curl -v -X GET \
 
 ```shell
 curl -v -X PATCH \
+    -H "Content-Type:application/json" \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d '{"data":{"name":"{NAME}"}}'
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/callflows/{CALLFLOW_ID}
 ```
 
@@ -125,6 +129,8 @@ curl -v -X PATCH \
 
 ```shell
 curl -v -X POST \
+    -H "Content-Type:application/json" \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d '{"data":{"name":"{NAME}", "numbers":["NUMBER"], "patterns":["PATTERN"]}}'
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/callflows/{CALLFLOW_ID}
 ```

@@ -7,6 +7,7 @@ Recordings endpoint provides a way to access call recordings.
 ## Fetch recordings
 
 > GET /v2/accounts/{ACCOUNT_ID}/recordings
+
 > GET /v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/recordings
 
 Lists the call recording with pagination and filtering.
