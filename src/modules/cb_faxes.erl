@@ -575,13 +575,18 @@ outbox_summary(Context) -> fax_modb_summary(Context, ?OUTBOX).
 
 -spec fax_modb_summary(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 fax_modb_summary(Context, Folder) ->
-    {ViewName, Opts} = get_view_and_filter(Context, get_filter_doc(Context), Folder),
-    Options = [{'mapper', fun normalize_modb_view_results/2}
-              ,{'field_key', 'filtermap'}
-              ,'include_docs'
-              | Opts
-              ],
+    {ViewName, Options} = modb_summary_options(Context, Folder),
     crossbar_view:load_modb(Context, ViewName, Options).
+
+modb_summary_options(Context, Folder) ->
+    {ViewName, Opts} = get_view_and_filter(Context, get_filter_doc(Context), Folder),
+    {ViewName
+    ,[{'mapper', fun normalize_modb_view_results/2}
+     ,{'field_key', 'filtermap'}
+     ,'include_docs'
+     | Opts
+     ]
+    }.
 
 %%------------------------------------------------------------------------------
 %% @doc Attempt to load a summarized listing of all instances of this
@@ -590,14 +595,19 @@ fax_modb_summary(Context, Folder) ->
 %%------------------------------------------------------------------------------
 -spec outgoing_summary(cb_context:context()) -> cb_context:context().
 outgoing_summary(Context) ->
+    {ViewName, Options} = outgoing_summary_options(Context),
+    crossbar_view:load(Context, ViewName, Options).
+
+outgoing_summary_options(Context) ->
     JObj = cb_context:fetch(Context, <<"faxbox">>, kz_json:new()),
     {ViewName, Opts} = get_view_and_filter(Context, {kz_doc:id(JObj), kz_doc:type(JObj)}, 'undefined'),
-    Options = [{'mapper', crossbar_view:get_value_fun()}
-              ,{'databases', [?KZ_FAXES_DB]}
-              ,'include_docs'
-              | Opts
-              ],
-    crossbar_view:load(Context, ViewName, Options).
+    {ViewName
+    ,[{'mapper', crossbar_view:get_value_fun()}
+     ,{'databases', [?KZ_FAXES_DB]}
+     ,'include_docs'
+     | Opts
+     ]
+    }.
 
 -spec get_view_and_filter(cb_context:context(), {kz_term:api_ne_binary(), kz_term:api_ne_binary()}, kz_term:api_ne_binary()) ->
           {kz_term:ne_binary(), crossbar_view:options()}.
@@ -642,10 +652,12 @@ maybe_user_filter_doc(Context) ->
 
 -spec load_smtp_log(cb_context:context()) -> cb_context:context().
 load_smtp_log(Context) ->
-    Options = [{'mapper', crossbar_view:get_value_fun()}
-              ,'include_docs'
-              ],
-    crossbar_view:load_modb(Context, ?CB_LIST_SMTP_LOG, Options).
+    crossbar_view:load_modb(Context, ?CB_LIST_SMTP_LOG, smtp_log_options()).
+
+smtp_log_options() ->
+    [{'mapper', crossbar_view:get_value_fun()}
+    ,'include_docs'
+    ].
 
 %%------------------------------------------------------------------------------
 %% @doc Normalizes the results of a view.

@@ -974,33 +974,39 @@ load_summary_by_types(Context, [], JObjs) ->
               ],
     normalize_type_summarize_results(cb_context:setters(Context, Setters));
 load_summary_by_types(Context, [Type | Types], JObjs) ->
-    C1 = load_summary_by_type(Context, Type),
-    case cb_context:resp_status(C1) =:= 'success' of
-        'true' ->
-            RespData = cb_context:resp_data(C1),
-            load_summary_by_types(Context, Types, JObjs ++ RespData);
-        'false' -> C1
+    maybe_continue_loading(Context, Types, JObjs, load_summary_by_type(Context, Type)).
+
+maybe_continue_loading(OriginalContext, Types, JObjs, LoadedContext) ->
+    case cb_context:resp_status(LoadedContext) of
+        'success' ->
+            RespData = cb_context:resp_data(LoadedContext),
+            load_summary_by_types(OriginalContext, Types, JObjs ++ RespData);
+        _Failed -> LoadedContext
     end.
 
+-spec load_summary_by_type(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 load_summary_by_type(Context, Type) ->
-    lager:debug("loading summary for port requests with type ~s"
-               ,[Type]
-               ),
+    lager:debug("loading summary for port requests with type ~s", [Type]),
+
     IsRanged = lists:member(Type, ?PORT_COMPLETED_STATES),
     AuthorityType = cb_context:fetch(Context, 'authority_type'),
     View = type_summarize_view_name(AuthorityType),
-    Options = [{'mapper', fun normalize_view_results/2}
-              ,{'databases', [?KZ_PORT_REQUESTS_DB]}
-              ,{'unchunkable', 'true'}
-              ,{'should_paginate', 'false'}
-              ,{'field_key', 'filtermap'}
-              ,'include_docs'
-              | by_types_view_options(Context, Type, IsRanged, AuthorityType)
-              ],
+
+    Options = summary_by_type_options(Context, Type, IsRanged, AuthorityType),
     case IsRanged of
         'true' -> crossbar_view:load_time_range(Context, View, Options);
         'false' -> crossbar_view:load(Context, View, Options)
     end.
+
+summary_by_type_options(Context, Type, IsRanged, AuthorityType) ->
+    [{'mapper', fun normalize_view_results/2}
+    ,{'databases', [?KZ_PORT_REQUESTS_DB]}
+    ,{'unchunkable', 'true'}
+    ,{'should_paginate', 'false'}
+    ,{'field_key', 'filtermap'}
+    ,'include_docs'
+    | by_types_view_options(Context, Type, IsRanged, AuthorityType)
+    ].
 
 -spec by_types_view_options(cb_context:context(), kz_term:ne_binary(), boolean(), authority_type()) -> crossbar_view:options().
 by_types_view_options(Context, Type, 'true', 'agent') ->
@@ -1072,13 +1078,16 @@ get_account_names(Keys) ->
 %%------------------------------------------------------------------------------
 -spec load_summary_by_number(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 load_summary_by_number(Context, Number) ->
-    Options = [{'keymap', knm_converters:normalize(Number)}
-              ,{'mapper', fun normalize_number_summarize_results/3}
-              ,{'databases', [?KZ_PORT_REQUESTS_DB]}
-              ,{'field_key', 'filtermap'}
-              ,'include_docs'
-              ],
+    Options = summary_by_number_options(Number),
     crossbar_view:load(Context, ?LISTING_BY_NUMBER, Options).
+
+summary_by_number_options(Number) ->
+    [{'keymap', knm_converters:normalize(Number)}
+    ,{'mapper', fun normalize_number_summarize_results/3}
+    ,{'databases', [?KZ_PORT_REQUESTS_DB]}
+    ,{'field_key', 'filtermap'}
+    ,'include_docs'
+    ].
 
 -spec normalize_number_summarize_results(cb_context:context(), kz_json:object(), kz_json:objects()) ->
           kz_json:objects().
@@ -1104,15 +1113,18 @@ normalize_number_summarize_results(Context, JObj, Acc) ->
 %%------------------------------------------------------------------------------
 -spec last_submitted(cb_context:context()) -> cb_context:context().
 last_submitted(Context) ->
-    AccountId = cb_context:account_id(Context),
-    Options = [{'startkey', [AccountId]}
-              ,{'endkey', [AccountId, kz_json:new()]}
-              ,{'mapper', fun  normalize_last_submitted/3}
-              ,{'databases', [?KZ_PORT_REQUESTS_DB]}
-              ,{'field_key', 'filtermap'}
-              ,'include_docs'
-              ],
+    Options = last_submitted_options(Context),
     crossbar_view:load(Context, <<"port_requests/listing_submitted">>, Options).
+
+last_submitted_options(Context) ->
+    AccountId = cb_context:account_id(Context),
+    [{'startkey', [AccountId]}
+    ,{'endkey', [AccountId, kz_json:new()]}
+    ,{'mapper', fun  normalize_last_submitted/3}
+    ,{'databases', [?KZ_PORT_REQUESTS_DB]}
+    ,{'field_key', 'filtermap'}
+    ,'include_docs'
+    ].
 
 -spec normalize_last_submitted(cb_context:context(), kz_json:object(), kz_json:objects()) -> kz_json:objects().
 normalize_last_submitted(Context, ResultJObj, Acc) ->

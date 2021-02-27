@@ -339,20 +339,26 @@ summary(Context) ->
 
 -spec summary(cb_context:context(), scope()) -> cb_context:context().
 summary(Context, 'system_plans') ->
-    Options = [{'databases', [?KZ_DATA_DB]}
-              ,{'mapper', crossbar_view:get_doc_fun()}
-              ,'include_docs'
-              ],
+    Options = system_plan_options(),
     crossbar_view:load(Context, ?CB_SYSTEM_LIST, Options);
 
 summary(Context, {'reseller_plans', AccountId}) ->
-    Options = [{'databases', [?KZ_DATA_DB]}
-              ,{'mapper', crossbar_view:get_doc_fun()}
-              ,{'startkey', [AccountId]}
-              ,{'endkey', [AccountId, kz_term:high_unicode_value()]}
-              ,'include_docs'
-              ],
+    Options = reseller_plan_options(AccountId),
     crossbar_view:load(Context, ?CB_ACCOUNT_LIST, Options).
+
+system_plan_options() ->
+    [{'databases', [?KZ_DATA_DB]}
+    ,{'mapper', crossbar_view:get_doc_fun()}
+    ,'include_docs'
+    ].
+
+reseller_plan_options(AccountId) ->
+    [{'databases', [?KZ_DATA_DB]}
+    ,{'mapper', crossbar_view:get_doc_fun()}
+    ,{'startkey', [AccountId]}
+    ,{'endkey', [AccountId, kz_term:high_unicode_value()]}
+    ,'include_docs'
+    ].
 
 %%------------------------------------------------------------------------------
 %% @doc

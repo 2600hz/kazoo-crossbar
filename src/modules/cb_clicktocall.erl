@@ -233,11 +233,13 @@ load_c2c(C2CId, Context) ->
 
 -spec load_c2c_history(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
 load_c2c_history(C2CId, Context) ->
-    Options = [{'mapper', crossbar_view:get_doc_fun()}
-              ,{'range_keymap', [C2CId]}
-              ,'include_docs'
-              ],
-    crossbar_view:load_modb(Context, ?HISTORY_LIST, Options).
+    crossbar_view:load_modb(Context, ?HISTORY_LIST, c2c_history_options(C2CId)).
+
+c2c_history_options(C2CId) ->
+    [{'mapper', crossbar_view:get_doc_fun()}
+    ,{'range_keymap', [C2CId]}
+    ,'include_docs'
+    ].
 
 -spec create_c2c(cb_context:context()) -> cb_context:context().
 create_c2c(Context) ->

@@ -647,23 +647,23 @@ load_media_docs_by_prompt(Context, PromptId) ->
     load_media_docs_by_prompt(Context, PromptId, cb_context:account_id(Context)).
 
 -spec load_media_docs_by_prompt(cb_context:context(), kz_term:ne_binary(), kz_term:api_binary()) -> cb_context:context().
-load_media_docs_by_prompt(Context, PromptId, 'undefined') ->
-    Options = [{'startkey', [PromptId]}
-              ,{'endkey', [PromptId, kz_term:high_unicode_value()]}
-              ,{'reduce', 'false'}
-              ,{'mapper', fun normalize_prompt_results/2}
-              ,{'databases', [?KZ_MEDIA_DB]}
-              ,'include_docs'
-              ],
-    crossbar_view:load(Context, ?CB_LIST_BY_PROMPT, Options);
-load_media_docs_by_prompt(Context, PromptId, _AccountId) ->
-    Options = [{'startkey', [PromptId]}
-              ,{'endkey', [PromptId, kz_term:high_unicode_value()]}
-              ,{'reduce', 'false'}
-              ,{'mapper', fun normalize_prompt_results/2}
-              ,'include_docs'
-              ],
+load_media_docs_by_prompt(Context, PromptId, AccountId) ->
+    Options = load_docs_by_prompt_options(PromptId, AccountId),
     crossbar_view:load(Context, ?CB_LIST_BY_PROMPT, Options).
+
+load_docs_by_prompt_options(PromptId, AccountId) ->
+    [{'startkey', [PromptId]}
+    ,{'endkey', [PromptId, kz_term:high_unicode_value()]}
+    ,{'reduce', 'false'}
+    ,{'mapper', fun normalize_prompt_results/2}
+    ,'include_docs'
+    | load_docs_by_prompt_dbs(AccountId)
+    ].
+
+load_docs_by_prompt_dbs('undefined') ->
+    [{'databases', [?KZ_MEDIA_DB]}];
+load_docs_by_prompt_dbs(_AccountId) ->
+    [].
 
 -spec normalize_prompt_results(kz_json:object(), kz_term:ne_binaries()) -> kz_term:ne_binaries().
 normalize_prompt_results(JObj, Acc) ->

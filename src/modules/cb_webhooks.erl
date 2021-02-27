@@ -426,11 +426,14 @@ summary_available(Context) ->
     {'ok', MasterAccountDb} = kapps_util:get_master_account_db(),
     IsSuperAdmin = cb_context:is_superduper_admin(Context),
     C1 = cb_context:store(Context, 'is_superduper_admin', IsSuperAdmin),
-    Options = [{'mapper', fun normalize_available/3}
-              ,{'field_key', 'filtermap'}
-              ,'include_docs'
-              ],
+    Options = summary_available_options(),
     crossbar_view:load(cb_context:set_db_name(C1, MasterAccountDb), ?AVAILABLE_HOOKS, Options).
+
+summary_available_options() ->
+    [{'mapper', fun normalize_available/3}
+    ,{'field_key', 'filtermap'}
+    ,'include_docs'
+    ].
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -489,12 +492,15 @@ filter_non_admin_notifications({Name, _}, 'false') ->
 -spec summary_attempts(cb_context:context(), kz_term:api_ne_binary()) -> cb_context:context().
 summary_attempts(Context, HookId) ->
     ViewName = get_view_name(HookId),
-    Options = [{'mapper', fun normalize_attempt_results/2}
-              ,{'range_keymap', HookId}
-              ,{'field_key', 'filtermap'}
-              ,'include_docs'
-              ],
+    Options = summary_attempts_options(HookId),
     crossbar_view:load_modb(Context, ViewName, Options).
+
+summary_attempts_options(HookId) ->
+    [{'mapper', fun normalize_attempt_results/2}
+    ,{'range_keymap', HookId}
+    ,{'field_key', 'filtermap'}
+    ,'include_docs'
+    ].
 
 -spec get_view_name(kz_term:api_ne_binary()) -> kz_term:ne_binary().
 get_view_name('undefined') -> ?ATTEMPTS_BY_ACCOUNT;

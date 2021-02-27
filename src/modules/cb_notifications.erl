@@ -1230,10 +1230,7 @@ summary_available(Context) ->
 
 -spec fetch_summary_available(cb_context:context()) -> cb_context:context().
 fetch_summary_available(Context) ->
-    ViewOpts = [{'no_design_module', 'true'}
-               ,'include_docs'
-               ],
-    case kz_view:find(?KZ_CONFIG_DB, ?CB_LIST, [], ViewOpts) of
+    case kz_view:find(?KZ_CONFIG_DB, ?CB_LIST, [], summary_available_options()) of
         {'ok', JObjs} ->
             CacheProp = [{'origin', [{'db', cb_context:db_name(Context), kz_notification:pvt_type()}]}],
             _ = kz_cache:store_local(?CACHE_NAME, {?MODULE, 'available'}, JObjs, CacheProp),
@@ -1241,6 +1238,11 @@ fetch_summary_available(Context) ->
         {'error', Error} ->
             crossbar_doc:handle_datamgr_errors(Error, ?CB_LIST, Context)
     end.
+
+summary_available_options() ->
+    [{'no_design_module', 'true'}
+    ,'include_docs'
+    ].
 
 -spec handle_available(cb_context:context(), kz_json:objects()) -> cb_context:context().
 handle_available(Context, JObjs) ->
@@ -1260,14 +1262,17 @@ is_cache_key(_K, _V) -> 'false'.
 
 -spec summary_account(cb_context:context()) -> cb_context:context().
 summary_account(Context) ->
-    Options = [{'mapper', select_normalize_fun(Context)}
-              ,{'should_paginate', 'false'}
-              ,{'unchunkable', 'true'}
-              ,{'field_key', 'filtermap'}
-              ,'include_docs'
-              ],
+    Options = summary_account_options(Context),
     Context1 = crossbar_view:load(Context, ?CB_LIST, Options),
     summary_account(Context1, cb_context:resp_status(Context1)).
+
+summary_account_options(Context) ->
+    [{'mapper', select_normalize_fun(Context)}
+    ,{'should_paginate', 'false'}
+    ,{'unchunkable', 'true'}
+    ,{'field_key', 'filtermap'}
+    ,'include_docs'
+    ].
 
 -spec summary_account(cb_context:context(), crossbar_status()) -> cb_context:context().
 summary_account(Context, 'success') ->

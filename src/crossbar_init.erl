@@ -22,6 +22,8 @@
 
 -define(USE_COMPRESSION, kapps_config:get_is_true(?CONFIG_CAT, <<"compress_response_body">>, 'true')).
 
+-type dispatch_rules() :: {'persistent_term', 'crossbar_dispatch'}. % cowboy_router:dispatch_rules()
+
 -spec crossbar_routes() -> cowboy_router:routes().
 crossbar_routes() -> [{'_', paths_list()}].
 
@@ -66,13 +68,14 @@ api_version_constraint('forward', NotVersion) ->
 start_link() ->
     kz_log:put_callid(?DEFAULT_LOG_SYSTEM_ID),
     Dispatch = cowboy_router:compile(crossbar_routes()),
+    persistent_term:put('crossbar_dispatch', Dispatch),
 
     DefaultIP = kz_network_utils:default_binding_ip(),
     IP = kapps_config:get_ne_binary(?CONFIG_CAT, <<"ip">>, DefaultIP),
     IPAddress = kz_network_utils:get_supported_binding_ip(IP, DefaultIP),
 
-    maybe_start_plaintext(Dispatch, IPAddress),
-    maybe_start_ssl(Dispatch, IPAddress),
+    maybe_start_plaintext({'persistent_term', 'crossbar_dispatch'}, IPAddress),
+    maybe_start_ssl({'persistent_term', 'crossbar_dispatch'}, IPAddress),
     'ignore'.
 
 %%------------------------------------------------------------------------------
@@ -173,7 +176,7 @@ stop_mod_version(Version, Mod) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec maybe_start_plaintext(cowboy_router:dispatch_rules(), inet:ip_address()) -> 'ok'.
+-spec maybe_start_plaintext(dispatch_rules(), inet:ip_address()) -> 'ok'.
 maybe_start_plaintext(Dispatch, IP) ->
     case kapps_config:get_is_true(?CONFIG_CAT, <<"use_plaintext">>, 'true') of
         'false' -> lager:info("plaintext api support not enabled");
@@ -209,14 +212,14 @@ maybe_start_plaintext(Dispatch, IP) ->
             end
     end.
 
--spec maybe_start_ssl(cowboy_router:dispatch_rules(), inet:ip_address()) -> 'ok'.
+-spec maybe_start_ssl(dispatch_rules(), inet:ip_address()) -> 'ok'.
 maybe_start_ssl(Dispatch, IP) ->
     case kapps_config:get_is_true(?CONFIG_CAT, <<"use_ssl">>, 'false') of
         'false' -> lager:info("ssl api support not enabled");
         'true' -> start_ssl(Dispatch, IP)
     end.
 
--spec start_ssl(cowboy_router:dispatch_rules(), inet:ip_address()) -> 'ok'.
+-spec start_ssl(dispatch_rules(), inet:ip_address()) -> 'ok'.
 start_ssl(Dispatch, IP) ->
     try ssl_opts(code:lib_dir(?APP)) of
         SSLOpts ->

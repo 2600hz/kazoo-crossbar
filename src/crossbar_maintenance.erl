@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2020, 2600Hz
+%%% @copyright (C) 2012-2021, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%%
@@ -197,14 +197,11 @@ find_account_by_number(Number) when not is_binary(Number) ->
 find_account_by_number(Number) ->
     case knm_numbers:lookup_account(Number) of
         {'ok', AccountId, _} ->
-            AccountDb = kzs_util:format_account_db(AccountId),
-            print_account_info(AccountDb, AccountId);
+            print_account_info(AccountId);
         {'error', {'not_in_service', AssignedTo}} ->
-            AccountDb = kzs_util:format_account_db(AssignedTo),
-            print_account_info(AccountDb, AssignedTo);
+            print_account_info(AssignedTo);
         {'error', {'account_disabled', AssignedTo}} ->
-            AccountDb = kzs_util:format_account_db(AssignedTo),
-            print_account_info(AccountDb, AssignedTo);
+            print_account_info(AssignedTo);
         {'error', Reason}=E ->
             ?SUP_LOG_INFO("failed to find account assigned to number '~s': ~p~n", [Number, Reason]),
             E
@@ -694,25 +691,24 @@ create_user(Context) ->
     end.
 
 -spec print_account_info(kz_term:ne_binary()) -> {'ok', kz_term:ne_binary()}.
-print_account_info(AccountDb) ->
-    AccountId = kzs_util:format_account_id(AccountDb),
-    print_account_info(AccountDb, AccountId).
-
--spec print_account_info(kz_term:ne_binary(), kz_term:ne_binary()) -> {'ok', kz_term:ne_binary()}.
-print_account_info(AccountDb, AccountId) ->
-    case kz_datamgr:open_doc(AccountDb, AccountId) of
-        {'ok', JObj} ->
-            ?SUP_LOG_INFO("Account ID: ~s (~s)~n", [AccountId, AccountDb]),
-            ?SUP_LOG_INFO("  Name: ~s~n", [kzd_accounts:name(JObj)]),
-            ?SUP_LOG_INFO("  Realm: ~s~n", [kzd_accounts:realm(JObj)]),
-            ?SUP_LOG_INFO("  Enabled: ~s~n", [kzd_accounts:is_enabled(JObj)]),
-            ?SUP_LOG_INFO("  System Admin: ~s~n", [kzd_accounts:is_superduper_admin(JObj)]);
+print_account_info(Account) ->
+    case kzd_accounts:fetch(Account) of
+        {'ok', AccountDoc} ->
+            ?SUP_LOG_INFO("Account ID: ~s (~s)~n"
+                         ,[kz_doc:id(AccountDoc), kz_doc:account_db(AccountDoc)]
+                         ),
+            ?SUP_LOG_INFO("  Name: ~s~n", [kzd_accounts:name(AccountDoc)]),
+            ?SUP_LOG_INFO("  Realm: ~s~n", [kzd_accounts:realm(AccountDoc)]),
+            ?SUP_LOG_INFO("  Enabled: ~s~n", [kzd_accounts:is_enabled(AccountDoc)]),
+            ?SUP_LOG_INFO("  System Admin: ~s~n", [kzd_accounts:is_superduper_admin(AccountDoc)]),
+            {'ok', kz_doc:id(AccountDoc)};
         {'error', 'not_found'} ->
-            ?SUP_LOG_INFO("Account ID: ~s (~s) does not exist~n", [AccountId, AccountDb]);
-        {'error', _} ->
-            ?SUP_LOG_INFO("Account ID: ~s (~s)~n", [AccountId, AccountDb])
-    end,
-    {'ok', AccountId}.
+            ?SUP_LOG_INFO("Account ID: ~s does not exist~n", [Account]),
+            {'ok', Account};
+        {'error', _E} ->
+            ?SUP_LOG_INFO("Account ID: ~s: ~p~n", [Account, _E]),
+            {'ok', Account}
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -812,7 +808,8 @@ maybe_update_app(AppPath, AppUrl, Keys) ->
     catch
         'error':{'badmatch', {'error', 'enoent'}} ->
             ?SUP_LOG_INFO("  failed to incorporate app because there was no app.json in ~s~n"
-                         ,[filename:join([AppPath, <<"metadata">>])]);
+                         ,[filename:join([AppPath, <<"metadata">>])]
+                         );
         'error':_E ->
             ?SUP_LOG_INFO("  failed to find metadata in ~s: ~p~n", [AppPath, _E])
     end.
@@ -831,10 +828,9 @@ maybe_create_app(AppPath, MetaData, Keys) ->
 -spec maybe_create_app(file:filename_all(), kz_json:object(), kz_term:ne_binaries(), kz_term:ne_binary()) -> 'ok'.
 maybe_create_app(AppPath, MetaData, Keys, MasterAccountDb) ->
     AppName = kzd_app:name(MetaData),
-    case find_app(MasterAccountDb, AppName) of
-        {'ok', JObj} ->
+    case kzd_app:find_by_name(MasterAccountDb, AppName) of
+        {'ok', AppJObj} ->
             ?SUP_LOG_INFO(" app ~s already loaded in system~n", [AppName]),
-            AppJObj = kz_json:get_json_value(<<"doc">>, JObj),
             maybe_update_app(AppPath, MetaData, Keys, MasterAccountDb, AppJObj);
         {'error', 'not_found'} -> create_app(AppPath, MetaData, MasterAccountDb);
         {'error', _E} -> ?SUP_LOG_INFO(" failed to find app ~s: ~p", [AppName, _E])
@@ -842,16 +838,15 @@ maybe_create_app(AppPath, MetaData, Keys, MasterAccountDb) ->
 
 -spec create_app(file:filename_all(), kz_json:object(), kz_term:ne_binary()) -> 'ok'.
 create_app(AppPath, MetaData, MasterAccountDb) ->
-    Doc0 = kz_doc:update_pvt_parameters(MetaData, MasterAccountDb, [{'type', <<"app">>}]),
-    Doc = kz_json:delete_key(<<"source_url">>, Doc0),
-    case kz_datamgr:save_doc(MasterAccountDb, Doc) of
+    case kzd_app:save(MasterAccountDb, MetaData) of
         {'ok', AppJObj} ->
             AppId = kz_doc:id(AppJObj),
             ?SUP_LOG_INFO(" saved app ~s as doc ~s~n", [kzd_app:name(AppJObj), AppId]),
             maybe_add_images(AppPath, AppId, MetaData, MasterAccountDb);
         {'error', _E} ->
             ?SUP_LOG_INFO(" failed to save app ~s to ~s: ~p~n"
-                         ,[kzd_app:name(MetaData), MasterAccountDb, _E])
+                         ,[kzd_app:name(MetaData), MasterAccountDb, _E]
+                         )
     end.
 
 -spec maybe_update_app(file:filename_all(), kz_json:object(), kz_term:ne_binaries(), kz_term:ne_binary(), kz_json:object()) -> 'no_return'.
@@ -917,7 +912,7 @@ safe_delete_image(AccountDb, AppId, Image) ->
             kz_datamgr:delete_attachment(AccountDb, AppId, Image)
     end.
 
--spec maybe_add_images(file:filename_all(), kz_term:ne_binary(), kz_json:object(), kz_term:ne_binary()) -> no_return.
+-spec maybe_add_images(file:filename_all(), kz_term:ne_binary(), kz_json:object(), kz_term:ne_binary()) -> 'no_return'.
 maybe_add_images(AppPath, ?NE_BINARY=AppId, MetaData, MasterAccountDb) ->
     Icon = kzd_app:icon(MetaData),
     Screenshots = kzd_app:screenshots(MetaData),
@@ -980,13 +975,20 @@ read_image(File) ->
           {'ok', kz_json:object()} |
           {'invalid_data', kz_term:proplist()}.
 find_metadata(AppPath) ->
-    {'ok', Bin} = file:read_file(filename:join([AppPath, <<"metadata">>, <<"app.json">>])),
+    AppFile = filename:join([AppPath, <<"metadata">>, <<"app.json">>]),
+    {'ok', Bin} = file:read_file(AppFile),
     JSON = kz_json:decode(Bin),
     case kz_json_schema:validate(<<"app">>, kz_doc:public_fields(JSON)) of
-        {'ok', _} -> {'ok', JSON};
+        {'ok', _} -> {'ok', kzd_app:set_app_hash(JSON, kz_binary:rand_hex(16))};
         {'error', Errors} ->
-            {'invalid_data', [Error || {'data_invalid', _, Error, _, _} <- Errors]}
+            io:format("validation error on ~s~n", [AppFile]),
+            io:format("JSON: ~s~n", [Bin]),
+            {'invalid_data', [log_and_return_error(Error) || Error <- Errors]}
     end.
+
+log_and_return_error({'data_invalid', _, Error, _, _}=_E) ->
+    io:format("  ~p~n", [_E]),
+    Error.
 
 -spec apps() -> 'no_return'.
 apps() ->
@@ -1000,7 +1002,7 @@ apps() ->
 -spec app(kz_term:ne_binary()) -> 'no_return'.
 app(AppNameOrId) ->
     {'ok', MA} = kapps_util:get_master_account_db(),
-    case find_app(MA, AppNameOrId) of
+    case kzd_app:find_by_name(MA, AppNameOrId) of
         {'ok', AppJObj} -> print_app(AppJObj);
         {'error', _} ->
             case kz_datamgr:open_doc(MA, AppNameOrId) of
@@ -1008,16 +1010,6 @@ app(AppNameOrId) ->
                 _ -> ?SUP_LOG_INFO("unknown app\n"), 'no_return'
             end
     end.
-
--spec find_app(kz_term:ne_binary(), kz_term:ne_binary()) ->
-          {'ok', kz_json:object()} |
-          kz_datamgr:data_error() |
-          {'error', 'multiple_results'}.
-find_app(Db, Name) ->
-    ViewOptions = [{'key', Name}
-                  ,'include_docs'
-                  ],
-    kz_datamgr:get_single_result(Db, ?CB_APPS_STORE_LIST, ViewOptions).
 
 view_app(AppJObj) ->
     M = maps:with([<<"name">>, <<"id">>, <<"phase">>, <<"i18n">>
@@ -1029,10 +1021,11 @@ view_app(AppJObj) ->
                       ,{<<"value">>, kz_json:from_map(M)}
                       ]).
 
+-spec print_app(kzd_app:doc()) -> 'no_return'.
 print_app(AppJObj) ->
-    ?SUP_LOG_INFO("App ~s\n", [kz_json:get_ne_value(<<"key">>, AppJObj)]),
+    ?SUP_LOG_INFO("App ~s\n", [kzd_app:name(AppJObj)]),
     _ = put('pp_lvl', 1),
-    _ = print_kvs(kz_json:get_json_value(<<"value">>, AppJObj)),
+    _ = print_kvs(kz_doc:public_fields(AppJObj)),
     ?SUP_LOG_INFO("\n"),
     'no_return'.
 

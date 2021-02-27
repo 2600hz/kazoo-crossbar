@@ -600,9 +600,10 @@ filter_messages([], _Filters, _Context, Selected, _) ->
     Selected;
 filter_messages([Mess|Messages], <<"all">> = Filter, Context, Selected, HasQSFilter) ->
     filter_messages(Messages, Filter, Context, [kzd_box_message:media_id(Mess)|Selected], HasQSFilter);
-filter_messages([Mess|Messages], <<_/binary>> = Filter, Context, Selected, HasQSFilter) when Filter =:= ?VM_FOLDER_NEW;
-                                                                                             Filter =:= ?VM_FOLDER_SAVED;
-                                                                                             Filter =:= ?VM_FOLDER_DELETED ->
+filter_messages([Mess|Messages], <<Filter/binary>>, Context, Selected, HasQSFilter)
+  when Filter =:= ?VM_FOLDER_NEW;
+       Filter =:= ?VM_FOLDER_SAVED;
+       Filter =:= ?VM_FOLDER_DELETED ->
     case (HasQSFilter
           andalso crossbar_filter:by_doc(Mess, Context, HasQSFilter)
          )
