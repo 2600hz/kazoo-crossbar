@@ -11098,6 +11098,20 @@
                     },
                     "type": "object"
                 },
+                "quantity": {
+                    "description": "A object that allows the automatic quantity selection to be overridden",
+                    "properties": {
+                        "category": {
+                            "description": "Overrides the automatic quantity category",
+                            "type": "string"
+                        },
+                        "name": {
+                            "description": "Overrides the automatic quantity name",
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                },
                 "rate": {
                     "default": 0.0,
                     "description": "Used if no flat_rates, flat_rate or rates apply, resulting charges is billable quantity multipled with rate",
