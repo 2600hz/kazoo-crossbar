@@ -393,11 +393,11 @@ stop_on_invalid_envelope(Req, Context) ->
 get_url_encoded_body(ReqBody) ->
     kz_json:from_list(cow_qs:parse_qs(ReqBody)).
 
--type cowboy_multipart_response() :: {'ok', cow_multipart:headers(), cowboy_req:req()} |
+-type cowboy_read_part_response() :: {'ok', cowboy:http_headers(), cowboy_req:req()} |
                                      {'done', cowboy_req:req()} |
                                      cowboy_req:req().
 
--spec extract_multipart(cb_context:context(), cowboy_multipart_response(), kz_json:object()) ->
+-spec extract_multipart(cb_context:context(), cowboy_read_part_response(), kz_json:object()) ->
           {cb_context:context(), cowboy_req:req()} |
           stop_return().
 extract_multipart(Context, {'done', Req}, _QS) ->
@@ -407,7 +407,7 @@ extract_multipart(Context0, {'ok', Headers, Req0}, QS) ->
     %% TODO: maybe check all files and req_data to see they reached to maximum upload size.
     case get_req_data(Context, Req0, maps:get(<<"content-type">>, Headers, 'undefined'), QS) of
         {Context1, Req1} ->
-            extract_multipart(Context1 ,cowboy_req:read_part(Req1), QS);
+            extract_multipart(Context1, cowboy_req:read_part(Req1), QS);
         {'stop', _, _}=Stop ->
             Stop
     end;
@@ -436,7 +436,7 @@ handle_file_contents(Context, ContentType, Req, FileContents) ->
     MultiPartHeaders = maps:merge(MultiPartHeaders0
                                  ,#{<<"content_type">> => ContentType
                                    ,<<"content_length">> =>
-                                   maps:get(<<"content-length">>, MultiPartHeaders0, cowboy_req:header(<<"content-length">>, Req))
+                                        maps:get(<<"content-length">>, MultiPartHeaders0, cowboy_req:header(<<"content-length">>, Req))
                                    }
                                  ),
     %% http://tools.ietf.org/html/rfc2045#page-17
@@ -458,7 +458,7 @@ handle_file_contents(Context, ContentType, Req, FileContents) ->
             {cb_context:add_req_file(Context, {Filename, FileJObj}), Req}
     end.
 
--spec uploaded_filename(cb_context:context(), kz_term:ne_binary(), cowboy_req:req(), cow_multipart:headers()) -> kz_term:ne_binary().
+-spec uploaded_filename(cb_context:context(), kz_term:ne_binary(), cowboy_req:req(), cowboy:headers()) -> kz_term:ne_binary().
 uploaded_filename(Context, ContentType, Req, MultiPartHeaders) ->
     case cb_context:req_value(Context, <<"filename">>) of
         'undefined' ->
@@ -522,12 +522,12 @@ decode_base64(Context, CT, Req, Base64Data) ->
     MultiPartHeaders = maps:merge(MultiPartHeaders0
                                  ,#{<<"content_type">> => CT
                                    ,<<"content_length">> =>
-                                   maps:get(<<"content-length">>, MultiPartHeaders0, cowboy_req:header(<<"content-length">>, Req))
+                                        maps:get(<<"content-length">>, MultiPartHeaders0, cowboy_req:header(<<"content-length">>, Req))
                                    }
                                  ),
     decode_base64(Context, CT, Req, Base64Data, MultiPartHeaders).
 
--spec decode_base64(cb_context:context(), kz_term:ne_binary(), cowboy_req:req(), binary(), cow_multipart:headers()) ->
+-spec decode_base64(cb_context:context(), kz_term:ne_binary(), cowboy_req:req(), binary(), cowboy:headers()) ->
           {cb_context:context(), cowboy_req:req()} |
           stop_return().
 decode_base64(Context, CT, Req, Base64Data, MultiPartHeaders) ->
