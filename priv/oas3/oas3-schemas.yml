@@ -8853,6 +8853,16 @@
           'description': Should this item be prorated during removals
           'type': boolean
       'type': object
+    'quantity':
+      'description': A object that allows the automatic quantity selection to be overridden
+      'properties':
+        'category':
+          'description': Overrides the automatic quantity category
+          'type': string
+        'name':
+          'description': Overrides the automatic quantity name
+          'type': string
+      'type': object
     'rate':
       'default': 0.0
       'description': |-
