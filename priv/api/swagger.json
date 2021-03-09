@@ -490,6 +490,24 @@
             },
             "type": "object"
         },
+        "account_config.stepswitch": {
+            "description": "Schema for stepswitch account_config",
+            "properties": {
+                "default_fail_on_single_reject": {
+                    "default": [
+                        "USER_BUSY",
+                        "CALL_REJECTED",
+                        "NO_ANSWER"
+                    ],
+                    "description": "stepswitch default_fail_on_single_reject",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
         "account_config.tasks.bill_early": {
             "description": "Schema for tasks.bill_early account_config",
             "properties": {
@@ -17715,6 +17733,18 @@
                 "default_emergency_cid_number": {
                     "description": "stepswitch default emergency cid number",
                     "type": "string"
+                },
+                "default_fail_on_single_reject": {
+                    "default": [
+                        "USER_BUSY",
+                        "CALL_REJECTED",
+                        "NO_ANSWER"
+                    ],
+                    "description": "stepswitch default_fail_on_single_reject",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
                 },
                 "default_formatters": {
                     "description": "stepswitch default formatters",
