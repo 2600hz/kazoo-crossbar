@@ -237,7 +237,7 @@ validate(Context, AuthToken) ->
 -spec put(cb_context:context()) -> cb_context:context().
 put(Context) ->
     _ = cb_context:put_reqid(Context),
-    crossbar_auth:create_auth_token(maybe_include_claims(Context), ?MODULE).
+    crossbar_auth:create_auth_token(Context, ?MODULE).
 
 -spec put(cb_context:context(), path_token()) -> cb_context:context().
 put(Context, ?RECOVERY) ->
@@ -268,33 +268,6 @@ post(Context, ?RECOVERY) ->
 %%%=============================================================================
 %%% Internal functions
 %%%=============================================================================
-
-%%------------------------------------------------------------------------------
-%% @doc add user defined claims to the token request
-%% @end
-%%------------------------------------------------------------------------------
--spec maybe_include_claims(cb_context:context()) -> cb_context:context().
-maybe_include_claims(Context) ->
-    case maybe_fetch_scopes(Context) of
-        'undefined' -> Context;
-        Scopes when is_list(Scopes) ->
-            DocWithClaims =
-                kz_json:set_value([<<"Claims">>, <<"scope">>]
-                                 ,kz_auth_scope:to_str(Scopes)
-                                 ,cb_context:doc(Context)
-                                 ),
-            cb_context:set_doc(Context, DocWithClaims)
-    end.
-
--spec maybe_fetch_scopes(cb_context:context()) -> kz_term:api_ne_binaries().
-maybe_fetch_scopes(Context) ->
-    AccountId = kz_json:get_ne_binary_value(<<"account_id">>, cb_context:doc(Context)),
-    OwnerId = kz_json:get_ne_binary_value(<<"owner_id">>, cb_context:doc(Context)),
-    case kzd_users:fetch(AccountId, OwnerId) of
-        {'ok', Doc} ->
-            kzd_users:scope_restrictions(Doc);
-        _Error -> 'undefined'
-    end.
 
 %%------------------------------------------------------------------------------
 %% @doc

@@ -201,6 +201,14 @@
             },
             "type": "object"
         },
+        "scopes": {
+            "default": [],
+            "description": " A list of API scopes to be added to all Auth tokens generate in this account",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
         "timezone": {
             "$ref": "timezone",
             "description": "The default account timezone",

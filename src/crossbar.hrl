@@ -250,7 +250,5 @@
                         ,{<<"usage_unit">>, <<"Usage Unit">>}
                         ]).
 
--define(CB_DEFAULT_SCOPES, [?APP_NAME]).
-
 -define(CROSSBAR_HRL, 'true').
 -endif.

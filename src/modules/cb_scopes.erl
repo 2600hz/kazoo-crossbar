@@ -24,7 +24,6 @@
 -define(SCOPES_KEY, <<"scopes">>).
 -define(SCHEMA, ?SCOPES_KEY).
 -define(PVT_TYPE, <<"scope">>).
--define(SCOPES_CAT, <<"system_auth">>).
 -define(SCOPES_LIST, <<"scopes/crossbar_listing">>).
 
 %%%=============================================================================
@@ -178,7 +177,7 @@ delete(Context, _) ->
 -spec set_to_system_auth_db(cb_context:context()) -> cb_context:context().
 set_to_system_auth_db(Context) ->
     cb_context:setters(Context
-                      ,[{fun cb_context:set_db_name/2, ?SCOPES_CAT}
+                      ,[{fun cb_context:set_db_name/2, ?KZ_AUTH_DB}
                        ,{fun cb_context:set_account_id/2, cb_context:auth_account_id(Context)}
                        ]).
 
@@ -193,7 +192,7 @@ scope_summary(Context) ->
 -spec scope_summary(cb_context:context(), path_token() | 'undefined') -> cb_context:context().
 scope_summary(Context, Scope) ->
     Options = props:filter_undefined(
-                [{'databases', [?SCOPES_CAT]}
+                [{'databases', [?KZ_AUTH_DB]}
                 ,{'key', Scope}
                 ,{'mapper', crossbar_view:get_doc_fun()}
                 ,'include_docs'

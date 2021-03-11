@@ -230,8 +230,9 @@
             },
             "type": "object"
         },
-        "scope_restrictions": {
-            "description": "Scope restrictions applied to this user",
+        "scopes": {
+            "default": [],
+            "description": " A list of API scopes applied to this user when generating authenticaing token",
             "items": {
                 "type": "string"
             },
