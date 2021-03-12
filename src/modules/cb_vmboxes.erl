@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc VMBoxes module
 %%% Handle client requests for vmbox documents
 %%%
@@ -33,7 +33,6 @@
 -include("crossbar.hrl").
 -include_lib("kazoo_documents/include/kazoo_documents.hrl").
 
--define(CB_LIST, <<"vmboxes/crossbar_listing">>).
 -define(MSG_LISTING_BY_MAILBOX, <<"mailbox_messages/listing_by_mailbox">>).
 
 -define(BOX_ID_KEY_INDEX, 2).
