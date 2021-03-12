@@ -498,7 +498,7 @@ load_users_summary(Context) ->
     Selector = [{'start', [{<<"doc_type">>, <<"user">>}]}
                ,{'end', [{<<"doc_type">>, <<"user">>}]}
                ],
-    crossbar_view:find(Context, <<"crossbar_listings/by_type_name">>, Selector, Options).
+    crossbar_view:find(Context, <<"crossbar_listings/by_type_id">>, Selector, Options).
 
 %%------------------------------------------------------------------------------
 %% @doc Load a user document from the database
