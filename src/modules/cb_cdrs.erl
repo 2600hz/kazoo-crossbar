@@ -453,8 +453,11 @@ do_normalize_cdr(<<"csv">>, JObj) ->
 
 -spec map_rows(cb_context:context(), kz_term:ne_binary(), kz_json:object()) -> kz_json:json_proplist().
 map_rows(Context, ContentType, JObj) ->
-    Duration = kzd_cdrs:duration_seconds(JObj, 0),
-    Timestamp = kzd_cdrs:timestamp(JObj, 0) - Duration,
+    %% Subtracting duration seconds from Timestamp is only required for cdrs with pvt_vsn < 3
+    Timestamp = maybe_subtract_duration(kzd_cdrs:timestamp(JObj, 0)
+                                       ,kzd_cdrs:duration_seconds(JObj, 0)
+                                       ,kz_term:to_integer(kz_doc:vsn(JObj, 0))
+                                       ),
 
     MappedRows = [{K, apply_row_mapper(K, F, JObj, Timestamp, Context)} || {K, F} <- csv_rows(Context)],
     case ContentType of
@@ -464,6 +467,12 @@ map_rows(Context, ContentType, JObj) ->
         _ ->
             MappedRows
     end.
+
+-spec maybe_subtract_duration(integer(), integer(), integer()) -> integer().
+maybe_subtract_duration(Timestamp, Duration, Vsn) when Vsn < 3 ->
+    Timestamp - Duration;
+maybe_subtract_duration(Timestamp, _Duration, _Vsn) ->
+    Timestamp.
 
 -spec apply_row_mapper(kz_term:ne_binary(), fun(), kz_json:object(), kz_time:gregorian_seconds(), cb_context:context()) -> binary().
 apply_row_mapper(<<"datetime">>, _F, JObj, Timestamp, Context) ->
