@@ -879,7 +879,8 @@ app_attachment_binary_meta(Context, AppId, AttachType) ->
             attachment_binary_meta(Context, AttachType, load_attachment_doc(Context, AppId, AttachType))
     end.
 
--spec load_attachment_doc(context:context(), kz_term:ne_binary(), attach_type()) -> cb_context:context().
+-spec load_attachment_doc(cb_context:context(), kz_term:ne_binary(), attach_type()) ->
+          cb_context:context().
 load_attachment_doc(Context, AppId, {<<"app">>, _}) ->
     get_app(Context, AppId);
 load_attachment_doc(Context, AppId, {?OVERRIDE, _}) ->
