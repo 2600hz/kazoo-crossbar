@@ -12,19 +12,20 @@
 
 -include("crossbar.hrl").
 -export([init/0
-        ,authorize/1
+        ,authorize/1, authorize/2
         ,allowed_methods/0, allowed_methods/1
         ,resource_exists/0, resource_exists/1
         ,validate/1, validate/2
         ,post/2
         ,put/1
         ,delete/2
+
+        ,maybe_deny_access/1
         ]).
 
 -define(SCOPES_KEY, <<"scopes">>).
 -define(SCHEMA, ?SCOPES_KEY).
 -define(PVT_TYPE, <<"scope">>).
--define(SCOPES_LIST, <<"scopes/crossbar_listing">>).
 
 %%%=============================================================================
 %%% API
@@ -36,6 +37,7 @@
 %%------------------------------------------------------------------------------
 -spec init() -> 'ok'.
 init() ->
+    _ = crossbar_bindings:bind(<<"*.authorize">>, ?MODULE, 'maybe_deny_access'),
     _ = crossbar_bindings:bind(<<"*.authorize.scopes">>, ?MODULE, 'authorize'),
     _ = crossbar_bindings:bind(<<"*.allowed_methods.scopes">>, ?MODULE, 'allowed_methods'),
     _ = crossbar_bindings:bind(<<"*.resource_exists.scopes">>, ?MODULE, 'resource_exists'),
@@ -51,13 +53,43 @@ init() ->
 %%------------------------------------------------------------------------------
 -spec authorize(cb_context:context()) -> boolean() | {'stop', cb_context:context()}.
 authorize(Context) ->
-    case cb_context:is_superduper_admin(Context)
-        andalso cb_context:req_nouns(Context) of
-        [{?SCOPES_KEY, _}] -> 'true';
+    maybe_authorize(Context, cb_context:req_nouns(Context), cb_context:req_verb(Context)).
+
+-spec authorize(cb_context:context(), path_token()) -> boolean() | {'stop', cb_context:context()}.
+authorize(Context, _) ->
+    maybe_authorize(Context, cb_context:req_nouns(Context), cb_context:req_verb(Context)).
+
+maybe_authorize(Context, [{?SCOPES_KEY, _}|_], Method)
+  when Method =:= ?HTTP_POST
+       orelse Method =:= ?HTTP_PUT
+       orelse Method =:= ?HTTP_DELETE ->
+    case cb_context:is_superduper_admin(Context) of
+        'true' -> 'true';
         'false' ->
-            {'stop', cb_context:add_system_error('forbidden', Context)};
-        _ ->
-            {'stop', cb_context:add_system_error('bad_identifier', Context)}
+            {'stop', cb_context:add_system_error('forbidden', Context)}
+    end;
+maybe_authorize(_, _, _) ->
+    'false'.
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec maybe_deny_access(cb_context:context()) -> boolean() | {'stop', cb_context:context()}.
+maybe_deny_access(Context) ->
+    Options = [{'transport', 'kz_auth_transport_http'}
+              ,{'http_path', cb_context:path_tokens(Context)}
+              ,{'http_method', cb_context:req_verb(Context)}
+              ],
+    AuthDoc = cb_context:auth_doc(Context),
+    case kz_auth_scope:maybe_deny_access(AuthDoc, Options) of
+        'false' -> 'false';
+        'true' ->
+            lager:info("denying access"),
+            Cause = kz_json:from_list(
+                      [{<<"cause">>, <<"access denied by scope restrictions">>}]
+                     ),
+            {'stop', cb_context:add_system_error('forbidden', Cause, Context)}
     end.
 
 %%------------------------------------------------------------------------------
@@ -99,11 +131,11 @@ resource_exists(_Scope) -> 'true'.
 %%------------------------------------------------------------------------------
 -spec validate(cb_context:context()) -> cb_context:context().
 validate(Context) ->
-    validate_scope(set_to_system_auth_db(Context), cb_context:req_verb(Context)).
+    validate_scope(set_db_name(Context), cb_context:req_verb(Context)).
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, Scope) ->
-    validate_scope(set_to_system_auth_db(Context), Scope, cb_context:req_verb(Context)).
+    validate_scope(set_db_name(Context), Scope, cb_context:req_verb(Context)).
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -121,9 +153,9 @@ validate_scope(Context, ?HTTP_PUT) ->
 %%------------------------------------------------------------------------------
 -spec validate_scope(cb_context:context(), path_token(), http_method()) -> cb_context:context().
 validate_scope(Context, Scope, ?HTTP_DELETE) ->
-    crossbar_doc:load(Scope, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE));
+    read(Context, Scope);
 validate_scope(Context, Scope, ?HTTP_GET) ->
-    scope_summary(Context, Scope);
+    read(Context, Scope);
 validate_scope(Context, Scope, ?HTTP_POST) ->
     validate_request(Context, Scope).
 
@@ -174,8 +206,16 @@ delete(Context, _) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec set_to_system_auth_db(cb_context:context()) -> cb_context:context().
-set_to_system_auth_db(Context) ->
+-spec read(cb_context:context(), path_token()) -> cb_context:context().
+read(Context, Scope) ->
+    crossbar_doc:load(Scope, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE)).
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec set_db_name(cb_context:context()) -> cb_context:context().
+set_db_name(Context) ->
     cb_context:setters(Context
                       ,[{fun cb_context:set_db_name/2, ?KZ_AUTH_DB}
                        ,{fun cb_context:set_account_id/2, cb_context:auth_account_id(Context)}
@@ -187,14 +227,9 @@ set_to_system_auth_db(Context) ->
 %%------------------------------------------------------------------------------
 -spec scope_summary(cb_context:context()) -> cb_context:context().
 scope_summary(Context) ->
-    scope_summary(Context, 'undefined').
-
--spec scope_summary(cb_context:context(), path_token() | 'undefined') -> cb_context:context().
-scope_summary(Context, Scope) ->
     Options = props:filter_undefined(
                 [{'databases', [?KZ_AUTH_DB]}
-                ,{'key', Scope}
                 ,{'mapper', crossbar_view:get_doc_fun()}
                 ,'include_docs'
                 ]),
-    crossbar_view:load(Context, ?SCOPES_LIST, Options).
+    crossbar_view:load(Context, <<"scopes/list_allowed_by_scope_id">>, Options).

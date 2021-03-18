@@ -12,6 +12,7 @@
 
 -include("crossbar.hrl").
 -export([init/0
+        ,authorize/1, authorize/2
         ,allowed_methods/0, allowed_methods/1
         ,resource_exists/0, resource_exists/1
         ,validate/1, validate/2
@@ -20,9 +21,11 @@
         ,delete/2
         ]).
 
+-define(SCOPE_RESTICTIONS_PATH, <<"scope_restictions">>).
+
 -define(PVT_TYPE, <<"scope_restriction">>).
--define(SCOPE_RESTRICTIONS_LIST, <<"scope_restrictions/crossbar_listing">>).
 -define(SCHEMA, <<"scope_restrictions">>).
+
 %%%=============================================================================
 %%% API
 %%%=============================================================================
@@ -34,11 +37,37 @@
 -spec init() -> 'ok'.
 init() ->
     _ = crossbar_bindings:bind(<<"*.allowed_methods.scope_restrictions">>, ?MODULE, 'allowed_methods'),
+    _ = crossbar_bindings:bind(<<"*.authorize.scope_restrictions">>, ?MODULE, 'authorize'),
     _ = crossbar_bindings:bind(<<"*.resource_exists.scope_restrictions">>, ?MODULE, 'resource_exists'),
     _ = crossbar_bindings:bind(<<"*.validate.scope_restrictions">>, ?MODULE, 'validate'),
     _ = crossbar_bindings:bind(<<"*.execute.put.scope_restrictions">>, ?MODULE, 'put'),
-    _ =  crossbar_bindings:bind(<<"*.execute.post.scope_restrictions">>, ?MODULE, 'post'),
+    _ = crossbar_bindings:bind(<<"*.execute.post.scope_restrictions">>, ?MODULE, 'post'),
     crossbar_bindings:bind(<<"*.execute.delete.scope_restrictions">>, ?MODULE, 'delete').
+
+%%------------------------------------------------------------------------------
+%% @doc Authorizes the incoming request, returning true if the requestor is
+%% allowed to access the resource, or false if not.
+%% @end
+%%------------------------------------------------------------------------------
+-spec authorize(cb_context:context()) -> boolean() | {'stop', cb_context:context()}.
+authorize(Context) ->
+    maybe_authorize(Context, cb_context:req_nouns(Context), cb_context:req_verb(Context)).
+
+-spec authorize(cb_context:context(), path_token()) -> boolean() | {'stop', cb_context:context()}.
+authorize(Context, _) ->
+    maybe_authorize(Context, cb_context:req_nouns(Context), cb_context:req_verb(Context)).
+
+maybe_authorize(Context, [{?SCOPE_RESTICTIONS_PATH, _}], Method)
+  when Method =:= ?HTTP_POST
+       orelse Method =:= ?HTTP_PUT
+       orelse Method =:= ?HTTP_DELETE ->
+    case cb_context:is_superduper_admin(Context) of
+        'true' -> 'true';
+        'false' ->
+            {'stop', cb_context:add_system_error('forbidden', Context)}
+    end;
+maybe_authorize(_, _, _) ->
+    'false'.
 
 %%------------------------------------------------------------------------------
 %% @doc Given the path tokens related to this module, what HTTP methods are
@@ -50,7 +79,7 @@ allowed_methods() ->
     [?HTTP_GET, ?HTTP_PUT].
 
 -spec allowed_methods(path_token()) -> http_methods().
-allowed_methods(_ScopeRestriction) ->
+allowed_methods(_Scope) ->
     [?HTTP_GET, ?HTTP_POST, ?HTTP_DELETE].
 
 %%------------------------------------------------------------------------------
@@ -68,7 +97,7 @@ allowed_methods(_ScopeRestriction) ->
 resource_exists() -> 'true'.
 
 -spec resource_exists(path_token()) -> 'true'.
-resource_exists(_ScopeRestriction) -> 'true'.
+resource_exists(_Scope) -> 'true'.
 
 %%------------------------------------------------------------------------------
 %% @doc Check the request (request body, query string params, path tokens, etc)
@@ -79,11 +108,11 @@ resource_exists(_ScopeRestriction) -> 'true'.
 %%------------------------------------------------------------------------------
 -spec validate(cb_context:context()) -> cb_context:context().
 validate(Context) ->
-    validate_scope_restriction(Context, cb_context:req_verb(Context)).
+    validate_scope_restriction(set_context_db(Context), cb_context:req_verb(Context)).
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
-validate(Context, ScopeRestriction) ->
-    validate_scope_restriction(Context, ScopeRestriction, cb_context:req_verb(Context)).
+validate(Context, Scope) ->
+    validate_scope_restriction(set_context_db(Context), Scope, cb_context:req_verb(Context)).
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -100,12 +129,12 @@ validate_scope_restriction(Context, ?HTTP_PUT) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec validate_scope_restriction(cb_context:context(), path_token(), http_method()) -> cb_context:context().
-validate_scope_restriction(Context, ScopeRestriction, ?HTTP_DELETE) ->
-    crossbar_doc:load(ScopeRestriction, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE));
-validate_scope_restriction(Context, ScopeRestriction, ?HTTP_GET) ->
-    scope_restriction_summary(Context, ScopeRestriction);
-validate_scope_restriction(Context, ScopeRestriction, ?HTTP_POST) ->
-    validate_request(Context, ScopeRestriction).
+validate_scope_restriction(Context, Scope, ?HTTP_DELETE) ->
+    read(Context, Scope);
+validate_scope_restriction(Context, Scope, ?HTTP_GET) ->
+    read(Context, Scope);
+validate_scope_restriction(Context, Scope, ?HTTP_POST) ->
+    validate_request(Context, Scope).
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -116,8 +145,8 @@ validate_request(Context) ->
     validate_request(Context, 'undefined').
 
 -spec validate_request(cb_context:context(), api_path_token()) -> cb_context:context().
-validate_request(Context, ScopeRestriction) ->
-    OnSuccess = fun(C) -> on_successful_validation(C, ScopeRestriction) end,
+validate_request(Context, Scope) ->
+    OnSuccess = fun(C) -> on_successful_validation(C, Scope) end,
     cb_context:validate_request_data(?SCHEMA, Context, OnSuccess).
 
 %%------------------------------------------------------------------------------
@@ -126,9 +155,15 @@ validate_request(Context, ScopeRestriction) ->
 %%------------------------------------------------------------------------------
 -spec on_successful_validation(cb_context:context(), api_path_token()) -> cb_context:context().
 on_successful_validation(Context, 'undefined') ->
-    cb_context:set_doc(Context, kz_doc:set_type(cb_context:doc(Context), ?PVT_TYPE));
-on_successful_validation(Context, ScopeRestriction) ->
-    crossbar_doc:load_merge(ScopeRestriction, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE)).
+    Doc = cb_context:doc(Context),
+    DocId = kz_auth_scope:restriction_doc_id(kzd_scope_restrictions:scope_name(Doc)),
+    Setters = [{fun kz_doc:set_id/2, DocId}
+              ,{fun kz_doc:set_type/2, ?PVT_TYPE}
+              ],
+    cb_context:set_doc(Context, kz_doc:setters(Doc, Setters));
+on_successful_validation(Context, Scope) ->
+    DocId = kz_auth_scope:restriction_doc_id(Scope),
+    crossbar_doc:load_merge(DocId, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE)).
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -151,18 +186,33 @@ delete(Context, _) ->
     crossbar_doc:delete(Context).
 
 %%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec read(cb_context:context(), path_token()) -> cb_context:context().
+read(Context, Scope) ->
+    DocId = kz_auth_scope:restriction_doc_id(Scope),
+    crossbar_doc:load(DocId, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE)).
+
+%%------------------------------------------------------------------------------
 %% @doc returns summary of scope restrictions
 %% @end
 %%------------------------------------------------------------------------------
 -spec scope_restriction_summary(cb_context:context()) -> cb_context:context().
 scope_restriction_summary(Context) ->
-    scope_restriction_summary(Context, 'undefined').
+    Options = [{'doc_type', ?PVT_TYPE}
+              ,{'mapper', crossbar_view:get_doc_fun()}
+              ,'include_docs'
+              ],
+    Selector = [{'start', [{<<"doc_type">>, ?PVT_TYPE}]}
+               ,{'end', [{<<"doc_type">>, ?PVT_TYPE}]}
+               ],
+    crossbar_view:find(Context, <<"crossbar_listings/by_type_id">>, Selector, Options).
 
--spec scope_restriction_summary(cb_context:context(), path_token() | 'undefined') -> cb_context:context().
-scope_restriction_summary(Context, ScopeRestriction) ->
-    Options = props:filter_undefined(
-                [{'key', ScopeRestriction}
-                ,{'mapper', crossbar_view:get_doc_fun()}
-                ,'include_docs'
-                ]),
-    crossbar_view:load(Context, ?SCOPE_RESTRICTIONS_LIST, Options).
+set_context_db(Context) ->
+    set_context_db(Context, cb_context:account_id(Context)).
+
+set_context_db(Context, 'undefined') ->
+    cb_context:set_db_name(Context, ?KZ_AUTH_DB);
+set_context_db(Context, AccountId) ->
+    cb_context:set_db_name(Context, AccountId).

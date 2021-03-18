@@ -3,8 +3,12 @@
     "_id": "scopes",
     "description": "Kazoo Auth Scope Definition",
     "properties": {
-        "id": {
-            "description": "Scope unique identifier",
+        "allow_api_request": {
+            "description": "Indicates this scope can be requested from API",
+            "type": "boolean"
+        },
+        "description": {
+            "description": "Scope description",
             "type": "string"
         },
         "scopes": {
@@ -16,5 +20,8 @@
             "type": "array"
         }
     },
+    "required": [
+        "allow_api_request"
+    ],
     "type": "object"
 }
