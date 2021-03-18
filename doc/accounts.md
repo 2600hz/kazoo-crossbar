@@ -57,6 +57,8 @@ Key | Description | Type | Default | Required | Support Level
 `ringtones.external` | The alert info SIP header added when the call is from internal sources | `string(0..256)` |   | `false` |  
 `ringtones.internal` | The alert info SIP header added when the call is from external sources | `string(0..256)` |   | `false` |  
 `ringtones` | Ringtone Parameters | `object()` | `{}` | `false` |  
+`scopes.[]` |   | `string()` |   | `false` |  
+`scopes` |  A list of API scopes to be added to all Auth tokens generate in this account | `array(string())` | `[]` | `false` |  
 `timezone` | The default account timezone | [#/definitions/timezone](#timezone) |   | `false` | `supported`
 `topup.amount` | Amount to topup with | `number()` |   | `false` |  
 `topup.threshold` | The account balance when topup occurs | `number()` |   | `false` |  

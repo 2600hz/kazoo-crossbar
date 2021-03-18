@@ -576,6 +576,13 @@
           'maxLength': 256
           'type': string
       'type': object
+    'scopes':
+      'default': []
+      'description': |2-
+         A list of API scopes to be added to all Auth tokens generate in this account
+      'items':
+        'type': string
+      'type': array
     'timezone':
       '$ref': '#/timezone'
       'description': The default account timezone
@@ -8312,57 +8319,53 @@
     - name
   'type': object
 'scope_restrictions':
-  'description': Crossbar Scope Restrictions  Definition
+  'description': Auth Scope Restrictions Definition
   'properties':
-    'id':
-      'description': Scope Restriction unique identifier
+    'description':
+      'description': Scope description
       'type': string
-    'scopes':
-      'default': []
-      'description': List of enforced scopes
-      'items':
-        'type': string
-      'type': array
-  'token_restrictions':
-    'description': Token Restrictions to enforce for these scopes
-    'patternProperties':
-      '^\w+$':
-        'items':
-          'description': |-
-            Endpoint (first path token) to which to apply restrictions. '_' matches any endpoint
-          'properties':
-            'allowed_accounts':
-              'description': Account allowed to match this item
+    'http':
+      'description': Token Restrictions to enforce for HTTP/HTTPS transport protocol
+      'properties':
+        'allow':
+          'type': object
+          'x-patternProperties':
+            '^(GET|PUT|POST|PATCH|DELETE|_)$':
+              'description': URL paths
               'items':
                 'type': string
               'type': array
-              'uniqueItems': true
-            'rules':
-              'description': Rules applied to endpoint parameters
-              'type': object
-              'x-patternProperties':
-                '^[\w/#*]+$':
-                  'description': verbs
-                  'items':
-                    'enum':
-                      - GET
-                      - PUT
-                      - POST
-                      - PATCH
-                      - DELETE
-                      - _
-                    'type': string
-                  'type': array
-                  'uniqueItems': true
+        'deny':
           'type': object
-        'type': array
-    'type': object
+          'x-patternProperties':
+            '^(GET|PUT|POST|PATCH|DELETE|_)$':
+              'description': URL paths
+              'items':
+                'type': string
+              'type': array
+      'type': object
+    'precedence':
+      'default': allow
+      'description': |-
+        If scope restriction request matches both allow and deny rules which one should take precedence
+      'enum':
+        - allow
+        - deny
+      'type': string
+    'scope_name':
+      'description': Name of scope this restriction is applying to
+      'type': string
+  'required':
+    - scope_name
   'type': object
 'scopes':
   'description': Kazoo Auth Scope Definition
   'properties':
-    'id':
-      'description': Scope unique identifier
+    'allow_api_request':
+      'description': Indicates this scope can be requested from API
+      'type': boolean
+    'description':
+      'description': Scope description
       'type': string
     'scopes':
       'default': []
@@ -8370,6 +8373,8 @@
       'items':
         'type': string
       'type': array
+  'required':
+    - allow_api_request
   'type': object
 'service_plan.item':
   'description': Describes a service plan item
@@ -15751,8 +15756,10 @@
           'maxLength': 256
           'type': string
       'type': object
-    'scope_restrictions':
-      'description': Scope restrictions applied to this user
+    'scopes':
+      'default': []
+      'description': |2-
+         A list of API scopes applied to this user when generating authenticaing token
       'items':
         'type': string
       'type': array

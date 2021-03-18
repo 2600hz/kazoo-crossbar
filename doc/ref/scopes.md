@@ -10,7 +10,8 @@ Kazoo Auth Scope Definition
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`id` | Scope unique identifier | `string()` |   | `false` |  
+`allow_api_request` | Indicates this scope can be requested from API | `boolean()` |   | `true` |  
+`description` | Scope description | `string()` |   | `false` |  
 `scopes.[]` |   | `string()` |   | `false` |  
 `scopes` | List of available subscopes | `array(string())` | `[]` | `false` |  
 

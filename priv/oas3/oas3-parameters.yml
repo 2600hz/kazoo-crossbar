@@ -562,13 +562,6 @@
   'required': true
   'schema':
     'type': string
-'SCOPE_RESTRICTION':
-  'description': request SCOPE_RESTRICTION parameter
-  'in': path
-  'name': SCOPE_RESTRICTION
-  'required': true
-  'schema':
-    'type': string
 'SELECTOR_NAME':
   'description': request SELECTOR_NAME parameter
   'in': path

@@ -39,9 +39,7 @@
             "type": "object"
         },
         "scopes": {
-            "default": [
-                "crossbar"
-            ],
+            "default": [],
             "description": "scopes provided by this authentication module",
             "items": {
                 "type": "string"

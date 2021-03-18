@@ -35,15 +35,22 @@ This
 
 #### Schema
 
-Crossbar Scope Restrictions  Definition
+Auth Scope Restrictions Definition
 
 
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`id` | Scope Restriction unique identifier | `string()` |   | `false` |  
-`scopes.[]` |   | `string()` |   | `false` |  
-`scopes` | List of enforced scopes | `array(string())` | `[]` | `false` |  
+`description` | Scope description | `string()` |   | `false` |  
+`http.allow./^(GET|PUT|POST|PATCH|DELETE|_)$/.[]` |   | `string()` |   | `false` |  
+`http.allow./^(GET|PUT|POST|PATCH|DELETE|_)$/` | URL paths | `array(string())` |   | `false` |  
+`http.allow` |   | `object()` |   | `false` |  
+`http.deny./^(GET|PUT|POST|PATCH|DELETE|_)$/.[]` |   | `string()` |   | `false` |  
+`http.deny./^(GET|PUT|POST|PATCH|DELETE|_)$/` | URL paths | `array(string())` |   | `false` |  
+`http.deny` |   | `object()` |   | `false` |  
+`http` | Token Restrictions to enforce for HTTP/HTTPS transport protocol | `object()` |   | `false` |  
+`precedence` | If scope restriction request matches both allow and deny rules which one should take precedence | `string('allow' | 'deny')` | `allow` | `false` |  
+`scope_name` | Name of scope this restriction is applying to | `string()` |   | `true` |  
 
 
 

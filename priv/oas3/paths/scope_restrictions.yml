@@ -27,13 +27,13 @@ paths:
       summary: Add an instance of scope_restrictions
       tags:
         - scope_restrictions
-  /accounts/{ACCOUNT_ID}/scope_restrictions/{SCOPE_RESTRICTION}:
+  /accounts/{ACCOUNT_ID}/scope_restrictions/{SCOPE}:
     delete:
-      operationId: DeleteAccountsAccountIdScopeRestrictionsScopeRestriction
+      operationId: DeleteAccountsAccountIdScopeRestrictionsScope
       parameters:
         - $ref: '../oas3-parameters.yml#/auth_token_header'
         - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
-        - $ref: '../oas3-parameters.yml#/SCOPE_RESTRICTION'
+        - $ref: '../oas3-parameters.yml#/SCOPE'
       responses:
         200:
           description: Successful operation
@@ -41,11 +41,11 @@ paths:
       tags:
         - scope_restrictions
     get:
-      operationId: GetAccountsAccountIdScopeRestrictionsScopeRestriction
+      operationId: GetAccountsAccountIdScopeRestrictionsScope
       parameters:
         - $ref: '../oas3-parameters.yml#/auth_token_header'
         - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
-        - $ref: '../oas3-parameters.yml#/SCOPE_RESTRICTION'
+        - $ref: '../oas3-parameters.yml#/SCOPE'
       responses:
         200:
           description: Successful operation
@@ -53,11 +53,11 @@ paths:
       tags:
         - scope_restrictions
     post:
-      operationId: PostAccountsAccountIdScopeRestrictionsScopeRestriction
+      operationId: PostAccountsAccountIdScopeRestrictionsScope
       parameters:
         - $ref: '../oas3-parameters.yml#/auth_token_header'
         - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
-        - $ref: '../oas3-parameters.yml#/SCOPE_RESTRICTION'
+        - $ref: '../oas3-parameters.yml#/SCOPE'
       requestBody:
         content:
           application/json:

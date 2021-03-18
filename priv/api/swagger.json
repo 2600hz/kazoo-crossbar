@@ -763,6 +763,14 @@
                     },
                     "type": "object"
                 },
+                "scopes": {
+                    "default": [],
+                    "description": " A list of API scopes to be added to all Auth tokens generate in this account",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
                 "timezone": {
                     "$ref": "#/definitions/timezone",
                     "description": "The default account timezone"
@@ -10584,32 +10592,52 @@
             "type": "object"
         },
         "scope_restrictions": {
-            "description": "Crossbar Scope Restrictions  Definition",
+            "description": "Auth Scope Restrictions Definition",
             "properties": {
-                "id": {
-                    "description": "Scope Restriction unique identifier",
+                "description": {
+                    "description": "Scope description",
                     "type": "string"
                 },
-                "scopes": {
-                    "default": [],
-                    "description": "List of enforced scopes",
-                    "items": {
-                        "type": "string"
+                "http": {
+                    "description": "Token Restrictions to enforce for HTTP/HTTPS transport protocol",
+                    "properties": {
+                        "allow": {
+                            "type": "object"
+                        },
+                        "deny": {
+                            "type": "object"
+                        }
                     },
-                    "type": "array"
+                    "type": "object"
+                },
+                "precedence": {
+                    "default": "allow",
+                    "description": "If scope restriction request matches both allow and deny rules which one should take precedence",
+                    "enum": [
+                        "allow",
+                        "deny"
+                    ],
+                    "type": "string"
+                },
+                "scope_name": {
+                    "description": "Name of scope this restriction is applying to",
+                    "type": "string"
                 }
             },
-            "token_restrictions": {
-                "description": "Token Restrictions to enforce for these scopes",
-                "type": "object"
-            },
+            "required": [
+                "scope_name"
+            ],
             "type": "object"
         },
         "scopes": {
             "description": "Kazoo Auth Scope Definition",
             "properties": {
-                "id": {
-                    "description": "Scope unique identifier",
+                "allow_api_request": {
+                    "description": "Indicates this scope can be requested from API",
+                    "type": "boolean"
+                },
+                "description": {
+                    "description": "Scope description",
                     "type": "string"
                 },
                 "scopes": {
@@ -10621,6 +10649,9 @@
                     "type": "array"
                 }
             },
+            "required": [
+                "allow_api_request"
+            ],
             "type": "object"
         },
         "service_plan.item": {
@@ -19853,8 +19884,9 @@
                     },
                     "type": "object"
                 },
-                "scope_restrictions": {
-                    "description": "Scope restrictions applied to this user",
+                "scopes": {
+                    "default": [],
+                    "description": " A list of API scopes applied to this user when generating authenticaing token",
                     "items": {
                         "type": "string"
                     },
@@ -21046,13 +21078,6 @@
             "description": "request SCOPE parameter",
             "in": "path",
             "name": "SCOPE",
-            "required": true,
-            "type": "string"
-        },
-        "SCOPE_RESTRICTION": {
-            "description": "request SCOPE_RESTRICTION parameter",
-            "in": "path",
-            "name": "SCOPE_RESTRICTION",
             "required": true,
             "type": "string"
         },
@@ -28183,7 +28208,7 @@
                 }
             }
         },
-        "/accounts/{ACCOUNT_ID}/scope_restrictions/{SCOPE_RESTRICTION}": {
+        "/accounts/{ACCOUNT_ID}/scope_restrictions/{SCOPE}": {
             "delete": {
                 "parameters": [
                     {
@@ -28193,7 +28218,7 @@
                         "$ref": "#/parameters/ACCOUNT_ID"
                     },
                     {
-                        "$ref": "#/parameters/SCOPE_RESTRICTION"
+                        "$ref": "#/parameters/SCOPE"
                     }
                 ],
                 "responses": {
@@ -28211,7 +28236,7 @@
                         "$ref": "#/parameters/ACCOUNT_ID"
                     },
                     {
-                        "$ref": "#/parameters/SCOPE_RESTRICTION"
+                        "$ref": "#/parameters/SCOPE"
                     }
                 ],
                 "responses": {
@@ -28237,7 +28262,7 @@
                         "$ref": "#/parameters/ACCOUNT_ID"
                     },
                     {
-                        "$ref": "#/parameters/SCOPE_RESTRICTION"
+                        "$ref": "#/parameters/SCOPE"
                     }
                 ],
                 "responses": {

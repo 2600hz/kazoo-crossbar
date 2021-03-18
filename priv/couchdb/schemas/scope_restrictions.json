@@ -19,7 +19,8 @@
                             },
                             "type": "array"
                         }
-                    }
+                    },
+                    "type": "object"
                 },
                 "deny": {
                     "patternProperties": {
@@ -30,9 +31,11 @@
                             },
                             "type": "array"
                         }
-                    }
+                    },
+                    "type": "object"
                 }
-            }
+            },
+            "type": "object"
         },
         "precedence": {
             "default": "allow",

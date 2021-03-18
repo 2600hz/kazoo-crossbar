@@ -491,9 +491,9 @@
   '/accounts/{ACCOUNT_ID}/scope_restrictions':
     '$ref': >-
       paths/scope_restrictions.yml#/paths/~1accounts~1{ACCOUNT_ID}~1scope_restrictions
-  '/accounts/{ACCOUNT_ID}/scope_restrictions/{SCOPE_RESTRICTION}':
+  '/accounts/{ACCOUNT_ID}/scope_restrictions/{SCOPE}':
     '$ref': >-
-      paths/scope_restrictions.yml#/paths/~1accounts~1{ACCOUNT_ID}~1scope_restrictions~1{SCOPE_RESTRICTION}
+      paths/scope_restrictions.yml#/paths/~1accounts~1{ACCOUNT_ID}~1scope_restrictions~1{SCOPE}
   '/accounts/{ACCOUNT_ID}/search':
     '$ref': 'paths/search.yml#/paths/~1accounts~1{ACCOUNT_ID}~1search'
   '/accounts/{ACCOUNT_ID}/search/multi':

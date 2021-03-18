@@ -414,7 +414,7 @@ maybe_add_metadata(ContextDoc, Doc) ->
 auth_module_scopes(AuthModule) when is_atom(AuthModule) ->
     auth_module_scopes(kz_term:to_binary(AuthModule));
 auth_module_scopes(AuthModule) ->
-    kapps_config:get_ne_binaries(?AUTH_CONFIG_CAT, ?AUTH_MODULE_SCOPES_KEY(AuthModule), [?APP_NAME], <<"default">>).
+    kapps_config:get_ne_binaries(?AUTH_CONFIG_CAT, ?AUTH_MODULE_SCOPES_KEY(AuthModule), ?CB_DEFAULT_SCOPES).
 
 %%------------------------------------------------------------------------------
 %% @doc
