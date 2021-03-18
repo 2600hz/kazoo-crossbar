@@ -13,7 +13,6 @@
 -module(cb_user_auth).
 
 -export([init/0
-        ,available_scopes/0
         ,allowed_methods/0, allowed_methods/1
         ,resource_exists/0, resource_exists/1
         ,authorize/1, authorize/2
@@ -60,14 +59,6 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.execute.put.user_auth">>, ?MODULE, 'put'),
     _ = crossbar_bindings:bind(<<"*.execute.post.user_auth">>, ?MODULE, 'post'),
     'ok'.
-
-%%------------------------------------------------------------------------------
-%% @doc emit valid available scopes for this module
-%% @end
-%%------------------------------------------------------------------------------
--spec available_scopes() -> kz_term:ne_binaries().
-available_scopes() ->
-    kz_auth_scope:available_scopes(?APP).
 
 %%------------------------------------------------------------------------------
 %% @doc This function determines the verbs that are appropriate for the

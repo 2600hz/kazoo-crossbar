@@ -27,7 +27,6 @@
 -define(SYS_ADMIN_MODS, [<<"acls">>
                         ,<<"rates">>
                         ,<<"sup">>
-                        ,<<"scopes">>
                         ]).
 
 %% Endpoints performing their own auth
