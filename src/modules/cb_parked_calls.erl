@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%%
 %%% @author Roman Galeev
 %%%
@@ -39,16 +39,19 @@ resource_exists() -> 'true'.
 
 -spec validate(cb_context:context()) -> cb_context:context().
 validate(Context) ->
-    Options = [{'mapper', fun normalize_view_results/2}
-              ,{'doc_type', ?PARKED_CALL_DOC_TYPE}
-              ,{'field_key', 'filtermap'}
-              ,'include_docs'
-              ],
+    Options = parked_options(),
     Context1 = crossbar_view:load(Context, ?PARKED_CALLS_VIEW, Options),
     case cb_context:resp_status(Context) of
         'success' -> cb_context:set_resp_data(Context1, build_slots(cb_context:doc(Context1)));
         _ -> Context1
     end.
+
+parked_options() ->
+    [{'mapper', fun normalize_view_results/2}
+    ,{'doc_type', ?PARKED_CALL_DOC_TYPE}
+    ,{'field_key', 'filtermap'}
+    ,'include_docs'
+    ].
 
 -spec build_slots(kz_json:objects()) -> kz_json:object().
 build_slots([]) ->

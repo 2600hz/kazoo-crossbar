@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Handle CRUD operations for functions
 %%% @author Ming Luo
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -286,16 +286,19 @@ delete_account(Account) ->
 -spec summary_available(cb_context:context()) ->
           cb_context:context().
 summary_available(Context) ->
-    Options = [{'mapper', fun normalize_available/2}
-              ,{'databases', [kzs_util:format_account_id(
-                                cb_context:master_account_id(Context)
-                               )
-                             ]
-               }
-              ,{'field_key', 'filtermap'}
-              ,'include_docs'
-              ],
+    Options = available_options(Context),
     crossbar_view:load(Context, ?AVAILABLE_FUNCTIONS, Options).
+
+available_options(Context) ->
+    [{'mapper', fun normalize_available/2}
+    ,{'databases', [kzs_util:format_account_id(
+                      cb_context:master_account_id(Context)
+                     )
+                   ]
+     }
+    ,{'field_key', 'filtermap'}
+    ,'include_docs'
+    ].
 
 -spec normalize_available(kz_json:object(), kz_json:objects()) ->
           kz_json:objects().

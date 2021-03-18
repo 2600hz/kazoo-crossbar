@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Crossbar API for pivot.
 %%% @author James Aimonetti
 %%%
@@ -121,14 +121,8 @@ limit_by_page_size(Context) ->
 %%------------------------------------------------------------------------------
 -spec debug_read(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 debug_read(Context, ?MATCH_MODB_PREFIX(Year, Month, CallId)) ->
-    AccountModb = kazoo_modb:get_modb(cb_context:account_id(Context), Year, Month),
-    Options = [{'databases', [AccountModb]}
-              ,{'endkey', [CallId, kz_json:new()]}
-              ,{'mapper', fun normalize_debug_read/2}
-              ,{'startkey', [CallId]}
-              ,{'field_key', 'filtermap'}
-              ,'include_docs'
-              ],
+    AccountMODB = kazoo_modb:get_modb(cb_context:account_id(Context), Year, Month),
+    Options = debug_read_modb_options(AccountMODB, CallId),
     Context1 = crossbar_view:load(Context, ?CB_DEBUG_LIST, Options),
     case cb_context:resp_status(Context1) of
         'success' ->
@@ -137,13 +131,25 @@ debug_read(Context, ?MATCH_MODB_PREFIX(Year, Month, CallId)) ->
         _Status -> Context1
     end;
 debug_read(Context, CallId) ->
-    ViewOptions = [{'mapper', fun normalize_debug_read/2}
-                  ,{'range_keymap', CallId}
-                  ,{'unchunkable', 'true'}
-                  ,{'field_key', 'filtermap'}
-                  ,'include_docs'
-                  ],
+    ViewOptions = debug_read_callid_options(CallId),
     crossbar_view:load_modb(Context, ?CB_DEBUG_LIST, ViewOptions).
+
+debug_read_modb_options(AccountMODB, CallId) ->
+    [{'databases', [AccountMODB]}
+    ,{'endkey', [CallId, kz_json:new()]}
+    ,{'mapper', fun normalize_debug_read/2}
+    ,{'startkey', [CallId]}
+    ,{'field_key', 'filtermap'}
+    ,'include_docs'
+    ].
+
+debug_read_callid_options(CallId) ->
+    [{'mapper', fun normalize_debug_read/2}
+    ,{'range_keymap', CallId}
+    ,{'unchunkable', 'true'}
+    ,{'field_key', 'filtermap'}
+    ,'include_docs'
+    ].
 
 %%------------------------------------------------------------------------------
 %% @doc

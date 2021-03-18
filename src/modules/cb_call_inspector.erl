@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -97,13 +97,16 @@ load_chunk_view(Context, ViewName, Options0) ->
                          ,'is_reseller'
                          ,kz_services_reseller:is_reseller(AuthAccountId)
                          ),
-    Options = [{'is_chunked', 'true'}
-              ,{'batch_size', ?MAX_BULK}
-              ,{'mapper', fun(JObjs) -> cdrs_listing_mapper(Context, JObjs) end}
-              ,'include_docs'
-              | Options0
-              ],
+    Options = load_chunk_options(Context, Options0),
     crossbar_view:load_modb(cb_cdrs:fix_qs_filter_keys(C1), ViewName, Options).
+
+load_chunk_options(Context, Options) ->
+    [{'is_chunked', 'true'}
+    ,{'batch_size', ?MAX_BULK}
+    ,{'mapper', fun(JObjs) -> cdrs_listing_mapper(Context, JObjs) end}
+    ,'include_docs'
+    | Options
+    ].
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, CallId) ->

@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2020, 2600Hz
+%%% @copyright (C) 2012-2021, 2600Hz
 %%% @doc Provides access to stored call recordings.
 %%%
 %%% @author OnNet (Kirill Sysoev [github.com/onnet])
@@ -127,13 +127,16 @@ delete(Context, _RecordingId) ->
 recording_summary(Context) ->
     UserId = cb_context:user_id(Context),
     ViewName = get_view_name(UserId),
-    Options = [{'mapper', fun summary_doc_fun/2}
-              ,{'range_start_keymap', [UserId]}
-              ,{'range_end_keymap', fun(Ts) -> build_end_key(Ts, UserId) end}
-              ,{'field_key', 'filtermap'}
-              ,'include_docs'
-              ],
+    Options = summary_options(UserId),
     crossbar_view:load_modb(Context, ViewName, Options).
+
+summary_options(UserId) ->
+    [{'mapper', fun summary_doc_fun/2}
+    ,{'range_start_keymap', [UserId]}
+    ,{'range_end_keymap', fun(Ts) -> build_end_key(Ts, UserId) end}
+    ,{'field_key', 'filtermap'}
+    ,'include_docs'
+    ].
 
 -spec summary_doc_fun(kz_json:object(), kz_json:objects()) -> kz_json:objects().
 summary_doc_fun(View, Acc) ->

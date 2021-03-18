@@ -514,12 +514,12 @@ lookup(Host, DomainType, Options) ->
     lager:debug("lookup of ~s(~s): ~p", [Host, Type, Lookup]),
     format_lookup_results(Type, Lookup).
 
--spec format_lookup_results(atom(), [inet_res:dns_data()]) ->
+-spec format_lookup_results(atom(), [kz_network_utils:dns_data()]) ->
           kz_term:ne_binaries().
 format_lookup_results(Type, Lookup) ->
     [format_lookup_result(Type, Result) || Result <- Lookup].
 
--spec format_lookup_result(atom(), inet_res:dns_data()) -> kz_term:ne_binary().
+-spec format_lookup_result(atom(), kz_network_utils:dns_data()) -> kz_term:ne_binary().
 format_lookup_result('naptr', {_, _, _, _, _, _}=NAPTR) ->
     kz_network_utils:naptrtuple_to_binary(NAPTR);
 format_lookup_result('srv', {_, _, _, _}=Srv) ->

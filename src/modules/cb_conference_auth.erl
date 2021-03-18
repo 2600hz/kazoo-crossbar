@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Conference auth module.
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -288,10 +288,7 @@ maybe_account_is_expired(Context) ->
 -spec find_conferences_by_name(cb_context:context()) -> kz_either:either(cb_context:context(), cb_context:context()).
 find_conferences_by_name(Context) ->
     Name = kzd_conference_auth:conference_name(cb_context:req_data(Context)),
-    Options = [{'doc_type', <<"conference">>}
-              ,{'filtermap', crossbar_view:get_doc_fun()}
-              ,'include_docs'
-              ],
+    Options = by_name_options(),
     Selector = [{'key', [{<<"doc_type">>, <<"conference">>}, {<<"name">>, Name}]}],
     case kz_view:find(cb_context:db_name(Context), <<"crossbar_listings/by_type_name">>, Selector, Options) of
         {'ok', []} ->
@@ -304,6 +301,12 @@ find_conferences_by_name(Context) ->
             lager:debug("failed to query for conference name ~p", [Reason]),
             {'ok', cb_context:add_system_error('bad_identifier', Name,  Context)}
     end.
+
+by_name_options() ->
+    [{'doc_type', <<"conference">>}
+    ,{'filtermap', crossbar_view:get_doc_fun()}
+    ,'include_docs'
+    ].
 
 %%------------------------------------------------------------------------------
 %% @doc
