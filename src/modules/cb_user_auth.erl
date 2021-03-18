@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc User auth module
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -205,6 +205,7 @@ validate_action(Context, ?SWITCH_USER) ->
               ),
     Setters = [{fun cb_context:set_resp_status/2, 'success'}
               ,{fun cb_context:store/3, 'auth_type', ?SWITCH_USER}
+              ,{fun cb_context:store/3, 'bypass_multi_factor', 'true'}
               ,{fun cb_context:set_doc/2, Claims}
               ],
     Context1 = cb_context:setters(Context, Setters),
@@ -254,8 +255,11 @@ post(Context, ?RECOVERY) ->
                   [{<<"account_id">>, cb_context:account_id(Context)}
                   ,{<<"owner_id">>, kz_doc:id(NewDoc)}
                   ]),
-            Context1 = cb_context:set_doc(crossbar_doc:handle_datamgr_success(NewDoc, Context), DocForCreation),
-            crossbar_auth:create_auth_token(Context1, ?MODULE);
+            Context1 = crossbar_doc:handle_datamgr_success(NewDoc, Context),
+            Setters = [{fun cb_context:set_doc/2, cb_context:set_doc(Context1, DocForCreation)}
+                      ,{fun cb_context:store/3, 'bypass_multi_factor', 'true'}
+                      ],
+            crossbar_auth:create_auth_token(cb_context:setters(Context1, Setters), ?MODULE);
         {'error', Reason} ->
             lager:debug("failed to update user doc: ~p", [Reason]),
             crossbar_doc:handle_datamgr_errors(Reason, kz_doc:id(UserDoc), Context)
