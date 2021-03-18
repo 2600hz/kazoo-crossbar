@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2020, 2600Hz
+%%% @copyright (C) 2010-2021, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -85,7 +85,7 @@ create_auth_token(Context, Method, JObj) ->
                | kz_json:to_proplist(kz_json:get_value(<<"Claims">>, JObj, kz_json:new()))
                ]),
 
-    IsMultiFactor = is_multi_factor_enabled(Claims, AuthConfig),
+    IsMultiFactor = is_multi_factor_enabled(Context, Claims, AuthConfig),
 
     case is_auth_module_enabled(Method, AuthConfig)
         andalso maybe_create_token(Context, Claims, AuthConfig, Method, IsMultiFactor)
@@ -257,8 +257,21 @@ is_auth_module_enabled(Method, Config) ->
 %% @doc Checks if authenticator module is configured to do multi factor auth.
 %% @end
 %%------------------------------------------------------------------------------
--spec is_multi_factor_enabled(kz_term:proplist(), kz_json:object()) -> boolean().
-is_multi_factor_enabled(Claims, AuthConfig) ->
+-spec is_multi_factor_enabled(cb_context:context(),kz_term:proplist(), kz_json:object()) -> boolean().
+is_multi_factor_enabled(Context, Claims, AuthConfig) ->
+    is_multi_factor_enabled(Context
+                           ,kz_term:is_true(cb_context:fetch(Context, 'bypass_multi_factor', 'false'))
+                           ,Claims
+                           ,AuthConfig
+                           ).
+
+-spec is_multi_factor_enabled(cb_context:context(), boolean(),kz_term:proplist(), kz_json:object()) -> boolean().
+is_multi_factor_enabled(Context, 'true', Claims, _AuthConfig) ->
+    Method = props:get_ne_binary_value(<<"method">>, Claims),
+    AuthType = cb_context:fetch(Context, 'auth_type', Method),
+    lager:info("auth module ~s with auth type ~s is bypassing multi factor authentication", [Method, AuthType]),
+    'false';
+is_multi_factor_enabled(_, 'false', Claims, AuthConfig) ->
     MasterId = master_account_id(),
     Method = props:get_ne_binary_value(<<"method">>, Claims),
     ClaimAccountId = props:get_ne_binary_value(<<"account_id">>, Claims),
