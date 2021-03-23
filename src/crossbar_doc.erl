@@ -49,8 +49,10 @@
                   ,fun add_pvt_alphanum_name/3
                   ]).
 
+-type doc_normalizer_fun() :: fun((kz_json:object()) -> kz_json:object()).
 -type load_option() :: {?OPTION_EXPECTED_TYPE, kz_term:ne_binary()} |
-                       {'use_cache', boolean()}.
+                       {'use_cache', boolean()} |
+                       {'doc_normalizer', doc_normalizer_fun()}.
 -type load_options() :: kazoo_data:view_options() |
                         [load_option()].
 
@@ -98,7 +100,9 @@ load(DocId, Context, Options, _RespStatus) when is_binary(DocId) ->
             handle_datamgr_errors(Error, DocId, Context);
         {'ok', JObj} ->
             case check_document_type(Context, JObj, Options) of
-                'true' -> handle_successful_load(Context, JObj, Options);
+                'true' ->
+                    JObj1 = maybe_normalize_doc(JObj, props:get_value('doc_normalizer', Options)),
+                    handle_successful_load(Context, JObj1, Options);
                 'false' ->
                     ErrorCause = kz_json:from_list([{<<"cause">>, DocId}]),
                     cb_context:add_system_error('bad_identifier', ErrorCause, Context)
@@ -138,6 +142,11 @@ maybe_open_cache_docs(DbName, DocIds, Options) ->
         'true' -> kz_datamgr:open_cache_docs(DbName, DocIds, Options);
         'false' -> kz_datamgr:open_docs(DbName, DocIds, Options)
     end.
+
+-spec maybe_normalize_doc(kz_json:object(), doc_normalizer_fun()) ->
+          kz_json:object().
+maybe_normalize_doc(JObj, 'undefined') -> JObj;
+maybe_normalize_doc(JObj, Fun) -> Fun(JObj).
 
 %%------------------------------------------------------------------------------
 %% @doc Returns `true' or `false' if the requested document type is matched
