@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2020, 2600Hz
+%%% @copyright (C) 2012-2021, 2600Hz
 %%% @doc Fax Box API
 %%% @author Luis Azedo
 %%%
@@ -119,7 +119,7 @@ validate_faxbox(Context, Id, ?HTTP_GET) ->
 validate_faxbox(Context, Id, ?HTTP_POST) ->
     validate_email_address(update_faxbox(Id, remove_private_fields(Context)));
 validate_faxbox(Context, Id, ?HTTP_PATCH) ->
-    validate_patch(update_faxbox(Id, remove_private_fields(Context)));
+    validate_patch(crossbar_doc:patch_and_validate(Id, remove_private_fields(Context), fun update_faxbox/2));
 validate_faxbox(Context, Id, ?HTTP_DELETE) ->
     delete_faxbox(Id, Context).
 
@@ -231,7 +231,20 @@ delete_faxbox(Id, Context) ->
 %%------------------------------------------------------------------------------
 -spec read(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
 read(Id, Context) ->
-    crossbar_doc:load(Id, Context, ?TYPE_CHECK_OPTION(kzd_fax_box:type())).
+    read(Id, Context, cb_context:req_verb(Context)).
+
+-spec read(kz_term:ne_binary(), cb_context:context(), http_method()) -> cb_context:context().
+read(Id, Context, ?HTTP_DELETE) ->
+    do_read(Id, Context, ?TYPE_CHECK_OPTION(kzd_fax_box:type()));
+read(Id, Context, _) ->
+    Options = [{'normalize_doc', fun leak_private_fields/1}
+              | ?TYPE_CHECK_OPTION(kzd_fax_box:type())
+              ],
+    do_read(Id, Context, Options).
+
+-spec do_read(kz_term:ne_binary(), cb_context:context(), crossbar_doc:load_options()) -> cb_context:context().
+do_read(Id, Context, Options) ->
+    crossbar_doc:load(Id, Context, Options).
 
 -spec leak_private_fields(kz_json:object()) -> kz_json:object().
 leak_private_fields(JObj) ->
@@ -249,22 +262,13 @@ leak_private_field(_K, Acc) -> Acc.
 -spec leak_private_field_value(kz_term:ne_binary(), kz_term:ne_binary(), kz_json:json_term(), kz_json:object()) ->
           kz_json:object().
 leak_private_field_value(_K, K1, V, Acc) ->
-    kz_json:set_value(K1, V, Acc).
+    kz_json:set_value([<<"_read_only">>, K1], V, Acc).
 
 -spec remove_private_fields(cb_context:context()) -> cb_context:context().
 remove_private_fields(Context) ->
-    JObj1 = lists:foldl(fun remove_private_fields_fold/2
-                       ,cb_context:req_data(Context)
-                       ,?LEAKED_FIELDS
-                       ),
-    cb_context:set_req_data(Context, JObj1).
-
--spec remove_private_fields_fold(kz_term:ne_binary(), kz_json:object()) -> kz_json:object().
-remove_private_fields_fold(<<"pvt_", K1/binary>>, Acc) ->
-    case kz_json:get_value(K1, Acc) of
-        'undefined' -> Acc;
-        _Value -> kz_json:delete_key(K1, Acc)
-    end.
+    cb_context:set_req_data(Context
+                           ,kz_json:delete_key(<<"_read_only">>, cb_context:req_data(Context))
+                           ).
 
 %%------------------------------------------------------------------------------
 %% @doc Update an existing instance with the data provided, if it is
