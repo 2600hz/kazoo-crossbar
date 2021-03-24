@@ -26,10 +26,9 @@
 
 -define(DEFAULT_FAX_SMTP_DOMAIN, <<"fax.kazoo.io">>).
 
--define(SMTP_EMAIL_FIELD, <<"pvt_smtp_email_address">>).
+-define(SMTP_EMAIL_FIELD, {<<"pvt_smtp_email_address">>, <<"custom_smtp_address">>}).
 
--define(LEAKED_FIELDS, [?SMTP_EMAIL_FIELD
-                       ]).
+-define(LEAKED_FIELDS, [?SMTP_EMAIL_FIELD]).
 
 %%%=============================================================================
 %%% API
@@ -106,7 +105,7 @@ validate(Context) ->
     validate_faxboxes(Context, cb_context:req_verb(Context)).
 
 validate_faxboxes(Context, ?HTTP_PUT) ->
-    validate_email_address(create_faxbox(remove_private_fields(Context)));
+    validate_email_address(create_faxbox(Context));
 validate_faxboxes(Context, ?HTTP_GET) ->
     faxbox_listing(Context).
 
@@ -117,21 +116,25 @@ validate(Context, Id) ->
 validate_faxbox(Context, Id, ?HTTP_GET) ->
     read(Id, Context);
 validate_faxbox(Context, Id, ?HTTP_POST) ->
-    validate_email_address(update_faxbox(Id, remove_private_fields(Context)));
+    validate_email_address(update_faxbox(Id, Context));
 validate_faxbox(Context, Id, ?HTTP_PATCH) ->
-    validate_patch(crossbar_doc:patch_and_validate(Id, remove_private_fields(Context), fun update_faxbox/2));
+    validate_patch(crossbar_doc:patch_and_validate(Id, Context, fun update_faxbox/2));
 validate_faxbox(Context, Id, ?HTTP_DELETE) ->
     delete_faxbox(Id, Context).
 
 -spec validate_email_address(cb_context:context()) -> cb_context:context().
 validate_email_address(Context) ->
-    Email = kz_json:get_value(<<"custom_smtp_email_address">>, cb_context:doc(Context)),
-    IsValid =
-        case Email of
-            'undefined' -> 'true';
-            Email -> is_faxbox_email_global_unique(Email, kz_doc:id(cb_context:doc(Context)))
-        end,
-    case IsValid of
+    ReqDoc = cb_context:doc(Context),
+    validate_email_address(Context
+                          ,ReqDoc
+                          ,kzd_faxbox:custom_smtp_email_address(ReqDoc)
+                          ).
+
+-spec validate_email_address(cb_context:context(), kz_json:object(), kz_term:api_ne_binary()) ->
+          cb_context:context().
+validate_email_address(Context, _ReqDoc, 'undefined') -> Context;
+validate_email_address(Context, ReqDoc, Email) ->
+    case is_faxbox_email_global_unique(Email, kz_doc:id(ReqDoc)) of
         'true' -> Context;
         'false' ->
             cb_context:add_validation_error(<<"custom_smtp_email_address">>
@@ -230,7 +233,7 @@ read(Id, Context) ->
 read(Id, Context, ?HTTP_DELETE) ->
     do_read(Id, Context, ?TYPE_CHECK_OPTION(kzd_fax_box:type()));
 read(Id, Context, _) ->
-    Options = [{'normalize_doc', fun leak_private_fields/1}
+    Options = [{'doc_normalizer', fun leak_private_fields/1}
               | ?TYPE_CHECK_OPTION(kzd_fax_box:type())
               ],
     do_read(Id, Context, Options).
@@ -244,11 +247,21 @@ leak_private_fields(JObj) ->
     J = kz_json:set_value(<<"id">>, kz_doc:id(JObj), JObj),
     lists:foldl(fun leak_private_field/2, J, ?LEAKED_FIELDS).
 
+leak_private_fields(Context, ReqData) ->
+    DbDoc = cb_context:doc(Context),
+    WithReadOnly = leak_private_fields(DbDoc),
+    kz_json:set_value(<<"_read_only">>, kz_json:get_value(<<"_read_only">>, WithReadOnly), ReqData).
+
 -spec leak_private_field(kz_term:ne_binary(), kz_json:object()) -> kz_json:object().
 leak_private_field(<<"pvt_", K1/binary>> = K, Acc) ->
     case kz_json:get_value(K, Acc) of
         'undefined' -> Acc;
         Value -> leak_private_field_value(K, K1, Value, Acc)
+    end;
+leak_private_field({<<PvtFieldName/binary>>, <<PublicFieldName/binary>>}, Acc) ->
+    case kz_json:get_value(PvtFieldName, Acc) of
+        'undefined' -> Acc;
+        Value -> leak_private_field_value(PvtFieldName, PublicFieldName, Value, Acc)
     end;
 leak_private_field(_K, Acc) -> Acc.
 
@@ -256,12 +269,6 @@ leak_private_field(_K, Acc) -> Acc.
           kz_json:object().
 leak_private_field_value(_K, K1, V, Acc) ->
     kz_json:set_value([<<"_read_only">>, K1], V, Acc).
-
--spec remove_private_fields(cb_context:context()) -> cb_context:context().
-remove_private_fields(Context) ->
-    cb_context:set_req_data(Context
-                           ,kz_json:delete_key(<<"_read_only">>, cb_context:req_data(Context))
-                           ).
 
 %%------------------------------------------------------------------------------
 %% @doc Update an existing instance with the data provided, if it is
@@ -327,7 +334,7 @@ faxbox_listing_options() ->
 
 -spec normalize_view_results(kz_json:object(), kz_json:objects()) -> kz_json:objects().
 normalize_view_results(JObj, Acc) ->
-    [leak_private_fields(kz_json:get_value(<<"doc">>, JObj)) | Acc].
+    [leak_private_fields(kz_json:get_json_value(<<"doc">>, JObj)) | Acc].
 
 -spec is_faxbox_email_global_unique(kz_term:ne_binary(), kz_term:ne_binary()) -> boolean().
 is_faxbox_email_global_unique(Email, FaxBoxId) ->
@@ -341,20 +348,20 @@ is_faxbox_email_global_unique(Email, FaxBoxId) ->
 
 -spec save_faxbox_doc(cb_context:context(), 'create' | 'update') -> cb_context:context().
 save_faxbox_doc(Context0, Action) ->
-    Context1 = save_faxbox_in_account_db(Context0),
-    case cb_context:resp_status(Context1) of
+    ContextAccount = save_faxbox_in_account_db(Context0),
+    case cb_context:resp_status(ContextAccount) of
         'success' ->
-            Context2 = save_doc_to_faxdb(Context1, Action),
-            case cb_context:resp_status(Context2) of
+            ContextFaxDb = save_doc_to_faxdb(ContextAccount, Action),
+            case cb_context:resp_status(ContextFaxDb) of
                 'success' ->
-                    RespData = kz_doc:public_fields(leak_private_fields(cb_context:doc(Context1))),
-                    cb_context:set_resp_data(Context1, RespData);
+                    RespData = leak_private_fields(ContextAccount, cb_context:resp_data(ContextAccount)),
+                    cb_context:set_resp_data(ContextAccount, RespData);
                 _ ->
-                    _ = rollback_doc(Context1, Action),
-                    Context2
+                    _ = rollback_doc(ContextAccount, Action),
+                    ContextFaxDb
             end;
         _ ->
-            Context1
+            ContextAccount
     end.
 
 -spec save_faxbox_in_account_db(cb_context:context()) -> cb_context:context().
