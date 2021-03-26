@@ -11,6 +11,10 @@
             "description": "Scope description",
             "type": "string"
         },
+        "id": {
+            "description": "Id (name) of scope",
+            "type": "string"
+        },
         "scopes": {
             "default": [],
             "description": "List of available subscopes",
@@ -21,7 +25,8 @@
         }
     },
     "required": [
-        "allow_api_request"
+        "allow_api_request",
+        "id"
     ],
     "type": "object"
 }

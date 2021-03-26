@@ -178,7 +178,22 @@ validate_request(Context, Scope) ->
 %%------------------------------------------------------------------------------
 -spec on_successful_validation(cb_context:context(), path_token()) -> cb_context:context().
 on_successful_validation(Context, 'undefined') ->
-    cb_context:set_doc(Context, kz_doc:set_type(cb_context:doc(Context), ?PVT_TYPE));
+    Doc = cb_context:doc(Context),
+    ScopeId = kzd_scopes:id(Doc),
+    case kz_datamgr:open_doc(?KZ_AUTH_DB, ScopeId) of
+        {'ok', _} ->
+            Error = kz_json:from_list([{<<"message">>, <<"scope name must be unique in system">>}
+                                      ,{<<"cause">>, ScopeId}
+                                      ]),
+            cb_context:add_validation_error([<<"id">>], <<"unique">>, Error, Context);
+        {'error', 'not_found'}->
+            Setters = [{fun kz_doc:set_type/2, ?PVT_TYPE}
+                      ,{fun kz_doc:set_id/2, kzd_scopes:id(Doc)}
+                      ],
+            cb_context:set_doc(Context, kz_doc:setters(Doc, Setters));
+        {'error', Error} ->
+            crossbar_doc:handle_datamgr_errors(Error, ScopeId, Context)
+    end;
 on_successful_validation(Context, Scope) ->
     crossbar_doc:load_merge(Scope, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE)).
 
