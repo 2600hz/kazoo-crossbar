@@ -50,24 +50,8 @@
             "description": "The account default caller ID parameters"
         },
         "caller_id_options": {
-            "description": "custom properties for configuring caller_id",
-            "properties": {
-                "outbound_privacy": {
-                    "description": "Determines what appears as caller id for offnet outbound calls. Values: full - hides name and number; name - hides only name; number - hides only number; none - hides nothing",
-                    "enum": [
-                        "full",
-                        "name",
-                        "number",
-                        "none"
-                    ],
-                    "type": "string"
-                },
-                "show_rate": {
-                    "description": "Whether to show the rate",
-                    "type": "boolean"
-                }
-            },
-            "type": "object"
+            "$ref": "caller_id_options",
+            "description": "custom properties for configuring caller_id"
         },
         "dial_plan": {
             "$ref": "dialplans",
@@ -221,6 +205,10 @@
         "topup": {
             "description": "Topup settings for the account",
             "properties": {
+                "amount": {
+                    "description": "Amount to topup with",
+                    "type": "number"
+                },
                 "threshold": {
                     "description": "The account balance when topup occurs",
                     "type": "number"

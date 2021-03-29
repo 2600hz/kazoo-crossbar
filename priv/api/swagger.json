@@ -617,24 +617,8 @@
                     "description": "The account default caller ID parameters"
                 },
                 "caller_id_options": {
-                    "description": "custom properties for configuring caller_id",
-                    "properties": {
-                        "outbound_privacy": {
-                            "description": "Determines what appears as caller id for offnet outbound calls. Values: full - hides name and number; name - hides only name; number - hides only number; none - hides nothing",
-                            "enum": [
-                                "full",
-                                "name",
-                                "number",
-                                "none"
-                            ],
-                            "type": "string"
-                        },
-                        "show_rate": {
-                            "description": "Whether to show the rate",
-                            "type": "boolean"
-                        }
-                    },
-                    "type": "object"
+                    "$ref": "#/definitions/caller_id_options",
+                    "description": "custom properties for configuring caller_id"
                 },
                 "dial_plan": {
                     "$ref": "#/definitions/dialplans",
@@ -782,6 +766,10 @@
                 "topup": {
                     "description": "Topup settings for the account",
                     "properties": {
+                        "amount": {
+                            "description": "Amount to topup with",
+                            "type": "number"
+                        },
                         "threshold": {
                             "description": "The account balance when topup occurs",
                             "type": "number"
@@ -1513,6 +1501,72 @@
                         }
                     },
                     "type": "object"
+                }
+            },
+            "type": "object"
+        },
+        "caller_id_options": {
+            "description": "Caller ID options for endpoints",
+            "properties": {
+                "format": {
+                    "description": "Object for CID formatters based on number classifiers",
+                    "properties": {
+                        "all": {
+                            "description": "Format to use for all CID formatting needs (vs per-classifier)",
+                            "properties": {
+                                "prefix": {
+                                    "description": "Prefix to add to captured group of regex",
+                                    "type": "string"
+                                },
+                                "regex": {
+                                    "description": "Regexp to match normalized CID and use first capture group",
+                                    "type": "string"
+                                },
+                                "suffix": {
+                                    "description": "Prefix to add to captured group of regex",
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "type": "object"
+                },
+                "ignore_completed_elsewhere": {
+                    "description": "Suppress the completed elsewhere cause",
+                    "type": "boolean"
+                },
+                "outbound_privacy": {
+                    "description": "Determines what appears as caller id for offnet outbound calls. Values: full - hides name and number; name - hides only name; number - hides only number; none - hides nothing",
+                    "enum": [
+                        "full",
+                        "name",
+                        "number",
+                        "none"
+                    ],
+                    "type": "string"
+                },
+                "privacy_method": {
+                    "description": "Method to use for anonymizing CID",
+                    "enum": [
+                        "sip",
+                        "none",
+                        "kazoo"
+                    ],
+                    "type": "string"
+                },
+                "show_rate": {
+                    "description": "Whether to show the rate",
+                    "type": "boolean"
+                },
+                "type": {
+                    "description": "Caller ID on endpoint to choose",
+                    "enum": [
+                        "internal",
+                        "external",
+                        "emergency"
+                    ],
+                    "type": "string"
                 }
             },
             "type": "object"
@@ -6048,20 +6102,8 @@
                     "description": "The device caller ID parameters"
                 },
                 "caller_id_options": {
-                    "description": "custom properties for configuring caller_id",
-                    "properties": {
-                        "outbound_privacy": {
-                            "description": "Determines what appears as caller id for offnet outbound calls. Values: full - hides name and number; name - hides only name; number - hides only number; none - hides nothing",
-                            "enum": [
-                                "full",
-                                "name",
-                                "number",
-                                "none"
-                            ],
-                            "type": "string"
-                        }
-                    },
-                    "type": "object"
+                    "$ref": "#/definitions/caller_id_options",
+                    "description": "custom properties for configuring caller_id"
                 },
                 "contact_list": {
                     "default": {},
@@ -10617,19 +10659,8 @@
             "description": "Schema for resources",
             "properties": {
                 "caller_id_options": {
-                    "description": "Caller ID options",
-                    "properties": {
-                        "type": {
-                            "description": "Caller ID type to choose",
-                            "enum": [
-                                "internal",
-                                "external",
-                                "emergency"
-                            ],
-                            "type": "string"
-                        }
-                    },
-                    "type": "object"
+                    "$ref": "#/definitions/caller_id_options",
+                    "description": "Caller ID options"
                 },
                 "cid_rules": {
                     "description": "Regexps to match against caller ID",
@@ -19542,20 +19573,8 @@
                     "description": "The device caller ID parameters"
                 },
                 "caller_id_options": {
-                    "description": "custom properties for configuring caller_id",
-                    "properties": {
-                        "outbound_privacy": {
-                            "description": "Determines what appears as caller id for offnet outbound calls. Values: full - hides name and number; name - hides only name; number - hides only number; none - hides nothing",
-                            "enum": [
-                                "full",
-                                "name",
-                                "number",
-                                "none"
-                            ],
-                            "type": "string"
-                        }
-                    },
-                    "type": "object"
+                    "$ref": "#/definitions/caller_id_options",
+                    "description": "custom properties for configuring caller_id"
                 },
                 "contact_list": {
                     "default": {},

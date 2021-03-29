@@ -23,8 +23,7 @@ Key | Description | Type | Default | Required | Support Level
 `call_restriction` | Device level call restrictions for each available number classification | `object()` | `{}` | `false` |  
 `call_waiting` | Parameters for server-side call waiting | [#/definitions/call_waiting](#call_waiting) |   | `false` |  
 `caller_id` | The device caller ID parameters | [#/definitions/caller_id](#caller_id) |   | `false` |  
-`caller_id_options.outbound_privacy` | Determines what appears as caller id for offnet outbound calls. Values: full - hides name and number; name - hides only name; number - hides only number; none - hides nothing | `string('full' | 'name' | 'number' | 'none')` |   | `false` |  
-`caller_id_options` | custom properties for configuring caller_id | `object()` |   | `false` |  
+`caller_id_options` | custom properties for configuring caller_id | [#/definitions/caller_id_options](#caller_id_options) |   | `false` |  
 `contact_list.exclude` | If set to true the device is excluded from the contact list | `boolean()` |   | `false` | `supported`
 `contact_list` | Contact List Parameters | `object()` | `{}` | `false` |  
 `device_type` | Arbitrary device type used by the UI and billing system | `string()` |   | `false` |  
@@ -153,6 +152,28 @@ Key | Description | Type | Default | Required | Support Level
 `internal.name` | The caller id name for the object type | `string(0..35)` |   | `false` |  
 `internal.number` | The caller id number for the object type | `string(0..35)` |   | `false` |  
 `internal` | The default caller ID used when dialing internal extensions | `object()` |   | `false` |  
+
+### caller_id_options
+
+Caller ID options for endpoints
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`format./.+/.prefix` | Prefix to add to captured group of regex | `string()` |   | `false` |  
+`format./.+/.regex` | Regexp to match normalized CID and use first capture group | `string()` |   | `false` |  
+`format./.+/.suffix` | Prefix to add to captured group of regex | `string()` |   | `false` |  
+`format./.+/` | Format to use for the CID classification | `object()` |   | `false` |  
+`format.all.prefix` | Prefix to add to captured group of regex | `string()` |   | `false` |  
+`format.all.regex` | Regexp to match normalized CID and use first capture group | `string()` |   | `false` |  
+`format.all.suffix` | Prefix to add to captured group of regex | `string()` |   | `false` |  
+`format.all` | Format to use for all CID formatting needs (vs per-classifier) | `object()` |   | `false` |  
+`format` | Object for CID formatters based on number classifiers | `object()` |   | `false` |  
+`ignore_completed_elsewhere` | Suppress the completed elsewhere cause | `boolean()` |   | `false` |  
+`outbound_privacy` | Determines what appears as caller id for offnet outbound calls. Values: full - hides name and number; name - hides only name; number - hides only number; none - hides nothing | `string('full' | 'name' | 'number' | 'none')` |   | `false` |  
+`privacy_method` | Method to use for anonymizing CID | `string('sip' | 'none' | 'kazoo')` |   | `false` |  
+`show_rate` | Whether to show the rate | `boolean()` |   | `false` |  
+`type` | Caller ID on endpoint to choose | `string('internal' | 'external' | 'emergency')` |   | `false` |  
 
 ### custom_sip_headers
 

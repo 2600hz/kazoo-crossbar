@@ -4,19 +4,8 @@
     "description": "Schema for resources",
     "properties": {
         "caller_id_options": {
-            "description": "Caller ID options",
-            "properties": {
-                "type": {
-                    "description": "Caller ID type to choose",
-                    "enum": [
-                        "internal",
-                        "external",
-                        "emergency"
-                    ],
-                    "type": "string"
-                }
-            },
-            "type": "object"
+            "$ref": "caller_id_options",
+            "description": "Caller ID options"
         },
         "cid_rules": {
             "description": "Regexps to match against caller ID",

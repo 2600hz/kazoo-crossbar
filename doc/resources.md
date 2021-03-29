@@ -26,8 +26,7 @@ Schema for resources
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`caller_id_options.type` | Caller ID type to choose | `string('internal' | 'external' | 'emergency')` |   | `false` |  
-`caller_id_options` | Caller ID options | `object()` |   | `false` |  
+`caller_id_options` | Caller ID options | [#/definitions/caller_id_options](#caller_id_options) |   | `false` |  
 `cid_rules.[]` |   | `string()` |   | `false` |  
 `cid_rules` | Regexps to match against caller ID | `array(string())` |   | `false` |  
 `classifiers./.+/.emergency` | Determines if the resource represents emergency services | `boolean()` | `false` | `false` |  
@@ -96,6 +95,28 @@ Key | Description | Type | Default | Required | Support Level
 `rules_test.[]` |   | `string()` |   | `false` |  
 `rules_test` | A list of regular expressions of which if matched denotes a test rule | `array(string())` | `[]` | `false` |  
 `weight_cost` | A value between 0 and 100 that determines the order of resources when multiple can be used | `integer()` | `50` | `false` |  
+
+### caller_id_options
+
+Caller ID options for endpoints
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`format./.+/.prefix` | Prefix to add to captured group of regex | `string()` |   | `false` |  
+`format./.+/.regex` | Regexp to match normalized CID and use first capture group | `string()` |   | `false` |  
+`format./.+/.suffix` | Prefix to add to captured group of regex | `string()` |   | `false` |  
+`format./.+/` | Format to use for the CID classification | `object()` |   | `false` |  
+`format.all.prefix` | Prefix to add to captured group of regex | `string()` |   | `false` |  
+`format.all.regex` | Regexp to match normalized CID and use first capture group | `string()` |   | `false` |  
+`format.all.suffix` | Prefix to add to captured group of regex | `string()` |   | `false` |  
+`format.all` | Format to use for all CID formatting needs (vs per-classifier) | `object()` |   | `false` |  
+`format` | Object for CID formatters based on number classifiers | `object()` |   | `false` |  
+`ignore_completed_elsewhere` | Suppress the completed elsewhere cause | `boolean()` |   | `false` |  
+`outbound_privacy` | Determines what appears as caller id for offnet outbound calls. Values: full - hides name and number; name - hides only name; number - hides only number; none - hides nothing | `string('full' | 'name' | 'number' | 'none')` |   | `false` |  
+`privacy_method` | Method to use for anonymizing CID | `string('sip' | 'none' | 'kazoo')` |   | `false` |  
+`show_rate` | Whether to show the rate | `boolean()` |   | `false` |  
+`type` | Caller ID on endpoint to choose | `string('internal' | 'external' | 'emergency')` |   | `false` |  
 
 ### custom_sip_headers
 
