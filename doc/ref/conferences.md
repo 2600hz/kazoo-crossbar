@@ -147,6 +147,16 @@ curl -v -X DELETE \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/conferences/{CONFERENCE_ID}
 ```
 
+## Create
+
+> PUT /v2/accounts/{ACCOUNT_ID}/conferences/{CONFERENCE_ID}/email_invite
+
+```shell
+curl -v -X PUT \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/conferences/{CONFERENCE_ID}/email_invite
+```
+
 ## Fetch
 
 > GET /v2/accounts/{ACCOUNT_ID}/conferences/{CONFERENCE_ID}/participants

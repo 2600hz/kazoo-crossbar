@@ -103,6 +103,24 @@ paths:
       summary: Add an instance of conferences
       tags:
         - conferences
+  /accounts/{ACCOUNT_ID}/conferences/{CONFERENCE_ID}/email_invite:
+    put:
+      operationId: PutAccountsAccountIdConferencesConferenceIdEmailInvite
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../oas3-parameters.yml#/CONFERENCE_ID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '../oas3-schemas.yml#/conferences'
+      responses:
+        200:
+          description: Successful operation
+      summary: Add an instance of conferences
+      tags:
+        - conferences
   /accounts/{ACCOUNT_ID}/conferences/{CONFERENCE_ID}/participants:
     get:
       operationId: GetAccountsAccountIdConferencesConferenceIdParticipants

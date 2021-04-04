@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Conferences module
 %%% Handle client requests for conference documents
 %%%
@@ -8,6 +8,7 @@
 %%% /v2/accounts/{AccountId}/conferences/{ConferenceID}
 %%% /v2/accounts/{AccountId}/conferences/{ConferenceID}/participants
 %%% /v2/accounts/{AccountId}/conferences/{ConferenceID}/participants/{ParticipantId}
+%%% /v2/accounts/{AccountId}/conferences/{ConferenceID}/email_invite
 %%%
 %%%
 %%% @author Karl Anderson
@@ -42,6 +43,7 @@
 
 -define(CB_LIST_BY_NUMBER, <<"conference/listing_by_number">>).
 
+-define(EMAIL_INVITE, <<"email_invite">>).
 -define(PARTICIPANTS, <<"participants">>).
 -define(MUTE, <<"mute">>).
 -define(UNMUTE, <<"unmute">>).
@@ -90,7 +92,8 @@ allowed_methods() -> [?HTTP_GET, ?HTTP_PUT].
 allowed_methods(_ConferenceId) -> [?HTTP_GET, ?HTTP_PATCH, ?HTTP_DELETE, ?HTTP_POST, ?HTTP_PUT].
 
 -spec allowed_methods(path_token(), path_token()) -> http_methods().
-allowed_methods(_ConferenceId, ?PARTICIPANTS) -> [?HTTP_GET, ?HTTP_PUT].
+allowed_methods(_ConferenceId, ?PARTICIPANTS) -> [?HTTP_GET, ?HTTP_PUT];
+allowed_methods(_ConferenceId, ?EMAIL_INVITE) -> [?HTTP_PUT].
 
 -spec allowed_methods(path_token(), path_token(), path_token()) -> http_methods().
 allowed_methods(_ConferenceId, ?PARTICIPANTS, _ParticipantId) -> [?HTTP_GET, ?HTTP_PUT].
@@ -121,7 +124,9 @@ validate(Context, ConferenceId) ->
 
 -spec validate(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 validate(Context, ConferenceId, ?PARTICIPANTS) ->
-    validate_participants(cb_context:req_verb(Context), Context, ConferenceId).
+    validate_participants(cb_context:req_verb(Context), Context, ConferenceId);
+validate(Context, ConferenceId, ?EMAIL_INVITE) ->
+    validate_email_invite(cb_context:req_verb(Context), Context, ConferenceId).
 
 -spec validate(cb_context:context(), path_token(), path_token(), path_token()) -> cb_context:context().
 validate(Context, ConferenceId, ?PARTICIPANTS, ParticipantId) ->
@@ -206,6 +211,21 @@ validate_participant(?HTTP_GET, Context0, ConferenceId, ParticipantId) ->
 validate_participant(?HTTP_PUT, Context, ConferenceId, _ParticipantId) ->
     maybe_load_conference(ConferenceId, Context).
 
+-spec validate_email_invite(http_method(), cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+validate_email_invite(?HTTP_PUT, Context, ConferenceId) ->
+    Schema = <<"conferences.email_invite">>,
+    OnSuccess = fun(Acc) -> lager:warning("validation for ~s passed", [Schema]), Acc end, %% TODO: decrease log level to debug.
+    case kzd_module_utils:validate_schema(Schema, {cb_context:req_data(Context), []}, OnSuccess) of
+        {ReqData, []} ->
+            {'ok', Conf} = kz_datamgr:open_cache_doc(cb_context:account_id(Context), ConferenceId),
+            crossbar_doc:handle_datamgr_success(ReqData
+                                               ,cb_context:store(Context, 'conference_doc', Conf)
+                                               );
+        {_ReqData, Errors} ->
+            lager:info("validation errors on ~s: ~p", [Schema, Errors]),
+            cb_context:add_doc_validation_errors(Context, Errors)
+    end.
+
 -spec post(cb_context:context(), path_token()) -> cb_context:context().
 post(Context, _ConferenceId) ->
     crossbar_doc:save(Context).
@@ -221,7 +241,13 @@ put(Context, ConferenceId) ->
 -spec put(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 put(Context, ConferenceId, ?PARTICIPANTS) ->
     Action = cb_context:req_value(Context, ?PUT_ACTION),
-    handle_participants_action(Context, ConferenceId, Action).
+    handle_participants_action(Context, ConferenceId, Action);
+put(Context, _ConferenceId, ?EMAIL_INVITE) ->
+    kapps_notify_publisher:cast(build_email_invite_kapi_req(Context)
+                               ,fun kapi_notifications:publish_email_invite/1
+                               ),
+    crossbar_util:response(<<"request accepted">>, Context).
+
 
 -spec put(cb_context:context(), path_token(), path_token(), path_token()) -> cb_context:context().
 put(Context, ConferenceId, ?PARTICIPANTS, ParticipantId) ->
@@ -379,6 +405,36 @@ invalid_unique_name(Context, Name) ->
                               ,{<<"cause">>, Name}
                               ]),
     cb_context:add_validation_error([<<"name">>], <<"unique">>, Error, Context).
+
+%%%=============================================================================
+%%% ?EMAIL_INVITE request helpers
+%%%=============================================================================
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec build_email_invite_kapi_req(cb_context:context()) -> kz_term:proplist().
+build_email_invite_kapi_req(Context) ->
+    Types = [<<"Conference Call-In Number">>, <<"MainConference">>],
+    {'ok', Callflows} = kz_datamgr:get_results(cb_context:db_name(Context)
+                                              ,<<"crossbar_listings/by_type_name">>
+                                              ,[{keys, [[kzd_callflows:type(), T] || T <- Types]}
+                                               ,{'result_key', <<"doc">>}
+                                               ,'include_docs'
+                                               ]
+                                              ),
+    Conf = cb_context:fetch(Context, 'conference_doc'),
+    ReqData = cb_context:req_data(Context),
+    [{<<"Conference-ID">>, kz_doc:id(Conf)}
+    ,{<<"Conference-Name">>, kzd_conferences:name(Conf)}
+    ,{<<"Conference-Link">>, kz_json:get_binary_value(<<"conference_link">>, ReqData)}
+    ,{<<"Conference-Call-In-Numbers">>, [kz_json:get_binary_value(<<"numbers">>, CF) || CF <- Callflows]}
+    ,{<<"Conference-Participant-Pins">>, kzd_conferences:member_pins(Conf)}
+    ,{<<"Invite-Message">>, kz_json:get_binary_value(<<"invite_message">>, ReqData)}
+    ,{<<"Guests">>, kz_json:get_list_value(<<"guests">>, ReqData)}
+    | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+    ].
 
 %%%=============================================================================
 %%% Conference Actions

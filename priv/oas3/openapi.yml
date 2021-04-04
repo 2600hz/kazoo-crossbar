@@ -122,6 +122,9 @@
   '/accounts/{ACCOUNT_ID}/conferences/{CONFERENCE_ID}':
     '$ref': >-
       paths/conferences.yml#/paths/~1accounts~1{ACCOUNT_ID}~1conferences~1{CONFERENCE_ID}
+  '/accounts/{ACCOUNT_ID}/conferences/{CONFERENCE_ID}/email_invite':
+    '$ref': >-
+      paths/conferences.yml#/paths/~1accounts~1{ACCOUNT_ID}~1conferences~1{CONFERENCE_ID}~1email_invite
   '/accounts/{ACCOUNT_ID}/conferences/{CONFERENCE_ID}/participants':
     '$ref': >-
       paths/conferences.yml#/paths/~1accounts~1{ACCOUNT_ID}~1conferences~1{CONFERENCE_ID}~1participants

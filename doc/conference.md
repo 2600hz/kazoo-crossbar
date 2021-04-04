@@ -359,10 +359,10 @@ These properties will be merged into a "default" conference document and then ex
     "data": {
         "endpoint_responses": [
             {
-                "call_id": "522bb682-da03-11e7-8ce9-5364ba916f96",
+                "call_id": "{CALL_ID}",
                 "endpoint_id": "{ENDPOINT_FROM_REQUEST}",
-                "job_id": "137b1e9e-d9fb-11e7-8cad-5364ba916f96",
-                "message": "dial resulted in call id 522bb682-da03-11e7-8ce9-5364ba916f96",
+                "job_id": "{JOB_ID}",
+                "message": "dial resulted in call id {CALL_ID}",
                 "status": "success"
             }
         ]
@@ -626,17 +626,17 @@ if parameter is unset, then all events are published.
 ```json
 {
     "custom_channel_vars": {
-        "account_id": "9d351ad7ffd6f846313af9eed3bb7b85",
-        "authorizing_id": "6507f40b09a61fbb8b025dbad9316eb5",
+        "account_id": "{ACCOUNT_ID}",
+        "authorizing_id": "{AUTHZ_ID}",
         "authorizing_type": "device",
-        "owner_id": "32d8788da9506b4b1991d5bb86d27b0a",
+        "owner_id": "{OWNER_ID}",
         "presence_id": "1000@kamailio.kazoo",
-        "fetch_id": "56507071-a216-4e0a-a28f-ff3bd9c86ac3",
-        "bridge_id": "934800819",
+        "fetch_id": "{FETCH_ID}",
+        "bridge_id": "{BRIDGE_ID}",
         "precedence": 5,
         "realm": "kamailio.kazoo",
         "username": "sip1",
-        "call_interaction_id": "63635497023-3e247b2e"
+        "call_interaction_id": "{INTERACTION_ID}"
     },
     "channel_presence_id": "1000@kamailio.kazoo",
     "caller_id_number": "sip1",
@@ -650,17 +650,60 @@ if parameter is unset, then all events are published.
     "hear": true,
     "floor": false,
     "participant_id": 20,
-    "instance_id": "d5765180-53d5-4104-860e-b352f3f8e6b1",
-    "conference_id": "5edbfdd3b825314a71b0a05957392edb",
+    "instance_id": "{INSTANCE_ID}",
+    "conference_id": "{CONFERENCE_ID}",
     "focus": "freeswitch@freeswitch.kazoo",
-    "call_id": "934800819",
+    "call_id": "{CALL_ID}",
     "event": "add-member",
-    "node": "kazoo_apps@jh460",
-    "msg_id": "a6fbbf034b5cd3af",
+    "node": "kazoo_apps@kazoo.kazoo",
+    "msg_id": "{MSG_ID}",
     "event_name": "participant_event",
     "event_category": "conference",
     "app_version": "4.0.0",
     "app_name": "ecallmgr",
     "routing_key": "participant_event"
+}
+```
+
+# Email Invite
+
+### conferences.email_invite
+
+Schema for conference email_invite
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`conference_link` | Link to join the conference | `string()` |   | `true` | `supported`
+`guests.[]` |   | `string()` |   | `true` | `supported`
+`guests` | List of email recipients to be invited to the conference | `array(string())` |   | `true` | `supported`
+`invite_message` | Invite message | `string()` |   | `true` | `supported`
+
+## Send Invite
+
+> PUT /v2/accounts/{ACCOUNT_ID}/conferences/{CONFERENCE_ID}/email_invite
+
+```shell
+curl -v -X PUT \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d '{"data": {"conference_link": "http://link.to/my-conference", \
+                  "invite_message": "invite message", \
+                  "guests": ["email1@domain.com", "email2@domain.com"]}}' \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/conferences/{CONFERENCE_ID}/email_invite
+```
+
+```json
+{
+  "version": "{VSN}",
+  "timestamp": "2021-04-22T15:10:33Z",
+  "node": "{NODE}",
+  "request_id": "{REQUEST_ID}",
+  "tokens": {
+    "consumed": 1,
+    "remaining": 100
+  },
+  "auth_token": "{AUTH_TOKEN}",
+  "data": "request accepted",
+  "status": "success"
 }
 ```
