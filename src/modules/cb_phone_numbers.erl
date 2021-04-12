@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Handle client requests for phone_number documents
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -478,7 +478,7 @@ delete(Context, Number) ->
 summary(Context, Number) ->
     case knm_numbers:get(Number, [{'auth_by', cb_context:auth_account_id(Context)}]) of
         {'ok', [JObj]} ->
-            crossbar_util:response(JObj, Context);
+            crossbar_doc:handle_datamgr_success(JObj, Context);
         _ ->
             maybe_find_port_number(Context, Number, should_include_ports(Context))
     end.
@@ -505,7 +505,7 @@ maybe_find_port_number(Context, Number, 'true') ->
 
 -spec port_number_summary(kz_json:object(), cb_context:context(), boolean()) -> cb_context:context().
 port_number_summary(PhoneNumberJObj, Context, 'true') ->
-    crossbar_util:response(PhoneNumberJObj, Context);
+    crossbar_doc:handle_datamgr_success(PhoneNumberJObj, Context);
 port_number_summary(PhoneNumberJObj, Context, 'false') ->
     reply_number_not_found(PhoneNumberJObj, Context).
 
@@ -913,7 +913,7 @@ set_response(Result, Context, CB) ->
 -spec set_response(knm_numbers:return(), cb_context:context(), cb(), kz_term:api_ne_binary()) -> cb_context:context().
 set_response({'ok', [JObj]}, Context, _, 'undefined') ->
     %% single number operation
-    crossbar_util:response(JObj, Context);
+    crossbar_doc:handle_datamgr_success(JObj, Context);
 set_response({'ok', JObjs}, Context, _, _Collection) ->
     %% collection operation (multi numbers)
     Resp = kz_json:from_list(

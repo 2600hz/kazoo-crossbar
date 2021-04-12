@@ -233,42 +233,51 @@ read(Id, Context) ->
 read(Id, Context, ?HTTP_DELETE) ->
     do_read(Id, Context, ?TYPE_CHECK_OPTION(kzd_fax_box:type()));
 read(Id, Context, _) ->
-    Options = [{'doc_normalizer', fun leak_private_fields/1}
-              | ?TYPE_CHECK_OPTION(kzd_fax_box:type())
-              ],
+    Options = ?TYPE_CHECK_OPTION(kzd_fax_box:type()),
     do_read(Id, Context, Options).
 
--spec do_read(kz_term:ne_binary(), cb_context:context(), crossbar_doc:load_options()) -> cb_context:context().
+-spec do_read(kz_term:ne_binary(), cb_context:context(), crossbar_doc:load_options()) ->
+          cb_context:context().
 do_read(Id, Context, Options) ->
-    crossbar_doc:load(Id, Context, Options).
+    ReadContext = crossbar_doc:load(Id, Context, Options),
+    case cb_context:resp_status(ReadContext) of
+        'success' -> add_leaked_fields(ReadContext);
+        _ -> ReadContext
+    end.
 
--spec leak_private_fields(kz_json:object()) -> kz_json:object().
-leak_private_fields(JObj) ->
-    J = kz_json:set_value(<<"id">>, kz_doc:id(JObj), JObj),
-    lists:foldl(fun leak_private_field/2, J, ?LEAKED_FIELDS).
+-spec leak_private_fields(kzd_faxbox:doc()) -> kz_json:object().
+leak_private_fields(Faxbox) ->
+    WithId = kz_json:set_value(<<"id">>, kz_doc:id(Faxbox), Faxbox),
+    lists:foldl(fun leak_private_field/2, WithId, ?LEAKED_FIELDS).
 
-leak_private_fields(Context, ReqData) ->
-    DbDoc = cb_context:doc(Context),
-    WithReadOnly = leak_private_fields(DbDoc),
-    kz_json:set_value(<<"_read_only">>, kz_json:get_value(<<"_read_only">>, WithReadOnly), ReqData).
+%% @doc leak private fields from db doc onto response data
+-spec leak_private_fields(cb_context:context(), kz_json:object()) -> kz_json:object().
+leak_private_fields(Context, RespData) ->
+    Faxbox = cb_context:doc(Context),
+    FaxboxWithReadOnly = leak_private_fields(Faxbox),
+    ReadOnly = kz_doc:read_only(FaxboxWithReadOnly),
+    lager:info("resp data: ~p", [RespData]),
+    lager:info("ro: ~p", [ReadOnly]),
+    kz_doc:set_read_only(RespData, ReadOnly).
 
--spec leak_private_field(kz_term:ne_binary(), kz_json:object()) -> kz_json:object().
+-spec leak_private_field(kz_term:ne_binary(), kzd_faxbox:doc()) -> kzd_faxbox:doc().
 leak_private_field(<<"pvt_", K1/binary>> = K, Acc) ->
     case kz_json:get_value(K, Acc) of
         'undefined' -> Acc;
-        Value -> leak_private_field_value(K, K1, Value, Acc)
+        Value -> leak_private_field_value(K1, Value, Acc)
     end;
 leak_private_field({<<PvtFieldName/binary>>, <<PublicFieldName/binary>>}, Acc) ->
     case kz_json:get_value(PvtFieldName, Acc) of
         'undefined' -> Acc;
-        Value -> leak_private_field_value(PvtFieldName, PublicFieldName, Value, Acc)
+        Value -> leak_private_field_value(PublicFieldName, Value, Acc)
     end;
 leak_private_field(_K, Acc) -> Acc.
 
--spec leak_private_field_value(kz_term:ne_binary(), kz_term:ne_binary(), kz_json:json_term(), kz_json:object()) ->
-          kz_json:object().
-leak_private_field_value(_K, K1, V, Acc) ->
-    kz_json:set_value([<<"_read_only">>, K1], V, Acc).
+-spec leak_private_field_value(kz_term:ne_binary(), kz_json:json_term(), kzd_faxbox:doc()) ->
+          kzd_faxbox:doc().
+leak_private_field_value(Key, Value, Acc) ->
+    lager:info("leaking ro ~s", [Key]),
+    kz_json:set_value([<<"_read_only">>, Key], Value, Acc).
 
 %%------------------------------------------------------------------------------
 %% @doc Update an existing instance with the data provided, if it is
@@ -354,8 +363,7 @@ save_faxbox_doc(Context0, Action) ->
             ContextFaxDb = save_doc_to_faxdb(ContextAccount, Action),
             case cb_context:resp_status(ContextFaxDb) of
                 'success' ->
-                    RespData = leak_private_fields(ContextAccount, cb_context:resp_data(ContextAccount)),
-                    cb_context:set_resp_data(ContextAccount, RespData);
+                    add_leaked_fields(ContextAccount);
                 _ ->
                     _ = rollback_doc(ContextAccount, Action),
                     ContextFaxDb
@@ -363,6 +371,12 @@ save_faxbox_doc(Context0, Action) ->
         _ ->
             ContextAccount
     end.
+
+%% @doc add typical leaked fields to GET responses or after save
+-spec add_leaked_fields(cb_context:context()) -> cb_context:context().
+add_leaked_fields(Context) ->
+    RespData = leak_private_fields(Context, cb_context:resp_data(Context)),
+    cb_context:set_resp_data(Context, RespData).
 
 -spec save_faxbox_in_account_db(cb_context:context()) -> cb_context:context().
 save_faxbox_in_account_db(Context) ->

@@ -903,7 +903,7 @@ aggregate_device(Context) ->
     Device = cb_context:doc(Context),
     lager:debug("adding device to the sip auth aggregate"),
     Doc = kz_doc:delete_revision(Device),
-    Update = kz_json:to_proplist(kz_json:flatten(Doc)),
+    Update = [{[<<"_read_only">>], 'null'} | kz_json:to_proplist(kz_json:flatten(Doc))],
     UpdateOptions = [{'update', Update}
                     ,{'create', []}
                     ,{'ensure_saved', 'true'}
