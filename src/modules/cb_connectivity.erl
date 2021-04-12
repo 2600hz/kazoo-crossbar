@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Handle client requests for connectivity documents
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -105,11 +105,11 @@ validate_connectivity_pbx(Context, Id, ?HTTP_DELETE) ->
 post(Context, _) ->
     Doc = crossbar_doc:update_pvt_parameters(cb_context:doc(Context), Context),
     case kzd_trunkstore:save(Doc) of
-        {ok, Saved} ->
+        {'ok', Saved} ->
             C1 = crossbar_doc:handle_datamgr_success(Saved, Context),
             'ok' = track_assignment('post', C1),
             C1;
-        {error, Error} ->
+        {'error', Error} ->
             lager:error("trunkstore save => ~p", [Error]),
             cb_context:add_system_error('datastore_fault', Context)
     end.
@@ -122,10 +122,10 @@ patch(Context, Id) ->
 put(Context) ->
     Doc = crossbar_doc:update_pvt_parameters(cb_context:doc(Context), Context),
     case kzd_trunkstore:save(Doc) of
-        {ok, Saved} ->
+        {'ok', Saved} ->
             _ = registration_update(Context),
             crossbar_doc:handle_datamgr_success(Saved, Context);
-        {error, Error} ->
+        {'error', Error} ->
             lager:error("trunkstore save => ~p", [Error]),
             cb_context:add_system_error('datastore_fault', Context)
     end.

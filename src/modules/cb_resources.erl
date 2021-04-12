@@ -41,7 +41,7 @@
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec init() -> ok.
+-spec init() -> 'ok'.
 init() ->
     _Pid = maybe_start_jobs_listener(),
     lager:debug("started jobs listener: ~p", [_Pid]),
@@ -513,7 +513,7 @@ is_global_resource_request(_ReqNouns, _AccountId) ->
 aggregate_resource(ResourceJObj) ->
     lager:debug("adding resource to the sip auth aggregate"),
     Doc = kz_doc:delete_revision(ResourceJObj),
-    Update = kz_json:to_proplist(kz_json:flatten(Doc)),
+    Update = [{[<<"_read_only">>], 'null'} | kz_json:to_proplist(kz_json:flatten(Doc))],
     UpdateOptions = [{'update', Update}
                     ,{'create', []}
                     ,{'ensure_saved', 'true'}

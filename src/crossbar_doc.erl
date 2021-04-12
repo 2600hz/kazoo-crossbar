@@ -47,6 +47,7 @@
                   ,fun add_pvt_request_id/3
                   ,fun add_pvt_auth/3
                   ,fun add_pvt_alphanum_name/3
+                  ,fun rm_read_only/3
                   ]).
 
 -type doc_normalizer_fun() :: fun((kz_json:object()) -> kz_json:object()).
@@ -691,7 +692,7 @@ handle_datamgr_success([JObj|_]=JObjs, Context) ->
     end;
 handle_datamgr_success(JObj, Context) ->
     case kz_json:is_json_object(JObj) of
-        'true' -> handle_json_success(JObj, Context);
+        'true' -> handle_json_success(kz_doc:set_read_only(JObj), Context);
         'false' -> handle_thing_success(JObj, Context)
     end.
 
@@ -831,6 +832,14 @@ pvt_updates(JObj, Context) ->
 -spec apply_pvt_fun(pvt_fun(), kz_json:object(), kz_json:json_proplist(), cb_context:context()) -> kz_json:json_proplist().
 apply_pvt_fun(Fun, JObj, Updates, Context) ->
     Fun(JObj, Updates, Context).
+
+-spec rm_read_only(kz_json:object(), kz_json:json_proplist(), cb_context:context()) ->
+          kz_json:json_proplist().
+rm_read_only(JObj, Updates, _) ->
+    case kz_doc:read_only(JObj, 'undefined') of
+        'undefined' -> Updates;
+        _ -> [{[<<"_read_only">>], 'null'} | Updates]
+    end.
 
 -spec add_pvt_vsn(kz_json:object(), kz_json:json_proplist(), cb_context:context()) -> kz_json:json_proplist().
 add_pvt_vsn(JObj, Updates, _) ->
