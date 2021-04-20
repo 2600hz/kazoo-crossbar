@@ -3,61 +3,11 @@
     "_id": "devices",
     "description": "A device be it a SIP phone or landline number",
     "properties": {
-        "call_forward": {
-            "description": "The device call forward parameters",
-            "properties": {
-                "direct_calls_only": {
-                    "default": false,
-                    "description": "Determines if the calls that are not directly sent to the device should be forwarded",
-                    "support_level": "supported",
-                    "type": "boolean"
-                },
-                "enabled": {
-                    "default": false,
-                    "description": "Determines if the call forwarding should be used",
-                    "support_level": "supported",
-                    "type": "boolean"
-                },
-                "failover": {
-                    "default": false,
-                    "description": "Enable the call-forwarding parameters if the device is offline",
-                    "support_level": "supported",
-                    "type": "boolean"
-                },
-                "ignore_early_media": {
-                    "default": true,
-                    "description": "The option to determine if early media from the call forwarded number should ignored",
-                    "type": "boolean"
-                },
-                "keep_caller_id": {
-                    "default": true,
-                    "description": "Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used",
-                    "support_level": "supported",
-                    "type": "boolean"
-                },
-                "number": {
-                    "description": "The number to forward calls to",
-                    "maxLength": 35,
-                    "support_level": "supported",
-                    "type": "string"
-                },
-                "require_keypress": {
-                    "default": true,
-                    "description": "Determines if the callee is prompted to press 1 to accept the call",
-                    "support_level": "supported",
-                    "type": "boolean"
-                },
-                "substitute": {
-                    "default": true,
-                    "description": "Determines if the call forwarding replaces the device",
-                    "support_level": "supported",
-                    "type": "boolean"
-                }
-            },
-            "type": "object"
+        "call_failover": {
+            "$ref": "call_failover"
         },
-        "call_recording": {
-            "$ref": "call_recording"
+        "call_forward": {
+            "$ref": "call_forward"
         },
         "call_restriction": {
             "additionalProperties": {

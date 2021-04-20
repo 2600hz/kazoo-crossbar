@@ -20,6 +20,8 @@ Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `blacklists.[]` |   | `string()` |   | `false` |  
 `blacklists` | A list blacklist ids that apply to the account | `array(string())` |   | `false` |  
+`call_failover` | The device call failover parameters, to replace the device with an extension/phone number when device is offline. | [#/definitions/call_failover](#call_failover) |   | `false` |  
+`call_forward` | The device call forward parameters | [#/definitions/call_forward](#call_forward) |   | `false` |  
 `call_recording.account` | endpoint recording settings | [#/definitions/call_recording](#call_recording) |   | `false` |  
 `call_recording.endpoint` | endpoint recording settings | [#/definitions/call_recording](#call_recording) |   | `false` |  
 `call_recording` | call recording configuration | `object()` |   | `false` |  
@@ -63,6 +65,34 @@ Key | Description | Type | Default | Required | Support Level
 `voicemail.notify` |   | `object()` |   | `false` |  
 `voicemail` |   | `object()` |   | `false` |  
 `zones` | A priority ordered mapping of zones for the account | `object()` |   | `false` |  
+
+### call_failover
+
+The device call failover parameters, to replace the device with an extension/phone number when device is offline.
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`enabled` | Determines if the call failover should be used when device is offline | `boolean()` | `false` | `false` |  
+`ignore_early_media` | The option to determine if early media from the call forwarded number should ignored | `boolean()` | `true` | `false` |  
+`keep_caller_id` | Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used | `boolean()` | `true` | `false` | `supported`
+`number` | The number to forward calls to | `string(0..35)` |   | `false` | `supported`
+`require_keypress` | Determines if the callee is prompted to press 1 to accept the call | `boolean()` | `true` | `false` |  
+
+### call_forward
+
+The device call forward parameters
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`direct_calls_only` | Determines if the calls that are not directly sent to the device should be forwarded | `boolean()` | `false` | `false` | `supported`
+`enabled` | Determines if the call forwarding should be used | `boolean()` | `false` | `false` | `supported`
+`ignore_early_media` | The option to determine if early media from the call forwarded number should ignored | `boolean()` | `true` | `false` |  
+`keep_caller_id` | Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used | `boolean()` | `true` | `false` | `supported`
+`number` | The number to forward calls to | `string(0..35)` |   | `false` | `supported`
+`require_keypress` | Determines if the callee is prompted to press 1 to accept the call | `boolean()` | `true` | `false` | `supported`
+`substitute` | Determines if the call forwarding replaces the device | `boolean()` | `true` | `false` | `supported`
 
 ### call_recording
 

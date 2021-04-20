@@ -11,6 +11,12 @@
             "type": "array",
             "uniqueItems": true
         },
+        "call_failover": {
+            "$ref": "call_failover"
+        },
+        "call_forward": {
+            "$ref": "call_forward"
+        },
         "call_recording": {
             "additionalProperties": false,
             "description": "call recording configuration",

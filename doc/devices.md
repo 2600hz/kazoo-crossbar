@@ -13,16 +13,8 @@ A device be it a SIP phone or landline number
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`call_forward.direct_calls_only` | Determines if the calls that are not directly sent to the device should be forwarded | `boolean()` | `false` | `false` | `supported`
-`call_forward.enabled` | Determines if the call forwarding should be used | `boolean()` | `false` | `false` | `supported`
-`call_forward.failover` | Enable the call-forwarding parameters if the device is offline | `boolean()` | `false` | `false` | `supported`
-`call_forward.ignore_early_media` | The option to determine if early media from the call forwarded number should ignored | `boolean()` | `true` | `false` |  
-`call_forward.keep_caller_id` | Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used | `boolean()` | `true` | `false` | `supported`
-`call_forward.number` | The number to forward calls to | `string(0..35)` |   | `false` | `supported`
-`call_forward.require_keypress` | Determines if the callee is prompted to press 1 to accept the call | `boolean()` | `true` | `false` | `supported`
-`call_forward.substitute` | Determines if the call forwarding replaces the device | `boolean()` | `true` | `false` | `supported`
-`call_forward` | The device call forward parameters | `object()` |   | `false` |  
-`call_recording` | endpoint recording settings | [#/definitions/call_recording](#call_recording) |   | `false` |  
+`call_failover` | The device call failover parameters, to replace the device with an extension/phone number when device is offline. | [#/definitions/call_failover](#call_failover) |   | `false` |  
+`call_forward` | The device call forward parameters | [#/definitions/call_forward](#call_forward) |   | `false` |  
 `call_restriction` | Device level call restrictions for each available number classification | `object()` | `{}` | `false` |  
 `call_waiting` | Parameters for server-side call waiting | [#/definitions/call_waiting](#call_waiting) |   | `false` |  
 `caller_id` | The device caller ID parameters | [#/definitions/caller_id](#caller_id) |   | `false` |  
@@ -92,39 +84,33 @@ Key | Description | Type | Default | Required | Support Level
 `suppress_unregister_notifications` | When true disables deregister notifications | `boolean()` | `false` | `false` |  
 `timezone` | Device's timezone | [#/definitions/timezone](#timezone) |   | `false` | `supported`
 
-### call_recording
+### call_failover
 
-endpoint recording settings
-
-
-Key | Description | Type | Default | Required | Support Level
---- | ----------- | ---- | ------- | -------- | -------------
-`any` | settings for any calls to/from the endpoint | [#/definitions/call_recording.source](#call_recordingsource) |   | `false` |  
-`inbound` | settings for inbound calls to the endpoint | [#/definitions/call_recording.source](#call_recordingsource) |   | `false` |  
-`outbound` | settings for outbound calls from the endpoint | [#/definitions/call_recording.source](#call_recordingsource) |   | `false` |  
-
-### call_recording.parameters
+The device call failover parameters, to replace the device with an extension/phone number when device is offline.
 
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`enabled` | is recording enabled | `boolean()` |   | `false` |  
-`format` | What format to store the recording on disk | `string('mp3' | 'wav')` |   | `false` |  
-`record_min_sec` | The minimum length, in seconds, the recording must be to be considered successful. Otherwise it is deleted | `integer()` |   | `false` |  
-`record_on_answer` | Recording should start on answer | `boolean()` |   | `false` |  
-`record_on_bridge` | Recording should start on bridge | `boolean()` |   | `false` |  
-`record_sample_rate` | What sampling rate to use on the recording | `integer()` |   | `false` |  
-`time_limit` | Time limit, in seconds, for the recording | `integer()` |   | `false` |  
-`url` | The URL to use when sending the recording for storage | `string()` |   | `false` |  
+`enabled` | Determines if the call failover should be used when device is offline | `boolean()` | `false` | `false` |  
+`ignore_early_media` | The option to determine if early media from the call forwarded number should ignored | `boolean()` | `true` | `false` |  
+`keep_caller_id` | Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used | `boolean()` | `true` | `false` | `supported`
+`number` | The number to forward calls to | `string(0..35)` |   | `false` | `supported`
+`require_keypress` | Determines if the callee is prompted to press 1 to accept the call | `boolean()` | `true` | `false` |  
 
-### call_recording.source
+### call_forward
+
+The device call forward parameters
 
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`any` | settings for calls from any network | [#/definitions/call_recording.parameters](#call_recordingparameters) |   | `false` |  
-`offnet` | settings for calls from offnet networks | [#/definitions/call_recording.parameters](#call_recordingparameters) |   | `false` |  
-`onnet` | settings for calls from onnet networks | [#/definitions/call_recording.parameters](#call_recordingparameters) |   | `false` |  
+`direct_calls_only` | Determines if the calls that are not directly sent to the device should be forwarded | `boolean()` | `false` | `false` | `supported`
+`enabled` | Determines if the call forwarding should be used | `boolean()` | `false` | `false` | `supported`
+`ignore_early_media` | The option to determine if early media from the call forwarded number should ignored | `boolean()` | `true` | `false` |  
+`keep_caller_id` | Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used | `boolean()` | `true` | `false` | `supported`
+`number` | The number to forward calls to | `string(0..35)` |   | `false` | `supported`
+`require_keypress` | Determines if the callee is prompted to press 1 to accept the call | `boolean()` | `true` | `false` | `supported`
+`substitute` | Determines if the call forwarding replaces the device | `boolean()` | `true` | `false` | `supported`
 
 ### call_waiting
 
