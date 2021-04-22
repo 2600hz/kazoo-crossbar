@@ -562,7 +562,7 @@ media_id_required(Context) ->
 dial(Context, _ConferenceId, 'undefined') ->
     data_required(Context, <<"dial">>);
 dial(Context, ConferenceId, Data) ->
-    case build_valid_endpoints(Context, ConferenceId, Data) of
+    case build_valid_endpoints(cb_context:set_resp_status(Context, 'success'), ConferenceId, Data) of
         {Context1, []} -> error_no_endpoints(Context1);
         {Context1, Endpoints} ->
             case cb_context:has_errors(Context1) of
@@ -891,7 +891,7 @@ handle_participants_action(Context, ConferenceId, Action, Selector) ->
          || P <- Participants,
             filter_participant(P, Selector)
         ],
-    Context.
+    cb_context:set_resp_status(Context, 'success').
 
 -spec filter_participant(kz_json:object(), filter_fun()) -> boolean().
 filter_participant(JObj, Fun) ->
