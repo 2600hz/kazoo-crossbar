@@ -1195,6 +1195,11 @@
         "call_failover": {
             "description": "The device call failover parameters, to replace the device with an extension/phone number when device is offline.",
             "properties": {
+                "direct_calls_only": {
+                    "default": false,
+                    "description": "Determines if the calls that are not directly sent to the device should be forwarded",
+                    "type": "boolean"
+                },
                 "enabled": {
                     "default": false,
                     "description": "Determines if the call failover should be used when device is offline",
