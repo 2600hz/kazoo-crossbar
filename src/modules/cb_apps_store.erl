@@ -288,7 +288,7 @@ post(Context, AppId) ->
         'success' ->
             JObj = cb_context:doc(Context1),
             RespData = kz_json:get_value(AppId, kzd_apps_store:apps(JObj)),
-            cb_context:set_resp_data(Context, RespData);
+            cb_context:set_resp_data(Context1, RespData);
         _Status -> Context1
     end.
 
@@ -355,7 +355,7 @@ put(Context, Id) ->
         'success' ->
             JObj = cb_context:doc(Context1),
             RespData = kz_json:get_value(Id, kzd_apps_store:apps(JObj)),
-            cb_context:set_resp_data(Context, RespData);
+            cb_context:set_resp_data(Context1, RespData);
         _Status -> Context1
     end.
 
@@ -372,7 +372,7 @@ delete(Context, _Id) ->
     Context1 = crossbar_doc:save(Context),
     case cb_context:resp_status(Context1) of
         'success' ->
-            cb_context:set_resp_data(Context, kz_json:new());
+            cb_context:set_resp_data(Context1, kz_json:new());
         _Status -> Context1
     end.
 
