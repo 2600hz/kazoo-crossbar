@@ -458,6 +458,10 @@ sync_images(JObj, AttachmentId, DocAttachments) ->
     kz_json:set_value(kz_doc:path_attachments(), kz_json:from_list(Attachments), JObj).
 
 all_i18n_images(JObj) ->
+    all_i18n_images(JObj, kzd_app:i18n(JObj)).
+
+all_i18n_images(_JObj, 'undefined') -> #{};
+all_i18n_images(_JObj, Images) ->
     kz_json:foldl(fun([Lang, <<"icon">>], Icon, Acc) ->
                           Acc#{Icon => kzd_app:path_i18_icon(Lang)};
                      ([Lang, <<"screenshots">>], Screenshots, Acc) ->
@@ -472,7 +476,7 @@ all_i18n_images(JObj) ->
                           Acc
                   end
                  ,#{}
-                 ,kz_json:flatten(kzd_app:i18n(JObj))
+                 ,kz_json:flatten(Images)
                  ).
 
 %%%=============================================================================

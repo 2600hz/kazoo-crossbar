@@ -396,17 +396,44 @@ curl -v -X DELETE \
 ```shell
 curl -v -X GET \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -H "Accept: image/png" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/icon
 ```
+
+The response body will be the PNG file (not base64 encoded).
 
 ### Change branded icon
 
 > POST /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/icon
 
+Example to update a PNG file that has been base64-encoded. `Content-Disposition` with `filename` will name the resulting file stored on the whitelabel document.
+
 ```shell
 curl -v -X POST \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -H "content-type: multipart/form-data; boundary={BOUNDARY}" \
+    -H "accept: application/json" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/icon
+    -d '--{BOUNDARY}
+content-disposition: form-data;filename="image-icon.png"
+content-transfer-encoding: base64
+content-type: image/png
+
+{BASE64-ENCODED IMAGE DATA}
+--{BOUNDARY}'
+```
+```json
+{"data":{
+  "i18n":{
+    "en-US":{
+      "icon":"icon-en-US-image-icon.png"
+    }
+   }
+   ,"id":"app_whitelabel-{ID}"
+  }
+  ,"status":"success"
+}
+
 ```
 
 ### Remove branded icon
