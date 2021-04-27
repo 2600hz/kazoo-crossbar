@@ -659,11 +659,14 @@ Kazoo will generate the NOTIFY packet if the device is registered.
 
 PUT body options:
 
-Key | Type | Description
---- | ---- | -----------
-`action` | `'notify'` | Perform the 'notify' action
-`data.event` | `string()` | The value of the Event header in the NOTIFY packet
-`data` | `object()` | Parameters for the action
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`data.body.content_type` | The Content-Type of the data in the NOTIFY content body | `string()` |   | `true` |
+`data.body.data` | The NOTIFY content body | `string()` |   | `true` |
+`data.body` | Parameters of content body of SIP NOTIFY | `object()` |   | `false` |
+`data.event` | Event header value for SIP NOTIFY | `string()` |   | `true` |
+`data` | Action-specific parameters | `object()` |   | `true` |
 
 > PUT /v2/accounts/{ACCOUNT_ID}/devices/{DEVICE_ID}
 
@@ -672,11 +675,34 @@ curl -v -X POST \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     -H "Content-Type: application/json" \
     -d '{"action": "notify",
-         "data": {
-           "event": "event"
+         "data":{
+           "data": {
+             "event": "event"
+             ,"body":{
+               "content_type":"application/xml"
+               ,"data":"NOTIFY body content"
+             }
+           }
          }
         }' \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/devices/{DEVICE_ID}/notify
+```
+
+An example for a Yealink might look like (thanks to forum user [https://forums.2600hz.com/forums/topic/12045-sip-notify/#comment-62381](andy.wells) for the suggestion):
+
+```json
+{
+    "action": "notify"
+    ,"data": {
+        "data": {
+            "event": "Yealink-xml",
+            "body": {
+                "data": "<YealinkIPPhoneTextScreen destroyOnExit=\"true\" Beep=\"true\" Timeout=\"0\" LockIn=\"false\"><Title wrap=\"true\">Title</Title><Text>Hello!</Text></YealinkIPPhoneTextScreen>",
+                "content_type": "application/xml"
+            }
+        }
+    }
+}
 ```
 
 ## Fetch registration statuses of all devices
