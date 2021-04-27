@@ -442,15 +442,20 @@ remove_root_keys(JObj, _, _, _) ->
     JObj.
 
 %% remove any attachments that is not in i18n part of document
-sync_images(JObj, AttachmentId, _, _) ->
+sync_images(JObj, AttachmentId, _Type, _Language) ->
+    sync_images(JObj, AttachmentId, kz_doc:attachments(JObj)).
+
+sync_images(JObj, AttachmentId, 'undefined') ->
+    lager:info("no images on ~s", [AttachmentId]),
+    JObj;
+sync_images(JObj, AttachmentId, DocAttachments) ->
     AllImages = all_i18n_images(JObj),
     Attachments = [{Name, AttJObj}
-                   || {Name, AttJObj} <- kz_json:to_proplist(kz_doc:attachments(JObj)),
+                   || {Name, AttJObj} <- kz_json:to_proplist(DocAttachments),
                       maps:is_key(Name, AllImages)
                           orelse Name =:= AttachmentId
                   ],
     kz_json:set_value(kz_doc:path_attachments(), kz_json:from_list(Attachments), JObj).
-
 
 all_i18n_images(JObj) ->
     kz_json:foldl(fun([Lang, <<"icon">>], Icon, Acc) ->
