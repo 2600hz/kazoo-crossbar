@@ -53,18 +53,25 @@ Key | Description | Type | Default | Required | Support Level
 
 ### App Internationalization (i18n)
 
-App documents may have internationalization of their metadata like description or name/label or screenshots. The language code are standard `two_letter_language_code-CAPITAL_TWO_LETTER_COUNTRY_CODE` for example `en-US`.
+App documents may have internationalization of their metadata like description or name/label or screenshots. The language code are standard language-country format like `en-US`.
 
 !!! note
     `icon` and `screenshot` in `i18n.en-US` section of app document has priority over their counterparts on the root of the document. For example if screenshots defined in both places ONLY values from `i18n.en-US.screenshots` will honored!
 
-### Branding Apps
+### Branding (White labeling) UI Apps
 
 Re-seller can change `i18n` section of the app documents to their needs. See below for API `override` endpoint. This whitelabel overrides will be saved in their account database. When listing or getting apps metadata these whitelabeled data will merged.
 
-Please note that these overrides has priority over default values from master account.
+Brand UI apps will affect the reseller and all their sub-accounts. Please note that these overrides has priority over default values from master account.
 
-### Getting brand or language specific icon or screenshots
+### How to specify brand or language specific UI applications
+
+To request brand or language app metadata simply include them in the URL path:
+
+* To request language add this part to URL: `/i18n/{{LANGUAGE_CODE}}`
+* To request brand add this part to URL: `/whitelabel/{{DOMAIN}}`
+
+### Examples
 
 Clients can request languages specific screenshots or icon by requesting the desired language in URL:
 
@@ -306,9 +313,17 @@ curl -v -X POST \
 }
 ```
 
-## Whitelabeling UI applications
+## Brand/Whitelabel UI applications override
 
-The account can override the app's icon, screenshots of the app, and i18n settings.
+The reseller account can override some part of UI application meta data like icon, screen shots and i18n settings.
+
+Reseller should create the overrides, then sub-account can get branded data when they include the reseller's whilteabel domain in URL:
+
+```
+GET /v2/whitelabel/{{domain}}/apps_store
+```
+
+
 
 ### Schema
 
@@ -406,7 +421,7 @@ The response body will be the PNG file (not base64 encoded).
 
 > POST /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/icon
 
-Example to update a PNG file that has been base64-encoded. `Content-Disposition` with `filename` will name the resulting file stored on the whitelabel document.
+See [Multipart](./multipart.md) on different ways to upload files.
 
 ```shell
 curl -v -X POST \
@@ -414,26 +429,20 @@ curl -v -X POST \
     -H "content-type: multipart/form-data; boundary={BOUNDARY}" \
     -H "accept: application/json" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/icon
-    -d '--{BOUNDARY}
-content-disposition: form-data;filename="image-icon.png"
-content-transfer-encoding: base64
-content-type: image/png
-
-{BASE64-ENCODED IMAGE DATA}
---{BOUNDARY}'
 ```
-```json
-{"data":{
-  "i18n":{
-    "en-US":{
-      "icon":"icon-en-US-image-icon.png"
-    }
-   }
-   ,"id":"app_whitelabel-{ID}"
-  }
-  ,"status":"success"
-}
 
+```json
+{
+  "data":{
+    "i18n":{
+      "en-US":{
+        "icon":"icon-en-US-image-icon.png"
+      }
+    },
+    "id":"app_whitelabel-{ID}"
+  },
+  "status":"success"
+}
 ```
 
 ### Remove branded icon
@@ -459,6 +468,8 @@ curl -v -X GET \
 ### Change branded screenshot
 
 You must supply the same filename in the request to replace the old image. Otherwise this will be added as a new screenshot.
+
+See [Multipart](./multipart.md) on different ways to upload files.
 
 > POST /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/screenshot
 
