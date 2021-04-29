@@ -53,18 +53,25 @@ Key | Description | Type | Default | Required | Support Level
 
 ### App Internationalization (i18n)
 
-App documents may have internationalization of their metadata like description or name/label or screenshots. The language code are standard `two_letter_language_code-CAPITAL_TWO_LETTER_COUNTRY_CODE` for example `en-US`.
+App documents may have internationalization of their metadata like description or name/label or screenshots. The language code are standard language-country format like `en-US`.
 
 !!! note
     `icon` and `screenshot` in `i18n.en-US` section of app document has priority over their counterparts on the root of the document. For example if screenshots defined in both places ONLY values from `i18n.en-US.screenshots` will honored!
 
-### Branding Apps
+### Branding (White labeling) UI Apps
 
 Re-seller can change `i18n` section of the app documents to their needs. See below for API `override` endpoint. This whitelabel overrides will be saved in their account database. When listing or getting apps metadata these whitelabeled data will merged.
 
-Please note that these overrides has priority over default values from master account.
+Brand UI apps will affect the reseller and all their sub-accounts. Please note that these overrides has priority over default values from master account.
 
-### Getting brand or language specific icon or screenshots
+### How to specify brand or language specific UI applications
+
+To request brand or language app metadata simply include them in the URL path:
+
+* To request language add this part to URL: `/i18n/{{LANGUAGE_CODE}}`
+* To request brand add this part to URL: `/whitelabel/{{DOMAIN}}`
+
+### Examples
 
 Clients can request languages specific screenshots or icon by requesting the desired language in URL:
 
@@ -306,7 +313,52 @@ curl -v -X POST \
 }
 ```
 
-## Fetch app whitelabel overrides
+## Brand/Whitelabel UI applications override
+
+The reseller account can override some part of UI application meta data like icon, screen shots and i18n settings.
+
+Reseller should create the overrides, then sub-account can get branded data when they include the reseller's whilteabel domain in URL:
+
+```
+GET /v2/whitelabel/{{domain}}/apps_store
+```
+
+
+
+### Schema
+
+Application Whitelabel
+
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`i18n` | Application translation | [#/definitions/app_i18n](#app_i18n) |   | `false` |
+`icon` | Application icon | `string()` |   | `false` |
+`screenshots.[]` |   | `string()` |   | `false` |
+`screenshots` |   | `array(string())` |   | `false` |
+
+### app_i18n
+
+Application translation
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`[a-z]{2}\-[A-Z]{2}.description` |   | `string(3..)` |   | `false` |
+`[a-z]{2}\-[A-Z]{2}.extended_description` |   | `string()` |   | `false` |
+`[a-z]{2}\-[A-Z]{2}.features.[]` |   | `string()` |   | `false` |
+`[a-z]{2}\-[A-Z]{2}.features` |   | `array(string())` |   | `false` |
+`[a-z]{2}\-[A-Z]{2}.icon` | I18N application icon attachment name | `string()` |   | `false` |
+`[a-z]{2}\-[A-Z]{2}.label` |   | `string(3..64)` |   | `false` |
+`[a-z]{2}\-[A-Z]{2}.screenshots.[]` |   | `string()` |   | `false` |
+`[a-z]{2}\-[A-Z]{2}.screenshots` |   | `array(string())` |   | `false` |
+`[a-z]{2}\-[A-Z]{2}.urls` |   | `object()` |   | `false` |
+`[a-z]{2}\-[A-Z]{2}` |   | `object()` |   | `false` |
+
+
+
+### Fetch app whitelabel overrides
 
 > GET /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override
 
@@ -315,18 +367,24 @@ curl -v -X GET \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override
 ```
+```json
 
-## Create app whitelabel overrides
+```
+
+!!! note: this will 404 if you haven't created the override via PUT yet
+
+### Create app whitelabel overrides
 
 > PUT /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override
 
 ```shell
 curl -v -X PUT \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
-    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override \
+    -d {"data":{"screenshots":[], "icon":"", "i18n":{}}}
 ```
 
-## Change app whitelabel overrides
+### Change app whitelabel overrides
 
 > POST /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override
 
@@ -336,7 +394,7 @@ curl -v -X POST \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override
 ```
 
-## Remove app whitelabel overrides
+### Remove app whitelabel overrides
 
 > DELETE /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override
 
@@ -346,27 +404,48 @@ curl -v -X DELETE \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override
 ```
 
-## Fetch branded icon
+### Fetch branded icon
 
 > GET /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/icon
 
 ```shell
 curl -v -X GET \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -H "Accept: image/png" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/icon
 ```
 
-## Change branded icon
+The response body will be the PNG file (not base64 encoded).
+
+### Change branded icon
 
 > POST /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/icon
+
+See [Multipart](./multipart.md) on different ways to upload files.
 
 ```shell
 curl -v -X POST \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -H "content-type: multipart/form-data; boundary={BOUNDARY}" \
+    -H "accept: application/json" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/icon
 ```
 
-## Remove branded icon
+```json
+{
+  "data":{
+    "i18n":{
+      "en-US":{
+        "icon":"icon-en-US-image-icon.png"
+      }
+    },
+    "id":"app_whitelabel-{ID}"
+  },
+  "status":"success"
+}
+```
+
+### Remove branded icon
 
 > DELETE /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/icon
 
@@ -376,7 +455,7 @@ curl -v -X DELETE \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/icon
 ```
 
-## Fetch branded screenshot at an index
+### Fetch branded screenshot at an index
 
 > GET /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/screenshot/{APP_SCREENSHOT_INDEX}
 
@@ -386,9 +465,11 @@ curl -v -X GET \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/screenshot/{APP_SCREENSHOT_INDEX}
 ```
 
-## Change branded screenshot
+### Change branded screenshot
 
 You must supply the same filename in the request to replace the old image. Otherwise this will be added as a new screenshot.
+
+See [Multipart](./multipart.md) on different ways to upload files.
 
 > POST /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/screenshot
 
@@ -398,7 +479,7 @@ curl -v -X POST \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/screenshot
 ```
 
-## Remove branded screenshot at an index
+### Remove branded screenshot at an index
 
 > DELETE /v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/screenshot/{APP_SCREENSHOT_INDEX}
 
