@@ -4754,8 +4754,13 @@
   'type': object
   'x-patternProperties':
     '^[a-zA-z0-9_\-]+$':
-      'description': The SIP header to add
-      'type': string
+      'oneOf':
+        - 'description': The SIP header to add
+          'type': string
+        - 'description': The SIP header to add
+          'type': boolean
+        - 'description': The SIP header to add
+          'type': integer
 'device_rate_limits':
   'additionalProperties': true
   'description': describe limits for SIP requests
