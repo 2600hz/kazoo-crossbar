@@ -27,7 +27,7 @@ Key | Description | Type | Default | Required | Support Level
 `custom_channel_vars` | Kazoo-specific key/value pairs set on the channel | `object()` |   | `false` |  
 `custom_sip_headers.in` | Custom SIP Headers to be applied to calls inbound to Kazoo from the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
 `custom_sip_headers.out` | Custom SIP Headers to be applied to calls outbound from Kazoo to the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
-`custom_sip_headers.^[a-zA-z0-9_\-]+$` | The SIP header to add | `string()` |   | `false` |  
+`custom_sip_headers.^[a-zA-z0-9_\-]+$` |   | `string() | boolean() | integer()` |   | `false` |  
 `custom_sip_headers` | A property list of SIP headers | `object()` |   | `false` |  
 `digits_dialed` | All the DTMF tones detected on this leg of the call | `string()` |   | `false` |  
 `disposition` | Who sent the SIP BYE message | `string()` |   | `false` |  
@@ -80,7 +80,7 @@ Custom SIP headers applied to an INVITE
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`^[a-zA-z0-9_\-]+$` | The SIP header to add | `string()` |   | `false` |  
+`^[a-zA-z0-9_\-]+$` |   | `string() | boolean() | integer()` |   | `false` |  
 
 
 

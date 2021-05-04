@@ -67,7 +67,7 @@ Key | Description | Type | Default | Required | Support Level
 `ringtones` | Ringtone Parameters | `object()` | `{}` | `false` |  
 `sip.custom_sip_headers.in` | Custom SIP Headers to be applied to calls inbound to Kazoo from the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
 `sip.custom_sip_headers.out` | Custom SIP Headers to be applied to calls outbound from Kazoo to the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
-`sip.custom_sip_headers.^[a-zA-z0-9_\-]+$` | The SIP header to add | `string()` |   | `false` |  
+`sip.custom_sip_headers.^[a-zA-z0-9_\-]+$` |   | `string() | boolean() | integer()` |   | `false` |  
 `sip.custom_sip_headers` | A property list of SIP headers | `object()` |   | `false` |  
 `sip.custom_sip_interface` | If the bridge string should target a different SIP interface | `string()` |   | `false` |  
 `sip.expire_seconds` | The time, in seconds, sent to the provisioner for the registration period that the device should be configured with. | `integer()` | `300` | `false` | `supported`
@@ -182,7 +182,7 @@ Custom SIP headers applied to an INVITE
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`^[a-zA-z0-9_\-]+$` | The SIP header to add | `string()` |   | `false` |  
+`^[a-zA-z0-9_\-]+$` |   | `string() | boolean() | integer()` |   | `false` |  
 
 ### devices.combo_key
 
