@@ -39,7 +39,7 @@ Key | Description | Type | Default | Required | Support Level
 `gateways.[].codecs` | A list of single list codecs supported by this gateway (to support backward compatibility) | `array(string('G729' | 'PCMU' | 'PCMA' | 'G722_16' | 'G722_32' | 'CELT_48' | 'CELT_64' | 'Speex' | 'GSM' | 'OPUS' | 'H261' | 'H263' | 'H264' | 'VP8'))` |   | `false` |  
 `gateways.[].custom_sip_headers.in` | Custom SIP Headers to be applied to calls inbound to Kazoo from the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
 `gateways.[].custom_sip_headers.out` | Custom SIP Headers to be applied to calls outbound from Kazoo to the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
-`gateways.[].custom_sip_headers.^[a-zA-z0-9_\-]+$` |   | `string() | boolean() | integer()` |   | `false` |  
+`gateways.[].custom_sip_headers.^[a-zA-z0-9_\-]+$` | The SIP header to add | `string() | boolean() | integer()` |   | `false` |  
 `gateways.[].custom_sip_headers` | A property list of SIP headers | `object()` |   | `false` |  
 `gateways.[].custom_sip_interface` | The name of a custom SIP interface | `string()` |   | `false` |  
 `gateways.[].enabled` | Determines if the resource gateway is currently enabled | `boolean()` | `true` | `false` |  
@@ -109,7 +109,7 @@ Custom SIP headers applied to an INVITE
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`^[a-zA-z0-9_\-]+$` |   | `string() | boolean() | integer()` |   | `false` |  
+`^[a-zA-z0-9_\-]+$` | The SIP header to add | `string() | boolean() | integer()` |   | `false` |  
 
 ### endpoint.media
 
