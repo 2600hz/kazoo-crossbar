@@ -47,7 +47,7 @@ Key | Description | Type | Default | Required | Support Level
 `ringtones.external` | The alert info SIP header added when the call is from internal sources | `string(0..256)` |   | `false` |  
 `ringtones.internal` | The alert info SIP header added when the call is from external sources | `string(0..256)` |   | `false` |  
 `ringtones` | Ringtone Parameters | `object()` | `{}` | `false` |  
-`timezone` | The default timezone | `string(5..32)` |   | `false` | `supported`
+`timezone` | The default account timezone | [#/definitions/timezone](#timezone) |   | `false` | `supported`
 `topup.amount` | Amount to topup with | `number()` |   | `false` |  
 `topup.threshold` | The account balance when topup occurs | `number()` |   | `false` |  
 `topup` | Topup settings for the account | `object()` |   | `false` |  
@@ -216,6 +216,14 @@ Key | Description | Type | Default | Required | Support Level
 `number` | Number for callback notifications about new messages | `string()` |   | `false` |  
 `schedule` | Schedules interval between callbacks | `array(integer())` |   | `false` |  
 `timeout_s` | How long will system wait for answer to callback | `integer()` |   | `false` |  
+
+### timezone
+
+The default timezone
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
 
 
 

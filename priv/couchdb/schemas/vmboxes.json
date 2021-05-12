@@ -185,11 +185,9 @@
             "type": "boolean"
         },
         "timezone": {
+            "$ref": "timezone",
             "description": "The default timezone",
-            "maxLength": 32,
-            "minLength": 5,
-            "support_level": "supported",
-            "type": "string"
+            "support_level": "supported"
         },
         "transcribe": {
             "default": false,

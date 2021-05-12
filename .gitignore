@@ -47,5 +47,3 @@ erlang.mk
 .erlang.mk
 
 ## app specific gitignore
-
-/priv/couchdb/schemas/port_requests.to_scheduled.json

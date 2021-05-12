@@ -50,7 +50,7 @@ Key | Description | Type | Default | Required | Support Level
 `skip_envelope` | Determines if the envelope should be skipped | `boolean()` | `false` | `false` | `beta`
 `skip_greeting` | Determines if the greeting should be skipped | `boolean()` | `false` | `false` | `supported`
 `skip_instructions` | Determines if the instructions after the greeting and prior to composing a message should be played | `boolean()` | `false` | `false` | `supported`
-`timezone` | The default timezone | `string(5..32)` |   | `false` | `supported`
+`timezone` | The default timezone | [#/definitions/timezone](#timezone) |   | `false` | `supported`
 `transcribe` | Transcribe voicemail using ASR engine | `boolean()` | `false` | `false` | `alpha`
 `vm_message_forward_type` | Enable or disable the ability to prepend a message when forwarding a voicemail message | `string('only_forward' | 'prepend_forward')` | `only_forward` | `false` | `supported`
 
@@ -67,6 +67,14 @@ Key | Description | Type | Default | Required | Support Level
 `number` | Number for callback notifications about new messages | `string()` |   | `false` |  
 `schedule` | Schedules interval between callbacks | `array(integer())` |   | `false` |  
 `timeout_s` | How long will system wait for answer to callback | `integer()` |   | `false` |  
+
+### timezone
+
+The default timezone
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
 
 
 

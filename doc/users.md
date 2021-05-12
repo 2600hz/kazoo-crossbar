@@ -63,7 +63,7 @@ Key | Description | Type | Default | Required | Support Level
 `ringtones` | Ringtone Parameters | `object()` | `{}` | `false` |  
 `scope_restrictions.[]` |   | `string()` |   | `false` |  
 `scope_restrictions` | Scope restrictions applied to this user | `array(string())` |   | `false` |  
-`timezone` | User's timezone | `string()` |   | `false` | `supported`
+`timezone` | User's timezone | [#/definitions/timezone](#timezone) |   | `false` | `supported`
 `username` | The GUI login username - alpha-numeric, dashes, at symbol, periods, plusses, and underscores allowed | `string(1..256)` |   | `false` | `supported`
 `verified` | Determines if the user has been verified | `boolean()` | `false` | `false` |  
 `vm_to_email_enabled` | Determines if the user would like voicemails emailed to them | `boolean()` | `true` | `false` |  
@@ -272,6 +272,14 @@ Key | Description | Type | Default | Required | Support Level
 `role` | To specify the function or part played in a particular situation by the user | `string()` |   | `false` |  
 `sort-string` | To specify the family name or given name text to be used for national-language-specific sorting of the FN and N types | `string()` |   | `false` |  
 `title` | To specify the position or job of the user | `string()` |   | `false` |  
+
+### timezone
+
+The default timezone
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
 
 
 

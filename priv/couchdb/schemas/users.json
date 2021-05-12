@@ -280,9 +280,9 @@
             "type": "array"
         },
         "timezone": {
+            "$ref": "timezone",
             "description": "User's timezone",
-            "support_level": "supported",
-            "type": "string"
+            "support_level": "supported"
         },
         "username": {
             "description": "The GUI login username - alpha-numeric, dashes, at symbol, periods, plusses, and underscores allowed",

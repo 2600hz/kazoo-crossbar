@@ -38,9 +38,9 @@
             "type": "string"
         },
         "fax_timezone": {
+            "$ref": "timezone",
             "description": "The timezone announced",
-            "support_level": "supported",
-            "type": "string"
+            "support_level": "supported"
         },
         "flags": {
             "description": "Flags set by external applications",

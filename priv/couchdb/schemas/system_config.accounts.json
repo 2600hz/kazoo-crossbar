@@ -9,9 +9,9 @@
             "type": "boolean"
         },
         "default_timezone": {
+            "$ref": "timezone",
             "default": "America/Los_Angeles",
-            "description": "accounts default timezone",
-            "type": "string"
+            "description": "accounts default timezone"
         },
         "master_account_id": {
             "description": "accounts master account id",

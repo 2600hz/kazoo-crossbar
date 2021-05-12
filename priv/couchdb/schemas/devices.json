@@ -449,9 +449,9 @@
             "type": "boolean"
         },
         "timezone": {
+            "$ref": "timezone",
             "description": "Device's timezone",
-            "support_level": "supported",
-            "type": "string"
+            "support_level": "supported"
         }
     },
     "required": [

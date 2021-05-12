@@ -4,9 +4,9 @@
     "description": "Schema for servers system_config",
     "properties": {
         "clock_timezone": {
+            "$ref": "timezone",
             "default": "UTC",
-            "description": "servers clock timezone",
-            "type": "string"
+            "description": "servers clock timezone"
         }
     },
     "type": "object"

@@ -196,11 +196,9 @@
             "type": "object"
         },
         "timezone": {
-            "description": "The default timezone",
-            "maxLength": 32,
-            "minLength": 5,
-            "support_level": "supported",
-            "type": "string"
+            "$ref": "timezone",
+            "description": "The default account timezone",
+            "support_level": "supported"
         },
         "topup": {
             "description": "Topup settings for the account",

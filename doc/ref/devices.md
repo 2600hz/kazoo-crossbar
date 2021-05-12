@@ -87,7 +87,7 @@ Key | Description | Type | Default | Required | Support Level
 `sip.username` | SIP authentication username | `string(2..32)` |   | `false` | `supported`
 `sip` | SIP Parameters | `object()` | `{}` | `false` |  
 `suppress_unregister_notifications` | When true disables deregister notifications | `boolean()` | `false` | `false` |  
-`timezone` | Device's timezone | `string()` |   | `false` | `supported`
+`timezone` | Device's timezone | [#/definitions/timezone](#timezone) |   | `false` | `supported`
 
 ### call_recording
 
@@ -274,6 +274,14 @@ Key | Description | Type | Default | Required | Support Level
 `numbers` | A list of static numbers with their flows | `object()` |   | `false` |  
 `patterns./.+/` | A metaflow node defines a module to execute, data to provide to that module, and one or more children to branch to | [#/definitions/metaflow](#metaflow) |   | `false` |  
 `patterns` | A list of patterns with their flows | `object()` |   | `false` |  
+
+### timezone
+
+The default timezone
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
 
 
 
