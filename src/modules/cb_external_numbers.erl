@@ -220,7 +220,7 @@ validate_number_reconcilable(Context) ->
     Number = kzd_external_numbers:number(cb_context:doc(Context)),
     case knm_converters:is_reconcilable(Number) of
         'true' -> Context;
-        'false' ->    
+        'false' ->
             cb_context:add_validation_error(<<"number">>, <<"invalid">>, <<"number is not an external number">>, Context)
     end.
 
@@ -298,6 +298,3 @@ send_voice_pin(Context) ->
     Number = kzd_external_numbers:number(Doc),
     io:format("place verification call to ~s with pin ~s~n", [Number, Pin]),
     Context.
-
-        
-    
