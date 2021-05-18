@@ -1,0 +1,17 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "_id": "external_number_verify",
+    "description": "Schema to request verification of an external number",
+    "properties": {
+        "method": {
+            "default": "voice",
+            "description": "The requested method for transfering the verification pin",
+            "enum": [
+                "voice"
+            ],
+            "support_level": "supported",
+            "type": "string"
+        }
+    },
+    "type": "object"
+}
