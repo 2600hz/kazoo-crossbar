@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Functions shared between crossbar modules
 %%% @author James Aimonetti
 %%%
@@ -333,7 +333,7 @@ format_assignment_results(#{'succeeded' := PNs
                            }) ->
     format_assignment_succeeded(PNs) ++ format_assignment_failure(Failed).
 
--spec format_assignment_succeeded(knm_phone_number:records()) -> assignment_updates().
+-spec format_assignment_succeeded(knm_phone_number:pn_records()) -> assignment_updates().
 format_assignment_succeeded(PhoneNumbers) ->
     [{knm_phone_number:number(PN), {'ok', PN}}
      || PN <- PhoneNumbers

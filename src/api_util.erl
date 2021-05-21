@@ -458,7 +458,7 @@ handle_file_contents(Context, ContentType, Req, FileContents) ->
             {cb_context:add_req_file(Context, {Filename, FileJObj}), Req}
     end.
 
--spec uploaded_filename(cb_context:context(), kz_term:ne_binary(), cowboy_req:req(), cowboy:headers()) -> kz_term:ne_binary().
+-spec uploaded_filename(cb_context:context(), kz_term:ne_binary(), cowboy_req:req(), cowboy:http_headers()) -> kz_term:ne_binary().
 uploaded_filename(Context, ContentType, Req, MultiPartHeaders) ->
     case cb_context:req_value(Context, <<"filename">>) of
         'undefined' ->
@@ -527,7 +527,7 @@ decode_base64(Context, CT, Req, Base64Data) ->
                                  ),
     decode_base64(Context, CT, Req, Base64Data, MultiPartHeaders).
 
--spec decode_base64(cb_context:context(), kz_term:ne_binary(), cowboy_req:req(), binary(), cowboy:headers()) ->
+-spec decode_base64(cb_context:context(), kz_term:ne_binary(), cowboy_req:req(), binary(), cowboy:http_headers()) ->
           {cb_context:context(), cowboy_req:req()} |
           stop_return().
 decode_base64(Context, CT, Req, Base64Data, MultiPartHeaders) ->
