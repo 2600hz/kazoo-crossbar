@@ -304,6 +304,8 @@ validate_device(DeviceId, Context) ->
                ,fun validate_device_creds/2
                ,fun check_device_type_change/2
                ,fun check_device_schema/2
+               ,fun validate_call_failover/2
+               ,fun validate_call_forward/2
                ],
     lists:foldl(fun(F, C) -> F(DeviceId, C) end
                ,Context
@@ -858,6 +860,58 @@ on_successful_validation('undefined', Context) ->
     cb_context:set_doc(Context, kz_json:set_values(Props, cb_context:doc(Context)));
 on_successful_validation(DeviceId, Context) ->
     crossbar_doc:load_merge(DeviceId, Context, ?TYPE_CHECK_OPTION(kzd_devices:type())).
+
+%%------------------------------------------------------------------------------
+%% @doc Verify that if call failover is enabled, the call forward failover is non-
+%% empty.
+%% @end
+%%------------------------------------------------------------------------------
+-spec validate_call_failover(kz_term:api_ne_binary(), cb_context:context()) -> cb_context:context().
+validate_call_failover(_DeviceId, Context) ->
+    ReqData = cb_context:req_data(Context),
+    CallFailover = kzd_devices:call_failover(ReqData, kz_json:new()),
+    CallFailoverNumber = kzd_call_failover:number(CallFailover),
+    case kzd_call_failover:enabled(CallFailover)
+        andalso not kz_term:is_ne_binary(CallFailoverNumber)
+    of
+        'true' ->
+            Msg = kz_json:from_list(
+                    [{<<"message">>, <<"Call failover number cannot be empty when call failover is enabled">>}
+                    ,{<<"cause">>, CallFailoverNumber}
+                    ]),
+            cb_context:add_validation_error([<<"call_failover.number">>]
+                                           ,<<"required">>
+                                           ,Msg
+                                           ,Context
+                                           );
+        'false' -> Context
+    end.
+
+%%------------------------------------------------------------------------------
+%% @doc Verify that if call forward is enabled, the call forward number is non-
+%% empty.
+%% @end
+%%------------------------------------------------------------------------------
+-spec validate_call_forward(kz_term:api_ne_binary(), cb_context:context()) -> cb_context:context().
+validate_call_forward(_DeviceId, Context) ->
+    ReqData = cb_context:req_data(Context),
+    Callforward = kzd_devices:call_forward(ReqData, kz_json:new()),
+    CallForwardNumber = kzd_call_forward:number(Callforward),
+    case kzd_call_forward:enabled(Callforward)
+        andalso not kz_term:is_ne_binary(CallForwardNumber)
+    of
+        'true' ->
+            Msg = kz_json:from_list(
+                    [{<<"message">>, <<"Call forward number cannot be empty when call forward is enabled">>}
+                    ,{<<"cause">>, CallForwardNumber}
+                    ]),
+            cb_context:add_validation_error([<<"call_forward.number">>]
+                                           ,<<"required">>
+                                           ,Msg
+                                           ,Context
+                                           );
+        'false' -> Context
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc
