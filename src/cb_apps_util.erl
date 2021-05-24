@@ -26,10 +26,10 @@
 
 -include("crossbar.hrl").
 
+-define(CB_APPS_STORE_LIST, <<"apps_store/crossbar_listing">>).
+
 -type apps_map() :: #{kz_term:ne_binary() := kz_json:object()}.
 -type apps() :: kz_json:objects() | apps_map().
-
--define(PLAN_CATEGORY, <<"ui_apps">>).
 
 %%------------------------------------------------------------------------------
 %% @doc Get allowed applications from service plans.

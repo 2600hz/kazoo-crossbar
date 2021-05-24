@@ -27,7 +27,6 @@
 
 -define(CB_LIST, <<"resources/crossbar_listing">>).
 -define(JOBS_LIST, <<"resources/jobs_listing">>).
--define(MOD_CONFIG_CAT, <<(?CONFIG_CAT)/binary, ".resources">>).
 -define(COLLECTION, <<"collection">>).
 -define(JOBS, <<"jobs">>).
 

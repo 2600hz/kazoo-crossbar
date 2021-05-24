@@ -82,8 +82,6 @@
        ,kapps_config:get_ne_binary(?CONFIG_CAT, <<"default_language">>, <<"en-US">>)
        ).
 
--define(KEY_EMERGENCY, <<"emergency">>).
-
 -type fails() :: 'error' | 'fatal'.
 
 %%------------------------------------------------------------------------------

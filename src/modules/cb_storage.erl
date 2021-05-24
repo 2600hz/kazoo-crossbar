@@ -30,8 +30,6 @@
 -define(CB_ACCOUNT_LIST, <<"storage/plans_by_account">>).
 -define(CB_SYSTEM_LIST, <<"storage/system_plans">>).
 
--define(SYSTEM_DATAPLAN, <<"system">>).
-
 -define(PLANS_TOKEN, <<"plans">>).
 
 -define(STORAGE_TYPES, [<<"storage">>, <<"storage_plan">>]).
@@ -620,17 +618,17 @@ add_att_settings_validation_error(AttId, {'error', Reason, ExtendedError}, Conte
           Bin | kz_json:object()
               when Bin :: binary().
 get_error_response(ErrorHeaders, ErrorBody) ->
-    get_error_response(ErrorHeaders, ErrorBody, props:get_value(<<"content-type">>, ErrorHeaders)).
+    get_error_response_by_content_type(ErrorBody, props:get_value(<<"content-type">>, ErrorHeaders)).
 
--spec get_error_response(kz_term:proplist(), Bin, kz_term:api_ne_binary()) ->
+-spec get_error_response_by_content_type(Bin, kz_term:api_ne_binary()) ->
           Bin | kz_json:object()
               when Bin :: binary().
-get_error_response(_Headers, ErrorBody, 'undefined') ->
+get_error_response_by_content_type(ErrorBody, 'undefined') ->
     lager:debug("no error content-type returned, trying JSON decoding"),
     decode_json(ErrorBody);
-get_error_response(_Headers, ErrorBody, <<"application/json", _/binary>>) ->
+get_error_response_by_content_type(ErrorBody, <<"application/json", _/binary>>) ->
     decode_json(ErrorBody);
-get_error_response(_Headers, ErrorBody, _CT) ->
+get_error_response_by_content_type(ErrorBody, _CT) ->
     lager:debug("not handling content-type ~s, using resp body as-is", [_CT]),
     ErrorBody.
 

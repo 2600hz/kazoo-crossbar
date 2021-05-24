@@ -41,16 +41,12 @@
 -define(SCHEMA, <<"port_requests">>).
 -define(SCHEMA_TO_SCHEDULED, <<(?SCHEMA)/binary, ".to_scheduled">>).
 
--define(TEMPLATE_DOC_ID, <<"notify.loa">>).
--define(TEMPLATE_ATTACHMENT_ID, <<"template">>).
-
 -define(ATTACHMENT_MIME_TYPES, [{<<"application">>, <<"octet-stream">>, '*'}
                                ,{<<"text">>, <<"plain">>, '*'}
                                | ?PDF_CONTENT_TYPES
                                ]).
 
 -define(ACCOUNTS_BY_SIMPLE_ID, <<"accounts/listing_by_simple_id">>).
--define(ALL_PORT_REQ_NUMBERS, <<"port_requests/all_port_in_numbers">>).
 -define(LISTING_BY_STATE, <<"port_requests/listing_by_state">>).
 -define(LISTING_BY_NUMBER, <<"port_requests/listing_by_number">>).
 -define(DESCENDANT_LISTING_BY_STATE, <<"port_requests/listing_by_descendant_state">>).
@@ -64,8 +60,6 @@
 -define(PATH_LNP_LOOKUP, <<"lnp_lookup">>).
 
 -define(REQ_TRANSITION, <<"reason">>).
-
--define(SUBMIT_TO_CARRIER, <<"submit">>).
 
 %%%=============================================================================
 %%% API

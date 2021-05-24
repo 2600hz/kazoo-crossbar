@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc
 %%% @author Peter Defebvre
 %%% @author Luis Azedo
@@ -31,8 +31,6 @@
 -define(VIEW_BY_ACCOUNT, <<"ledgers/summary_by_account">>).
 -define(VIEW_BY_TIMESTAMP, <<"ledgers/list_by_timestamp">>).
 -define(VIEW_BY_SOURCE, <<"ledgers/list_by_source">>).
-
--define(NOTIFY_MSG, "failed to impact reseller ~s ledger : ~p").
 
 %%%=============================================================================
 %%% API

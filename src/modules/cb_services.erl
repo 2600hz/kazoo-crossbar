@@ -175,11 +175,11 @@ content_types_provided(Context, _) ->
 %%------------------------------------------------------------------------------
 -spec to_csv(cb_cowboy_payload()) -> cb_cowboy_payload().
 to_csv({Req, Context}) ->
-    {Req, to_response(Context, <<"csv">>, cb_context:req_nouns(Context))}.
+    {Req, to_response(Context, cb_context:req_nouns(Context))}.
 
--spec to_response(cb_context:context(), kz_term:ne_binary(), req_nouns()) ->
+-spec to_response(cb_context:context(), req_nouns()) ->
           cb_context:context().
-to_response(Context, _, [{<<"services">>, [?SUMMARY]}, {?KZ_ACCOUNTS_DB, _}|_]) ->
+to_response(Context, [{<<"services">>, [?SUMMARY]}, {?KZ_ACCOUNTS_DB, _}|_]) ->
     JObj = cb_context:resp_data(Context),
     case kz_json:get_list_value(<<"invoices">>, JObj, []) of
         [] -> Context;

@@ -32,6 +32,10 @@
 -include("crossbar.hrl").
 -include_lib("kazoo_numbers/include/knm_phone_number.hrl").
 
+-define(DEVICES_ALLOW_AGGREGATES
+       ,kapps_config:get_is_true(<<(?CONFIG_CAT)/binary, ".devices">>, <<"allow_aggregates">>, 'true')
+       ).
+
 -define(STATUS_PATH_TOKEN, <<"status">>).
 -define(CHECK_SYNC_PATH_TOKEN, <<"sync">>).
 
@@ -42,7 +46,6 @@
 -define(KEY_MAC_ADDRESS, <<"mac_address">>).
 -define(KEY_MDN, [<<"mobile">>, <<"mdn">>]).
 -define(KEY_SIP_REALM, [<<"sip">>, <<"realm">>]).
--define(KEY_SIP_METHOD, [<<"sip">>, <<"method">>]).
 -define(KEY_SIP_IP, [<<"sip">>, <<"ip">>]).
 -define(KEY_SIP_USERNAME, [<<"sip">>, <<"username">>]).
 -define(KEY_OUTBOUND_FLAGS, <<"outbound_flags">>).

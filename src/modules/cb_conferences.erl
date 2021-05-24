@@ -75,7 +75,7 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.execute.post.conferences">>, ?MODULE, 'post'),
     _ = crossbar_bindings:bind(<<"*.execute.patch.conferences">>, ?MODULE, 'patch'),
     _ = crossbar_bindings:bind(<<"*.execute.delete.conferences">>, ?MODULE, 'delete'),
-    ok.
+    'ok'.
 
 %%%=============================================================================
 %%% REST API Callbacks
@@ -191,7 +191,8 @@ validate_conference(?HTTP_PATCH, Context, ConferenceId) ->
 validate_conference(?HTTP_DELETE, Context, ConferenceId) ->
     load_conference(ConferenceId, Context).
 
--spec validate_participants(http_method(), cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+-spec validate_participants(http_method(), cb_context:context(), path_token()) ->
+          cb_context:context().
 validate_participants(?HTTP_GET, Context0, ConferenceId) ->
     Context1 = maybe_load_conference(ConferenceId, Context0),
     case cb_context:resp_status(Context1) of
@@ -201,7 +202,8 @@ validate_participants(?HTTP_GET, Context0, ConferenceId) ->
 validate_participants(?HTTP_PUT, Context, ConferenceId) ->
     maybe_load_conference(ConferenceId, Context).
 
--spec validate_participant(http_method(), cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) -> cb_context:context().
+-spec validate_participant(http_method(), cb_context:context(), path_token(), path_token()) ->
+          cb_context:context().
 validate_participant(?HTTP_GET, Context0, ConferenceId, ParticipantId) ->
     Context1 = maybe_load_conference(ConferenceId, Context0),
     case cb_context:resp_status(Context1) of
@@ -887,7 +889,7 @@ handle_participants_action(Context, ConferenceId, Action, Selector) ->
     ConfData = request_conference_details(ConferenceId),
     Participants = extract_participants(ConfData),
     Conf = conference(ConferenceId),
-    _ = [perform_participant_action(Conf, Action, kz_json:get_ne_binary_value(<<"Participant-ID">>, P))
+    _ = [perform_participant_action(Conf, Action, kz_json:get_integer_value(<<"Participant-ID">>, P))
          || P <- Participants,
             filter_participant(P, Selector)
         ],
@@ -949,7 +951,7 @@ participant_not_found(ParticipantId, Context) ->
                                ,Context
                                ).
 
--spec perform_participant_action(kapps_conference:conference(), kz_term:ne_binary(), kz_term:api_integer()) -> 'ok'.
+-spec perform_participant_action(kapps_conference:conference(), kz_term:ne_binary(), non_neg_integer()) -> 'ok'.
 perform_participant_action(Conference, ?MUTE, ParticipantId) ->
     kapps_conference_command:mute_participant(ParticipantId, Conference);
 perform_participant_action(Conference, ?UNMUTE, ParticipantId) ->
@@ -962,14 +964,14 @@ perform_participant_action(Conference, ?KICK, ParticipantId) ->
     kapps_conference_command:kick(ParticipantId, Conference).
 
 %% add real-time call-info to participants
--spec enrich_participant(kz_term:ne_binary(), kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
+-spec enrich_participant(path_token(), path_token(), cb_context:context()) -> cb_context:context().
 enrich_participant(ParticipantId, ConferenceId, Context) ->
     Participants = extract_participants(
                      request_conference_details(ConferenceId)
                     ),
     [Normalized|_] = [kz_json:normalize_jobj(JObj)
                       || JObj <- Participants,
-                         kz_json:get_binary_value(<<"Participant-ID">>, JObj) == ParticipantId
+                         ParticipantId =:= kz_json:get_ne_binary_value(<<"Participant-ID">>, JObj)
                      ] ++ [kz_json:new()],
     cb_context:set_resp_data(Context, Normalized).
 
@@ -1004,7 +1006,7 @@ conference_realtime_data(ConferenceId) ->
                ],
     kz_json:merge(kz_json:exec(Routines, ConferenceDetails), C2).
 
--spec request_conference_details(kz_term:ne_binary()) -> kz_json:object().
+-spec request_conference_details(path_token()) -> kz_json:object().
 request_conference_details(ConferenceId) ->
     Req = [{<<"Conference-ID">>, ConferenceId}
           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)

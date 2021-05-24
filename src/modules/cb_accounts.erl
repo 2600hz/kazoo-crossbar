@@ -35,8 +35,6 @@
 
 -include("crossbar.hrl").
 
--define(SERVER, ?MODULE).
-
 -define(ACCOUNTS_CONFIG_CAT, <<(?CONFIG_CAT)/binary, ".accounts">>).
 
 -define(AGG_VIEW_PARENT, <<"accounts/listing_by_parent">>).
@@ -54,12 +52,6 @@
 
 -define(MOVE, <<"move">>).
 
--define(ACCOUNT_REALM_SUFFIX
-       ,kapps_config:get_binary(?ACCOUNTS_CONFIG_CAT, <<"account_realm_suffix">>, <<"sip.2600hz.com">>)
-       ).
--define(RANDOM_REALM_STRENGTH
-       ,kapps_config:get_integer(?ACCOUNTS_CONFIG_CAT, <<"random_realm_strength">>, 3)
-       ).
 -define(ALLOW_DIRECT_CLIENTS
        ,kapps_config:get_is_true(?KZ_ACCOUNTS_DB, <<"allow_subaccounts_for_direct">>, 'true')
        ).
@@ -507,7 +499,7 @@ validate_request(AccountId, Context) ->
         {'true', AccountJObj} ->
             {OldDoc, NewAccountJObj} = maybe_add_pvt_fields(AccountId, AccountJObj),
             Context1 = cb_context:update_successfully_validated_request(cb_context:store(Context, 'db_doc', OldDoc), NewAccountJObj),
-            extra_validation(AccountId, Context1);
+            extra_validation(Context1);
         {'validation_errors', ValidationErrors} ->
             cb_context:add_doc_validation_errors(Context, ValidationErrors);
         {'system_error', Error} when is_atom(Error) ->
@@ -537,27 +529,27 @@ get_parent_id_from_req(Context) ->
             end
     end.
 
--spec extra_validation(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
-extra_validation(AccountId, Context) ->
-    Extra = [fun(_, C) -> maybe_import_enabled(C) end
-            ,fun disallow_direct_clients/2
+-spec extra_validation(cb_context:context()) -> cb_context:context().
+extra_validation(Context) ->
+    Extra = [fun maybe_import_enabled/1
+            ,fun disallow_direct_clients/1
             ],
-    lists:foldl(fun(F, C) -> F(AccountId, C) end
+    lists:foldl(fun(F, C) -> F(C) end
                ,Context
                ,Extra
                ).
 
--spec disallow_direct_clients(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
-disallow_direct_clients(AccountId, Context) ->
+-spec disallow_direct_clients(cb_context:context()) -> cb_context:context().
+disallow_direct_clients(Context) ->
     ShouldAllow = ?ALLOW_DIRECT_CLIENTS,
     lager:debug("will allow direct clients: ~s", [ShouldAllow]),
-    maybe_disallow_direct_clients(AccountId, Context, ShouldAllow).
+    maybe_disallow_direct_clients(Context, ShouldAllow).
 
--spec maybe_disallow_direct_clients(kz_term:api_binary(), cb_context:context(), boolean()) ->
+-spec maybe_disallow_direct_clients(cb_context:context(), boolean()) ->
           cb_context:context().
-maybe_disallow_direct_clients(_AccountId, Context, 'true') ->
+maybe_disallow_direct_clients(Context, 'true') ->
     Context;
-maybe_disallow_direct_clients(_AccountId, Context, 'false') ->
+maybe_disallow_direct_clients(Context, 'false') ->
     {'ok', MasterAccountId} = kapps_util:get_master_account_id(),
     AuthAccountId = cb_context:auth_account_id(Context),
     AuthUserReseller = kz_services_reseller:get_id(AuthAccountId),

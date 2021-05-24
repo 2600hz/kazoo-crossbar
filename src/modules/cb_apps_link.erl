@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Crossbar API for apps link.
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -21,7 +21,6 @@
 
 -include("crossbar.hrl").
 
--define(DEFAULT_LANGUAGE, <<"en-US">>).
 -define(AUTHORIZE, <<"authorize">>).
 
 %%%=============================================================================

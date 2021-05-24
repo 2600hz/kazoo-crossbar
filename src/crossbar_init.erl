@@ -21,6 +21,7 @@
 -include("crossbar.hrl").
 
 -define(USE_COMPRESSION, kapps_config:get_is_true(?CONFIG_CAT, <<"compress_response_body">>, 'true')).
+-define(INBOUND_HOOKS, [?INBOUND_HOOK]).
 
 -type dispatch_rules() :: {'persistent_term', 'crossbar_dispatch'}. % cowboy_router:dispatch_rules()
 

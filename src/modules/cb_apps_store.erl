@@ -252,7 +252,7 @@ validate(Context, Id) ->
 
 -spec validate(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 validate(Context, AppId, ?ICON) ->
-    get_attachment(app_attachment_binary_meta(Context, AppId, {<<"app">>, ?ICON}), AppId);
+    get_attachment(app_attachment_binary_meta(Context, AppId, {<<"app">>, ?ICON}));
 validate(Context, AppId, ?OVERRIDE) ->
     validate_app_whitelabel_doc(Context, AppId, cb_context:req_verb(Context)).
 
@@ -262,7 +262,7 @@ validate(Context, AppId, ?OVERRIDE, ?ICON) ->
 validate(Context, AppId, ?OVERRIDE, ?SCREENSHOT) ->
     validate_app_whitelabel_binary(Context, AppId, ?SCREENSHOT, cb_context:req_verb(Context));
 validate(Context, AppId, ?SCREENSHOT, Number) ->
-    get_attachment(app_attachment_binary_meta(Context, AppId, {<<"app">>, {?SCREENSHOT, Number}}), AppId).
+    get_attachment(app_attachment_binary_meta(Context, AppId, {<<"app">>, {?SCREENSHOT, Number}})).
 
 -spec validate(cb_context:context(), path_token(), path_token(), path_token(), path_token()) -> cb_context:context().
 validate(Context, AppId, ?OVERRIDE, ?SCREENSHOT, Number) ->
@@ -431,14 +431,17 @@ sanitize_attachments(JObj, AttachmentId, Type, Language) ->
     Funs = [fun remove_root_keys/4
            ,fun sync_images/4
            ],
-    lists:foldl(fun(Fun, Acc) -> Fun(Acc, AttachmentId, Type, Language) end, JObj, Funs).
+    lists:foldl(fun(Fun, Acc) -> Fun(Acc, AttachmentId, Type, Language) end
+               ,JObj
+               ,Funs
+               ).
 
 %% we already set `en' image in i18n part of document, removing from root
-remove_root_keys(JObj, _, ?ICON, ?EN_LANGUAGE) ->
+remove_root_keys(JObj, _AttachmentId, ?ICON, ?EN_LANGUAGE) ->
     kz_json:delete_keys([<<"icon">>], JObj);
-remove_root_keys(JObj, _, ?SCREENSHOT, ?EN_LANGUAGE) ->
+remove_root_keys(JObj, _AttachmentId, ?SCREENSHOT, ?EN_LANGUAGE) ->
     kz_json:delete_keys([<<"screenshots">>], JObj);
-remove_root_keys(JObj, _, _, _) ->
+remove_root_keys(JObj, _AttachmentId, _Type, _Language) ->
     JObj.
 
 %% remove any attachments that is not in i18n part of document
@@ -449,7 +452,7 @@ sync_images(JObj, AttachmentId, 'undefined') ->
     lager:info("no images on ~s", [AttachmentId]),
     JObj;
 sync_images(JObj, AttachmentId, DocAttachments) ->
-    AllImages = all_i18n_images(JObj),
+    AllImages = all_i18n_images(kzd_app:i18n(JObj)),
     Attachments = [{Name, AttJObj}
                    || {Name, AttJObj} <- kz_json:to_proplist(DocAttachments),
                       maps:is_key(Name, AllImages)
@@ -457,27 +460,25 @@ sync_images(JObj, AttachmentId, DocAttachments) ->
                   ],
     kz_json:set_value(kz_doc:path_attachments(), kz_json:from_list(Attachments), JObj).
 
-all_i18n_images(JObj) ->
-    all_i18n_images(JObj, kzd_app:i18n(JObj)).
-
-all_i18n_images(_JObj, 'undefined') -> #{};
-all_i18n_images(_JObj, Images) ->
-    kz_json:foldl(fun([Lang, <<"icon">>], Icon, Acc) ->
-                          Acc#{Icon => kzd_app:path_i18_icon(Lang)};
-                     ([Lang, <<"screenshots">>], Screenshots, Acc) ->
-                          maps:merge(Acc
-                                    ,maps:from_list(
-                                       [{Screenshot, kzd_app:path_i18_screenshots(Lang)}
-                                        || Screenshot <- Screenshots
-                                       ]
-                                      )
-                                    );
-                     (_, _, Acc) ->
-                          Acc
-                  end
+all_i18n_images('undefined') -> #{};
+all_i18n_images(Images) ->
+    kz_json:foldl(fun i18n_image_fold/3
                  ,#{}
                  ,kz_json:flatten(Images)
                  ).
+
+i18n_image_fold([Lang, <<"icon">>], Icon, Acc) ->
+    Acc#{Icon => kzd_app:path_i18_icon(Lang)};
+i18n_image_fold([Lang, <<"screenshots">>], Screenshots, Acc) ->
+    maps:merge(Acc
+              ,maps:from_list(
+                 [{Screenshot, kzd_app:path_i18_screenshots(Lang)}
+                  || Screenshot <- Screenshots
+                 ]
+                )
+              );
+i18n_image_fold(_Path, _Value, Acc) ->
+    Acc.
 
 %%%=============================================================================
 %%% Internal functions
@@ -548,7 +549,7 @@ validate_app_whitelabel_doc(Context, AppId, ?HTTP_DELETE) ->
     load_app_whitelabel_doc(Context, AppId).
 
 validate_app_whitelabel_binary(Context, AppId, ?ICON, ?HTTP_GET) ->
-    get_attachment(app_attachment_binary_meta(Context, AppId, {?OVERRIDE, ?ICON}), AppId);
+    get_attachment(app_attachment_binary_meta(Context, AppId, {?OVERRIDE, ?ICON}));
 validate_app_whitelabel_binary(Context, AppId, ?ICON, ?HTTP_DELETE) ->
     validate_delete_app_whitelabel_binary(Context, AppId, ?ICON);
 validate_app_whitelabel_binary(Context, AppId, ?ICON, ?HTTP_POST) ->
@@ -557,7 +558,7 @@ validate_app_whitelabel_binary(Context, AppId, ?SCREENSHOT, ?HTTP_POST) ->
     validate_upload_app_whitelabel_binary(Context, AppId, cb_context:req_files(Context)).
 
 validate_app_whitelabel_binary(Context, AppId, ?SCREENSHOT, Number, ?HTTP_GET) ->
-    get_attachment(app_attachment_binary_meta(Context, AppId, {?OVERRIDE, {?SCREENSHOT, Number}}), AppId);
+    get_attachment(app_attachment_binary_meta(Context, AppId, {?OVERRIDE, {?SCREENSHOT, Number}}));
 validate_app_whitelabel_binary(Context, AppId, ?SCREENSHOT, Number, ?HTTP_DELETE) ->
     validate_delete_app_whitelabel_binary(Context, AppId, {?SCREENSHOT, Number}).
 
@@ -902,24 +903,21 @@ attachment_binary_meta(Context, AttachType, AppContext) ->
         'success' ->
             Doc = cb_context:doc(AppContext),
             Lang = get_lang(Context),
-            set_binary_meta(Context, Doc, AttachType, app_attachment_id(AttachType, Doc, Lang));
+            set_binary_meta(Context, AttachType, app_attachment_id(AttachType, Doc, Lang));
         _Status ->
             {'error', AppContext}
     end.
 
--spec set_binary_meta(cb_context:context(), kz_json:object(), attach_type()
+-spec set_binary_meta(cb_context:context(), attach_type()
                      ,kz_either:either('not_found', {kz_term:ne_binary(), kz_json:object()})
                      ) -> kz_either:either(cb_context:context(), cb_context:context()).
-set_binary_meta(Context, _AppDoc, _AttachType, {'ok', {AttachmentName, AttachmentObject}}) ->
+set_binary_meta(Context, _AttachType, {'ok', {AttachmentName, AttachmentObject}}) ->
     Setters = [{fun cb_context:store/3, <<"attachment_id">>, AttachmentName}
               ,{fun cb_context:store/3, <<"attachment_meta">>, AttachmentObject}
               ],
     {'ok', cb_context:setters(Context, Setters)};
-set_binary_meta(Context, _, AttachType, {'error', Reason}) ->
-    Type = case AttachType of
-               {_, {_Screen, Index}} -> <<"screenshot attachment at index ", (kz_term:to_binary(Index))/binary>>;
-               {_, T} -> <<T/binary, " attachment">>
-           end,
+set_binary_meta(Context, AttachType, {'error', Reason}) ->
+    Type = attach_type_text(AttachType),
     lager:debug("failed to find attachment type ~p: ~p", [AttachType, Reason]),
     Message = kz_json:from_list(
                 [{<<"message">>, <<"failed to find attachment">>}
@@ -928,20 +926,24 @@ set_binary_meta(Context, _, AttachType, {'error', Reason}) ->
                ),
     {'error', cb_context:add_system_error(404, 'not_found', Message,  Context)}.
 
+attach_type_text({_, {_Screen, Index}}) ->
+    <<"screenshot attachment at index ", (kz_term:to_binary(Index))/binary>>;
+attach_type_text({_, T}) -> <<T/binary, " attachment">>.
+
 %%------------------------------------------------------------------------------
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec get_attachment(kz_either:either(cb_context:context(), cb_context:context()), kz_term:ne_binary()) ->
+-spec get_attachment(kz_either:either(cb_context:context(), cb_context:context())) ->
           cb_context:context().
-get_attachment({'ok', Context}, _AppId) ->
+get_attachment({'ok', Context}) ->
     Name = cb_context:fetch(Context, <<"attachment_id">>),
     JObj = cb_context:fetch(Context, <<"attachment_meta">>),
 
     AccountDb = kz_doc:account_db(JObj),
 
     crossbar_doc:load_attachment(kz_doc:id(JObj), Name, [], cb_context:set_db_name(Context, AccountDb));
-get_attachment({'error', Context}, _) ->
+get_attachment({'error', Context}) ->
     Context.
 
 %%------------------------------------------------------------------------------

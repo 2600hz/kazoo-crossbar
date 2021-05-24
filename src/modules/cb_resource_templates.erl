@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Handle client requests for local resource documents
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -25,7 +25,6 @@
 -include("crossbar.hrl").
 
 -define(CB_LIST, <<"resources/resource_templates">>).
--define(MOD_CONFIG_CAT, <<(?CONFIG_CAT)/binary, ".resource_templates">>).
 
 %%%=============================================================================
 %%% API

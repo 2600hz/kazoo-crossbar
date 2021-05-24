@@ -19,8 +19,6 @@
         ,validate/1
         ]).
 
--define(MOD_CONFIG_CAT, <<"callflow.park">>).
--define(DB_DOC_NAME, kapps_config:get_ne_binary(?MOD_CONFIG_CAT, <<"db_doc_name">>, <<"parked_calls">>)).
 -define(PARKED_CALLS_VIEW, <<"parking/parked_calls">>).
 -define(PARKED_CALL_DOC_TYPE, <<"parked_call">>).
 -define(SLOT_DOC_ID(A), <<"parking-slot-", A/binary>>).

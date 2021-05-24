@@ -73,9 +73,19 @@
                                   ,<<"phase">>
                                   ]
        ).
--define(REFRESH_APP_KEYS
-       ,kapps_config:get_ne_binaries(?CONFIG_CAT, <<"refresh_app_keys">>, ?DEFAULT_REFRESH_APP_KEYS)
-       ).
+
+-define(DEPRECATED_MODULES, ['cb_bulk'
+                            ,'cb_freeswitch'
+                            ,'cb_global_provisioner_templates'
+                            ,'cb_global_resources'
+                            ,'cb_local_provisioner_templates'
+                            ,'cb_local_resources'
+                            ,'cb_onboard'
+                            ,'cb_shared_auth'
+                            ,'cb_signup'
+                            ,'cb_templates'
+                            ,'cb_ubiquiti_auth'
+                            ]).
 
 %%------------------------------------------------------------------------------
 %% @doc

@@ -220,7 +220,7 @@ create(Context) ->
 %%------------------------------------------------------------------------------
 -spec read(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
 read(Id, Context) ->
-    crossbar_doc:load(Id, Context, ?TYPE_CHECK_OPTION(<<"sys_info">>)).
+    crossbar_doc:load(Id, Context, ?TYPE_CHECK_OPTION(kzd_connectivity:type())).
 
 %%------------------------------------------------------------------------------
 %% @doc Update an existing instance with the data provided, if it is
@@ -257,10 +257,10 @@ validate_patch(Id, Context) ->
 %%------------------------------------------------------------------------------
 -spec on_successful_validation(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
 on_successful_validation('undefined', Context) ->
-    Doc = kz_doc:set_type(cb_context:doc(Context), <<"sys_info">>),
+    Doc = kz_doc:set_type(cb_context:doc(Context), kzd_connectivity:type()),
     cb_context:set_doc(Context, Doc);
 on_successful_validation(Id, Context) ->
-    crossbar_doc:load_merge(Id, Context, ?TYPE_CHECK_OPTION(<<"sys_info">>)).
+    crossbar_doc:load_merge(Id, Context, ?TYPE_CHECK_OPTION(kzd_connectivity:type())).
 
 %%------------------------------------------------------------------------------
 %% @doc Attempt to load a summarized listing of all instances of this
@@ -269,10 +269,10 @@ on_successful_validation(Id, Context) ->
 %%------------------------------------------------------------------------------
 -spec summary(cb_context:context()) -> cb_context:context().
 summary(Context) ->
-    Options = [{'doc_type', <<"sys_info">>}
+    Options = [{'doc_type', kzd_connectivity:type()}
               ,{'mapper', crossbar_view:get_id_fun()}
               ],
-    Selector = [{'start', [{<<"doc_type">>, <<"sys_info">>}]}
-               ,{'end', [{<<"doc_type">>, <<"sys_info">>}]}
+    Selector = [{'start', [{<<"doc_type">>, kzd_connectivity:type()}]}
+               ,{'end', [{<<"doc_type">>, kzd_connectivity:type()}]}
                ],
     crossbar_view:find(Context, <<"crossbar_listings/by_type_id">>, Selector, Options).

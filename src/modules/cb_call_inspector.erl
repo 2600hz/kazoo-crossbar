@@ -26,8 +26,6 @@
 -define(CB_LIST, <<"cdrs/crossbar_listing">>).
 -define(CB_LIST_BY_USER, <<"cdrs/listing_by_owner">>).
 
--define(MATCH_CDR_ID(YYYYMM, CallId), <<YYYYMM:6/binary, "-", CallId/binary>>).
-
 %%%=============================================================================
 %%% API
 %%%=============================================================================

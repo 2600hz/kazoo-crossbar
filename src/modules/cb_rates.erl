@@ -25,12 +25,9 @@
 
 -include("crossbar.hrl").
 
--define(PVT_FUNS, [fun add_pvt_type/2]).
--define(PVT_TYPE, <<"rate">>).
 -define(NUMBER, <<"number">>).
 -define(CB_LIST, <<"rates/crossbar_listing">>).
 -define(RATEDECKS, <<"ratedecks">>).
--define(RATE_LOOKUP, <<"rates/lookup">>).
 
 -define(NUMBER_RESP_FIELDS, [<<"Base-Cost">>
                             ,<<"E164-Number">>

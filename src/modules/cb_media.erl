@@ -31,7 +31,6 @@
 
 -include("crossbar.hrl").
 
--define(SERVER, ?MODULE).
 -define(BIN_DATA, <<"raw">>).
 -define(LANGUAGES, <<"languages">>).
 -define(PROMPTS, <<"prompts">>).

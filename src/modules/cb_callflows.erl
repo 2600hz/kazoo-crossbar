@@ -28,13 +28,6 @@
 -include("test/cb_callflows_test.hrl").
 -endif.
 
--define(MOD_CONFIG_CAT, <<(?CONFIG_CAT)/binary, ".callflows">>).
-
--define(SERVER, ?MODULE).
-
--define(CB_LIST_BY_NUMBER, <<"callflows/listing_by_number">>).
--define(CB_LIST_BY_PATTERN, <<"callflows/listing_by_pattern">>).
-
 %%%=============================================================================
 %%% API
 %%%=============================================================================

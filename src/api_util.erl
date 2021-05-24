@@ -62,6 +62,36 @@
 -include_lib("kernel/include/file.hrl").
 -include("crossbar.hrl").
 
+-define(CSV_HEADER_MAP, [{<<"account_id">>, <<"Account ID">>}
+                        ,{<<"account_name">>, <<"Account Name">>}
+                        ,{<<"amount">>, <<"Amount">>}
+                        ,{<<"description">>, <<"Description">>}
+                        ,{<<"id">>, <<"ID">>}
+                        ,{<<"metadata_callee_id_number">>, <<"Callee ID Number">>}
+                        ,{<<"metadata_callee_id_name">>, <<"Callee ID Name">>}
+                        ,{<<"metadata_caller_id_number">>, <<"Caller ID Number">>}
+                        ,{<<"metadata_caller_id_name">>, <<"Caller ID Name">>}
+                        ,{<<"metadata_direction">>, <<"Direction">>}
+                        ,{<<"metadata_from">>, <<"From">>}
+                        ,{<<"metadata_to">>, <<"To">>}
+                        ,{<<"metadata_rate_description">>, <<"Rate Description">>}
+                        ,{<<"metadata_rate_increment">>, <<"Rate Increment">>}
+                        ,{<<"metadata_rate_minimum">>, <<"Rate Minimum">>}
+                        ,{<<"metadata_rate_name">>, <<"Rate Name">>}
+                        ,{<<"metadata_rate_nocharge_time">>, <<"Grace Period">>}
+                        ,{<<"metadata_rate_value">>, <<"Rate">>}
+                        ,{<<"period_start">>, <<"Start Time">>}
+                        ,{<<"period_end">>, <<"End Time">>}
+                        ,{<<"source_id">>, <<"Source ID">>}
+                        ,{<<"source_service">>, <<"Source Service">>}
+                        ,{<<"usage_quantity">>, <<"Usage Quantity">>}
+                        ,{<<"usage_type">>, <<"Usage Type">>}
+                        ,{<<"usage_unit">>, <<"Usage Unit">>}
+                        ]).
+
+-define(NO_ENVELOPE_VERSIONS, [?INBOUND_HOOK]).
+-define(NO_ENVELOPE_CONTENT_TYPES, []).
+
 -define(MAX_UPLOAD_SIZE, kapps_config:get_integer(?CONFIG_CAT, <<"max_upload_size">>, 8000000)). %% limit the whole payload/file size
 -define(READ_BODY_LENGTH, 8000000). %% read body in 8MB chunks
 
@@ -887,7 +917,7 @@ is_authentic(Req, Context0, _ReqVerb) ->
         'false' ->
             {'true', Req, Context0};
         [] ->
-            is_authentic(Req, Context0, _ReqVerb, cb_context:req_nouns(Context0));
+            is_authentic_noun(Req, Context0, cb_context:req_nouns(Context0));
         ['true'|T] ->
             prefer_new_context(T, Req, Context0);
         [{'true', Context1}|_] ->
@@ -897,14 +927,13 @@ is_authentic(Req, Context0, _ReqVerb) ->
             ?MODULE:stop(Req, Context1)
     end.
 
--spec is_authentic(cowboy_req:req(), cb_context:context(), http_method(), list()) ->
+-spec is_authentic_noun(cowboy_req:req(), cb_context:context(), req_nouns()) ->
           {{'false', <<>>} | 'true', cowboy_req:req(), cb_context:context()} |
           stop_return().
-
-is_authentic(Req, Context, _ReqVerb, []) ->
+is_authentic_noun(Req, Context, []) ->
     lager:debug("failed to authenticate"),
     ?MODULE:stop(Req, cb_context:add_system_error('invalid_credentials', Context));
-is_authentic(Req, Context, _ReqVerb, [{Mod, Params} | _ReqNouns]) ->
+is_authentic_noun(Req, Context, [{Mod, Params} | _ReqNouns]) ->
     Event = create_event_name(Context, <<"authenticate.", Mod/binary>>),
     Payload = [Context | Params],
     case crossbar_bindings:succeeded(crossbar_bindings:pmap(Event, Payload)) of
@@ -1053,20 +1082,20 @@ is_permitted_verb(Req, Context0, _ReqVerb) ->
     Event = create_event_name(Context0, <<"authorize">>),
     case crossbar_bindings:succeeded(crossbar_bindings:pmap(Event, Context0)) of
         [] ->
-            is_permitted_nouns(Req, Context0, _ReqVerb,cb_context:req_nouns(Context0));
+            is_permitted_nouns(Req, Context0, cb_context:req_nouns(Context0));
         ['true'|_] ->
-            is_permitted_verb_on_module(Req, Context0, _ReqVerb,cb_context:req_nouns(Context0));
+            is_permitted_verb_on_module(Req, Context0, cb_context:req_nouns(Context0));
         [{'true', Context1}|_] ->
-            is_permitted_verb_on_module(Req, Context1, _ReqVerb,cb_context:req_nouns(Context1));
+            is_permitted_verb_on_module(Req, Context1, cb_context:req_nouns(Context1));
         [{'stop', Context1}|_] ->
             lager:debug("authz stopped"),
             ?MODULE:stop(Req, Context1)
     end.
 
--spec is_permitted_verb_on_module(cowboy_req:req(), cb_context:context(), http_method(), list()) ->
+-spec is_permitted_verb_on_module(cowboy_req:req(), cb_context:context(), req_nouns()) ->
           {'true', cowboy_req:req(), cb_context:context()} |
           stop_return().
-is_permitted_verb_on_module(Req, Context0, _ReqVerb, [{Mod, Params} | _ReqNouns]) ->
+is_permitted_verb_on_module(Req, Context0, [{Mod, Params} | _ReqNouns]) ->
     Event = create_event_name(Context0, <<"authorize.", Mod/binary>>),
     Payload = [Context0 | Params],
     case crossbar_bindings:succeeded(crossbar_bindings:pmap(Event, Payload)) of
@@ -1076,15 +1105,15 @@ is_permitted_verb_on_module(Req, Context0, _ReqVerb, [{Mod, Params} | _ReqNouns]
         _Other -> {'true', Req, Context0}
     end.
 
--spec is_permitted_nouns(cowboy_req:req(), cb_context:context(), http_method(), list()) ->
+-spec is_permitted_nouns(cowboy_req:req(), cb_context:context(), req_nouns()) ->
           {'true', cowboy_req:req(), cb_context:context()} |
           stop_return().
-is_permitted_nouns(Req, Context, _ReqVerb, [{<<"404">>, []}]) ->
+is_permitted_nouns(Req, Context, [{<<"404">>, []}]) ->
     ?MODULE:stop(Req, cb_context:add_system_error('not_found', Context));
-is_permitted_nouns(Req, Context, _ReqVerb, []) ->
+is_permitted_nouns(Req, Context, []) ->
     lager:debug("no one authz'd the request"),
     ?MODULE:stop(Req, cb_context:add_system_error('forbidden', Context));
-is_permitted_nouns(Req, Context0, _ReqVerb, [{Mod, Params} | _ReqNouns]) ->
+is_permitted_nouns(Req, Context0, [{Mod, Params} | _ReqNouns]) ->
     Event = create_event_name(Context0, <<"authorize.", Mod/binary>>),
     Payload = [Context0 | Params],
     case crossbar_bindings:succeeded(crossbar_bindings:pmap(Event, Payload)) of

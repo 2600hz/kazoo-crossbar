@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2013-2020, 2600Hz
+%%% @copyright (C) 2013-2021, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -21,18 +21,6 @@
 
 -include("crossbar.hrl").
 
--define(MOD_CONFIG_CAT, <<(?CONFIG_CAT)/binary, ".presence">>).
-
--define(PRESENTITY_KEY, <<"include_presentity">>).
--define(PRESENTITY_CFG_KEY, <<"query_include_presentity">>).
-
--define(PRESENCE_QUERY_TIMEOUT_KEY, <<"query_presence_timeout">>).
--define(PRESENCE_QUERY_DEFAULT_TIMEOUT, 5000).
--define(PRESENCE_QUERY_TIMEOUT, kapps_config:get_integer(?MOD_CONFIG_CAT
-                                                        ,?PRESENCE_QUERY_TIMEOUT_KEY
-                                                        ,?PRESENCE_QUERY_DEFAULT_TIMEOUT
-                                                        )
-       ).
 -define(REPORT_CONTENT_TYPE, [{'send_file', [{<<"application">>, <<"json">>, '*'}]}]).
 -define(REPORT_PREFIX, "report-").
 -define(MATCH_REPORT_PREFIX(ReportId), <<?REPORT_PREFIX, ReportId/binary>>).
@@ -193,7 +181,7 @@ search_result(Context, {'error', Error}) ->
 search_req(Context, SearchType) ->
     search_req(Context, SearchType, 'undefined').
 
--spec search_req(cb_context:context(), kz_term:ne_binary(), kz_term:api_binary()) -> search_result().
+-spec search_req(cb_context:context(), kz_term:ne_binary(), kz_term:api_ne_binary()) -> search_result().
 search_req(Context, SearchType, Username) ->
     Req = [{<<"Realm">>, cb_context:account_realm(Context)}
           ,{<<"Username">>, Username}

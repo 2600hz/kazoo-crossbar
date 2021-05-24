@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Simple authorization module
 %%% Authenticates tokens if they are accessing the parent or
 %%% child account only
@@ -22,8 +22,6 @@
 
 -include("crossbar.hrl").
 
--define(SERVER, ?MODULE).
--define(VIEW_SUMMARY, <<"accounts/listing_by_id">>).
 -define(SYS_ADMIN_MODS, [<<"acls">>
                         ,<<"rates">>
                         ,<<"sup">>

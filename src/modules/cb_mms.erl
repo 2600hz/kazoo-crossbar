@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2020, 2600Hz
+%%% @copyright (C) 2012-2021, 2600Hz
 %%% @doc
 %%% @author Luis Azedo
 %%%
@@ -26,8 +26,6 @@
 -define(CB_LIST_ALL, <<"mms/crossbar_listing">>).
 -define(CB_LIST_BY_DEVICE, <<"mms/listing_by_device">>).
 -define(CB_LIST_BY_OWNERID, <<"mms/listing_by_owner">>).
-
--define(MOD_CONFIG_CAT, <<(?CONFIG_CAT)/binary, ".mms">>).
 
 %%%=============================================================================
 %%% API

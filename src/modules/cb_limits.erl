@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
 %%%
@@ -21,7 +21,6 @@
 -include("crossbar.hrl").
 -include_lib("kazoo_stdlib/include/kazoo_json.hrl").
 
--define(CB_LIST, <<"limits/crossbar_listing">>).
 -define(PVT_TYPE, <<"limits">>).
 
 %%%=============================================================================

@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Handle CRUD operations for Directories
 %%% @author James Aimonetti
 %%%
@@ -25,7 +25,6 @@
 
 -include("crossbar.hrl").
 
--define(PVT_FUNS, [fun add_pvt_type/2]).
 -define(CB_USERS_LIST, <<"directories/users_listing">>).
 
 -type payload() :: {cowboy_req:req(), cb_context:context()}.

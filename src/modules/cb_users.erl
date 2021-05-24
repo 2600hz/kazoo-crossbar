@@ -32,8 +32,6 @@
 
 -include("crossbar.hrl").
 
--define(MOD_CONFIG_CAT, <<(?CONFIG_CAT)/binary, ".users">>).
-
 -define(LIST_BY_PRESENCE_ID, <<"devices/listing_by_presence_id">>).
 
 -define(VCARD, <<"vcard">>).

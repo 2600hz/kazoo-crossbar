@@ -22,15 +22,10 @@
 
 -include("crossbar.hrl").
 
--define(SRS_LIST, <<"resource_selectors/resource_listing">>).
--define(SRS_SEARCH, <<"resource_selectors/crossbar_search">>).
--define(MOD_CONFIG_CAT, <<(?CONFIG_CAT)/binary, ".resource_selectors">>).
--define(SUPPRESS_SRS_NOTICE, kapps_config:get_is_true(?MOD_CONFIG_CAT, <<"suppress_selectors_change_notice">>, 'false')).
 -define(NAME, <<"name">>).
 -define(RESOURCE, <<"resource">>).
 -define(RULES, <<"rules">>).
 
--define(DEFAULT_RULES, kz_json:new()).
 -define(DOC_PVT_TYPE, <<"resource_selector">>).
 -define(RULES_PVT_TYPE, <<"resource_selector_rules">>).
 
@@ -42,7 +37,7 @@
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec init() -> ok.
+-spec init() -> 'ok'.
 init() ->
     _ = [crossbar_bindings:bind(Binding, ?MODULE, F)
          || {Binding, F} <- [{<<"*.allowed_methods.resource_selectors">>, 'allowed_methods'}
@@ -53,7 +48,7 @@ init() ->
                             ,{<<"*.authorize">>, 'authorize'}
                             ]
         ],
-    ok.
+    'ok'.
 
 -spec authorize(cb_context:context()) ->
           boolean() | {'stop', cb_context:context()}.

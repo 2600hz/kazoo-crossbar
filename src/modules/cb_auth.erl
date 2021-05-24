@@ -34,7 +34,6 @@
 -define(APPS_PATH, <<"apps">>).
 -define(PROVIDERS_PATH, <<"providers">>).
 -define(KEYS_PATH, <<"keys">>).
--define(WHITELABEL_PATH, <<"whitelabel">>).
 
 -define(LINKS_VIEW, <<"users/list_linked_users">>).
 -define(PROVIDERS_VIEW, <<"providers/list_by_type">>).

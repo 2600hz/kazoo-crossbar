@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc
 %%% @author Peter Defebvre
 %%%
@@ -22,14 +22,6 @@
 -include("crossbar.hrl").
 -include_lib("kazoo_amqp/include/kapi_conf.hrl").
 -include_lib("kazoo_documents/include/doc_types.hrl").
-
--define(CB_LIST, <<"websockets/crossbar_listing">>).
-
--define(TO_JSON(Binding, Event)
-       ,kz_json:from_list([{<<"binding">>, Binding}
-                          ,{<<"event">>, Event}
-                          ])
-       ).
 
 -define(AVAILABLE
        ,kapps_config:get_json(<<"blackhole">>, <<"bindings">>)

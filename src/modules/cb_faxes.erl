@@ -39,8 +39,6 @@
 -define(CB_LIST_BY_ACCOUNT, <<"faxes/list_by_account">>).
 -define(CB_LIST_SMTP_LOG, <<"faxes/smtp_log">>).
 
--define(FAX_FILE_TYPE, <<"tiff">>).
-
 -define(ACCEPTED_MIME_TYPES, [{<<"image">>, <<"tiff">>, '*'}
                              | ?MULTIPART_CONTENT_TYPES
                               ++ ?PDF_CONTENT_TYPES
@@ -55,8 +53,6 @@
 -define(OUTBOX_FAX_DOC_MAP, [{[<<"_read_only">>, <<"created">>], <<"pvt_created">>}
                             ,{[<<"_read_only">>, <<"status">>], <<"pvt_job_status">>}
                             ]).
-
--define(MOD_CONFIG_CAT, <<(?CONFIG_CAT)/binary, ".fax">>).
 
 -define(FAX_TYPE, <<"fax">>).
 -define(CONVERT_CONFIG_CAT, <<"kazoo_convert">>).

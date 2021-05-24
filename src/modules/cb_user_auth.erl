@@ -25,21 +25,15 @@
 
 -include("crossbar.hrl").
 
+-define(LIST_BY_USERNAME, <<"users/list_by_username">>).
 -define(ACCT_MD5_LIST, <<"users/creds_by_md5">>).
 -define(ACCT_SHA1_LIST, <<"users/creds_by_sha">>).
--define(DEFAULT_LANGUAGE, <<"en-us">>).
 -define(USER_AUTH_TOKENS, kapps_config:get_integer(?CONFIG_CAT, <<"user_auth_tokens">>, 35)).
 
 -define(SWITCH_USER, <<"impersonate_user">>).
 -define(RECOVERY, <<"recovery">>).
 -define(RESET_ID, <<"reset_id">>).
 -define(RESET_ID_SIZE_DEFAULT, 137).
--define(RESET_ID_SIZE,
-        case kapps_config:get_integer(?CONFIG_CAT, <<"reset_id_size">>, ?RESET_ID_SIZE_DEFAULT) of
-            _TooBig when _TooBig >= 180 -> ?RESET_ID_SIZE_DEFAULT;
-            _TooSmall when _TooSmall < 42 -> ?RESET_ID_SIZE_DEFAULT;
-            Ok -> Ok
-        end).
 -define(RESET_PVT_TYPE, <<"password_reset">>).
 
 %%%=============================================================================
@@ -605,7 +599,7 @@ maybe_load_user_doc_via_reset_id(Context, _, ResetId, _) ->
 reset_id(?MATCH_MODB_SUFFIX_ENCODED(A, B, Rest, YYYY, MM)) ->
     <<Y1:1/binary, Y2:1/binary, Y3:1/binary, Y4:1/binary>> = YYYY,
     <<M1:1/binary, M2:1/binary>> = MM,
-    SomeNoise = kz_binary:rand_hex((?RESET_ID_SIZE - (32 + 4 + 2 + 3 + 1)) div 2),
+    SomeNoise = kz_binary:rand_hex((reset_id_size() - (32 + 4 + 2 + 3 + 1)) div 2),
     <<N1:1/binary, N2:1/binary, N3:1/binary, Noise/binary>> = SomeNoise,
     <<(?MATCH_ACCOUNT_RAW(A, B, Rest))/binary,
       N1/binary, Y1/binary, Y4/binary,
@@ -718,4 +712,12 @@ consume_tokens(Context) ->
     case kz_buckets:consume_tokens_until(?APP_NAME, BucketName, TokenCost) of
         'true' -> cb_context:set_resp_status(Context, 'success');
         'false' -> cb_context:add_system_error('too_many_requests', Context)
+    end.
+
+-spec reset_id_size() -> integer().
+reset_id_size() ->
+    case kapps_config:get_integer(?CONFIG_CAT, <<"reset_id_size">>, ?RESET_ID_SIZE_DEFAULT) of
+        _TooBig when _TooBig >= 180 -> ?RESET_ID_SIZE_DEFAULT;
+        _TooSmall when _TooSmall < 42 -> ?RESET_ID_SIZE_DEFAULT;
+        Ok -> Ok
     end.

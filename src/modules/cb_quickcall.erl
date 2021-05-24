@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Devices module
 %%% Handle client requests for device documents
 %%%
@@ -23,6 +23,8 @@
         ]).
 
 -include("crossbar.hrl").
+
+-define(QUICKCALL_PATH_TOKEN, <<"quickcall">>).
 
 -define(QCALL_NUMBER_FILTER, [<<" ">>, <<",">>, <<".">>, <<"-">>, <<"(">>, <<")">>]).
 

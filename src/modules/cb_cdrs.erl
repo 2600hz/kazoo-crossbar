@@ -53,7 +53,6 @@
 -define(PATH_SUMMARY, <<"summary">>).
 
 -define(KEY_UTC_OFFSET, <<"utc_offset">>).
--define(KEY_CCV, <<"custom_channel_vars">>).
 
 %%%=============================================================================
 %%% API
@@ -465,13 +464,13 @@ map_rows(Context, ContentType, JObj) ->
     end.
 
 -spec apply_row_mapper(kz_term:ne_binary(), fun(), kz_json:object(), kz_time:gregorian_seconds(), cb_context:context()) -> binary().
-apply_row_mapper(<<"datetime">>, _F, JObj, Timestamp, Context) ->
-    col_pretty_print(JObj, Timestamp, Context);
+apply_row_mapper(<<"datetime">>, _F, _JObj, Timestamp, Context) ->
+    tz_pretty_print(Timestamp, Context);
 apply_row_mapper(_, F, JObj, Timestamp, _Context) ->
     F(JObj, Timestamp, 'undefined').
 
--spec col_pretty_print(kz_json:object(), kz_time:gregorian_seconds(), cb_context:context()) -> kz_term:ne_binary().
-col_pretty_print(_JObj, Timestamp, Context) ->
+-spec tz_pretty_print(kz_time:gregorian_seconds(), cb_context:context()) -> kz_term:ne_binary().
+tz_pretty_print(Timestamp, Context) ->
     UTCSecondsOffset = cb_context:req_value(Context, ?KEY_UTC_OFFSET),
     %% maintain compatibility with old format.
     %% NOTE: kzd_cdrs:col_pretty_print/3 is using the new format kz_time:pretty_print_datetime/2 with underscore

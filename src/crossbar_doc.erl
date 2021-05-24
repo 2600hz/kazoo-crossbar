@@ -38,6 +38,17 @@
 
 -include("crossbar.hrl").
 
+-define(SPECIAL_EXPECTED_TYPE, [{<<"allotments">>, <<"limits">>}
+                               ,{<<"connectivity">>, <<"sys_info">>}
+                               ,{<<"directories">>, <<"directory">>}
+                               ,{<<"faxes">>, <<"fax">>}
+                               ,{<<"rate_limit">>, <<"resource">>}
+                               ,{<<"sms">>, <<"sms">>}
+                               ,{<<"phone_numbers">>, <<"phone_numbers">>} %% weird...
+                               ,{<<"vmboxes">>, <<"vmbox">>}
+                               ,{<<"resource_selectors">>, <<"resource_selectors_rules">>}
+                               ]).
+
 -define(CROSSBAR_DOC_VSN, <<"1">>).
 -define(PVT_FUNS, [fun add_pvt_vsn/3
                   ,fun add_pvt_account_id/3
@@ -575,27 +586,27 @@ maybe_delete_doc(Context, DocOrId, Options) ->
         {'false', 'true'} ->
             lager:debug("maybe deleting document ~s if doc has no other attachments", [kz_doc:id(DocOrId)]),
             AccountDb = cb_context:db_name(Context),
-            delete_if_empty_attachments(AccountDb, kz_doc:id(DocOrId), {'ok', DocOrId});
+            delete_if_empty_attachments(AccountDb, {'ok', DocOrId});
         {'false', 'false'} ->
             lager:debug("maybe deleting document ~s if doc has no other attachments", [DocOrId]),
             AccountDb = cb_context:db_name(Context),
-            delete_if_empty_attachments(AccountDb, DocOrId, kz_datamgr:open_doc(AccountDb, DocOrId))
+            delete_if_empty_attachments(AccountDb, kz_datamgr:open_doc(AccountDb, DocOrId))
     end.
 
--spec delete_if_empty_attachments(kz_term:ne_binary(), kz_term:ne_binary(), {'ok', kz_json:object()} | kz_datamgr:data_error()) -> 'ok'.
-delete_if_empty_attachments(AccountDb, _DocId, {'ok', JObj}) ->
+-spec delete_if_empty_attachments(kz_term:ne_binary(), {'ok', kz_json:object()} | kz_datamgr:data_error()) -> 'ok'.
+delete_if_empty_attachments(AccountDb, {'ok', JObj}) ->
     case kz_doc:attachments(JObj) of
         'undefined' ->
             _ = kz_datamgr:del_doc(AccountDb, JObj),
-            lager:debug("no attachment for ~s document, deleting doc", [_DocId]);
+            lager:debug("no attachment for ~s document, deleting doc", [kz_doc:id(JObj)]);
         Attachments ->
             lager:debug("document ~s has ~b attachments, not deleting doc"
-                       ,[_DocId, length(kz_json:get_keys(Attachments))]
+                       ,[kz_doc:id(JObj), length(kz_json:get_keys(Attachments))]
                        )
     end;
-delete_if_empty_attachments(_, _DocId, {'error', _Reason}) ->
-    lager:debug("failed to open doc ~s and check if it has attachments: ~p"
-               ,[_DocId, _Reason]
+delete_if_empty_attachments(_AccountDb, {'error', _Reason}) ->
+    lager:debug("failed to open doc in ~s and check if it has attachments: ~p"
+               ,[_AccountDb, _Reason]
                ).
 
 %% @equiv delete(Context, cb_context:should_soft_delete(Context))
@@ -859,7 +870,7 @@ apply_pvt_fun(Fun, JObj, Updates, Context) ->
 
 -spec rm_read_only(kz_json:object(), kz_json:json_proplist(), cb_context:context()) ->
           kz_json:json_proplist().
-rm_read_only(JObj, Updates, _) ->
+rm_read_only(JObj, Updates, _Context) ->
     case kz_doc:read_only(JObj, 'undefined') of
         'undefined' -> Updates;
         _ -> [{[<<"_read_only">>], 'null'} | Updates]

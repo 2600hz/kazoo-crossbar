@@ -44,16 +44,6 @@
 -define(COLLECTION_NUMBERS, <<"numbers">>).
 -define(CARRIERS_INFO, <<"carriers_info">>).
 -define(FIX, <<"fix">>).
--define(MIME_TYPES, [{<<"application">>, <<"pdf">>}
-                    ,{<<"application">>, <<"x-gzip">>}
-                    ,{<<"application">>, <<"zip">>}
-                    ,{<<"application">>, <<"x-rar-compressed">>}
-                    ,{<<"application">>, <<"x-tar">>}
-                    ,{<<"image">>, <<"*">>}
-                    ,{<<"text">>, <<"plain">>}
-                    ,{<<"application">>, <<"base64">>}
-                    ,{<<"application">>, <<"x-base64">>}
-                    ]).
 
 -define(PHONE_NUMBERS_CONFIG_CAT, <<"crossbar.phone_numbers">>).
 

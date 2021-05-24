@@ -22,6 +22,8 @@
 
 -include("crossbar.hrl").
 
+-define(CB_DEFAULT_SCOPES, [?APP_NAME]).
+
 -define(DEFAULT_METHOD_CONFIG(LogSuccess),
         kz_json:from_list(
           [{<<"enabled">>, 'true'}
@@ -44,7 +46,6 @@
        ).
 
 -define(DEFAULT_AUTH_EXPIRY, kapps_config:get_integer(?AUTH_CONFIG_CAT, <<"token_auth_expiry_s">>, ?SECONDS_IN_HOUR)).
--define(SHOULD_LOG_FAILED, kapps_config:get_is_true(?AUTH_CONFIG_CAT, <<"log_failed_attempts">>, 'true')).
 -define(SHOULD_LOG_SUCCESS, kapps_config:get_is_true(?AUTH_CONFIG_CAT, <<"log_successful_attempts">>, 'true')).
 -define(AUTH_MODULE_SCOPES_KEY(AuthModule), [<<"auth_modules">>, AuthModule, <<"scopes">>]).
 
