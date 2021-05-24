@@ -17004,6 +17004,25 @@
             },
             "type": "object"
         },
+        "system_config.properly": {
+            "description": "Schema for properly system_config",
+            "properties": {
+                "key": {
+                    "description": "properly key"
+                },
+                "nested": {
+                    "properties": {
+                        "ankle": {
+                            "description": "properly nested ankle"
+                        },
+                        "knee": {
+                            "description": "properly nested knee"
+                        }
+                    }
+                }
+            },
+            "type": "object"
+        },
         "system_config.provisioner": {
             "description": "Schema for provisioner system_config",
             "properties": {
