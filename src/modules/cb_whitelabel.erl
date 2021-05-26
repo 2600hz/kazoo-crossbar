@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Account module
 %%% @author Jon Blanton <jon@2600hz.com>
 %%%
@@ -839,10 +839,13 @@ maybe_update_account_definition(Context, 'success') ->
     Context1 = crossbar_doc:load(cb_context:account_id(Context), Context, ?TYPE_CHECK_OPTION(kzd_accounts:type())),
     case cb_context:resp_status(Context1) of
         'success' ->
-            AccountDoc = cb_context:doc(Context1),
             Domain = kz_json:get_ne_value(<<"domain">>, cb_context:doc(Context)),
-            AccountDoc1 = kz_json:set_value(<<"pvt_whitelabel_domain">>, Domain, AccountDoc),
-            _ = cb_accounts:post(cb_context:set_doc(Context1, AccountDoc1), cb_context:account_id(Context)),
+            AccountDoc = kz_json:set_values([{<<"pvt_whitelabel_domain">>, Domain}
+                                            ,{<<"_read_only">>, 'null'}
+                                            ]
+                                           ,cb_context:doc(Context1)
+                                           ),
+            _ = cb_accounts:post(cb_context:set_doc(Context1, AccountDoc), cb_context:account_id(Context)),
             Context;
         _Status -> Context1
     end;
@@ -860,9 +863,10 @@ maybe_cleanup_account_definition(Context, 'success') ->
     Context1 = crossbar_doc:load(cb_context:account_id(Context), Context, ?TYPE_CHECK_OPTION(kzd_accounts:type())),
     case cb_context:resp_status(Context1) of
         'success' ->
-            AccountDoc = cb_context:doc(Context1),
-            AccountDoc1 = kz_json:delete_key(<<"pvt_whitelabel_domain">>, AccountDoc),
-            _ = cb_accounts:post(cb_context:set_doc(Context1, AccountDoc1), cb_context:account_id(Context)),
+            AccountDoc = kz_json:delete_keys([<<"_read_only">>, <<"pvt_whitelabel_domain">>]
+                                            ,cb_context:doc(Context1)
+                                            ),
+            _ = cb_accounts:post(cb_context:set_doc(Context1, AccountDoc), cb_context:account_id(Context)),
             Context;
         _Status -> Context1
     end;
