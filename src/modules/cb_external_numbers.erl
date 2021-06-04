@@ -293,8 +293,84 @@ send_verification_pin(Context) ->
 
 -spec send_voice_pin(cb_context:context()) -> cb_context:context().
 send_voice_pin(Context) ->
+    originate_call(Context),
+    %%io:format("place verification call to ~s with pin ~s~n", [Number, Pin]),
+    Context.
+
+-spec originate_call(cb_context:context()) -> cb_context:context().
+originate_call(Context) ->
+    AccountId = cb_context:account_id(Context),
+    Realm = kzd_accounts:fetch_realm(AccountId),
+    Number = kzd_external_numbers:number(cb_context:doc(Context)),
+    %%{CIDNumber, CIDName} = kz_attributes:caller_id(<<"external">>, Call),
+    CIDNumber = <<"+14158867900">>,
+    CIDName = <<"Number Verification">>,
+    Request = props:filter_undefined(
+                [{<<"Account-ID">>, AccountId}
+                ,{<<"Account-Realm">>, Realm}
+                ,{<<"To-DID">>, Number}
+                ,{<<"Resource-Type">>, <<"originate">>}
+                ,{<<"Application-Name">>, <<"park">>}
+                ,{<<"Timeout">>, 30}
+                ,{<<"Outbound-Caller-ID-Name">>, CIDName}
+                ,{<<"Outbound-Caller-ID-Number">>, CIDNumber}
+                 | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+                ]),
+    case kz_amqp_worker:call_collect(Request
+                                    ,fun kapi_offnet_resource:publish_req/1
+                                    ,fun([Resp | _Resps]) ->
+                                             kapi_offnet_resource:resp_v(Resp)
+                                     end
+                                    ,30 * ?MILLISECONDS_IN_SECOND
+                                    )
+    of
+        {'ok', [JObj|_JObjs]} ->
+            execute_originate(Context, JObj);
+        {'error', E} ->
+            cb_context:add_system_error(E, Context)
+    end.
+
+-spec execute_originate(cb_context:context(), kz_json:object()) -> kz_json:object().
+execute_originate(Context, JObj) ->
+    io:format("~p~n", [JObj]),
+    play_pin(Context, JObj),
+    CallId = kz_json:get_value([<<"Resource-Response">>, <<"Call-ID">>], JObj),
+    ServerId = kz_json:get_value([<<"Resource-Response">>, <<"Server-ID">>], JObj),
+    %%ControlQ = kz_json:get_value(<<"Control-Queue">>, JObj),
+    Request = [{<<"Call-ID">>, CallId}
+              ,{<<"Msg-ID">>, kz_binary:rand_hex(16)}
+               | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+              ],
+    Publisher = fun(P) -> kapi_dialplan:publish_originate_execute(ServerId, P) end,
+    _ = kz_amqp_worker:cast(Request, Publisher),
+    ok.
+%%   timer:sleep(10000),
+%%   play_pin(Context, JObj),
+%%   timer:sleep(10000),
+%%   play_pin(Context, JObj).
+
+-spec play_pin(kapps_call:call(), kz_json:object()) -> 'ok'.
+play_pin(Context, JObj) ->
     Doc = cb_context:doc(Context),
     Pin = kzd_external_numbers:pvt_pin(Doc),
-    Number = kzd_external_numbers:number(Doc),
-    io:format("place verification call to ~s with pin ~s~n", [Number, Pin]),
-    Context.
+    AccountId = cb_context:account_id(Context),
+    Routines =
+        [{F, V}
+         || {F, V} <- [{fun kapps_call:set_account_db/2, cb_context:db_name(Context)}
+                      ,{fun kapps_call:set_account_id/2, AccountId}
+                      ,{fun kapps_call:set_resource_type/2, <<"audio">>}
+                      ,{fun kapps_call:set_authorizing_id/2, AccountId}
+                      ,{fun kapps_call:set_authorizing_type/2, <<"account">>}
+                      ,{fun kapps_call:set_call_id/2
+                       ,kz_json:get_value([<<"Resource-Response">>, <<"Call-ID">>], JObj)}
+                      ,{fun kapps_call:set_control_queue/2
+                       ,kz_json:get_value([<<"Resource-Response">>, <<"Control-Queue">>], JObj)}
+                      ,{fun kapps_call:set_application_name/2, ?APP_NAME}
+                      ,{fun kapps_call:set_application_version/2, ?APP_VERSION}
+                      ],
+            'undefined' =/= V
+        ],
+    Call = kapps_call:exec(Routines, kapps_call:new()),
+    lager:debug("sent call command~n", []),
+    kapps_call_command:say(Pin, Call).
+%%kapps_call_command:audio_macro([{'say', Pin}], Call).
