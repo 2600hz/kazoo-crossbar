@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc Crossnar API for skel.
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -112,7 +112,11 @@ validate_external_number_verify(Context, Id, ?HTTP_PUT) ->
     cb_context:validate_request_data(<<"external_number_verify">>, Context, OnSuccess);
 validate_external_number_verify(Context, Id, ?HTTP_POST) ->
     OnSuccess = fun(C) -> read(Id, C) end,
-    cb_context:validate_request_data(<<"external_number_claim">>, Context, OnSuccess).
+    case cb_context:is_superduper_admin(Context) of
+        'true' -> OnSuccess(Context);
+        'false' ->
+            cb_context:validate_request_data(<<"external_number_claim">>, Context, OnSuccess)
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc If the HTTP verb is PUT, execute the actual action, usually a db save.
@@ -149,7 +153,9 @@ update_pin(Context) ->
 post(Context, _Id, ?VERIFY) ->
     Doc = cb_context:doc(Context),
     Pin = kzd_external_numbers:pvt_pin(Doc),
-    case Pin =:= kz_json:get_ne_binary_value(<<"pin">>, cb_context:req_data(Context)) of
+    case Pin =:= kzd_external_number_claim:pin(cb_context:req_data(Context))
+        orelse cb_context:is_superduper_admin(Context)
+    of
         'true' -> number_verified(Context);
         'false' ->
             cb_context:add_validation_error(<<"pin">>, <<"invalid">>, <<"pin does not match">>, Context)
@@ -287,7 +293,7 @@ summary(Context) ->
 %%------------------------------------------------------------------------------
 -spec send_verification_pin(cb_context:context()) -> cb_context:context().
 send_verification_pin(Context) ->
-    case kz_json:get_ne_binary_value(<<"method">>, cb_context:req_data(Context)) of
+    case kzd_external_number_verify:method(cb_context:req_data(Context)) of
         <<"voice">> -> send_voice_pin(Context)
     end.
 

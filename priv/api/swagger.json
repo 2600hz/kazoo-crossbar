@@ -6718,6 +6718,56 @@
             },
             "type": "object"
         },
+        "external_numbers": {
+            "description": "Schema for an external number",
+            "properties": {
+                "name": {
+                    "description": "A friendly name for the external number",
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "type": "string"
+                },
+                "number": {
+                    "description": "The external number",
+                    "maxLength": 30,
+                    "minLength": 1,
+                    "type": "string"
+                }
+            },
+            "required": [
+                "number"
+            ],
+            "type": "object"
+        },
+        "external_numbers_claim": {
+            "description": "Schema to request verification of an external number",
+            "properties": {
+                "pin": {
+                    "description": "The verification pin number sent to the external number",
+                    "maxLength": 4,
+                    "minLength": 4,
+                    "type": "string"
+                }
+            },
+            "required": [
+                "pin"
+            ],
+            "type": "object"
+        },
+        "external_numbers_verify": {
+            "description": "Schema to request verification of an external number",
+            "properties": {
+                "method": {
+                    "default": "voice",
+                    "description": "The requested method for transfering the verification pin",
+                    "enum": [
+                        "voice"
+                    ],
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "faxbox": {
             "description": "FaxBoxes allow configuration of individual fax virtual machines",
             "properties": {
@@ -20731,6 +20781,13 @@
             "required": true,
             "type": "string"
         },
+        "THING": {
+            "description": "request THING parameter",
+            "in": "path",
+            "name": "THING",
+            "required": true,
+            "type": "string"
+        },
         "TRANSACTION_ID": {
             "description": "request TRANSACTION_ID parameter",
             "in": "path",
@@ -23041,6 +23098,138 @@
                     },
                     {
                         "$ref": "#/parameters/DIRECTORY_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/external_numbers": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "put": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "external_numbers",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/external_numbers"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/external_numbers/{THING}": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/THING"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/THING"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/external_numbers/{THING}/verify": {
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "external_numbers",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/external_numbers"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/THING"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "put": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "external_numbers",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/external_numbers"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/THING"
                     }
                 ],
                 "responses": {

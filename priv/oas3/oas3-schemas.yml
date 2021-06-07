@@ -5328,6 +5328,47 @@
           'uniqueItems': true
       'type': object
   'type': object
+'external_numbers':
+  'description': Schema for an external number
+  'properties':
+    'name':
+      'description': A friendly name for the external number
+      'maxLength': 128
+      'minLength': 1
+      'type': string
+      'x-support_level': supported
+    'number':
+      'description': The external number
+      'maxLength': 30
+      'minLength': 1
+      'type': string
+      'x-support_level': supported
+  'required':
+    - number
+  'type': object
+'external_numbers_claim':
+  'description': Schema to request verification of an external number
+  'properties':
+    'pin':
+      'description': The verification pin number sent to the external number
+      'maxLength': 4
+      'minLength': 4
+      'type': string
+      'x-support_level': supported
+  'required':
+    - pin
+  'type': object
+'external_numbers_verify':
+  'description': Schema to request verification of an external number
+  'properties':
+    'method':
+      'default': voice
+      'description': The requested method for transfering the verification pin
+      'enum':
+        - voice
+      'type': string
+      'x-support_level': supported
+  'type': object
 'faxbox':
   'description': FaxBoxes allow configuration of individual fax virtual machines
   'properties':
