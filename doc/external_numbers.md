@@ -19,7 +19,7 @@ Key | Description | Type | Default | Required | Support Level
 
 ## Fetch
 
-List and status of all external numbers on an account.
+List all external numbers on an account with the verification status.
 
 > GET /v2/accounts/{ACCOUNT_ID}/external_numbers
 
@@ -54,7 +54,7 @@ curl -v -X GET \
 
 ## Create a new external number
 
-Create a new, unverified, external number.  The number must be unique amoung the existing assigned (routable) phone numbers as well as external numbers.
+Creates a new, unverified, external number.  The number must be unique amoung the existing assigned (routable) phone numbers as well as external numbers.
 
 > PUT /v2/accounts/{ACCOUNT_ID}/external_numbers
 
