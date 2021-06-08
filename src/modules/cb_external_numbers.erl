@@ -326,7 +326,7 @@ send_sms_code(Context) ->
               ,{<<"Route-Type">>, <<"offnet">>}
                %%,{<<"Application-ID">>, ?APP_ID}
               ,{<<"Event-Category">>, <<"sms">>}
-               | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+              | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
               ],
     io:format("~p~n", [Request]),
     _ = kz_amqp_worker:cast(Request, fun kapi_im:publish_outbound/1),
@@ -366,17 +366,17 @@ play_code(Context, JObj) ->
               ], Call),
             kapps_call_command:audio_macro(
               [{'prompt', <<"general-authorization_code">>}
-               | say_number_by_number(Code)
+              | say_number_by_number(Code)
               ], Call),
             kapps_call_command:audio_macro(
               [{'prompt', <<"general-again">>}
               ,{'prompt', <<"general-authorization_code">>}
-               | say_number_by_number(Code)
+              | say_number_by_number(Code)
               ], Call),
             kapps_call_command:audio_macro(
               [{'prompt', <<"general-once_more">>}
               ,{'prompt', <<"general-authorization_code">>}
-               | say_number_by_number(Code)
+              | say_number_by_number(Code)
               ], Call),
             kapps_call_command:prompt(<<"general-goodbye">>, Call);
         Message ->
@@ -411,7 +411,7 @@ execute_ivr(Context, 'undefined') ->
 execute_ivr(Context, JObj) ->
     Call = kapps_call:from_json(JObj),
     %% NOTE: this process is bound for call events
-    %%   because we need to be able to recieve
+    %%   because we need to be able to receive
     %%   a digit during the prompt indicating
     %%   the user has confirmed they have the number.
     _ = kz_events:bind_call_id(kapps_call:call_id(Call)),
@@ -470,17 +470,17 @@ caller_id(Context) ->
         {'ok', JObj} ->
             CallerIds = kzd_accounts:caller_id(JObj),
             Number = kz_json:get_first_defined([[<<"external">>, <<"number">>]
-                                                ,[<<"default">>, <<"number">>]
-                                                ]
-                                               ,CallerIds
-                                               ,kz_privacy:anonymous_caller_id_number()
-                                               ),
-            Name = kz_json:get_first_defined([[<<"external">>, <<"name">>]
-                                              ,[<<"default">>, <<"name">>]
-                                              ]
+                                               ,[<<"default">>, <<"number">>]
+                                               ]
                                               ,CallerIds
-                                              ,kzd_accounts:name(JObj)
-                                             ),
+                                              ,kz_privacy:anonymous_caller_id_number()
+                                              ),
+            Name = kz_json:get_first_defined([[<<"external">>, <<"name">>]
+                                             ,[<<"default">>, <<"name">>]
+                                             ]
+                                            ,CallerIds
+                                            ,kzd_accounts:name(JObj)
+                                            ),
             {Number, Name}
     end.
 
