@@ -2,7 +2,7 @@
 
 ## About External Numbers
 
-External numbers is a collection of phone numbers that the account or reseller has attested they have control over but does not route to the cluster for call processing.  Once a external number has been successfully verified it can be used as a known valid caller id for that account with [STIR/SHAKEN](https://en.wikipedia.org/wiki/STIR/SHAKEN "STIR/SHAKEN") compliance. 
+External numbers is a collection of phone numbers that the account or reseller has attested they have control over but does not route to the cluster for call processing.  Once an external number has been successfully verified it can be used as a known valid caller id for that account with [STIR/SHAKEN](https://en.wikipedia.org/wiki/STIR/SHAKEN "STIR/SHAKEN") compliance. 
 
 #### Schema
 
