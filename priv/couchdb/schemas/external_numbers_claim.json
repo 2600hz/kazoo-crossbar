@@ -3,8 +3,8 @@
     "_id": "external_number_claim",
     "description": "Schema to request verification of an external number",
     "properties": {
-        "pin": {
-            "description": "The verification pin number sent to the external number",
+        "code": {
+            "description": "The verification code number sent to the external number",
             "maxLength": 4,
             "minLength": 4,
             "support_level": "supported",
@@ -12,7 +12,7 @@
         }
     },
     "required": [
-        "pin"
+        "code"
     ],
     "type": "object"
 }

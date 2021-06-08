@@ -6742,26 +6742,32 @@
         "external_numbers_claim": {
             "description": "Schema to request verification of an external number",
             "properties": {
-                "pin": {
-                    "description": "The verification pin number sent to the external number",
+                "code": {
+                    "description": "The verification code number sent to the external number",
                     "maxLength": 4,
                     "minLength": 4,
                     "type": "string"
                 }
             },
             "required": [
-                "pin"
+                "code"
             ],
             "type": "object"
         },
         "external_numbers_verify": {
             "description": "Schema to request verification of an external number",
             "properties": {
+                "message": {
+                    "description": "The message template to transfer the verification pin",
+                    "type": "string"
+                },
                 "method": {
                     "default": "voice",
                     "description": "The requested method for transfering the verification pin",
                     "enum": [
-                        "voice"
+                        "voice",
+                        "ivr",
+                        "sms"
                     ],
                     "type": "string"
                 }
@@ -22762,7 +22768,6 @@
         },
         "/accounts/{ACCOUNT_ID}/devices": {
             "get": {
-                "description": "Summary listing of devices for the account",
                 "parameters": [
                     {
                         "$ref": "#/parameters/auth_token_header"
@@ -22778,7 +22783,6 @@
                 }
             },
             "put": {
-                "description": "Create a new device",
                 "parameters": [
                     {
                         "in": "body",
@@ -22798,9 +22802,6 @@
                 "responses": {
                     "200": {
                         "description": "request succeeded"
-                    },
-                    "201": {
-                        "description": "The newly created device object"
                     }
                 }
             }
@@ -22824,7 +22825,6 @@
         },
         "/accounts/{ACCOUNT_ID}/devices/{DEVICE_ID}": {
             "delete": {
-                "description": "Remove the device from the account",
                 "parameters": [
                     {
                         "$ref": "#/parameters/auth_token_header"
@@ -22843,7 +22843,6 @@
                 }
             },
             "get": {
-                "description": "Get the device details",
                 "parameters": [
                     {
                         "$ref": "#/parameters/auth_token_header"
@@ -22880,7 +22879,6 @@
                 }
             },
             "post": {
-                "description": "Edit the device object",
                 "parameters": [
                     {
                         "in": "body",
@@ -22929,16 +22927,12 @@
                 "responses": {
                     "200": {
                         "description": "request succeeded"
-                    },
-                    "202": {
-                        "description": "action was accepted (for asynchronous actions)"
                     }
                 }
             }
         },
         "/accounts/{ACCOUNT_ID}/devices/{DEVICE_ID}/sync": {
             "post": {
-                "description": "Reset the device by sending a check-sync SIP NOTIFY",
                 "parameters": [
                     {
                         "in": "body",
@@ -22961,9 +22955,6 @@
                 "responses": {
                     "200": {
                         "description": "request succeeded"
-                    },
-                    "202": {
-                        "description": "Notice that the check-sync has been sent"
                     }
                 }
             }
@@ -29215,7 +29206,6 @@
         },
         "/accounts/{ACCOUNT_ID}/vmboxes": {
             "get": {
-                "description": "Summary listing of voicemail boxes for the account",
                 "parameters": [
                     {
                         "$ref": "#/parameters/auth_token_header"
@@ -29231,7 +29221,6 @@
                 }
             },
             "put": {
-                "description": "Create a new voicemail box",
                 "parameters": [
                     {
                         "in": "body",
@@ -29251,16 +29240,12 @@
                 "responses": {
                     "200": {
                         "description": "request succeeded"
-                    },
-                    "201": {
-                        "description": "The newly created voicemail box"
                     }
                 }
             }
         },
         "/accounts/{ACCOUNT_ID}/vmboxes/messages": {
             "get": {
-                "description": "Listing of all messages on an account",
                 "parameters": [
                     {
                         "$ref": "#/parameters/auth_token_header"
@@ -29278,7 +29263,6 @@
         },
         "/accounts/{ACCOUNT_ID}/vmboxes/{VM_BOX_ID}": {
             "delete": {
-                "description": "Deletes the voicemail box from the account",
                 "parameters": [
                     {
                         "$ref": "#/parameters/auth_token_header"
@@ -29297,7 +29281,6 @@
                 }
             },
             "get": {
-                "description": "Details of the voicemail box",
                 "parameters": [
                     {
                         "$ref": "#/parameters/auth_token_header"
@@ -29316,7 +29299,6 @@
                 }
             },
             "patch": {
-                "description": "Patch an existing voicemail box",
                 "parameters": [
                     {
                         "$ref": "#/parameters/auth_token_header"
@@ -29335,7 +29317,6 @@
                 }
             },
             "post": {
-                "description": "Edit an existing voicemail box",
                 "parameters": [
                     {
                         "in": "body",
@@ -29364,7 +29345,6 @@
         },
         "/accounts/{ACCOUNT_ID}/vmboxes/{VM_BOX_ID}/messages": {
             "delete": {
-                "description": "Remove all or a list of messages from a voicemail box",
                 "parameters": [
                     {
                         "$ref": "#/parameters/auth_token_header"
@@ -29383,7 +29363,6 @@
                 }
             },
             "get": {
-                "description": "Listing of messages contained in the voicemail box",
                 "parameters": [
                     {
                         "$ref": "#/parameters/auth_token_header"
@@ -29402,7 +29381,6 @@
                 }
             },
             "post": {
-                "description": "Change a list message",
                 "parameters": [
                     {
                         "in": "body",
@@ -29457,7 +29435,6 @@
         },
         "/accounts/{ACCOUNT_ID}/vmboxes/{VM_BOX_ID}/messages/raw": {
             "post": {
-                "description": "Fetch raw audio of a list message id",
                 "parameters": [
                     {
                         "in": "body",
@@ -29486,7 +29463,6 @@
         },
         "/accounts/{ACCOUNT_ID}/vmboxes/{VM_BOX_ID}/messages/{VM_MSG_ID}": {
             "delete": {
-                "description": "Remove the message from the voicemail box",
                 "parameters": [
                     {
                         "$ref": "#/parameters/auth_token_header"
@@ -29508,7 +29484,6 @@
                 }
             },
             "get": {
-                "description": "Get a specific message object",
                 "parameters": [
                     {
                         "$ref": "#/parameters/auth_token_header"
@@ -29530,7 +29505,6 @@
                 }
             },
             "post": {
-                "description": "Change a message",
                 "parameters": [
                     {
                         "in": "body",
@@ -29614,7 +29588,6 @@
         },
         "/accounts/{ACCOUNT_ID}/webhooks": {
             "get": {
-                "description": "Summary listing of webhooks for the account",
                 "parameters": [
                     {
                         "$ref": "#/parameters/auth_token_header"
@@ -29630,7 +29603,6 @@
                 }
             },
             "patch": {
-                "description": "Re-enable the collection of webhooks",
                 "parameters": [
                     {
                         "$ref": "#/parameters/auth_token_header"
@@ -29646,7 +29618,6 @@
                 }
             },
             "put": {
-                "description": "Create a new webhook",
                 "parameters": [
                     {
                         "in": "body",
@@ -29666,16 +29637,12 @@
                 "responses": {
                     "200": {
                         "description": "request succeeded"
-                    },
-                    "201": {
-                        "description": "The newly created webhook object"
                     }
                 }
             }
         },
         "/accounts/{ACCOUNT_ID}/webhooks/attempts": {
             "get": {
-                "description": "List the attempts Kazoo has made to the external servers",
                 "parameters": [
                     {
                         "$ref": "#/parameters/auth_token_header"
@@ -29730,7 +29697,6 @@
         },
         "/accounts/{ACCOUNT_ID}/webhooks/{WEBHOOK_ID}": {
             "delete": {
-                "description": "Remove the webhook from the account",
                 "parameters": [
                     {
                         "$ref": "#/parameters/auth_token_header"
@@ -29749,7 +29715,6 @@
                 }
             },
             "get": {
-                "description": "Get the webhook details",
                 "parameters": [
                     {
                         "$ref": "#/parameters/auth_token_header"
@@ -29768,7 +29733,6 @@
                 }
             },
             "patch": {
-                "description": "Patch the webhook object",
                 "parameters": [
                     {
                         "$ref": "#/parameters/auth_token_header"
@@ -29787,7 +29751,6 @@
                 }
             },
             "post": {
-                "description": "Edit the webhook object",
                 "parameters": [
                     {
                         "in": "body",
@@ -29816,7 +29779,6 @@
         },
         "/accounts/{ACCOUNT_ID}/webhooks/{WEBHOOK_ID}/attempts": {
             "get": {
-                "description": "List the attempts Kazoo has made to the external servers for this webhook",
                 "parameters": [
                     {
                         "$ref": "#/parameters/auth_token_header"
@@ -30480,7 +30442,6 @@
         },
         "/ip_auth": {
             "put": {
-                "parameters": [],
                 "responses": {
                     "200": {
                         "description": "request succeeded"
@@ -30490,7 +30451,6 @@
         },
         "/rates": {
             "get": {
-                "description": "Listing of available rate docs",
                 "responses": {
                     "200": {
                         "description": "request succeeded"
@@ -30540,7 +30500,6 @@
         },
         "/rates/{RATE_ID}": {
             "delete": {
-                "description": "Delete the rate doc",
                 "parameters": [
                     {
                         "$ref": "#/parameters/RATE_ID"
@@ -30553,7 +30512,6 @@
                 }
             },
             "get": {
-                "description": "Get the rate doc",
                 "parameters": [
                     {
                         "$ref": "#/parameters/RATE_ID"
@@ -30600,7 +30558,6 @@
         },
         "/schemas": {
             "get": {
-                "description": "Listing of installed schemas available",
                 "responses": {
                     "200": {
                         "description": "request succeeded"
@@ -30610,7 +30567,6 @@
         },
         "/schemas/{SCHEMA_NAME}": {
             "get": {
-                "description": "Get the JSON schema definition",
                 "parameters": [
                     {
                         "$ref": "#/parameters/SCHEMA_NAME"
@@ -30625,7 +30581,6 @@
         },
         "/schemas/{SCHEMA_NAME}/validation": {
             "put": {
-                "description": "Perform a test validation",
                 "parameters": [
                     {
                         "$ref": "#/parameters/SCHEMA_NAME"

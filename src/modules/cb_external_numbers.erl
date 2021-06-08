@@ -26,6 +26,12 @@
 -define(VERIFY, <<"verify">>).
 -define(PVT_TYPE, kzd_external_numbers:type()).
 
+-define(MOD_CONFIG_CAT, <<(?CONFIG_CAT)/binary, ".external_numbers">>).
+
+-define(SMS_VERIFY_TEMPLATE, <<"Your verification code is {{verify.code}}">>).
+-define(SMS_VERIFY_BODY_KEY, <<"sms_verify_message">>).
+-define(DEFAULT_SMS_VERIFY_BODY, kapps_config:get_ne_binary(?MOD_CONFIG_CAT, ?SMS_VERIFY_BODY_KEY, ?SMS_VERIFY_TEMPLATE)).
+
 %%%=============================================================================
 %%% API
 %%%=============================================================================
@@ -128,18 +134,18 @@ put(Context) ->
 
 -spec put(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 put(Context, _Id, ?VERIFY) ->
-    Context1 = crossbar_doc:save(update_pin(Context)),
+    Context1 = crossbar_doc:save(update_code(Context)),
     case cb_context:resp_status(Context1) of
-        'success' -> send_verification_pin(Context1);
+        'success' -> send_verification_code(Context1);
         _Else -> Context1
     end.
 
--spec update_pin(cb_context:context()) -> cb_context:context().
-update_pin(Context) ->
+-spec update_code(cb_context:context()) -> cb_context:context().
+update_code(Context) ->
     Doc = cb_context:doc(Context),
-    Pin = kz_term:to_binary(kz_term:rand_integer(1000, 9999)),
+    Code = kz_term:to_binary(kz_term:rand_integer(1000, 9999)),
     Setters = [{fun kzd_external_numbers:set_attestation/2, kz_json:new()}
-              ,{fun kzd_external_numbers:set_pvt_pin/2, Pin}
+              ,{fun kzd_external_numbers:set_pvt_code/2, Code}
               ,{fun kzd_external_numbers:set_pvt_verified/2, 'false'}
               ],
     cb_context:set_doc(Context, kz_doc:setters(Doc, Setters)).
@@ -152,13 +158,13 @@ update_pin(Context) ->
 -spec post(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 post(Context, _Id, ?VERIFY) ->
     Doc = cb_context:doc(Context),
-    Pin = kzd_external_numbers:pvt_pin(Doc),
-    case Pin =:= kzd_external_number_claim:pin(cb_context:req_data(Context))
+    Code = kzd_external_numbers:pvt_code(Doc),
+    case Code =:= kzd_external_number_claim:code(cb_context:req_data(Context))
         orelse cb_context:is_superduper_admin(Context)
     of
         'true' -> number_verified(Context);
         'false' ->
-            cb_context:add_validation_error(<<"pin">>, <<"invalid">>, <<"pin does not match">>, Context)
+            cb_context:add_validation_error(<<"code">>, <<"invalid">>, <<"code does not match">>, Context)
     end.
 
 -spec number_verified(cb_context:context()) -> cb_context:context().
@@ -180,7 +186,7 @@ number_verified(Context) ->
               ,{fun kzd_external_numbers:set_attestation_user_id/2, UserId}
               ,{fun kzd_external_numbers:set_attestation_user_name/2, <<>>}
               ,{fun kzd_external_numbers:set_pvt_verified/2, 'true'}
-              ,{fun kzd_external_numbers:set_pvt_pin/2, 'undefined'}
+              ,{fun kzd_external_numbers:set_pvt_code/2, 'undefined'}
               ],
     crossbar_doc:save(cb_context:set_doc(Context, kz_doc:setters(Doc, Setters))).
 
@@ -291,20 +297,152 @@ summary(Context) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec send_verification_pin(cb_context:context()) -> cb_context:context().
-send_verification_pin(Context) ->
+-spec send_verification_code(cb_context:context()) -> cb_context:context().
+send_verification_code(Context) ->
     case kzd_external_number_verify:method(cb_context:req_data(Context)) of
-        <<"voice">> -> send_voice_pin(Context)
+        <<"sms">> -> send_sms_code(Context);
+        <<"voice">> -> send_voice_code(Context);
+        <<"ivr">> -> ivr_verify(Context)
     end.
 
--spec send_voice_pin(cb_context:context()) -> cb_context:context().
-send_voice_pin(Context) ->
+-spec send_sms_code(cb_context:context()) -> cb_context:context().
+send_sms_code(Context) ->
+    Doc = cb_context:doc(Context),
+    Number = kzd_external_numbers:number(Doc),
+    Code = kzd_external_numbers:pvt_code(Doc),
+    {CIDNumber, _CIDName} = caller_id(Context),
+    Body = case get_message(Context) of
+               'undefined' ->
+                   Template = ?SMS_VERIFY_TEMPLATE,
+                   Code = kzd_external_numbers:pvt_code(cb_context:doc(Context)),
+                   binary:replace(Template, <<"{{verify.code}}">>, Code, ['global']);
+               Message -> Message
+           end,
+    Request = [{<<"Message-ID">>, kz_binary:rand_hex(16)}
+              ,{<<"Body">>, Body}
+              ,{<<"From">>, CIDNumber}
+              ,{<<"To">>, Number}
+              ,{<<"Account-ID">>, cb_context:account_id(Context)}
+              ,{<<"Route-Type">>, <<"offnet">>}
+               %%,{<<"Application-ID">>, ?APP_ID}
+              ,{<<"Event-Category">>, <<"sms">>}
+               | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+              ],
+    io:format("~p~n", [Request]),
+    _ = kz_amqp_worker:cast(Request, fun kapi_im:publish_outbound/1),
+    Context.
+
+-spec send_voice_code(cb_context:context()) -> cb_context:context().
+send_voice_code(Context) ->
+    case place_call(Context) of
+        {'ok', JObj} ->
+            play_code(Context, kz_json:get_value(<<"Call">>, JObj));
+        {'timeout', _} ->
+            cb_context:add_system_error(<<"call failure">>, Context);
+        {'error', E} ->
+            cb_context:add_system_error(E, Context)
+    end.
+
+-spec play_code(kapps_call:call(), kz_json:object()) -> 'ok'.
+play_code(Context, 'undefined') ->
+    cb_context:add_system_error(<<"call failure">>, Context);
+play_code(Context, JObj) ->
+    Doc = cb_context:doc(Context),
+    Code = kzd_external_numbers:pvt_code(Doc),
+    Call = kapps_call:from_json(JObj),
+    %% NOTE: this process is not bound for call
+    %%   events because we can just queue all the commands
+    %%   in ecallmgr and let it handle executing them
+    %%   since its just a static sequence.
+    %%   (fire and forget)
+    kapps_call_command:wait_for_answer(Call),
+    case get_message(Context) of
+        'undefined' ->
+            kapps_call_command:audio_macro(
+              [{'prompt', <<"general-hello">>}
+              ,{'prompt', <<"external-number-request_for">>}
+              ,{'say', kapps_call:request_user(Call), <<"telephone_number">>}
+              ,{'prompt', <<"external-number-description">>}
+              ], Call),
+            kapps_call_command:audio_macro(
+              [{'prompt', <<"general-authorization_code">>}
+               | say_number_by_number(Code)
+              ], Call),
+            kapps_call_command:audio_macro(
+              [{'prompt', <<"general-again">>}
+              ,{'prompt', <<"general-authorization_code">>}
+               | say_number_by_number(Code)
+              ], Call),
+            kapps_call_command:audio_macro(
+              [{'prompt', <<"general-once_more">>}
+              ,{'prompt', <<"general-authorization_code">>}
+               | say_number_by_number(Code)
+              ], Call),
+            kapps_call_command:prompt(<<"general-goodbye">>, Call);
+        Message ->
+            kapps_call_command:tts(Message, Call)
+    end,
+    kapps_call_command:queued_hangup(Call),
+    cb_context:set_resp_data(Context, kapps_call:to_public_json(Call)).
+
+-spec say_number_by_number(kz_term:ne_binary()) -> kz_term:proplist().
+say_number_by_number(Number) ->
+    say_number_by_number(Number, []).
+
+say_number_by_number(<<>>, Say) ->
+    lists:reverse(Say);
+say_number_by_number(<<Number, Rest/binary>>, Say) ->
+    say_number_by_number(Rest, [{'say', Number} | Say]).
+
+-spec ivr_verify(cb_context:context()) -> cb_context:context().
+ivr_verify(Context) ->
+    case place_call(Context) of
+        {'ok', JObj} ->
+            execute_ivr(Context, kz_json:get_value(<<"Call">>, JObj));
+        {'timeout', _} ->
+            cb_context:add_system_error(<<"call failure">>, Context);
+        {'error', E} ->
+            cb_context:add_system_error(E, Context)
+    end.
+
+-spec execute_ivr(kapps_call:call(), kz_json:object()) -> 'ok'.
+execute_ivr(Context, 'undefined') ->
+    cb_context:add_system_error(<<"call failure">>, Context);
+execute_ivr(Context, JObj) ->
+    Call = kapps_call:from_json(JObj),
+    %% NOTE: this process is bound for call events
+    %%   because we need to be able to recieve
+    %%   a digit during the prompt indicating
+    %%   the user has confirmed they have the number.
+    _ = kz_events:bind_call_id(kapps_call:call_id(Call)),
+    kapps_call_command:wait_for_answer(Call),
+    case get_message(Context) of
+        'undefined' ->
+            kapps_call_command:audio_macro(
+              [{'prompt', <<"general-hello">>}
+              ,{'prompt', <<"external-number-request_for">>}
+              ,{'say', kapps_call:request_user(Call), <<"telephone_number">>}
+              ,{'prompt', <<"external-number-ivr_verification">>}
+              ], Call);
+        Message ->
+            kapps_call_command:tts(Message, Call)
+    end,
+    _ = case kapps_call_command:collect_digits(1, 10 * ?MILLISECONDS_IN_SECOND, Call) of
+            {'ok', <<"1">>} ->
+                number_verified(Context),
+                io:format("number verified!~n", []);
+            _Else ->
+                lager:debug("user did not accept IVR verification")
+        end,
+    kapps_call_command:prompt(<<"general-goodbye">>, Call),
+    kapps_call_command:queued_hangup(Call).
+
+-spec place_call(cb_context:context()) -> kz_amqp_worker:request_return().
+place_call(Context) ->
     AccountId = cb_context:account_id(Context),
     Realm = kzd_accounts:fetch_realm(AccountId),
     Number = kzd_external_numbers:number(cb_context:doc(Context)),
-    %%{CIDNumber, CIDName} = kz_attributes:caller_id(<<"external">>, Call),
-    CIDNumber = <<"+14158867900">>,
-    CIDName = <<"Number Verification">>,
+    {CIDNumber, CIDName} = caller_id(Context),
     Request = props:filter_undefined(
                 [{<<"Account-ID">>, AccountId}
                 ,{<<"Account-Realm">>, Realm}
@@ -315,58 +453,42 @@ send_voice_pin(Context) ->
                 ,{<<"Application-Name">>, <<"park">>}
                 ,{<<"Originate-Immediate">>, 'true'}
                 ,{<<"Timeout">>, 30}
-                 | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+                | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
                 ]),
-    case kz_amqp_worker:call(Request
-                            ,fun kapi_offnet_resource:publish_req/1
-                            ,fun kapi_offnet_resource:resp_v/1
-                            ,30 * ?MILLISECONDS_IN_SECOND
-                            )
-    of
+    kz_amqp_worker:call(Request
+                       ,fun kapi_offnet_resource:publish_req/1
+                       ,fun kapi_offnet_resource:resp_v/1
+                       ,30 * ?MILLISECONDS_IN_SECOND
+                       ).
+
+-spec caller_id(cb_context:context()) -> {kz_term:ne_binary(), kz_term:ne_binary()}.
+caller_id(Context) ->
+    case kzd_accounts:fetch(cb_context:account_id(Context)) of
+        {'error', _R} ->
+            lager:warning("unable to determine caller id, account document fetch returned error ~p", _R),
+            {kz_privacy:anonymous_caller_id_number(), kz_privacy:anonymous_caller_id_name()};
         {'ok', JObj} ->
-            play_pin(Context, kz_json:get_value(<<"Call">>, JObj));
-        {'timeout', _} ->
-            cb_context:add_system_error(<<"call failure">>, Context);
-        {'error', E} ->
-            cb_context:add_system_error(E, Context)
+            CallerIds = kzd_accounts:caller_id(JObj),
+            Number = kz_json:get_first_defined([[<<"external">>, <<"number">>]
+                                                ,[<<"default">>, <<"number">>]
+                                                ]
+                                               ,CallerIds
+                                               ,kz_privacy:anonymous_caller_id_number()
+                                               ),
+            Name = kz_json:get_first_defined([[<<"external">>, <<"name">>]
+                                              ,[<<"default">>, <<"name">>]
+                                              ]
+                                              ,CallerIds
+                                              ,kzd_accounts:name(JObj)
+                                             ),
+            {Number, Name}
     end.
 
--spec play_pin(kapps_call:call(), kz_json:object()) -> 'ok'.
-play_pin(Context, 'undefined') ->
-    cb_context:add_system_error(<<"call failure">>, Context);
-play_pin(Context, JObj) ->
-    Doc = cb_context:doc(Context),
-    Pin = kzd_external_numbers:pvt_pin(Doc),
-    Call = kapps_call:from_json(JObj),
-    kapps_call_command:wait_for_answer(Call),
-    kapps_call_command:audio_macro(
-      [{'prompt', <<"general-hello">>}
-      ,{'prompt', <<"external-number-request_for">>}
-      ,{'say', kapps_call:request_user(Call), <<"telephone_number">>}
-      ,{'prompt', <<"external-number-description">>}
-      ], Call),
-    kapps_call_command:audio_macro(
-      [{'prompt', <<"general-authorization_code">>}
-       | say_number_by_number(Pin)
-      ], Call),
-    kapps_call_command:audio_macro(
-      [{'prompt', <<"general-again">>}
-      ,{'prompt', <<"general-authorization_code">>}
-       | say_number_by_number(Pin)
-      ], Call),
-    kapps_call_command:audio_macro(
-      [{'prompt', <<"general-once_more">>}
-      ,{'prompt', <<"general-authorization_code">>}
-       | say_number_by_number(Pin)
-      ], Call),
-    kapps_call_command:prompt(<<"general-goodbye">>, Call),
-    kapps_call_command:queued_hangup(Call).
-
--spec say_number_by_number(kz_term:ne_binary()) -> kz_term:proplist().
-say_number_by_number(Number) ->
-    say_number_by_number(Number, []).
-
-say_number_by_number(<<>>, Say) ->
-    lists:reverse(Say);
-say_number_by_number(<<Number, Rest/binary>>, Say) ->
-    say_number_by_number(Rest, [{'say', Number} | Say]).
+-spec get_message(cb_context:context()) -> kz_term:api_ne_binary().
+get_message(Context) ->
+    case kzd_external_number_verify:message(cb_context:req_data(Context)) of
+        'undefined' -> 'undefined';
+        Message ->
+            Code = kzd_external_numbers:pvt_code(cb_context:doc(Context)),
+            binary:replace(Message, <<"{{verify.code}}">>, Code, ['global'])
+    end.

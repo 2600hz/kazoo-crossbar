@@ -3,11 +3,18 @@
     "_id": "external_number_verify",
     "description": "Schema to request verification of an external number",
     "properties": {
+        "message": {
+            "description": "The message template to transfer the verification pin",
+            "support_level": "supported",
+            "type": "string"
+        },
         "method": {
             "default": "voice",
             "description": "The requested method for transfering the verification pin",
             "enum": [
-                "voice"
+                "voice",
+                "ivr",
+                "sms"
             ],
             "support_level": "supported",
             "type": "string"

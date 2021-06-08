@@ -5349,23 +5349,29 @@
 'external_numbers_claim':
   'description': Schema to request verification of an external number
   'properties':
-    'pin':
-      'description': The verification pin number sent to the external number
+    'code':
+      'description': The verification code number sent to the external number
       'maxLength': 4
       'minLength': 4
       'type': string
       'x-support_level': supported
   'required':
-    - pin
+    - code
   'type': object
 'external_numbers_verify':
   'description': Schema to request verification of an external number
   'properties':
+    'message':
+      'description': The message template to transfer the verification pin
+      'type': string
+      'x-support_level': supported
     'method':
       'default': voice
       'description': The requested method for transfering the verification pin
       'enum':
         - voice
+        - ivr
+        - sms
       'type': string
       'x-support_level': supported
   'type': object
