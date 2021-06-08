@@ -169,6 +169,9 @@ post(Context, _Id, ?VERIFY) ->
 
 -spec number_verified(cb_context:context()) -> cb_context:context().
 number_verified(Context) ->
+    lager:debug("number ~s has been verified."
+               ,[kzd_external_numbers:number(cb_context:doc(Context))]
+               ),
     Doc = cb_context:doc(Context),
     AccountId = cb_context:auth_account_id(Context),
     UserId = cb_context:auth_user_id(Context),
@@ -328,9 +331,8 @@ send_sms_code(Context) ->
               ,{<<"Event-Category">>, <<"sms">>}
               | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
               ],
-    io:format("~p~n", [Request]),
     _ = kz_amqp_worker:cast(Request, fun kapi_im:publish_outbound/1),
-    Context.
+    cb_context:set_resp_data(Context, kz_json:new()).
 
 -spec send_voice_code(cb_context:context()) -> cb_context:context().
 send_voice_code(Context) ->
@@ -427,15 +429,15 @@ execute_ivr(Context, JObj) ->
         Message ->
             kapps_call_command:tts(Message, Call)
     end,
-    _ = case kapps_call_command:collect_digits(1, 10 * ?MILLISECONDS_IN_SECOND, Call) of
-            {'ok', <<"1">>} ->
-                number_verified(Context),
-                io:format("number verified!~n", []);
-            _Else ->
-                lager:debug("user did not accept IVR verification")
-        end,
+    Context1 = case kapps_call_command:collect_digits(1, 10 * ?MILLISECONDS_IN_SECOND, Call) of
+                   {'ok', <<"1">>} -> number_verified(Context);
+                   _Else ->
+                       lager:debug("user did not accept IVR verification"),
+                       Context
+               end,
     kapps_call_command:prompt(<<"general-goodbye">>, Call),
-    kapps_call_command:queued_hangup(Call).
+    kapps_call_command:queued_hangup(Call),
+    Context1.
 
 -spec place_call(cb_context:context()) -> kz_amqp_worker:request_return().
 place_call(Context) ->
