@@ -2,24 +2,7 @@
 
 ## About Scope Restrictions
 
-#### Schema
-
-Auth Scope Restrictions Definition
-
-
-
-Key | Description | Type | Default | Required | Support Level
---- | ----------- | ---- | ------- | -------- | -------------
-`description` | Scope description | `string()` |   | `false` |  
-`http.allow./^(GET|PUT|POST|PATCH|DELETE|_)$/.[]` |   | `string()` |   | `false` |  
-`http.allow./^(GET|PUT|POST|PATCH|DELETE|_)$/` | URL paths | `array(string())` |   | `false` |  
-`http.allow` |   | `object()` |   | `false` |  
-`http.deny./^(GET|PUT|POST|PATCH|DELETE|_)$/.[]` |   | `string()` |   | `false` |  
-`http.deny./^(GET|PUT|POST|PATCH|DELETE|_)$/` | URL paths | `array(string())` |   | `false` |  
-`http.deny` |   | `object()` |   | `false` |  
-`http` | Token Restrictions to enforce for HTTP/HTTPS transport protocol | `object()` |   | `false` |  
-`precedence` | If scope restriction request matches both allow and deny rules which one should take precedence | `string('allow' | 'deny')` | `allow` | `false` |  
-`scope_name` | Name of scope this restriction is applying to | `string()` |   | `true` |  
+## Schema
 
 
 

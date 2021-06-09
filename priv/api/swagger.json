@@ -10591,36 +10591,76 @@
             ],
             "type": "object"
         },
-        "scope_restrictions": {
-            "description": "Auth Scope Restrictions Definition",
+        "scope_rules": {
+            "description": "Auth Scope Rules Definition",
             "properties": {
-                "description": {
-                    "description": "Scope description",
+                "application": {
+                    "description": "Application name this rules can be applied",
                     "type": "string"
                 },
-                "http": {
-                    "description": "Token Restrictions to enforce for HTTP/HTTPS transport protocol",
-                    "properties": {
-                        "allow": {
+                "description": {
+                    "description": "Scope rule description",
+                    "type": "string"
+                },
+                "rules": {
+                    "description": "Rules",
+                    "oneOf": [
+                        {
+                            "properties": {
+                                "allow": {
+                                    "patternProperties": {
+                                        "^(GET|PUT|POST|PATCH|DELETE|_)$": {
+                                            "description": "HTTP URL paths, can be absolute (start with `/`) or relative. Use `*` in a path segment to macth all values.",
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "type": "array"
+                                        }
+                                    },
+                                    "type": "object"
+                                },
+                                "deny": {
+                                    "patternProperties": {
+                                        "^(GET|PUT|POST|PATCH|DELETE|_)$": {
+                                            "description": "HTTP URL paths, can be absolute (start with `/`) or relative. Use `*` in a path segment to macth all values.",
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "type": "array"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
                             "type": "object"
                         },
-                        "deny": {
+                        {
+                            "properties": {
+                                "allow": {
+                                    "description": "Webscoket payload subscription / routing keys",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                },
+                                "deny": {
+                                    "description": "Webscoket payload subscription / routing keys",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                }
+                            },
                             "type": "object"
                         }
-                    },
-                    "type": "object"
-                },
-                "precedence": {
-                    "default": "allow",
-                    "description": "If scope restriction request matches both allow and deny rules which one should take precedence",
-                    "enum": [
-                        "allow",
-                        "deny"
-                    ],
-                    "type": "string"
+                    ]
                 },
                 "scope_name": {
-                    "description": "Name of scope this restriction is applying to",
+                    "description": "Name of scope this rule is applying to",
+                    "type": "string"
+                },
+                "transport": {
+                    "description": "Network transport this rule can be applied, e.g. 'http', 'websocket'",
                     "type": "string"
                 }
             },
@@ -10632,17 +10672,37 @@
         "scopes": {
             "description": "Kazoo Auth Scope Definition",
             "properties": {
-                "allow_api_request": {
-                    "description": "Indicates this scope can be requested from API",
-                    "type": "boolean"
-                },
                 "description": {
                     "description": "Scope description",
                     "type": "string"
                 },
+                "id": {
+                    "description": "Id of scope",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Name of scope",
+                    "type": "string"
+                },
+                "permissions": {
+                    "description": "Specifies who can request using this scope, values are '{ACCOUNT_TYPE}:{USER_TYPE_OR_STAR}. ACCOUNT_TYPE can be 'master', 'reseller', 'non-reseller'. USER_TYPE can be 'user', 'admin' or '*' as catch all",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "precedence": {
+                    "default": "allow",
+                    "description": "Specifies which rules take precedence if scope matches both allow and deny rules",
+                    "enum": [
+                        "allow",
+                        "deny"
+                    ],
+                    "type": "string"
+                },
                 "scopes": {
                     "default": [],
-                    "description": "List of available subscopes",
+                    "description": "List of subscopes",
                     "items": {
                         "type": "string"
                     },
@@ -10650,7 +10710,8 @@
                 }
             },
             "required": [
-                "allow_api_request"
+                "id",
+                "permissions"
             ],
             "type": "object"
         },
@@ -11422,7 +11483,8 @@
                 "default_timezone": {
                     "$ref": "#/definitions/timezone",
                     "default": "America/Los_Angeles",
-                    "description": "accounts default timezone"
+                    "description": "accounts default timezone",
+                    "type": "string"
                 },
                 "master_account_id": {
                     "description": "accounts master account id",
@@ -28187,14 +28249,6 @@
             "put": {
                 "parameters": [
                     {
-                        "in": "body",
-                        "name": "scope_restrictions",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/scope_restrictions"
-                        }
-                    },
-                    {
                         "$ref": "#/parameters/auth_token_header"
                     },
                     {
@@ -28247,14 +28301,6 @@
             },
             "post": {
                 "parameters": [
-                    {
-                        "in": "body",
-                        "name": "scope_restrictions",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/scope_restrictions"
-                        }
-                    },
                     {
                         "$ref": "#/parameters/auth_token_header"
                     },

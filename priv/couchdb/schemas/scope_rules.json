@@ -1,0 +1,80 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "_id": "scope_rules",
+    "description": "Auth Scope Rules Definition",
+    "properties": {
+        "application": {
+            "description": "Application name this rules can be applied",
+            "type": "string"
+        },
+        "description": {
+            "description": "Scope rule description",
+            "type": "string"
+        },
+        "rules": {
+            "description": "Rules",
+            "oneOf": [
+                {
+                    "properties": {
+                        "allow": {
+                            "patternProperties": {
+                                "^(GET|PUT|POST|PATCH|DELETE|_)$": {
+                                    "description": "HTTP URL paths, can be absolute (start with `/`) or relative. Use `*` in a path segment to macth all values.",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                }
+                            },
+                            "type": "object"
+                        },
+                        "deny": {
+                            "patternProperties": {
+                                "^(GET|PUT|POST|PATCH|DELETE|_)$": {
+                                    "description": "HTTP URL paths, can be absolute (start with `/`) or relative. Use `*` in a path segment to macth all values.",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "type": "object"
+                },
+                {
+                    "properties": {
+                        "allow": {
+                            "description": "Webscoket payload subscription / routing keys",
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        },
+                        "deny": {
+                            "description": "Webscoket payload subscription / routing keys",
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "type": "object"
+                }
+            ]
+        },
+        "scope_name": {
+            "description": "Name of scope this rule is applying to",
+            "type": "string"
+        },
+        "transport": {
+            "description": "Network transport this rule can be applied, e.g. 'http', 'websocket'",
+            "type": "string"
+        }
+    },
+    "required": [
+        "scope_name"
+    ],
+    "type": "object"
+}

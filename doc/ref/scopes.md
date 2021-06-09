@@ -10,10 +10,14 @@ Kazoo Auth Scope Definition
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`allow_api_request` | Indicates this scope can be requested from API | `boolean()` |   | `true` |  
 `description` | Scope description | `string()` |   | `false` |  
+`id` | Id of scope | `string()` |   | `true` |  
+`name` | Name of scope | `string()` |   | `false` |  
+`permissions.[]` |   | `string()` |   | `true` |  
+`permissions` | Specifies who can request using this scope, values are '{ACCOUNT_TYPE}:{USER_TYPE_OR_STAR}. ACCOUNT_TYPE can be 'master', 'reseller', 'non-reseller'. USER_TYPE can be 'user', 'admin' or '*' as catch all | `array(string())` |   | `true` |  
+`precedence` | Specifies which rules take precedence if scope matches both allow and deny rules | `string('allow' | 'deny')` | `allow` | `false` |  
 `scopes.[]` |   | `string()` |   | `false` |  
-`scopes` | List of available subscopes | `array(string())` | `[]` | `false` |  
+`scopes` | List of subscopes | `array(string())` | `[]` | `false` |  
 
 
 

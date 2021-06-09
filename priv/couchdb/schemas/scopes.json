@@ -3,21 +3,37 @@
     "_id": "scopes",
     "description": "Kazoo Auth Scope Definition",
     "properties": {
-        "allow_api_request": {
-            "description": "Indicates this scope can be requested from API",
-            "type": "boolean"
-        },
         "description": {
             "description": "Scope description",
             "type": "string"
         },
         "id": {
-            "description": "Id (name) of scope",
+            "description": "Id of scope",
+            "type": "string"
+        },
+        "name": {
+            "description": "Name of scope",
+            "type": "string"
+        },
+        "permissions": {
+            "description": "Specifies who can request using this scope, values are '{ACCOUNT_TYPE}:{USER_TYPE_OR_STAR}. ACCOUNT_TYPE can be 'master', 'reseller', 'non-reseller'. USER_TYPE can be 'user', 'admin' or '*' as catch all",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "precedence": {
+            "default": "allow",
+            "description": "Specifies which rules take precedence if scope matches both allow and deny rules",
+            "enum": [
+                "allow",
+                "deny"
+            ],
             "type": "string"
         },
         "scopes": {
             "default": [],
-            "description": "List of available subscopes",
+            "description": "List of subscopes",
             "items": {
                 "type": "string"
             },
@@ -25,8 +41,8 @@
         }
     },
     "required": [
-        "allow_api_request",
-        "id"
+        "id",
+        "permissions"
     ],
     "type": "object"
 }

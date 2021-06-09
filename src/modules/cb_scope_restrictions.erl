@@ -23,8 +23,8 @@
 
 -define(SCOPE_RESTICTIONS_PATH, <<"scope_restictions">>).
 
--define(PVT_TYPE, <<"scope_restriction">>).
--define(SCHEMA, <<"scope_restrictions">>).
+-define(PVT_TYPE, <<"scope_rule">>).
+-define(SCHEMA, <<"scope_rules">>).
 
 %%%=============================================================================
 %%% API
@@ -156,7 +156,7 @@ validate_request(Context, Scope) ->
 -spec on_successful_validation(cb_context:context(), api_path_token()) -> cb_context:context().
 on_successful_validation(Context, 'undefined') ->
     Doc = cb_context:doc(Context),
-    DocId = kz_auth_scope:scope_rules_doc_id(kzd_scope_restrictions:scope_name(Doc)),
+    DocId = kz_auth_scope:scope_rules_doc_id(kzd_scope_rules:scope_name(Doc)),
     Setters = [{fun kz_doc:set_id/2, DocId}
               ,{fun kz_doc:set_type/2, ?PVT_TYPE}
               ],
