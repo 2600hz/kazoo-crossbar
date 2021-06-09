@@ -256,7 +256,7 @@ post(Context, ?RECOVERY) ->
                   ,{<<"owner_id">>, kz_doc:id(NewDoc)}
                   ]),
             Context1 = crossbar_doc:handle_datamgr_success(NewDoc, Context),
-            Setters = [{fun cb_context:set_doc/2, cb_context:set_doc(Context1, DocForCreation)}
+            Setters = [{fun cb_context:set_doc/2, DocForCreation}
                       ,{fun cb_context:store/3, 'bypass_multi_factor', 'true'}
                       ],
             crossbar_auth:create_auth_token(cb_context:setters(Context1, Setters), ?MODULE);
