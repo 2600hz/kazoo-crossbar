@@ -60,7 +60,6 @@ Key | Description | Type | Default | Required | Support Level
 `name` | Name of scope | `string()` |   | `false` |  
 `permissions.[]` |   | `string()` |   | `true` |  
 `permissions` | Specifies who can request using this scope, values are '{ACCOUNT_TYPE}:{USER_TYPE_OR_STAR}. ACCOUNT_TYPE can be 'master', 'reseller', 'non-reseller'. USER_TYPE can be 'user', 'admin' or '*' as catch all | `array(string())` |   | `true` |  
-`precedence` | Specifies which rules take precedence if scope matches both allow and deny rules | `string('allow' | 'deny')` | `allow` | `false` |  
 `scopes.[]` |   | `string()` |   | `false` |  
 `scopes` | List of subscopes | `array(string())` | `[]` | `false` |  
 

@@ -22,15 +22,6 @@
             },
             "type": "array"
         },
-        "precedence": {
-            "default": "allow",
-            "description": "Specifies which rules take precedence if scope matches both allow and deny rules",
-            "enum": [
-                "allow",
-                "deny"
-            ],
-            "type": "string"
-        },
         "scopes": {
             "default": [],
             "description": "List of subscopes",

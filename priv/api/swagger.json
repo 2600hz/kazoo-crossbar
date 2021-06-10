@@ -10602,6 +10602,15 @@
                     "description": "Scope rule description",
                     "type": "string"
                 },
+                "precedence": {
+                    "default": "allow",
+                    "description": "Specifies which rules take precedence if scope matches both allow and deny rules",
+                    "enum": [
+                        "allow",
+                        "deny"
+                    ],
+                    "type": "string"
+                },
                 "rules": {
                     "description": "Rules",
                     "oneOf": [
@@ -10609,7 +10618,7 @@
                             "properties": {
                                 "allow": {
                                     "patternProperties": {
-                                        "^(GET|PUT|POST|PATCH|DELETE|_)$": {
+                                        "^(get|put|post|patch|delete|_)$": {
                                             "description": "HTTP URL paths, can be absolute (start with `/`) or relative. Use `*` in a path segment to macth all values.",
                                             "items": {
                                                 "type": "string"
@@ -10621,7 +10630,7 @@
                                 },
                                 "deny": {
                                     "patternProperties": {
-                                        "^(GET|PUT|POST|PATCH|DELETE|_)$": {
+                                        "^(get|put|post|patch|delete|_)$": {
                                             "description": "HTTP URL paths, can be absolute (start with `/`) or relative. Use `*` in a path segment to macth all values.",
                                             "items": {
                                                 "type": "string"
@@ -10690,15 +10699,6 @@
                         "type": "string"
                     },
                     "type": "array"
-                },
-                "precedence": {
-                    "default": "allow",
-                    "description": "Specifies which rules take precedence if scope matches both allow and deny rules",
-                    "enum": [
-                        "allow",
-                        "deny"
-                    ],
-                    "type": "string"
                 },
                 "scopes": {
                     "default": [],
