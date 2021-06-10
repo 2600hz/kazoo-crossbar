@@ -72,27 +72,6 @@ maybe_authorize(_, _, _) ->
     'false'.
 
 %%------------------------------------------------------------------------------
-%% @doc
-%% @end
-%%------------------------------------------------------------------------------
--spec maybe_deny_access(cb_context:context()) -> boolean() | {'stop', cb_context:context()}.
-maybe_deny_access(Context) ->
-    Options = [{'transport', 'kz_auth_transport_http'}
-              ,{'http_path', cb_context:path_tokens(Context)}
-              ,{'http_method', cb_context:req_verb(Context)}
-              ],
-    AuthDoc = cb_context:auth_doc(Context),
-    case kz_auth_scope:maybe_deny_access(AuthDoc, Options) of
-        'false' -> 'false';
-        'true' ->
-            lager:info("denying access"),
-            Cause = kz_json:from_list(
-                      [{<<"cause">>, <<"access denied by scope restrictions">>}]
-                     ),
-            {'stop', cb_context:add_system_error('forbidden', Cause, Context)}
-    end.
-
-%%------------------------------------------------------------------------------
 %% @doc Given the path tokens related to this module, what HTTP methods are
 %% going to be responded to.
 %% @end
@@ -248,3 +227,79 @@ scope_summary(Context) ->
                 ,'include_docs'
                 ]),
     crossbar_view:load(Context, <<"scopes/list_allowed_by_scope_id">>, Options).
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec maybe_deny_access(cb_context:context()) -> boolean() | {'stop', cb_context:context()}.
+maybe_deny_access(Context) ->
+    maybe_deny_access(Context, should_check_scopes(Context)).
+
+should_check_scopes(Context) ->
+    cb_context:is_authenticated(Context)
+        andalso has_req_path(Context)
+        andalso has_scopes(Context).
+
+has_req_path(Context) ->
+    kz_term:is_not_empty(cb_context:path_tokens(Context)).
+
+has_scopes(Context) ->
+    AuthDoc = cb_context:auth_doc(Context),
+    ScopesExpaned = kz_json:get_ne_json_value(<<"scope_expanded">>, AuthDoc, kz_json:new()),
+    kz_json:is_not_empty(ScopesExpaned).
+
+maybe_deny_access(_Context, 'false') ->
+    'false';
+maybe_deny_access(Context, 'true') ->
+    Scopes = get_scopes(Context),
+    Funs = [fun check_system_rules/3
+           ,fun check_reseller_rules/3
+           ,fun check_account_rules/3
+           ],
+    maybe_deny_scopes(Funs, Context, Scopes, cb_context:path_tokens(Context)).
+
+get_scopes(Context) ->
+    AuthDoc = cb_context:auth_doc(Context),
+    ScopesExpaned = kz_json:get_ne_json_value(<<"scope_expanded">>, AuthDoc, kz_json:new()),
+    kz_json:foldl(fun get_scopes_fold/3, [], ScopesExpaned).
+
+get_scopes_fold(Scope, Expand, Acc) ->
+    lists:append([Acc, [Scope], Expand]).
+
+maybe_deny_scopes([], _, _, _) ->
+    'false';
+maybe_deny_scopes([Fun | Funs], Context, Scopes, ReqPath) ->
+    case Fun(Context, ReqPath) of
+        'true' ->
+            lager:info("denying access"),
+            Cause = kz_json:from_list(
+                      [{<<"cause">>, <<"access denied by scope restrictions">>}]
+                     ),
+            {'stop', cb_context:add_system_error('forbidden', Cause, Context)};
+        'false' ->
+            maybe_deny_scopes(Funs, Context, Scopes, ReqPath)
+    end.
+
+check_system_rules(Context, Scopes, ReqPath) ->
+    call_transport(Context, ReqPath, filter_cb(kz_auth_scope_rule:fetch_system(Scopes))).
+
+check_reseller_rules(Context, Scopes, ReqPath) ->
+    AccountId = cb_context:auth_account_id(Context),
+    call_transport(Context, ReqPath, filter_cb(kz_auth_scope_rule:fetch_reseller(AccountId, Scopes))).
+
+check_account_rules(Context, Scopes, ReqPath) ->
+    AccountId = cb_context:auth_account_id(Context),
+    call_transport(Context, ReqPath, filter_cb(kz_auth_scope_rule:fetch_account(AccountId, Scopes))).
+
+filter_cb(Scopes) ->
+    [JObj || JObj <- Scopes,
+             kzd_scope_rules:application(JObj) =:= ?APP_NAME
+    ].
+
+call_transport(_, _, []) ->
+    'false';
+call_transport(Context, ReqPath, Rules) ->
+    ReqVerb = cb_context:req_verb(Context),
+    AuthDoc = cb_context:auth_doc(Context),
+    kz_auth_transport_http:maybe_deny_access(AuthDoc, ReqPath, ReqVerb, Rules).
