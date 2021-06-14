@@ -410,11 +410,19 @@ maybe_add_metadata(ContextDoc, Doc) ->
 %% @doc fetch or set default scopes for an auth_module
 %% @end
 %%------------------------------------------------------------------------------
--spec auth_module_scopes(atom() | kz_term:ne_binary()) -> kz_term:ne_binaries().
+-spec auth_module_scopes(atom() | kz_term:ne_binary() | cb_context:context()) -> kz_term:ne_binaries().
 auth_module_scopes(AuthModule) when is_atom(AuthModule) ->
     auth_module_scopes(kz_term:to_binary(AuthModule));
-auth_module_scopes(AuthModule) ->
-    kapps_config:get_ne_binaries(?AUTH_CONFIG_CAT, ?AUTH_MODULE_SCOPES_KEY(AuthModule), ?CB_DEFAULT_SCOPES).
+auth_module_scopes(<<AuthModule/binary>>) ->
+    kapps_config:get_ne_binaries(?AUTH_CONFIG_CAT, ?AUTH_MODULE_SCOPES_KEY(AuthModule), ?CB_DEFAULT_SCOPES);
+auth_module_scopes(Context) ->
+    case kz_json:get_ne_binary_value(<<"method">>, cb_context:auth_doc(Context)) of
+        'undefined' ->
+            lager:debug("cannot get auth module scopes, unknown auth method"),
+            [];
+        AuthModule ->
+            auth_module_scopes(AuthModule)
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc

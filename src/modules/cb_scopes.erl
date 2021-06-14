@@ -236,41 +236,26 @@ scope_summary(Context) ->
 maybe_deny_access(Context) ->
     maybe_deny_access(Context, should_check_scopes(Context)).
 
-should_check_scopes(Context) ->
-    cb_context:is_authenticated(Context)
-        andalso has_req_path(Context)
-        andalso has_scopes(Context).
-
-has_req_path(Context) ->
-    kz_term:is_not_empty(cb_context:path_tokens(Context)).
-
-has_scopes(Context) ->
-    AuthDoc = cb_context:auth_doc(Context),
-    ScopesExpaned = kz_json:get_ne_json_value(<<"scope_expanded">>, AuthDoc, kz_json:new()),
-    kz_json:is_not_empty(ScopesExpaned).
-
+%% @private
+-spec maybe_deny_access(cb_context:context(), boolean()) -> boolean().
 maybe_deny_access(_Context, 'false') ->
     'false';
 maybe_deny_access(Context, 'true') ->
     Scopes = get_scopes(Context),
-    Funs = [fun check_system_rules/3
-           ,fun check_reseller_rules/3
-           ,fun check_account_rules/3
+    Funs = [fun is_enforce_scopes_denies/3
+           ,fun is_system_rules_denies/3
+           ,fun is_reseller_rules_denies/3
+           ,fun is_account_rules_denies/3
            ],
-    maybe_deny_scopes(Funs, Context, Scopes, cb_context:path_tokens(Context)).
+    maybe_deny_access(Funs, Context, Scopes, cb_context:path_tokens(Context)).
 
-get_scopes(Context) ->
-    AuthDoc = cb_context:auth_doc(Context),
-    ScopesExpaned = kz_json:get_ne_json_value(<<"scope_expanded">>, AuthDoc, kz_json:new()),
-    kz_json:foldl(fun get_scopes_fold/3, [], ScopesExpaned).
-
-get_scopes_fold(Scope, Expand, Acc) ->
-    lists:append([Acc, [Scope], Expand]).
-
-maybe_deny_scopes([], _, _, _) ->
+%% @private
+-spec maybe_deny_access(fun(), cb_context:context(), map(), kz_term:ne_binaries()) ->
+          boolean().
+maybe_deny_access([], _, _, _) ->
     'false';
-maybe_deny_scopes([Fun | Funs], Context, Scopes, ReqPath) ->
-    case Fun(Context, ReqPath) of
+maybe_deny_access([Fun | Funs], Context, Scopes, ReqPath) ->
+    case Fun(Context, Scopes, ReqPath) of
         'true' ->
             lager:info("denying access"),
             Cause = kz_json:from_list(
@@ -278,25 +263,96 @@ maybe_deny_scopes([Fun | Funs], Context, Scopes, ReqPath) ->
                      ),
             {'stop', cb_context:add_system_error('forbidden', Cause, Context)};
         'false' ->
-            maybe_deny_scopes(Funs, Context, Scopes, ReqPath)
+            maybe_deny_access(Funs, Context, Scopes, ReqPath)
     end.
 
-check_system_rules(Context, Scopes, ReqPath) ->
-    call_transport(Context, ReqPath, filter_cb(kz_auth_scope_rule:fetch_system(Scopes))).
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec should_check_scopes(cb_context:context()) -> boolean().
+should_check_scopes(Context) ->
+    cb_context:is_authenticated(Context)
+        andalso has_scopes(Context)
+        andalso has_req_path(Context).
 
-check_reseller_rules(Context, Scopes, ReqPath) ->
+-spec has_scopes(cb_context:context()) -> boolean().
+has_scopes(Context) ->
+    AuthDoc = cb_context:auth_doc(Context),
+    kz_term:is_not_empty(kz_json:get_ne_value(<<"scopes">>, AuthDoc)).
+
+-spec has_req_path(cb_context:context()) -> boolean().
+has_req_path(Context) ->
+    kz_term:is_not_empty(cb_context:path_tokens(Context)).
+
+-spec get_scopes(cb_context:context()) -> map().
+get_scopes(Context) ->
+    JWTScopes = get_jwt_scopes(Context),
+    Resolved = kz_term:uniq_list(
+                 lists:flatten(
+                   props:get_values(
+                     kz_auth_scope:available_scopes(JWTScopes)
+                    )
+                  )
+                ),
+    #{jwt_scopes => JWTScopes
+     ,resolved_scopes => Resolved
+     ,required_scopes => get_required_scopes(Context)
+     }.
+
+-spec get_jwt_scopes(cb_context:context()) -> kz_term:ne_binaries().
+get_jwt_scopes(Context) ->
+    AuthDoc = cb_context:auth_doc(Context),
+    Scopes = kz_json:get_ne_value(<<"scopes">>, AuthDoc),
+    kz_term:uniq_list(kz_auth_scope:split(Scopes)).
+
+-spec get_required_scopes(cb_context:context()) -> kz_term:ne_binaries().
+get_required_scopes(Context) ->
+    TokenType = cb_context:auth_token_type(Context),
+    lager:debug("token type is : ~p~n", [cb_context:auth_token_type(Context)]),
+    get_required_scopes(Context, TokenType).
+
+-spec get_required_scopes(cb_context:context(), atom()) -> kz_term:ne_binaries().
+get_required_scopes(Context, 'x-auth-token') ->
+    lager:debug("jwt token detected, enforcing scopes"),
+    AuthScopes = crossbar_auth:auth_module_scopes(Context),
+
+    [{Mod, _Params} | _] = cb_context:req_nouns(Context),
+    Event = api_util:create_event_name(Context, <<"required_scopes.", Mod/binary>>),
+    RequiredScopes = lists:flatten(crossbar_bindings:pmap(Event, Context)),
+    kz_term:uniq_list(AuthScopes ++ RequiredScopes);
+get_required_scopes(_, _TokenType) ->
+    lager:debug("legacy token detected skipping scope enforcement"),
+    [].
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec is_enforce_scopes_denies(cb_context:context(), map(), kz_term:binaries()) -> boolean().
+is_enforce_scopes_denies(_, #{required_scopes := []}, _) ->
+    'false';
+is_enforce_scopes_denies(Context, #{required_scopes := RequiredScopes}, _) ->
+    case kz_auth_scope:all(cb_context:auth_doc(Context), RequiredScopes) of
+        'true' -> 'false';
+        'false' -> 'true'
+    end.
+
+-spec is_system_rules_denies(cb_context:context(), map(), kz_term:binaries()) -> boolean().
+is_system_rules_denies(Context, #{resolved_scopes := Resolved}, ReqPath) ->
+    call_transport(Context, ReqPath, kz_auth_scope_rule:fetch_system(?APP_NAME, Resolved)).
+
+-spec is_reseller_rules_denies(cb_context:context(), map(), kz_term:binaries()) -> boolean().
+is_reseller_rules_denies(Context, #{resolved_scopes := Resolved}, ReqPath) ->
     AccountId = cb_context:auth_account_id(Context),
-    call_transport(Context, ReqPath, filter_cb(kz_auth_scope_rule:fetch_reseller(AccountId, Scopes))).
+    call_transport(Context, ReqPath, kz_auth_scope_rule:fetch_reseller(?APP_NAME, AccountId, Resolved)).
 
-check_account_rules(Context, Scopes, ReqPath) ->
+-spec is_account_rules_denies(cb_context:context(), map(), kz_term:binaries()) -> boolean().
+is_account_rules_denies(Context, #{resolved_scopes := Resolved}, ReqPath) ->
     AccountId = cb_context:auth_account_id(Context),
-    call_transport(Context, ReqPath, filter_cb(kz_auth_scope_rule:fetch_account(AccountId, Scopes))).
+    call_transport(Context, ReqPath, kz_auth_scope_rule:fetch_account(?APP_NAME, AccountId, Resolved)).
 
-filter_cb(Scopes) ->
-    [JObj || JObj <- Scopes,
-             kzd_scope_rules:application(JObj) =:= ?APP_NAME
-    ].
-
+-spec call_transport(cb_context:context(), kz_term:binaries(), kz_json:objects()) -> boolean().
 call_transport(_, _, []) ->
     'false';
 call_transport(Context, ReqPath, Rules) ->
