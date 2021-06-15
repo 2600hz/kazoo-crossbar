@@ -156,13 +156,13 @@ validate_request(Context, Scope) ->
 -spec on_successful_validation(cb_context:context(), api_path_token()) -> cb_context:context().
 on_successful_validation(Context, 'undefined') ->
     Doc = cb_context:doc(Context),
-    DocId = kz_auth_scope:scope_rules_doc_id(kzd_scope_rules:scope_name(Doc)),
+    DocId = kz_auth_scope_rule:doc_id(kzd_scope_rules:scope_name(Doc)),
     Setters = [{fun kz_doc:set_id/2, DocId}
               ,{fun kz_doc:set_type/2, ?PVT_TYPE}
               ],
     cb_context:set_doc(Context, kz_doc:setters(Doc, Setters));
 on_successful_validation(Context, Scope) ->
-    DocId = kz_auth_scope:scope_rules_doc_id(Scope),
+    DocId = kz_auth_scope_rule:doc_id(Scope),
     crossbar_doc:load_merge(DocId, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE)).
 
 %%------------------------------------------------------------------------------
@@ -191,7 +191,7 @@ delete(Context, _) ->
 %%------------------------------------------------------------------------------
 -spec read(cb_context:context(), path_token()) -> cb_context:context().
 read(Context, Scope) ->
-    DocId = kz_auth_scope:scope_rules_doc_id(Scope),
+    DocId = kz_auth_scope_rule:doc_id(Scope),
     crossbar_doc:load(DocId, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE)).
 
 %%------------------------------------------------------------------------------
@@ -200,6 +200,14 @@ read(Context, Scope) ->
 %%------------------------------------------------------------------------------
 -spec scope_restriction_summary(cb_context:context()) -> cb_context:context().
 scope_restriction_summary(Context) ->
+    scope_restriction_summary(Context, cb_context:db_name(Context)).
+
+scope_restriction_summary(Context, ?KZ_AUTH_DB) ->
+    Options = [{'mapper', crossbar_view:get_doc_fun()}
+              ,'include_docs'
+              ],
+    crossbar_view:load(Context, <<"scopes/crossbar_listing">>, Options);
+scope_restriction_summary(Context, _Db) ->
     Options = [{'doc_type', ?PVT_TYPE}
               ,{'mapper', crossbar_view:get_doc_fun()}
               ,'include_docs'
