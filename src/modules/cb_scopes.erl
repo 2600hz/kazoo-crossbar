@@ -159,15 +159,16 @@ validate_request(Context, Scope) ->
 on_successful_validation(Context, 'undefined') ->
     Doc = cb_context:doc(Context),
     ScopeId = kzd_scopes:id(Doc),
-    case kz_datamgr:open_doc(?KZ_AUTH_DB, ScopeId) of
+    ScopeDocId = kz_auth_scope:doc_id(ScopeId),
+    case kz_datamgr:open_doc(?KZ_AUTH_DB, ScopeDocId) of
         {'ok', _} ->
-            Error = kz_json:from_list([{<<"message">>, <<"scope name must be unique in system">>}
+            Error = kz_json:from_list([{<<"message">>, <<"scope id must be unique in system">>}
                                       ,{<<"cause">>, ScopeId}
                                       ]),
             cb_context:add_validation_error([<<"id">>], <<"unique">>, Error, Context);
         {'error', 'not_found'}->
             Setters = [{fun kz_doc:set_type/2, ?PVT_TYPE}
-                      ,{fun kz_doc:set_id/2, kzd_scopes:id(Doc)}
+                      ,{fun kz_doc:set_id/2, ScopeDocId}
                       ],
             cb_context:set_doc(Context, kz_doc:setters(Doc, Setters));
         {'error', Error} ->
@@ -226,7 +227,7 @@ scope_summary(Context) ->
                 ,{'mapper', crossbar_view:get_doc_fun()}
                 ,'include_docs'
                 ]),
-    crossbar_view:load(Context, <<"scopes/list_allowed_by_scope_id">>, Options).
+    crossbar_view:load(Context, <<"scopes/crossbar_listing">>, Options).
 
 %%------------------------------------------------------------------------------
 %% @doc
