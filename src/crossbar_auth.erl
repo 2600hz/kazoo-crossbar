@@ -17,13 +17,13 @@
         ,log_failed_auth/4, log_failed_auth/5, log_failed_auth/6
         ,get_inherited_config/1
 
-        ,scopes/1, scopes/2
+        ,req_scopes/1
         ,auth_module_scopes/1
         ]).
 
 -include("crossbar.hrl").
 
--define(CB_DEFAULT_SCOPES, [?APP_NAME]).
+-define(CB_DEFAULT_SCOPES, []).
 
 -define(DEFAULT_METHOD_CONFIG(LogSuccess),
         kz_json:from_list(
@@ -85,7 +85,8 @@ create_auth_token(Context, Method, JObj) ->
                ,{<<"method">>, Method}
                ,{<<"exp">>, Expiration}
                ,{<<"mfa_resp">>, kz_json:get_ne_value(<<"multi_factor_response">>, Data)}
-               ,{<<"scopes">>, scopes(Context, Method)}
+               ,{<<"req_scopes">>, req_scopes(Context)}
+               ,{<<"scopes">>, auth_module_scopes(Method)}
                | kz_json:to_proplist(kz_json:get_value(<<"Claims">>, JObj, kz_json:new()))
                ]),
 
@@ -428,15 +429,6 @@ auth_module_scopes(Context) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec scopes(Context::cb_context:context()) -> kz_term:ne_binaries().
-scopes(Context) ->
-    lists:usort(
-      kz_json:get_ne_binaries(<<"scopes">>, cb_context:req_data(Context), [])
-     ).
-
--spec scopes(Context::cb_context:context(), AuthModule:: atom() | kz_term:ne_binary()) ->
-          kz_term:api_binaries().
-scopes(Context, AuthModule) ->
-    lists:usort(
-      scopes(Context) ++ auth_module_scopes(AuthModule)
-     ).
+-spec req_scopes(Context::cb_context:context()) -> kz_term:ne_binaries().
+req_scopes(Context) ->
+    kz_json:get_ne_binaries(<<"scopes">>, cb_context:req_data(Context), []).
