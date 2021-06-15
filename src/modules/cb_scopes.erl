@@ -279,7 +279,7 @@ should_check_scopes(Context) ->
 -spec has_scopes(cb_context:context()) -> boolean().
 has_scopes(Context) ->
     AuthDoc = cb_context:auth_doc(Context),
-    kz_term:is_not_empty(kz_json:get_ne_value(<<"scopes">>, AuthDoc)).
+    kz_term:is_not_empty(kz_json:get_ne_value(<<"scope">>, AuthDoc)).
 
 -spec has_req_path(cb_context:context()) -> boolean().
 has_req_path(Context) ->
@@ -303,7 +303,7 @@ get_scopes(Context) ->
 -spec get_jwt_scopes(cb_context:context()) -> kz_term:ne_binaries().
 get_jwt_scopes(Context) ->
     AuthDoc = cb_context:auth_doc(Context),
-    Scopes = kz_json:get_ne_value(<<"scopes">>, AuthDoc),
+    Scopes = kz_json:get_ne_value(<<"scope">>, AuthDoc),
     kz_term:uniq_list(kz_auth_scope:split(Scopes)).
 
 -spec get_required_scopes(cb_context:context()) -> kz_term:ne_binaries().
