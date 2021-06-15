@@ -83,6 +83,7 @@
         }
     },
     "required": [
+        "application",
         "scope_name"
     ],
     "type": "object"
