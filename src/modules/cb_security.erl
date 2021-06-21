@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2020, 2600Hz
+%%% @copyright (C) 2010-2021, 2600Hz
 %%% @doc Kazoo authentication configuration API endpoint
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -182,7 +182,10 @@ post(Context) ->
         'success' ->
             maybe_flush_config(C1),
             RespJObj = maybe_add_multi_factor_metadata(cb_context:resp_data(Context)),
-            cb_context:set_resp_data(Context, RespJObj);
+            Setters = [{fun cb_context:set_resp_data/2, RespJObj}
+                      ,{fun cb_context:set_resp_status/2, 'success'}
+                      ],
+            cb_context:setters(Context, Setters);
         _ -> C1
     end.
 
@@ -199,7 +202,10 @@ patch(Context) ->
         'success' ->
             maybe_flush_config(C1),
             RespJObj = maybe_add_multi_factor_metadata(cb_context:resp_data(Context)),
-            cb_context:set_resp_data(Context, RespJObj);
+            Setters = [{fun cb_context:set_resp_data/2, RespJObj}
+                      ,{fun cb_context:set_resp_status/2, 'success'}
+                      ],
+            cb_context:setters(Context, Setters);
         _ -> C1
     end.
 
