@@ -43,6 +43,7 @@
         ,init_app/1, init_app/2
         ,refresh_apps/1, refresh_apps/2
         ,refresh_app/1, refresh_app/2
+        ,rename_and_refresh_app/2, rename_and_refresh_app/3
         ,apps/0
         ,app/1
         ,set_app_field/3
@@ -783,6 +784,14 @@ refresh_app(AppPath) ->
 -spec refresh_app(file:filename_all(), kz_term:api_binary()) -> 'ok'.
 refresh_app(AppPath, AppUrl) ->
     kazoo_documents_maintenance:refresh_app(AppPath, AppUrl).
+
+-spec rename_and_refresh_app(file:filename_all(), kz_term:ne_binary()) -> 'ok'.
+rename_and_refresh_app(AppPath, PrevName) ->
+    kazoo_documents_maintenance:rename_and_refresh_app(AppPath, PrevName).
+
+-spec rename_and_refresh_app(file:filename_all(), kz_term:ne_binary(), kz_term:api_binary()) -> 'ok'.
+rename_and_refresh_app(AppPath, PrevName, AppUrl) ->
+    kazoo_documents_maintenance:rename_and_refresh_app(AppPath, PrevName, AppUrl).
 
 -spec apps() -> 'no_return'.
 apps() ->
