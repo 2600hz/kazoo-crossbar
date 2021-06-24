@@ -1,0 +1,8 @@
+'/accounts/{ACCOUNT_ID}/users':
+  '$ref': 'paths/users.yml#/paths/~1accounts~1{ACCOUNT_ID}~1users'
+'/accounts/{ACCOUNT_ID}/users/{USER_ID}':
+  '$ref': 'paths/users.yml#/paths/~1accounts~1{ACCOUNT_ID}~1users~1{USER_ID}'
+'/accounts/{ACCOUNT_ID}/users/{USER_ID}/photo':
+  '$ref': 'paths/users.yml#/paths/~1accounts~1{ACCOUNT_ID}~1users~1{USER_ID}~1photo'
+'/accounts/{ACCOUNT_ID}/users/{USER_ID}/vcard':
+  '$ref': 'paths/users.yml#/paths/~1accounts~1{ACCOUNT_ID}~1users~1{USER_ID}~1vcard'

@@ -1,0 +1,264 @@
+paths:
+  /accounts/{ACCOUNT_ID}/users:
+    get:
+      operationId: getAccountUsersSummary
+      parameters:
+        - $ref: '../cb-parameters.yml#/ACCOUNT_ID'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '../cb-schemas.yml#/users'
+          description: user summary response
+      summary: Returns all users for account
+      description: Returns all users for account
+      tags:
+        - users
+      x-cb-security:
+        auth: required
+        scopes:
+          crossbar:users:read: read users in account
+      x-kazoo:
+        supported: true
+    put:
+      operationId: createAccountUser
+      parameters:
+        - $ref: '../cb-parameters.yml#/ACCOUNT_ID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '../cb-schemas.yml#/users'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '../cb-schemas.yml#/users'
+          description: user response
+      summary: Add an instance of user
+      description: Add an instance of user
+      tags:
+        - users
+      x-cb-security:
+        auth: required
+        scopes:
+          crossbar:users:create: create new users in account
+      x-kazoo:
+        supported: true
+  /accounts/{ACCOUNT_ID}/users/{USER_ID}:
+    delete:
+      operationId: deleteAccountUserWithId
+      parameters:
+        - $ref: '../cb-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../cb-parameters.yml#/USER_ID'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '../cb-schemas.yml#/users'
+          description: user response
+      summary: Delete an instance of user
+      description: Delete an instance of user
+      tags:
+        - users
+      x-cb-security:
+        auth: required
+        scopes:
+          crossbar:users:delete: delete users in account
+      x-kazoo:
+        supported: true
+    get:
+      operationId: getAccountUserWithId
+      parameters:
+        - $ref: '../cb-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../cb-parameters.yml#/USER_ID'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '../cb-schemas.yml#/users'
+          description: user response
+      summary: Get a user by ID
+      description: Get a user by ID
+      tags:
+        - users
+      x-cb-security:
+        auth: required
+        scopes:
+          crossbar:users:read: read users in account
+      x-kazoo:
+        supported: true
+    patch:
+      operationId: patchAccountUserWithId
+      parameters:
+        - $ref: '../cb-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../cb-parameters.yml#/USER_ID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '../cb-schemas.yml#/users'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '../cb-schemas.yml#/users'
+          description: user response
+      summary: Patch specific fields of a user
+      description: Patch specific fields of a user
+      tags:
+        - users
+      x-cb-security:
+        auth: required
+        scopes:
+          crossbar:users:modify: Modify users in account
+      x-kazoo:
+        supported: true
+    post:
+      operationId: updateAccountUserWithId
+      parameters:
+        - $ref: '../cb-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../cb-parameters.yml#/USER_ID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '../cb-schemas.yml#/users'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '../cb-schemas.yml#/users'
+          description: user response
+      summary: Update an instance of user
+      description: Update an instance of user
+      tags:
+        - users
+      x-cb-security:
+        auth: required
+        scopes:
+          crossbar:users:modify: Modify users in account
+      x-kazoo:
+        supported: true
+  /accounts/{ACCOUNT_ID}/users/{USER_ID}/photo:
+    delete:
+      operationId: deleteAccountUserPhoto
+      parameters:
+        - $ref: '../cb-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../cb-parameters.yml#/USER_ID'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                'description': Delete attachment response
+                'properties':
+                  '_read_only':
+                    'properties':
+                      'deleted':
+                        default: true
+                        type: boolean
+                    'type': object
+                'type': object
+          description: user photo response
+      summary: Delete user photo
+      description: Delete user photo
+      tags:
+        - users
+      x-cb-security:
+        auth: required
+        scopes:
+          crossbar:users:modify: Modify users in account
+      x-kazoo:
+        supported: true
+    get:
+      operationId: getAccountUserPhoto
+      parameters:
+        - $ref: '../cb-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../cb-parameters.yml#/USER_ID'
+      responses:
+        '200':
+          content:
+            application/octet-stream: {}
+            application/base64:
+              schema:
+                type: string
+            # FIXME: it seems kzd_users:to_vcard expecting image/jpeg only, otherwise will crash
+            image/jpeg: {}
+          description: user photo response
+      summary: Get photo of a user
+      description: Get photo of a user
+      tags:
+        - users
+      x-cb-security:
+        auth: required
+        scopes:
+          crossbar:users:read: read users in account
+      x-kazoo:
+        supported: true
+    post:
+      operationId: updateAccountUserPhoto
+      parameters:
+        - $ref: '../cb-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../cb-parameters.yml#/USER_ID'
+      requestBody:
+        content:
+          application/octet-stream: {}
+          application/base64:
+            schema:
+              type: string
+          # FIXME: it seems kzd_users:to_vcard expecting image/jpeg only, otherwise will crash
+          image/jpeg: {}
+        description: user photo response
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '../cb-schemas.yml#/users'
+          description: user response
+      summary: Update a user photo
+      description: Update a user photo
+      tags:
+        - users
+      x-cb-security:
+        auth: required
+        scopes:
+          crossbar:users:modify: Modify users in account
+      x-kazoo:
+        supported: true
+  /accounts/{ACCOUNT_ID}/users/{USER_ID}/vcard:
+    get:
+      operationId: getAccountUserVcard
+      parameters:
+        - $ref: '../cb-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../cb-parameters.yml#/USER_ID'
+      responses:
+        '200':
+          content:
+            text/x-vcard:
+              schema:
+                type: string
+            text/directory:
+              schema:
+                type: string
+          description: user vcard response
+      summary: Get vcard of a user
+      description: Get vcard of a user
+      tags:
+        - users
+      x-cb-security:
+        auth: required
+        scopes:
+          crossbar:users:read: read users in account
+      x-kazoo:
+        supported: true
+
