@@ -158,9 +158,11 @@ update_code(Context) ->
 -spec post(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 post(Context, _Id, ?VERIFY) ->
     Doc = cb_context:doc(Context),
-    Code = kzd_external_numbers:pvt_code(Doc),
-    case Code =:= kzd_external_number_claim:code(cb_context:req_data(Context))
-        orelse cb_context:is_superduper_admin(Context)
+    Code = kzd_external_number_claim:code(cb_context:req_data(Context)),
+    case Code =:= kzd_external_numbers:pvt_code(Doc)
+        orelse (kz_term:is_empty(Code)
+                andalso cb_context:is_superduper_admin(Context)
+               )
     of
         'true' -> number_verified(Context);
         'false' ->
@@ -188,6 +190,7 @@ number_verified(Context) ->
                }
               ,{fun kzd_external_numbers:set_attestation_user_id/2, UserId}
               ,{fun kzd_external_numbers:set_attestation_user_name/2, <<>>}
+              ,{fun kzd_external_numbers:set_pvt_adopted/2, 'false'}
               ,{fun kzd_external_numbers:set_pvt_verified/2, 'true'}
               ,{fun kzd_external_numbers:set_pvt_code/2, 'undefined'}
               ],
