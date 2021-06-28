@@ -20,8 +20,6 @@ Key | Description | Type | Default | Required | Support Level
 `name` | The name of the directory | `string(1..)` |   | `true` | `supported`
 `search_fields` | What user fields to search DTMF matches on | `string('first_name' | 'last_name' | 'both')` |   | `false` |  
 `sort_by` | What field to sort on in matching documents when a caller enters characters | `string('first_name' | 'last_name')` | `last_name` | `false` | `supported`
-`users.[]` |   | `string()` |   | `false` | `supported`
-`users` | The list of users associated with this directory | `array(string())` | `[]` | `false` | `supported`
 
 
 
@@ -85,8 +83,7 @@ curl -v -X GET \
             "origin": "voip",
             "ui": "monster-ui",
             "version": "3.23"
-        },
-        "users": []
+        }
     },
     "request_id": "{REQUEST_ID}",
     "revision": "{REVISION}",
@@ -108,3 +105,17 @@ Streams back a PDF document.
 ```
 
 If your client does not support setting the `Accept` header, you can append `?accept=pdf` to the URI and Kazoo will pretend you sent the proper `Accept` header.
+
+## Add a user to the directory listing
+
+Once you've created the directory, you can `PATCH` a user's doc to add the user to the directory:
+
+```shell
+curl -v -X PATCH \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -H "Accept: application/pdf"
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}
+    -d `{"data":{"directories":{"{DIRECTORY_ID}":"{CALLFLOW_ID}"}}}`
+```
+
+Here, `{CALLFLOW_ID}` is the ID of the callflow the user would like executed if they're matched in the directory.

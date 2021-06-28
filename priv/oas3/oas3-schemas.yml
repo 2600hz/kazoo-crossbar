@@ -5359,14 +5359,6 @@
         - last_name
       'type': string
       'x-support_level': supported
-    'users':
-      'default': []
-      'description': The list of users associated with this directory
-      'items':
-        'description': UserId to include in the directory
-        'type': string
-      'type': array
-      'x-support_level': supported
   'required':
     - name
   'type': object
@@ -13371,6 +13363,10 @@
       'default': false
       'description': reorder assume inbound e164
       'type': boolean
+    'inbound_user_field':
+      'default': Request
+      'description': reorder inbound_user_field
+      'type': string
     'known_number':
       'description': setting for how to response if the number is known but unconfigured
       'properties':

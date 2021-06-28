@@ -55,16 +55,6 @@
             ],
             "support_level": "supported",
             "type": "string"
-        },
-        "users": {
-            "default": [],
-            "description": "The list of users associated with this directory",
-            "items": {
-                "description": "UserId to include in the directory",
-                "type": "string"
-            },
-            "support_level": "supported",
-            "type": "array"
         }
     },
     "required": [

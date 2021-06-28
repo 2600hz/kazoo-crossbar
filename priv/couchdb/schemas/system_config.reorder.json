@@ -8,6 +8,11 @@
             "description": "reorder assume inbound e164",
             "type": "boolean"
         },
+        "inbound_user_field": {
+            "default": "Request",
+            "description": "reorder inbound_user_field",
+            "type": "string"
+        },
         "known_number": {
             "description": "setting for how to response if the number is known but unconfigured",
             "properties": {
