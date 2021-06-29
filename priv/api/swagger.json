@@ -23138,7 +23138,7 @@
                 }
             }
         },
-        "/accounts/{ACCOUNT_ID}/external_numbers/{THING}": {
+        "/accounts/{ACCOUNT_ID}/external_numbers/{EXTERNAL_NUMBER_ID}": {
             "delete": {
                 "parameters": [
                     {
@@ -23176,7 +23176,7 @@
                 }
             }
         },
-        "/accounts/{ACCOUNT_ID}/external_numbers/{THING}/verify": {
+        "/accounts/{ACCOUNT_ID}/external_numbers/{EXTERNAL_NUMBER_ID}/verify": {
             "post": {
                 "parameters": [
                     {

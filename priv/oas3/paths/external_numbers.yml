@@ -27,7 +27,7 @@ paths:
       summary: Add an instance of external_numbers
       tags:
         - external_numbers
-  /accounts/{ACCOUNT_ID}/external_numbers/{THING}:
+  /accounts/{ACCOUNT_ID}/external_numbers/{EXTERNAL_NUMBER_ID}:
     delete:
       operationId: DeleteAccountsAccountIdExternalNumbersThing
       parameters:
@@ -52,7 +52,7 @@ paths:
       summary: Get a external_numbers by ID
       tags:
         - external_numbers
-  /accounts/{ACCOUNT_ID}/external_numbers/{THING}/verify:
+  /accounts/{ACCOUNT_ID}/external_numbers/{EXTERNAL_NUMBER_ID}/verify:
     post:
       operationId: PostAccountsAccountIdExternalNumbersThingVerify
       parameters:
