@@ -348,7 +348,7 @@ send_voice_code(Context) ->
             cb_context:add_system_error(E, Context)
     end.
 
--spec play_code(kapps_call:call(), kz_json:api_object()) -> 'ok'.
+-spec play_code(cb_context:context(), kz_term:api_object()) -> cb_context:context().
 play_code(Context, 'undefined') ->
     cb_context:add_system_error(<<"call failure">>, Context);
 play_code(Context, JObj) ->
@@ -361,34 +361,36 @@ play_code(Context, JObj) ->
     %%   since its just a static sequence.
     %%   (fire and forget)
     kapps_call_command:wait_for_answer(Call),
-    case get_message(Context) of
-        'undefined' ->
-            kapps_call_command:audio_macro(
-              [{'prompt', <<"general-hello">>}
-              ,{'prompt', <<"external-number-request_for">>}
-              ,{'say', kapps_call:request_user(Call), <<"telephone_number">>}
-              ,{'prompt', <<"external-number-description">>}
-              ], Call),
-            kapps_call_command:audio_macro(
-              [{'prompt', <<"general-authorization_code">>}
-              | say_number_by_number(Code)
-              ], Call),
-            kapps_call_command:audio_macro(
-              [{'prompt', <<"general-again">>}
-              ,{'prompt', <<"general-authorization_code">>}
-              | say_number_by_number(Code)
-              ], Call),
-            kapps_call_command:audio_macro(
-              [{'prompt', <<"general-once_more">>}
-              ,{'prompt', <<"general-authorization_code">>}
-              | say_number_by_number(Code)
-              ], Call),
-            kapps_call_command:prompt(<<"general-goodbye">>, Call);
-        Message ->
-            kapps_call_command:tts(Message, Call)
-    end,
+
+    _ = play_message_code(Call, Code, get_message(Context)),
+
     kapps_call_command:queued_hangup(Call),
     cb_context:set_resp_data(Context, kapps_call:to_public_json(Call)).
+
+play_message_code(Call, Code, 'undefined') ->
+    _ = kapps_call_command:audio_macro(
+          [{'prompt', <<"general-hello">>}
+          ,{'prompt', <<"external-number-request_for">>}
+          ,{'say', kapps_call:request_user(Call), <<"telephone_number">>}
+          ,{'prompt', <<"external-number-description">>}
+          ], Call),
+    _ = kapps_call_command:audio_macro(
+          [{'prompt', <<"general-authorization_code">>}
+          | say_number_by_number(Code)
+          ], Call),
+    _ = kapps_call_command:audio_macro(
+          [{'prompt', <<"general-again">>}
+          ,{'prompt', <<"general-authorization_code">>}
+          | say_number_by_number(Code)
+          ], Call),
+    _ = kapps_call_command:audio_macro(
+          [{'prompt', <<"general-once_more">>}
+          ,{'prompt', <<"general-authorization_code">>}
+          | say_number_by_number(Code)
+          ], Call),
+    kapps_call_command:prompt(<<"general-goodbye">>, Call);
+play_message_code(Call, _Code, Message) ->
+    kapps_call_command:tts(Message, Call).
 
 -spec say_number_by_number(kz_term:ne_binary()) -> kz_term:proplist().
 say_number_by_number(Number) ->
@@ -403,14 +405,14 @@ say_number_by_number(<<Number, Rest/binary>>, Say) ->
 ivr_verify(Context) ->
     case place_call(Context) of
         {'ok', JObj} ->
-            execute_ivr(Context, kz_json:get_value(<<"Call">>, JObj));
+            execute_ivr(Context, kz_json:get_json_value(<<"Call">>, JObj));
         {'timeout', _} ->
             cb_context:add_system_error(<<"call failure">>, Context);
         {'error', E} ->
             cb_context:add_system_error(E, Context)
     end.
 
--spec execute_ivr(kapps_call:call(), kz_json:api_object()) -> 'ok'.
+-spec execute_ivr(cb_context:context(), kz_term:api_object()) -> cb_context:context().
 execute_ivr(Context, 'undefined') ->
     cb_context:add_system_error(<<"call failure">>, Context);
 execute_ivr(Context, JObj) ->
@@ -421,26 +423,32 @@ execute_ivr(Context, JObj) ->
     %%   the user has confirmed they have the number.
     _ = kz_events:bind_call_id(kapps_call:call_id(Call)),
     kapps_call_command:wait_for_answer(Call),
-    case get_message(Context) of
-        'undefined' ->
-            kapps_call_command:audio_macro(
-              [{'prompt', <<"general-hello">>}
-              ,{'prompt', <<"external-number-request_for">>}
-              ,{'say', kapps_call:request_user(Call), <<"telephone_number">>}
-              ,{'prompt', <<"external-number-ivr_verification">>}
-              ], Call);
-        Message ->
-            kapps_call_command:tts(Message, Call)
-    end,
-    Context1 = case kapps_call_command:collect_digits(1, 10 * ?MILLISECONDS_IN_SECOND, Call) of
-                   {'ok', <<"1">>} -> number_verified(Context);
-                   _Else ->
-                       lager:debug("user did not accept IVR verification"),
-                       Context
-               end,
-    kapps_call_command:prompt(<<"general-goodbye">>, Call),
+
+    _ = send_ivr_message(Call, get_message(Context)),
+
+    Context1 = verify_ivr_number(Context, Call),
+
+    _ = kapps_call_command:prompt(<<"general-goodbye">>, Call),
     kapps_call_command:queued_hangup(Call),
     Context1.
+
+verify_ivr_number(Context, Call) ->
+    case kapps_call_command:collect_digits(1, 10 * ?MILLISECONDS_IN_SECOND, Call) of
+        {'ok', <<"1">>} -> number_verified(Context);
+        _Else ->
+            lager:info("user did not accept IVR verification"),
+            Context
+    end.
+
+send_ivr_message(Call, 'undefined') ->
+    kapps_call_command:audio_macro(
+      [{'prompt', <<"general-hello">>}
+      ,{'prompt', <<"external-number-request_for">>}
+      ,{'say', kapps_call:request_user(Call), <<"telephone_number">>}
+      ,{'prompt', <<"external-number-ivr_verification">>}
+      ], Call);
+send_ivr_message(Call, Message) ->
+    kapps_call_command:tts(Message, Call).
 
 -spec place_call(cb_context:context()) -> kz_amqp_worker:request_return().
 place_call(Context) ->
