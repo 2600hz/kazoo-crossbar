@@ -20358,6 +20358,16 @@
             "required": true,
             "type": "string"
         },
+        "EXTERNAL_NUMBER_ID": {
+            "description": "request EXTERNAL_NUMBER_ID parameter",
+            "in": "path",
+            "maxLength": 32,
+            "minLength": 32,
+            "name": "EXTERNAL_NUMBER_ID",
+            "pattern": "^[0-9a-f]+$",
+            "required": true,
+            "type": "string"
+        },
         "FAXBOX_ID": {
             "description": "request FAXBOX_ID parameter",
             "in": "path",
@@ -20784,13 +20794,6 @@
             "minLength": 32,
             "name": "TEMPORAL_RULE_SET",
             "pattern": "^[0-9a-f]+$",
-            "required": true,
-            "type": "string"
-        },
-        "THING": {
-            "description": "request THING parameter",
-            "in": "path",
-            "name": "THING",
             "required": true,
             "type": "string"
         },
@@ -23148,7 +23151,7 @@
                         "$ref": "#/parameters/ACCOUNT_ID"
                     },
                     {
-                        "$ref": "#/parameters/THING"
+                        "$ref": "#/parameters/EXTERNAL_NUMBER_ID"
                     }
                 ],
                 "responses": {
@@ -23166,7 +23169,7 @@
                         "$ref": "#/parameters/ACCOUNT_ID"
                     },
                     {
-                        "$ref": "#/parameters/THING"
+                        "$ref": "#/parameters/EXTERNAL_NUMBER_ID"
                     }
                 ],
                 "responses": {
@@ -23194,7 +23197,7 @@
                         "$ref": "#/parameters/ACCOUNT_ID"
                     },
                     {
-                        "$ref": "#/parameters/THING"
+                        "$ref": "#/parameters/EXTERNAL_NUMBER_ID"
                     }
                 ],
                 "responses": {
@@ -23220,7 +23223,7 @@
                         "$ref": "#/parameters/ACCOUNT_ID"
                     },
                     {
-                        "$ref": "#/parameters/THING"
+                        "$ref": "#/parameters/EXTERNAL_NUMBER_ID"
                     }
                 ],
                 "responses": {
