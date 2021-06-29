@@ -61,11 +61,11 @@ allowed_methods() ->
     [?HTTP_GET, ?HTTP_PUT].
 
 -spec allowed_methods(path_token()) -> http_methods().
-allowed_methods(_Thing) ->
+allowed_methods(_ExternalNumberId) ->
     [?HTTP_GET, ?HTTP_DELETE].
 
 -spec allowed_methods(path_token(), path_token()) -> http_methods().
-allowed_methods(_Thing, ?VERIFY) ->
+allowed_methods(_ExternalNumberId, ?VERIFY) ->
     [?HTTP_PUT, ?HTTP_POST].
 
 %%------------------------------------------------------------------------------
@@ -348,7 +348,7 @@ send_voice_code(Context) ->
             cb_context:add_system_error(E, Context)
     end.
 
--spec play_code(kapps_call:call(), kz_json:object()) -> 'ok'.
+-spec play_code(kapps_call:call(), kz_json:api_object()) -> 'ok'.
 play_code(Context, 'undefined') ->
     cb_context:add_system_error(<<"call failure">>, Context);
 play_code(Context, JObj) ->
@@ -410,7 +410,7 @@ ivr_verify(Context) ->
             cb_context:add_system_error(E, Context)
     end.
 
--spec execute_ivr(kapps_call:call(), kz_json:object()) -> 'ok'.
+-spec execute_ivr(kapps_call:call(), kz_json:api_object()) -> 'ok'.
 execute_ivr(Context, 'undefined') ->
     cb_context:add_system_error(<<"call failure">>, Context);
 execute_ivr(Context, JObj) ->
