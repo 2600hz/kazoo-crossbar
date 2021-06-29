@@ -2,7 +2,7 @@
 
 ## About External Numbers
 
-External numbers is a collection of phone numbers that the account or reseller has attested they have control over but does not route to the cluster for call processing.  Once an external number has been successfully verified it can be used as a known valid caller id for that account with [STIR/SHAKEN](https://en.wikipedia.org/wiki/STIR/SHAKEN "STIR/SHAKEN") compliance. 
+External numbers is a collection of phone numbers that the account or reseller has attested they have control over but does not route to the cluster for call processing. Once an external number has been successfully verified it can be used as a known valid caller id for that account with [STIR/SHAKEN](https://en.wikipedia.org/wiki/STIR/SHAKEN "STIR/SHAKEN") compliance.
 
 #### Schema
 
@@ -54,7 +54,7 @@ curl -v -X GET \
 
 ## Create a new external number
 
-Creates a new, unverified, external number.  The number must be unique among the existing assigned (routable) phone numbers as well as external numbers.
+Creates a new, unverified, external number. The number must be unique among the existing assigned (routable) phone numbers as well as external numbers.
 
 > PUT /v2/accounts/{ACCOUNT_ID}/external_numbers
 
@@ -134,17 +134,17 @@ curl -v -X DELETE \
 
 ## Create a verification code
 
-This will send a verification code using one of three methods, by default if non are specified it will use 'voice'.  The available methods are:
+This will send a verification code using one of three methods (by default if none are specified it will use 'voice'). The available methods are:
 
 1. `voice` This will call the external number and play the verification code to the the person that answers the call.
 2. `sms` This will send the external number an SMS containing the verification code.
-3. `ivr` This will call the external number and on answer request "If you would like to allow your caller identification to be used by other phones, press one now".  Pressing one will immediately validate the number.  This method does not require the user to submit a verification code to complete the validation.
+3. `ivr` This will call the external number and on answer request "If you would like to allow your caller identification to be used by other phones, press one now". Pressing one will immediately validate the number. This method does not require the user to submit a verification code to complete the validation.
 
 
 **NOTE:**
-There is an additional property `message` that can be used to override the default prompts on a per-verification request if required.  If provided for methods `voice` or `ivr` it will replace the corresponding prompts played to the user using the clusters configured TTS engine to convert to audio, and if used with `sms` is the resulting body of the SMS.  When providing the `message` parameter it is important to include the template placeholder `{{verify.code}}` at the location the verification code should be inserted.  For example:
+There is an additional property `message` that can be used to override the default prompts on a per-verification request if required. If provided for methods `voice` or `ivr`, it will replace the corresponding prompts played to the user using the cluster's configured TTS engine to convert to audio, and if used with `sms` is the resulting body of the SMS. When providing the `message` parameter it is important to include the template placeholder `{{verify.code}}` at the location the verification code should be inserted. For example:
 ```
-{"data":{"method":"voice", "message":"The FooBar phone company has requested to use your caller id, the verification code is {{verify.code}}.  Thank you for your time."}}
+{"data":{"method":"voice", "message":"The FooBar phone company has requested to use your caller id, the verification code is {{verify.code}}. Thank you for your time."}}
 ```
 
 > PUT /v2/accounts/{ACCOUNT_ID}/external_numbers/{EXTERNAL_NUMBER_ID}/verify
@@ -161,7 +161,7 @@ The returned data is different depending on the method used.
 
 #### Request a verification code: voice reply
 
-When using the method `voice` the response will be the relevant parameters of the call placed to the external number or an API error if the call could not be started.  The API will block until the call is progressing.
+When using the method `voice` the response will be the relevant parameters of the call placed to the external number or an API error if the call could not be started. The API will block until the call is progressing.
 
 ```json
 {
@@ -226,7 +226,7 @@ When using the method `voice` the response will be the relevant parameters of th
 
 #### Request a verification code: sms reply
 
-When using the method `sms` the response will be have an empty success reply if the SMS was published.  The API will return immediately.
+When using the method `sms` the response will be have an empty success reply if the SMS was published. The API will return immediately.
 
 ```json
 {
@@ -241,7 +241,7 @@ When using the method `sms` the response will be have an empty success reply if 
 
 #### Request a verification code: IVR reply
 
-When using the method `ivr` the response will result in the updated external number object, if the user chooses to press one then the attestation parameter will be populated.  The API will return when the user terminates the call or it times out.
+When using the method `ivr` the response will result in the updated external number object, if the user chooses to press one then the attestation parameter will be populated. The API will return when the user terminates the call or it times out.
 
 ```json
 {
@@ -274,7 +274,7 @@ When using the method `ivr` the response will result in the updated external num
 
 ## Claim an external number
 
-If a user has recieved an exernal number verification code they can submit it to claim and verify they have access to the number.  If the code matches what is expected the updated document is returned otherwise an API error is provided.
+If a user has received an external number verification code they can submit it to claim and verify they have access to the number. If the code matches what is expected the updated document is returned otherwise an API error is provided.
 
 **NOTE:**
 If an auth-token is used belonging to the master account of the cluster this request can be issued without providing a code to mark a number as verified without requiring a valid verification code.
