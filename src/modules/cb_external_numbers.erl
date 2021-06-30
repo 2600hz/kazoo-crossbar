@@ -1,6 +1,6 @@
 %%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2011-2021, 2600Hz
-%%% @doc Crossnar API for skel.
+%%% @doc Crossbar API for external numbers.
 %%% @author Karl Anderson
 %%% @author James Aimonetti
 %%%
