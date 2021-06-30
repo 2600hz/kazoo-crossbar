@@ -143,6 +143,15 @@
   '/accounts/{ACCOUNT_ID}/directories/{DIRECTORY_ID}':
     '$ref': >-
       paths/directories.yml#/paths/~1accounts~1{ACCOUNT_ID}~1directories~1{DIRECTORY_ID}
+  '/accounts/{ACCOUNT_ID}/external_numbers':
+    '$ref': >-
+      paths/external_numbers.yml#/paths/~1accounts~1{ACCOUNT_ID}~1external_numbers
+  '/accounts/{ACCOUNT_ID}/external_numbers/{EXTERNAL_NUMBER_ID}':
+    '$ref': >-
+      paths/external_numbers.yml#/paths/~1accounts~1{ACCOUNT_ID}~1external_numbers~1{EXTERNAL_NUMBER_ID}
+  '/accounts/{ACCOUNT_ID}/external_numbers/{EXTERNAL_NUMBER_ID}/verify':
+    '$ref': >-
+      paths/external_numbers.yml#/paths/~1accounts~1{ACCOUNT_ID}~1external_numbers~1{EXTERNAL_NUMBER_ID}~1verify
   '/accounts/{ACCOUNT_ID}/faxboxes':
     '$ref': 'paths/faxboxes.yml#/paths/~1accounts~1{ACCOUNT_ID}~1faxboxes'
   '/accounts/{ACCOUNT_ID}/faxboxes/{FAXBOX_ID}':

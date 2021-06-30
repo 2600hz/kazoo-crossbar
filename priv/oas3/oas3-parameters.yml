@@ -215,6 +215,16 @@
   'required': true
   'schema':
     'type': string
+'EXTERNAL_NUMBER_ID':
+  'description': request EXTERNAL_NUMBER_ID parameter
+  'in': path
+  'name': EXTERNAL_NUMBER_ID
+  'required': true
+  'schema':
+    'maxLength': 32
+    'minLength': 32
+    'pattern': '^[0-9a-f]+$'
+    'type': string
 'FAXBOX_ID':
   'description': request FAXBOX_ID parameter
   'in': path
