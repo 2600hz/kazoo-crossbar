@@ -189,7 +189,7 @@ channels_query(CallId) ->
 -spec custom_query_channels_resp_v(kz_term:api_terms()) -> boolean().
 custom_query_channels_resp_v(Resp) when is_list(Resp) ->
     kapi_call:query_channels_resp_v(Resp)
-    andalso not kz_term:is_empty(props:get_value(<<"Channels">>, Resp));
+        andalso not kz_term:is_empty(props:get_value(<<"Channels">>, Resp));
 custom_query_channels_resp_v(Resp) ->
     custom_query_channels_resp_v(kz_json:to_proplist(Resp)).
 
