@@ -1343,6 +1343,11 @@
                     "description": "What sampling rate to use on the recording",
                     "type": "integer"
                 },
+                "should_record_feature_calls": {
+                    "default": true,
+                    "description": "Toggles whether to start a recording for calls to feature codes",
+                    "type": "boolean"
+                },
                 "time_limit": {
                     "description": "Time limit, in seconds, for the recording",
                     "maximum": 10800,

@@ -113,6 +113,7 @@ Key | Description | Type | Default | Required | Support Level
 `record_on_answer` | Recording should start on answer | `boolean()` |   | `false` |  
 `record_on_bridge` | Recording should start on bridge | `boolean()` |   | `false` |  
 `record_sample_rate` | What sampling rate to use on the recording | `integer()` |   | `false` |  
+`should_record_feature_calls` | Toggles whether to start a recording for calls to feature codes | `boolean()` | `true` | `false` |  
 `time_limit` | Time limit, in seconds, for the recording | `integer()` |   | `false` |  
 `url` | The URL to use when sending the recording for storage | `string()` |   | `false` |  
 
