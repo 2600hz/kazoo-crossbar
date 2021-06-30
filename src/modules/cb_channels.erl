@@ -183,8 +183,15 @@ channels_query(CallId) ->
 
     kz_amqp_worker:call_collect(Req
                                ,fun kapi_call:publish_query_channels_req/1
-                               ,{'ecallmgr', fun kapi_call:query_channels_resp_v/1}
+                               ,{'ecallmgr', fun custom_query_channels_resp_v/1, 'true'}
                                ).
+
+-spec custom_query_channels_resp_v(kz_term:api_terms()) -> boolean().
+custom_query_channels_resp_v(Resp) when is_list(Resp) ->
+    kapi_call:query_channels_resp_v(Resp)
+        andalso not kz_term:is_empty(props:get_value(<<"Channels">>, Resp));
+custom_query_channels_resp_v(Resp) ->
+    custom_query_channels_resp_v(kz_json:to_proplist(Resp)).
 
 -spec find_channel(kz_term:ne_binary(), kz_term:ne_binary(), kz_json:objects()) -> kz_term:api_object().
 find_channel(_AccountId, _CallId, []) -> 'undefined';
