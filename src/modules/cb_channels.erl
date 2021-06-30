@@ -21,9 +21,6 @@
         ,put/2
         ]).
 
-%% Exported only because it is a callback for kz_amqp_worker to validate a response.
--export([custom_query_channels_resp_v/1]).
-
 -include("crossbar.hrl").
 
 -define(MOD_CONFIG_CAT, <<(?CONFIG_CAT)/binary, ".channels">>).
@@ -186,7 +183,7 @@ channels_query(CallId) ->
 
     kz_amqp_worker:call_collect(Req
                                ,fun kapi_call:publish_query_channels_req/1
-                               ,{'ecallmgr', fun ?MODULE:custom_query_channels_resp_v/1, 'true'}
+                               ,{'ecallmgr', fun custom_query_channels_resp_v/1, 'true'}
                                ).
 
 -spec custom_query_channels_resp_v(kz_term:api_terms()) -> boolean().
