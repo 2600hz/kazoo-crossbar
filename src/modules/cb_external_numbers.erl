@@ -433,7 +433,7 @@ execute_ivr(Context, JObj) ->
     Context1.
 
 verify_ivr_number(Context, Call) ->
-    case kapps_call_command:collect_digits(1, 10 * ?MILLISECONDS_IN_SECOND, Call) of
+    case kapps_call_command:collect_digits(1, 25 * ?MILLISECONDS_IN_SECOND, Call) of
         {'ok', <<"1">>} -> number_verified(Context);
         _Else ->
             lager:info("user did not accept IVR verification"),
