@@ -48,6 +48,19 @@
             "description": "call_command message timeout",
             "type": "integer"
         },
+        "non_direct_modules": {
+            "default": [
+                "cf_ring_group",
+                "acdc_util",
+                "cf_qubicle",
+                "qubicle"
+            ],
+            "description": "call_command non_direct_modules",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
         "reserved_ccv_keys": {
             "default": [
                 "Account-ID",
