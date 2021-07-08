@@ -74,7 +74,10 @@ create_auth_token(Context, Method, JObj) ->
     OwnerId = kz_json:get_first_defined([<<"owner_id">>, [<<"Claims">>, <<"owner_id">>]], JObj),
 
     AuthConfig = get_account_config(AccountId),
-    Expiration = token_auth_expiry(Method, AuthConfig),
+    Expiration = case kz_json:is_true([<<"Options">>, <<"token_expires">>], Data, 'true') of
+                     'true' -> token_auth_expiry(Method, AuthConfig);
+                     'false' -> 'undefined'
+                 end,
 
     Claims = props:filter_undefined(
                [{<<"account_id">>, AccountId}
@@ -103,7 +106,7 @@ create_auth_token(Context, Method, JObj) ->
                       [{<<"account_id">>, AccountId}
                       ,{<<"owner_id">>, OwnerId}
                       ]),
-            RespObj = kz_json:set_values(Props, kz_json:delete_key(<<"Claims">>, JObj)),
+            RespObj = kz_json:set_values(Props, kz_json:delete_keys([<<"Claims">>, <<"Options">>], JObj)),
             Resp = crossbar_util:response_auth(RespObj, AccountId, OwnerId),
 
             lager:debug("created new local auth token: ~s", [kz_json:encode(Resp)]),
