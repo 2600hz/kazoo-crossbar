@@ -183,7 +183,7 @@ validate_conference_auth(Context) ->
                         ,fun validate_allow_shareable_link/1
                         ,fun validate_has_member_pins/1
                         ,fun validate_req_pin/1
-                        ,fun get_confernce_domain/1
+                        ,fun get_conference_domain/1
                         ,fun set_context_success/1
                         ]
                        )
@@ -208,7 +208,7 @@ validate_link(Context, ConferenceId) ->
     {_, Context1} = kz_either:pipe(load_conference(Context, ConferenceId)
                                   ,[fun validate_allow_shareable_link/1
                                    ,fun validate_has_member_pins/1
-                                   ,fun get_confernce_domain/1
+                                   ,fun get_conference_domain/1
                                    ,fun set_context_success/1
                                    ]
                                   ),
@@ -404,26 +404,26 @@ validate_req_pin(Context) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec get_confernce_domain(cb_context:context()) ->
+-spec get_conference_domain(cb_context:context()) ->
           kz_either:either(cb_context:context(), cb_context:context()).
-get_confernce_domain(Context) ->
-    get_account_confernce_domain(Context, cb_context:reseller_id(Context), cb_context:account_id(Context)).
+get_conference_domain(Context) ->
+    get_account_conference_domain(Context, cb_context:reseller_id(Context), cb_context:account_id(Context)).
 
--spec get_account_confernce_domain(cb_context:context(), kz_term:api_ne_binary(), kz_term:ne_binary()) ->
+-spec get_account_conference_domain(cb_context:context(), kz_term:api_ne_binary(), kz_term:ne_binary()) ->
           kz_either:either(cb_context:context(), cb_context:context()).
-get_account_confernce_domain(Context, 'undefined', _) ->
+get_account_conference_domain(Context, 'undefined', _) ->
     lager:debug("reseller is undefined, reading from system_config"),
     system_public_domain(Context);
-get_account_confernce_domain(Context, ResellerId, ResellerId) ->
-    case fetch_confernce_domain(ResellerId) of
+get_account_conference_domain(Context, ResellerId, ResellerId) ->
+    case fetch_conference_domain(ResellerId) of
         'undefined' ->
             lager:debug("reseller ~s doesn't have conference_public_domain, reading from system_config", [ResellerId]),
             system_public_domain(Context);
         Domain ->
             {'ok', cb_context:store(Context, 'domain', Domain)}
     end;
-get_account_confernce_domain(Context, Reseller, AccountId) ->
-    case fetch_confernce_domain(AccountId) of
+get_account_conference_domain(Context, Reseller, AccountId) ->
+    case fetch_conference_domain(AccountId) of
         'undefined' ->
             lager:debug("account ~s doesn't have conference_public_domain, maybe reading from parent", [AccountId]),
             case kzd_accounts:get_parent_account_id(AccountId) of
@@ -432,7 +432,7 @@ get_account_confernce_domain(Context, Reseller, AccountId) ->
                     system_public_domain(Context);
                 ParentId ->
                     lager:debug("reading from parent ~s account", [ParentId]),
-                    get_account_confernce_domain(Context, Reseller, ParentId)
+                    get_account_conference_domain(Context, Reseller, ParentId)
             end;
         Domain ->
             lager:debug("using account ~s conference_public_domain", [AccountId]),
@@ -449,8 +449,8 @@ system_public_domain(Context) ->
             {'ok', cb_context:store(Context, 'domain', Domain)}
     end.
 
--spec fetch_confernce_domain(kz_term:ne_binary()) -> kz_term:api_ne_binary().
-fetch_confernce_domain(AccountId) ->
+-spec fetch_conference_domain(kz_term:ne_binary()) -> kz_term:api_ne_binary().
+fetch_conference_domain(AccountId) ->
     case kzd_whitelabel:fetch(AccountId) of
         {'ok', JObj} -> kzd_whitelabel:conference_public_domain(JObj);
         {'error', _} -> 'undefined'
