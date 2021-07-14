@@ -4467,6 +4467,9 @@
     'require_moderator':
       'description': does the conference require a moderator
       'type': boolean
+    'video':
+      'description': 'If false, video participants will join with video muted'
+      'type': boolean
     'wait_for_moderator':
       'description': should members wait for a moderator before joining the conference
       'type': boolean
