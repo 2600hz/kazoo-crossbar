@@ -87,6 +87,24 @@ Some clients do not support the ability to set the [Accept header](http://www.w3
 !!! note
     `accept=csv` is retained for backwards-compatibility but it is encouraged to use a proper media type going forward.
 
+### Setting an entity ID on creation
+
+For some usecases, it can be desirable to set the ID of the entity on creation.
+
+The ID *must* be a 32-character, alphanumeric UUID.
+
+```json
+{
+    "data":{
+        "id":"{YOUR_UUID}",
+        ... other entity data
+    }
+}
+```
+
+!!! note
+    This feature requires a system admin to set `"allow_onboarding_setting_id":true` in the crossbar system config: `sup kapps_config set_default crossbar allow_onboarding_setting_id true`
+
 ## Request Envelope
 
 When issuing a `PUT`, `POST` or `PUT`, a request body is needed. When submitting a JSON (the most common body), Crossbar expects a request envelope with a few bits of metadata:

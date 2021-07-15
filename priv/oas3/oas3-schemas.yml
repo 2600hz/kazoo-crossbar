@@ -10341,6 +10341,10 @@
       'default': false
       'description': crossbar allow_fetch_full_docs
       'type': boolean
+    'allow_onboarding_setting_id':
+      'default': false
+      'description': crossbar allow_onboarding_setting_id
+      'type': boolean
     'allow_tracing':
       'default': false
       'description': crossbar allow tracing
