@@ -521,7 +521,7 @@ validate_patch(UserId, Context) ->
 %%------------------------------------------------------------------------------
 -spec validate_request(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
 validate_request(UserId, Context0) ->
-    ReqUser = cb_context:doc(Context0),
+    ReqUser = cb_context:req_data(Context0),
     AccountId = cb_context:account_id(Context0),
 
     Context = cb_context:store(Context0
