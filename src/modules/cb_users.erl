@@ -503,7 +503,8 @@ load_users_summary(Context) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec load_user(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
-load_user(UserId, Context) -> crossbar_doc:load(UserId, Context, ?TYPE_CHECK_OPTION(kzd_users:type())).
+load_user(UserId, Context) ->
+    crossbar_doc:load(UserId, Context, ?TYPE_CHECK_OPTION(kzd_users:type())).
 
 %%------------------------------------------------------------------------------
 %% @doc Validate an update request.
@@ -520,12 +521,15 @@ validate_patch(UserId, Context) ->
 %%------------------------------------------------------------------------------
 -spec validate_request(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
 validate_request(UserId, Context0) ->
-    ReqJObj = cb_context:req_data(Context0),
+    ReqUser = cb_context:req_data(Context0),
     AccountId = cb_context:account_id(Context0),
 
-    Context = cb_context:store(Context0, <<"req_password">>, kz_json:get_value(<<"password">>, ReqJObj)),
+    Context = cb_context:store(Context0
+                              ,<<"req_password">>
+                              ,kzd_users:password(ReqUser)
+                              ),
 
-    case kzd_users:validate(AccountId, UserId, ReqJObj) of
+    case kzd_users:validate(AccountId, UserId, ReqUser) of
         {'true', UserJObj} when is_binary(UserId) ->
             lager:debug("successfully validated user object update"),
             %% NOTE: We need to load the current (unmodified) user document
@@ -545,7 +549,6 @@ validate_request(UserId, Context0) ->
             lager:info("system error validating user: ~p, ~p", [Error, Message]),
             cb_context:add_system_error(Error, Message, Context)
     end.
-
 
 %%------------------------------------------------------------------------------
 %% @doc Converts context to vcard

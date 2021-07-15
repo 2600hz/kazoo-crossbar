@@ -1011,15 +1011,15 @@ validate_request_data(SchemaJObj, Context, OnSuccess, OnFailure, _SchemaRequired
             lager:debug("validation errors but not strictly validating, trying to fix request"),
             maybe_fix_js_types(SchemaJObj, Context, OnSuccess, OnFailure, Errors)
     catch
-        ?STACKTRACE('error', 'function_clause', ST)
-        lager:debug("function clause failure"),
-        kz_log:log_stacktrace(ST),
-        Context#cb_context{resp_status = 'fatal'
-                          ,resp_error_code = 500
-                          ,resp_data = kz_json:new()
-                          ,resp_error_msg = <<"validation failed to run on the server">>
-                          }
-        end.
+        'error':'function_clause':ST ->
+            lager:debug("function clause failure"),
+            kz_log:log_stacktrace(ST),
+            Context#cb_context{resp_status = 'fatal'
+                              ,resp_error_code = 500
+                              ,resp_data = kz_json:new()
+                              ,resp_error_msg = <<"validation failed to run on the server">>
+                              }
+    end.
 
 -spec validate_failed(kz_json:object(), context(), validation_errors(), after_fun()) -> context().
 validate_failed(SchemaJObj, Context, Errors, OnFailure) ->
@@ -1070,14 +1070,42 @@ failed_error(Error, Context) ->
 
 -spec passed(context()) -> context().
 passed(Context) ->
-    Context1 = case 'error' =:= resp_status(Context) of
-                   'true' -> Context;
-                   'false' -> set_resp_status(Context, 'success')
-               end,
-    case kz_doc:id(req_data(Context1)) of
-        'undefined' -> Context1;
-        Id -> set_doc(Context1, kz_doc:set_id(doc(Context1), Id))
-    end.
+    passed(Context, resp_status(Context)).
+
+passed(Context, 'error') -> Context;
+passed(Context, _Status) ->
+    maybe_allow_setting_id(set_resp_status(Context, 'success')).
+
+maybe_allow_setting_id(Context) ->
+    maybe_allow_setting_id(Context
+                          ,kapps_config:is_true(?CONFIG_CAT, <<"allow_onboarding_setting_id">>, 'false')
+                          ,req_verb(Context)
+                          ).
+
+maybe_allow_setting_id(Context, 'true', ?HTTP_PUT) ->
+    case kz_doc:id(req_data(Context)) of
+        'undefined' -> Context;
+        <<Id:32/binary>> ->
+            lager:info("setting ID ~s from request data for PUT", [Id]),
+            set_doc(Context, kz_doc:set_id(doc(Context), Id));
+        Id ->
+            lager:info("invalid ID '~s' in request data", [Id]),
+            error_invalid_id(Context, Id, 32)
+    end;
+maybe_allow_setting_id(Context, _Allowed, _Verb) -> Context.
+
+-spec error_invalid_id(context(), kz_term:ne_binary(), pos_integer()) -> context().
+error_invalid_id(Context, Id, RequiredSize) ->
+    ReqSize = kz_term:to_binary(RequiredSize),
+    add_validation_error([<<"id">>]
+                        ,<<"minLength">>
+                        ,kz_json:from_list([{<<"message">>, <<"ID must be ", ReqSize/binary, " characters">>}
+                                           ,{<<"target">>, RequiredSize}
+                                           ,{<<"cause">>, Id}
+                                           ,{<<"value">>, Id}
+                                           ])
+                        ,Context
+                        ).
 
 -spec find_schema(kz_term:ne_binary()) -> kz_term:api_object().
 find_schema(Schema=?NE_BINARY) ->
@@ -1285,4 +1313,4 @@ update_successfully_validated_request(Context, Doc) ->
               ,{fun set_doc/2, Doc}
               ,{fun set_resp_status/2, 'success'}
               ],
-    setters(Context, Updates).
+    passed(setters(Context, Updates)).
