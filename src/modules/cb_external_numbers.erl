@@ -30,6 +30,7 @@
 
 -define(SMS_VERIFY_TEMPLATE, <<"Your verification code is {{verify.code}}">>).
 -define(SMS_VERIFY_BODY_KEY, <<"sms_verify_message">>).
+-define(DEFAULT_SMS_VERIFY_BODY, kapps_config:get_ne_binary(?MOD_CONFIG_CAT, ?SMS_VERIFY_BODY_KEY, ?SMS_VERIFY_TEMPLATE)).
 
 %%%=============================================================================
 %%% API
