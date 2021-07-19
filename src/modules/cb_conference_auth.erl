@@ -501,7 +501,6 @@ create_auth_token(Context) ->
                            ,{<<"scope">>, ?INVITE_ALLOWED_SCOPE}
                            ]
             }
-           ,{<<"Options">>, [{<<"token_expires">>, 'false'}]}
            ],
     Setters = [{fun cb_context:store/3, 'auth_type', <<"conference_invite_link">>}
               ,{fun cb_context:set_doc/2, kz_json:from_list_recursive(Prop)}
