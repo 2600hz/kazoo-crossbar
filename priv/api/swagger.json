@@ -9885,6 +9885,7 @@
                     "default": "round_robin",
                     "description": "The queue strategy for connecting agents to callers",
                     "enum": [
+                        "ring_all",
                         "round_robin",
                         "most_idle"
                     ],
