@@ -24,10 +24,11 @@
 
 -define(CB_DEFAULT_SCOPES, [?APP_NAME]).
 
--define(DEFAULT_METHOD_CONFIG(LogSuccess),
+-define(DEFAULT_METHOD_CONFIG(LogSuccess), ?DEFAULT_METHOD_CONFIG(LogSuccess, ?SECONDS_IN_HOUR)).
+-define(DEFAULT_METHOD_CONFIG(LogSuccess, TokenExpirationTime),
         kz_json:from_list(
           [{<<"enabled">>, 'true'}
-          ,{<<"token_auth_expiry_s">>, ?SECONDS_IN_HOUR}
+          ,{<<"token_auth_expiry_s">>, TokenExpirationTime}
           ,{<<"log_failed_attempts">>, 'true'}
           ,{<<"log_successful_attempts">>, LogSuccess}
           ,{<<"scopes">>, ?CB_DEFAULT_SCOPES}
@@ -41,6 +42,7 @@
           ,{<<"cb_api_auth">>, ?DEFAULT_METHOD_CONFIG('false')}
           ,{<<"cb_auth">>, ?DEFAULT_METHOD_CONFIG('false')}
           ,{<<"cb_ip_auth">>, ?DEFAULT_METHOD_CONFIG('false')}
+          ,{<<"cb_conference_auth">>, ?DEFAULT_METHOD_CONFIG('false', 'infinity')}
           ]
          )
        ).
@@ -235,15 +237,17 @@ method_mfa_path(Method, Key) -> [Method, <<"multi_factor">>, Key].
 -spec token_auth_expiry(kz_term:ne_binary(), kz_json:object()) -> non_neg_integer().
 token_auth_expiry(Method, AuthConfig) ->
     Path = method_config_path(Method, <<"token_auth_expiry_s">>),
-    case kz_json:get_integer_value(Path, AuthConfig, 0) of
-        TokenExp when TokenExp > 0 ->
-            kz_time:current_unix_tstamp() + TokenExp;
-        _ ->
+    case kz_json:get_integer_value(Path, AuthConfig, 'undefined') of
+        'undefined' ->
             case ?DEFAULT_AUTH_EXPIRY of
                 TokenExp when TokenExp > 0 ->
                     kz_time:current_unix_tstamp() + TokenExp;
                 _ -> 'undefined'
-            end
+            end;
+        TokenExp when TokenExp > 0 ->
+            kz_time:current_unix_tstamp() + TokenExp;
+        _Else ->
+            'undefined'
     end.
 
 %%------------------------------------------------------------------------------

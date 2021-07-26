@@ -259,6 +259,15 @@
                             ],
                             "token_auth_expiry_s": 3600
                         },
+                        "cb_conference_auth": {
+                            "enabled": true,
+                            "log_failed_attempts": true,
+                            "log_successful_attempts": false,
+                            "scopes": [
+                                "crossbar"
+                            ],
+                            "token_auth_expiry_s": "infinity"
+                        },
                         "cb_ip_auth": {
                             "enabled": true,
                             "log_failed_attempts": true,
@@ -12942,6 +12951,15 @@
                                 "crossbar"
                             ],
                             "token_auth_expiry_s": 3600
+                        },
+                        "cb_conference_auth": {
+                            "enabled": true,
+                            "log_failed_attempts": true,
+                            "log_successful_attempts": false,
+                            "scopes": [
+                                "crossbar"
+                            ],
+                            "token_auth_expiry_s": "infinity"
                         },
                         "cb_ip_auth": {
                             "enabled": true,
