@@ -37,16 +37,16 @@ curl -v -X GET \
     "data": [
         {
             "answered": true,
-            "authorizing_id": "63fbb9ac78e11f3ccb387928a423798a",
+            "authorizing_id": "{AUTHORIZING_ID}",
             "authorizing_type": "device",
             "destination": "user_zu0bf7",
             "direction": "outbound",
-            "other_leg": "d220c187-e18edc42-bab2459d@10.26.0.91",
-            "owner_id": "72855158432d790dfb22d03ff64c033e",
+            "other_leg": "{CALL_ID}",
+            "owner_id": "{OWNER_ID}",
             "presence_id": "user_zu0bf7@account.realm.com",
             "timestamp": 63573977746,
             "username": "user_zu0bf7",
-            "uuid": "dab25c76-7479-4ed2-ba92-6b725d68e351"
+            "uuid": "{UUID}"
         }
     ],
     "request_id": "{REQUEST_ID}",
@@ -105,7 +105,26 @@ curl -v -X POST \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/channels/{UUID}
 ```
 
-Available `action` values are `transfer`, `hangup`, `break`, `callflow`, and `intercept`.
+Available `action` values are `transfer`, `hangup`, `break`, `callflow`, `move` and `intercept`.
+
+### Move
+
+```shell
+curl -v -x POST \
+    -H "Content-Type: application/json" \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d '{"data": {"action": "move", "owner_id": "{OWNER_ID}", "device_id": "{DEVICE_ID}", "auto_answer": true, "can_call_self": true, "dial_strategy": "simultaneous"}}' \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/channels/{UUID}
+```
+
+Key | Description | Type | Default | Required
+
+--- | ----------- | ---- | ------- | --------
+`auto_answer` | Whether to auto-answer the new leg | `boolean()` | `false` | `false`
+`can_call_self` | Can intercept devices of the same targeted user | `boolean()` | `true` | `false`
+`device_id` | Move the call to a specific device | `string()` |   | `false`
+`dial_strategy` | How to ring the endpoints, if multiple | `string()` | `simultaneous` | `false`
+`owner_id` | User ID to use for finding endpoints | `string()` |   | `false`
 
 ### Transfer
 
