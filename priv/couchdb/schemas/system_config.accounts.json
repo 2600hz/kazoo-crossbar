@@ -11,7 +11,8 @@
         "default_timezone": {
             "$ref": "timezone",
             "default": "America/Los_Angeles",
-            "description": "accounts default timezone"
+            "description": "accounts default timezone",
+            "type": "string"
         },
         "master_account_id": {
             "description": "accounts master account id",

@@ -12,6 +12,11 @@
             "type": "string"
         },
         "controls": {
+            "patternProperties": {
+                ".+": {
+                    "description": "conferences controls  +"
+                }
+            },
             "properties": {
                 "default": {
                     "description": "conferences controls default",
@@ -92,6 +97,11 @@
         },
         "profiles": {
             "default": {},
+            "patternProperties": {
+                ".+": {
+                    "description": "conferences profiles  +"
+                }
+            },
             "properties": {
                 "default": {
                     "default": {

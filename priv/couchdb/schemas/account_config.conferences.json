@@ -4,6 +4,11 @@
     "description": "Schema for conferences account_config",
     "properties": {
         "controls": {
+            "patternProperties": {
+                ".+": {
+                    "description": "conferences controls  +"
+                }
+            },
             "properties": {
                 "default": {
                     "description": "conferences controls default",
@@ -70,6 +75,19 @@
             "default": 5000,
             "description": "conferences pin timeout",
             "type": "integer"
+        },
+        "profiles": {
+            "patternProperties": {
+                ".+": {
+                    "description": "conferences profiles  +"
+                }
+            },
+            "properties": {
+                "page": {
+                    "description": "conferences profiles page",
+                    "type": "object"
+                }
+            }
         },
         "support_name_announcement": {
             "default": true,

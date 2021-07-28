@@ -17,6 +17,7 @@
             "type": "string"
         },
         "default_caller_id_number": {
+            "default": "anonymous",
             "description": "kazoo_endpoint default caller id number",
             "type": "string"
         },

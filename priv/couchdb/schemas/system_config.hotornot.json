@@ -59,6 +59,13 @@
             "type": "string"
         },
         "should_publish_system_alert": {
+            "patternProperties": {
+                ".+": {
+                    "default": true,
+                    "description": "hotornot should_publish_system_alert  +",
+                    "type": "boolean"
+                }
+            },
             "properties": {
                 "both": {
                     "default": true,

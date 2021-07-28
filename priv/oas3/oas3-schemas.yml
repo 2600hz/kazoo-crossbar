@@ -144,6 +144,9 @@
                 'type': string
             'type': object
           'type': array
+      'x-patternProperties':
+        '.+':
+          'description': conferences controls  +
     'entry_tone':
       'default': |-
         tone_stream://v=-7;>=2;+=.1;%(300,0,523,659);v=-7;>=3;+=.1;%(800,0,659,783)
@@ -172,6 +175,14 @@
       'default': 5000
       'description': conferences pin timeout
       'type': integer
+    'profiles':
+      'properties':
+        'page':
+          'description': conferences profiles page
+          'type': object
+      'x-patternProperties':
+        '.+':
+          'description': conferences profiles  +
     'support_name_announcement':
       'default': true
       'description': conferences support name announcement
@@ -9017,6 +9028,7 @@
       '$ref': '#/timezone'
       'default': America/Los_Angeles
       'description': accounts default timezone
+      'type': string
     'master_account_id':
       'description': accounts master account id
       'type': string
@@ -9855,6 +9867,9 @@
             'type': object
           'type': array
       'type': object
+      'x-patternProperties':
+        '.+':
+          'description': conferences controls  +
     'entry_tone':
       'default': |-
         tone_stream://v=-7;>=2;+=.1;%(300,0,523,659);v=-7;>=3;+=.1;%(800,0,659,783)
@@ -9930,6 +9945,9 @@
           'description': conferences page
           'type': object
       'type': object
+      'x-patternProperties':
+        '.+':
+          'description': conferences profiles  +
     'review_name':
       'default': false
       'description': conferences review name
@@ -9958,6 +9976,11 @@
       'default': false
       'description': crossbar allow tracing
       'type': boolean
+    'allowed_modules_fetch_full_docs':
+      'x-patternProperties':
+        '.+':
+          'description': crossbar allowed_modules_fetch_full_docs  +
+          'type': boolean
     'api_auth_tokens':
       'default': 35
       'description': crossbar api auth tokens
@@ -9980,6 +10003,9 @@
       'default': 35
       'description': crossbar conference_auth_tokens
       'type': integer
+    'deb_download_url':
+      'description': crossbar deb_download_url
+      'type': string
     'default_allow_anonymous_quickcalls':
       'default': true
       'description': crossbar default allow anonymous quickcalls
@@ -9988,6 +10014,10 @@
       'default': en-US
       'description': crossbar default language
       'type': string
+    'desktop_auth_tokens':
+      'default': 35
+      'description': crossbar desktop_auth_tokens
+      'type': integer
     'ensure_valid_schema':
       'default': true
       'description': crossbar ensure valid schema
@@ -10004,6 +10034,9 @@
       'description': crossbar load_view_chunk_size
       'minimum': 1
       'type': integer
+    'mac_dowload_url':
+      'description': crossbar mac_dowload_url
+      'type': string
     'magic_path_patterns':
       'default':
         - |-
@@ -10076,6 +10109,9 @@
       'items':
         'type': string
       'type': array
+    'rpm_download_url':
+      'description': crossbar rpm_download_url
+      'type': string
     'schema_strict_validation':
       'default': false
       'description': crossbar schema strict validation
@@ -10128,6 +10164,9 @@
       'default': 35
       'description': crossbar user auth tokens
       'type': integer
+    'windows_dowload_url':
+      'description': crossbar windows_dowload_url
+      'type': string
     'workers':
       'default': 100
       'description': crossbar workers
@@ -11471,6 +11510,11 @@
           'default': true
           'description': hotornot should_publish_system_alert if outbound rate is missing
           'type': boolean
+      'x-patternProperties':
+        '.+':
+          'default': true
+          'description': hotornot should_publish_system_alert  +
+          'type': boolean
     'sort_by_weight':
       'default': true
       'description': sort rates by weight (true) or cost (false)
@@ -11791,6 +11835,7 @@
       'description': kazoo_endpoint default caller id name
       'type': string
     'default_caller_id_number':
+      'default': anonymous
       'description': kazoo_endpoint default caller id number
       'type': string
     'default_can_text_self':
@@ -13454,6 +13499,7 @@
       '$ref': '#/timezone'
       'default': UTC
       'description': servers clock timezone
+      'type': string
   'type': object
 'system_config.services':
   'description': Schema for services system_config
@@ -14392,6 +14438,7 @@
   'description': Schema for trunkstore system_config
   'properties':
     'default_caller_id_number':
+      'default': anonymous
       'description': trunkstore default caller id number
       'type': string
     'default_hunt_non_reconcilable':
@@ -14467,6 +14514,21 @@
       'items':
         'type': string
       'type': array
+  'type': object
+'system_config.webhooks.object':
+  'description': Schema for webhooks.object system_config
+  'properties':
+    'include_fields':
+      'description': Fields from the changed document to include in webhook payloads
+      'type': object
+      'x-patternProperties':
+        '.+':
+          'default': []
+          'description': Per-doc-type properties to include
+          'items':
+            'description': JSON key(or path) from the changed document to include
+            'type': string
+          'type': array
   'type': object
 'system_config.webrtc':
   'description': Schema for webrtc system_config

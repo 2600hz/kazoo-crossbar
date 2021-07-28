@@ -6,7 +6,8 @@
         "clock_timezone": {
             "$ref": "timezone",
             "default": "UTC",
-            "description": "servers clock timezone"
+            "description": "servers clock timezone",
+            "type": "string"
         }
     },
     "type": "object"
