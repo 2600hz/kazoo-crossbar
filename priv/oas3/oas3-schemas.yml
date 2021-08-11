@@ -15858,6 +15858,10 @@
       'items':
         'type': string
       'type': array
+    'should_create_caller_id_name_if_undefined':
+      'description': |-
+        Create the users caller id name from the first and last name fields if no caller id is defined
+      'type': boolean
     'timezone':
       '$ref': '#/timezone'
       'description': User's timezone
