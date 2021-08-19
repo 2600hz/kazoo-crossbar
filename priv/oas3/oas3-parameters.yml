@@ -569,6 +569,16 @@
   'required': true
   'schema':
     'type': string
+'SCREENPOP_ID':
+  'description': request SCREENPOP_ID parameter
+  'in': path
+  'name': SCREENPOP_ID
+  'required': true
+  'schema':
+    'maxLength': 32
+    'minLength': 32
+    'pattern': '^[0-9a-f]+$'
+    'type': string
 'SELECTOR_NAME':
   'description': request SELECTOR_NAME parameter
   'in': path
