@@ -43,6 +43,40 @@
                         "type": "object"
                     },
                     "type": "array"
+                },
+                "paging": {
+                    "description": "conferences controls paging",
+                    "items": {
+                        "properties": {
+                            "action": {
+                                "description": "what action to assign to the star-code",
+                                "type": "string"
+                            },
+                            "digits": {
+                                "description": "what digit sequence to bind the action to",
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "video": {
+                    "description": "conferences controls video",
+                    "items": {
+                        "properties": {
+                            "action": {
+                                "description": "what action to assign to the star-code",
+                                "type": "string"
+                            },
+                            "digits": {
+                                "description": "what digit sequence to bind the action to",
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "type": "array"
                 }
             }
         },
