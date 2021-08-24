@@ -477,6 +477,11 @@
   '/accounts/{ACCOUNT_ID}/scope_restrictions/{SCOPE_RESTRICTION}':
     '$ref': >-
       paths/scope_restrictions.yml#/paths/~1accounts~1{ACCOUNT_ID}~1scope_restrictions~1{SCOPE_RESTRICTION}
+  '/accounts/{ACCOUNT_ID}/screenpops':
+    '$ref': 'paths/screenpops.yml#/paths/~1accounts~1{ACCOUNT_ID}~1screenpops'
+  '/accounts/{ACCOUNT_ID}/screenpops/{SCREENPOP_ID}':
+    '$ref': >-
+      paths/screenpops.yml#/paths/~1accounts~1{ACCOUNT_ID}~1screenpops~1{SCREENPOP_ID}
   '/accounts/{ACCOUNT_ID}/search':
     '$ref': 'paths/search.yml#/paths/~1accounts~1{ACCOUNT_ID}~1search'
   '/accounts/{ACCOUNT_ID}/search/multi':
