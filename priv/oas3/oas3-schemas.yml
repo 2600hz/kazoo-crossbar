@@ -8462,6 +8462,7 @@
           'description': |-
             Contains all the url custom params defined to concat to the custom url
           'type': object
+      'type': object
     'post_call_extension_time':
       'description': |-
         Contains the time the screenpop will remain active when the temporal type is selected.

@@ -10733,7 +10733,8 @@
                             "description": "Contains all the url custom params defined to concat to the custom url",
                             "type": "object"
                         }
-                    }
+                    },
+                    "type": "object"
                 },
                 "post_call_extension_time": {
                     "description": "Contains the time the screenpop will remain active when the temporal type is selected.",
@@ -28527,6 +28528,24 @@
             }
         },
         "/accounts/{ACCOUNT_ID}/screenpops/{SCREENPOP_ID}": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/SCREENPOP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
             "get": {
                 "parameters": [
                     {

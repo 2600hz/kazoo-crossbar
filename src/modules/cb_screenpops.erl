@@ -13,6 +13,7 @@
         ,put/1
         ,post/2
         ,patch/2
+        ,delete/2
         ]).
 
 -include_lib("crossbar/src/crossbar.hrl").
@@ -35,7 +36,8 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.execute.get.screenpops">>, ?MODULE, 'get'),
     _ = crossbar_bindings:bind(<<"*.execute.put.screenpops">>, ?MODULE, 'put'),
     _ = crossbar_bindings:bind(<<"*.execute.post.screenpops">>, ?MODULE, 'post'),
-    _ = crossbar_bindings:bind(<<"*.execute.patch.screenpops">>, ?MODULE, 'patch').
+    _ = crossbar_bindings:bind(<<"*.execute.patch.screenpops">>, ?MODULE, 'patch'),
+    _ = crossbar_bindings:bind(<<"*.execute.delete.screenpops">>, ?MODULE, 'delete').
 
 %%------------------------------------------------------------------------------
 %% @doc Given the path tokens related to this module, what HTTP methods are
@@ -49,7 +51,7 @@ allowed_methods() ->
 
 -spec allowed_methods(path_token()) -> http_methods().
 allowed_methods(_ScreenpopId) ->
-    [?HTTP_GET, ?HTTP_POST, ?HTTP_PATCH].
+    [?HTTP_GET, ?HTTP_POST, ?HTTP_PATCH, ?HTTP_DELETE].
 
 %%------------------------------------------------------------------------------
 %% @doc Does the path point to a valid resource
@@ -72,20 +74,20 @@ resource_exists(_) -> 'true'.
 -spec validate(cb_context:context()) -> cb_context:context().
 validate(Context) ->
     validate_request(Context, cb_context:req_verb(Context)).
+
+-spec validate_request(cb_context:context(), req_verb()) -> cb_context:context().
 validate_request(Context, ?HTTP_GET) ->
     load_summary(Context);
 validate_request(Context, ?HTTP_PUT) ->
     create_entry(Context).
 
-
-
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, ScreenpopId) ->
     validate_request(Context, ScreenpopId, cb_context:req_verb(Context)).
 
+-spec validate_request(cb_context:context(), path_token(), req_verb()) -> cb_context:context().
 validate_request(Context, DocId, ?HTTP_GET) ->
     load_entry(DocId, Context);
-
 validate_request(Context, ScreenpopId, ?HTTP_PATCH) ->
     RespContext = load_entry(ScreenpopId, Context),
     case cb_context:has_errors(RespContext) of
@@ -97,7 +99,9 @@ validate_request(Context, ScreenpopId, ?HTTP_POST) ->
     case cb_context:has_errors(RespContext) of
         'false' -> update_entry(ScreenpopId, Context);
         'true' ->  RespContext
-    end.
+    end;
+validate_request(Context, ScreenpopId, ?HTTP_DELETE) ->
+    load_entry(ScreenpopId, Context).
 
 %%------------------------------------------------------------------------------
 %% @doc If the HTTP verb is PUT, execute the actual action, usually a db save.
@@ -113,7 +117,7 @@ put(Context) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec post(cb_context:context(), path_token()) -> cb_context:context().
-post(Context, _) ->
+post(Context, _ScreenpopId) ->
     crossbar_doc:save(Context).
 
 %%------------------------------------------------------------------------------
@@ -122,8 +126,12 @@ post(Context, _) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec patch(cb_context:context(), path_token()) -> cb_context:context().
-patch(Context, _) ->
+patch(Context, _ScreenpopId) ->
     crossbar_doc:save(Context).
+
+-spec delete(cb_context:context(), path_token()) -> cb_context:context().
+delete(Context, _ScreenpopId) ->
+    crossbar_doc:delete(Context).
 
 %%%=============================================================================
 %%% Internal functions
@@ -136,11 +144,21 @@ patch(Context, _) ->
 %%------------------------------------------------------------------------------
 -spec load_summary(cb_context:context()) -> cb_context:context().
 load_summary(Context) ->
-    crossbar_view:load(Context, ?CB_LIST, [{'mapper', crossbar_view:get_value_fun()}]).
+    Selector = [{'start', [{<<"doc_type">>, kzd_screenpops:type()}]}
+               ,{'end', [{<<"doc_type">>, kzd_screenpops:type()}]}
+               ],
+    Options = [{'mapper', crossbar_view:get_value_fun()}
+              ,{'doc_type', kzd_screenpops:type()}
+              ],
+    crossbar_view:find(Context
+                      ,<<"crossbar_listings/by_type_id">>
+                      ,Selector
+                      ,Options
+                      ).
 
 -spec load_entry(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
 load_entry(DocId, Context) ->
-    crossbar_doc:load(DocId, Context, ?TYPE_CHECK_OPTION(<<"screenpops">>)).
+    crossbar_doc:load(DocId, Context, ?TYPE_CHECK_OPTION(kzd_screenpops:type())).
 
 %%------------------------------------------------------------------------------
 %% @doc Create a new document with the data provided, if it is valid
@@ -149,8 +167,7 @@ load_entry(DocId, Context) ->
 -spec create_entry(cb_context:context()) -> cb_context:context().
 create_entry(Context) ->
     OnSuccess = fun(C) -> on_successful_validation('undefined', C) end,
-    cb_context:validate_request_data(<<"screenpops">>, Context, OnSuccess).
-
+    cb_context:validate_request_data(kzd_screenpops:schema_name(), Context, OnSuccess).
 
 %%------------------------------------------------------------------------------
 %% @doc Update-merge an existing document with the data provided, if it is
@@ -169,7 +186,7 @@ validate_patch(DocId, Context) ->
 -spec update_entry(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
 update_entry(DocId, Context) ->
     OnSuccess = fun(C) -> on_successful_validation(DocId, C) end,
-    cb_context:validate_request_data(<<"screenpops">>, Context, OnSuccess).
+    cb_context:validate_request_data(kzd_screenpops:schema_name(), Context, OnSuccess).
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -178,10 +195,10 @@ update_entry(DocId, Context) ->
 -spec on_successful_validation(kz_term:api_binary(), cb_context:context()) ->
           cb_context:context().
 on_successful_validation('undefined', Context) ->
-    cb_context:set_doc(Context, kz_json:set_values([{<<"pvt_type">>, <<"screenpops">>}
-                                                   ,{<<"pvt_vsn">>, <<"1">>}
-                                                   ]
-                                                  ,cb_context:doc(Context)
-                                                  ));
+    cb_context:set_doc(Context
+                      ,kz_json:set_values([{<<"pvt_type">>, kzd_screenpops:type()}]
+                                         ,cb_context:doc(Context)
+                                         )
+                      );
 on_successful_validation(DocId, Context) ->
-    crossbar_doc:load_merge(DocId, Context, ?TYPE_CHECK_OPTION(<<"screenpops">>)).
+    crossbar_doc:load_merge(DocId, Context, ?TYPE_CHECK_OPTION(kzd_screenpops:type())).
