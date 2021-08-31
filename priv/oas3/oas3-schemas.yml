@@ -16468,12 +16468,8 @@
       'description': Parameters related to white-labeling port requests
       'properties':
         'authority':
-          'description': The account ID(s) to be used for administrating port requests
-          'oneOf':
-            - 'type': string
-            - 'items':
-                'type': string
-              'type': array
+          'description': The account ID to be used for administrating port requests
+          'type': string
           'x-support_level': supported
         'features':
           'description': The URL to use when the features link is clicked
