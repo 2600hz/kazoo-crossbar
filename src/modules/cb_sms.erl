@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2020, 2600Hz
+%%% @copyright (C) 2012-2022, 2600Hz
 %%% @doc
 %%% @author Luis Azedo
 %%%
@@ -169,6 +169,9 @@ on_successful_validation(Context) ->
               ,fun account_is_in_good_standing/1
               ,fun reseller_has_sms_enabled/1
               ,fun reseller_is_in_good_standing/1
+              ,fun validate_route_type/1
+              ,fun set_route_type/1
+              ,fun reconcile_to/1
               ,fun create_request/1
               ,fun validate_from/1
               ],
@@ -196,12 +199,9 @@ create_request(Context) ->
         end,
 
     To = kzd_sms:to(Payload),
-    {Type, ToNum} = case knm_converters:is_reconcilable(To) of
-                        'true' -> {<<"offnet">>, knm_converters:normalize(To, AccountId)};
-                        'false' -> {<<"onnet">>, To}
-                    end,
-
-    FromNum = kzd_sms:from(Payload, get_default_caller_id(Context, Type, OwnerId)),
+    Type = route_type(Context),
+    DefaultCID = get_default_caller_id(Context, Type, OwnerId),
+    From = kzd_sms:from(Payload, DefaultCID),
 
     CCVs = [{<<"Account-ID">>, AccountId}
            ,{<<"Reseller-ID">>, ResellerId}
@@ -211,8 +211,8 @@ create_request(Context) ->
            ],
 
     KVs = [{<<"Message-ID">>, cb_context:req_id(Context)}
-          ,{<<"From">>, FromNum}
-          ,{<<"To">>, ToNum}
+          ,{<<"From">>, From}
+          ,{<<"To">>, To}
           ,{<<"Body">>, kzd_sms:body(Payload)}
           ,{<<"Account-ID">>, cb_context:account_id(Context)}
           ,{<<"Custom-Vars">>, kz_json:from_list(CCVs)}
@@ -220,8 +220,66 @@ create_request(Context) ->
           ,{<<"Event-Category">>, <<"sms">>}
           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
-
     cb_context:set_doc(Context, kz_json:from_list(KVs)).
+
+-spec reconcile_to(cb_context:context()) -> cb_context:context().
+reconcile_to(Context) ->
+    reconcile_to(Context, route_type(Context)).
+
+reconcile_to(Context, <<"onnet">>) -> Context;
+reconcile_to(Context, <<"offnet">>) ->
+    AccountId = cb_context:account_id(Context),
+    Doc = cb_context:doc(Context),
+    To = kzd_sms:to(Doc),
+    case reconcile_numbers(AccountId, To) of
+        To -> Context;
+        Reconciled -> cb_context:set_doc(Context, kzd_sms:set_to(Doc, Reconciled))
+    end.
+
+-spec reconcile_numbers(kz_term:ne_binary(), kz_term:ne_binary_or_binaries()) -> kz_term:ne_binary_or_binaries().
+reconcile_numbers(AccountId, To)
+  when is_binary(To) ->
+    knm_converters:normalize(To, AccountId);
+reconcile_numbers(AccountId, To)
+  when is_list(To) ->
+    [knm_converters:normalize(Number, AccountId) || Number <- To].
+
+-spec set_route_type(cb_context:context()) -> cb_context:context().
+set_route_type(Context) ->
+    set_route_type(Context, kzd_sms:to(cb_context:doc(Context))).
+
+-spec set_route_type(cb_context:context(), kz_term:ne_binary_or_binaries()) -> cb_context:context().
+set_route_type(Context, To) ->
+    cb_context:store(Context, route_type, get_route_type(To)).
+
+-spec route_type(cb_context:context()) -> kz_term:ne_binary().
+route_type(Context) ->
+    cb_context:fetch(Context, route_type, <<"offnet">>).
+
+-spec get_route_type(kz_term:ne_binary_or_binaries()) -> kz_term:ne_binary().
+get_route_type(To)
+  when is_binary(To) ->
+    case knm_converters:is_reconcilable(To) of
+        true -> <<"offnet">>;
+        false -> <<"onnet">>
+    end;
+get_route_type([To | _List]) ->
+    get_route_type(To).
+
+-spec validate_route_type(cb_context:context()) -> cb_context:context().
+validate_route_type(Context) ->
+    validate_route_type(Context, kzd_sms:to(cb_context:doc(Context))).
+
+-spec validate_route_type(cb_context:context(), kz_term:ne_binary_or_binaries()) -> cb_context:context().
+validate_route_type(Context, To)
+  when is_binary(To) ->
+    Context;
+validate_route_type(Context, [To | List]) ->
+    Reconcilable = knm_converters:is_reconcilable(To),
+    case lists:all(fun(T) -> Reconcilable =:= knm_converters:is_reconcilable(T) end , List) of
+        false -> cb_context:add_validation_error(<<"to">>, <<"invalid">>, <<"mixed onnet/offnet not supported">>, Context);
+        true -> Context
+    end.
 
 -spec get_default_caller_id(cb_context:context(), binary(), kz_term:api_binary()) -> kz_term:api_binary().
 get_default_caller_id(Context, <<"offnet">>, 'undefined') ->
