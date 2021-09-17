@@ -6145,6 +6145,10 @@
                 }
             }
         },
+        "custom_channel_vars": {
+            "description": "Custom Channel Vars applied to an INVITE",
+            "type": "object"
+        },
         "custom_sip_headers": {
             "description": "Custom SIP headers applied to an INVITE",
             "type": "object"
@@ -10291,6 +10295,52 @@
                     "description": "Resource classifiers to use as rules when matching against dialed numbers",
                     "type": "object"
                 },
+                "custom_channel_vars": {
+                    "anyOf": [
+                        {
+                            "$ref": "custom_channel_vars"
+                        },
+                        {
+                            "properties": {
+                                "in": {
+                                    "$ref": "custom_channel_vars",
+                                    "description": "Custom Channel Vars to be applied to calls inbound to Kazoo from the endpoint"
+                                },
+                                "out": {
+                                    "$ref": "custom_channel_vars",
+                                    "description": "Custom Channel Vars to be applied to calls outbound from Kazoo to the endpoint"
+                                }
+                            }
+                        }
+                    ],
+                    "description": "A property list of C hannel Vars",
+                    "type": "object"
+                },
+                "custom_sip_headers": {
+                    "anyOf": [
+                        {
+                            "$ref": "custom_sip_headers"
+                        },
+                        {
+                            "properties": {
+                                "in": {
+                                    "$ref": "custom_sip_headers",
+                                    "description": "Custom SIP Headers to be applied to calls inbound to Kazoo from the endpoint"
+                                },
+                                "out": {
+                                    "$ref": "custom_sip_headers",
+                                    "description": "Custom SIP Headers to be applied to calls outbound from Kazoo to the endpoint"
+                                }
+                            }
+                        }
+                    ],
+                    "description": "A property list of SIP headers",
+                    "type": "object"
+                },
+                "custom_sip_interface": {
+                    "description": "The name of a custom SIP interface",
+                    "type": "string"
+                },
                 "emergency": {
                     "default": false,
                     "description": "Determines if the resource represents emergency services",
@@ -10392,6 +10442,27 @@
                                 },
                                 "type": "array",
                                 "uniqueItems": true
+                            },
+                            "custom_channel_vars": {
+                                "anyOf": [
+                                    {
+                                        "$ref": "custom_channel_vars"
+                                    },
+                                    {
+                                        "properties": {
+                                            "in": {
+                                                "$ref": "custom_channel_vars",
+                                                "description": "Custom Channel Vars to be applied to calls inbound to Kazoo from the endpoint"
+                                            },
+                                            "out": {
+                                                "$ref": "custom_channel_vars",
+                                                "description": "Custom Channel Vars to be applied to calls outbound from Kazoo to the endpoint"
+                                            }
+                                        }
+                                    }
+                                ],
+                                "description": "A property list of Channel Vars",
+                                "type": "object"
                             },
                             "custom_sip_headers": {
                                 "anyOf": [
