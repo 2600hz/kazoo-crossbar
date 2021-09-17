@@ -4882,6 +4882,21 @@
           - auth
         'type': object
       'type': array
+'custom_channel_vars':
+  'additionalProperties': false
+  'description': Custom Channel Vars applied to an INVITE
+  'type': object
+  'x-patternProperties':
+    '^[a-zA-z0-9_\-]+$':
+      'oneOf':
+        - 'description': The Custom Channel Var to add
+          'type': string
+        - 'description': The Custom Channel Var to add
+          'type': boolean
+        - 'description': The Custom Channel Var to add
+          'type': integer
+        - 'description': The Custom Channel Var to add
+          'type': object
 'custom_sip_headers':
   'additionalProperties': false
   'description': Custom SIP headers applied to an INVITE
@@ -8080,6 +8095,37 @@
               'minimum': 0
               'type': integer
           'type': object
+    'custom_channel_vars':
+      'anyOf':
+        - '$ref': '#/custom_channel_vars'
+        - 'properties':
+            'in':
+              '$ref': '#/custom_channel_vars'
+              'description': |-
+                Custom Channel Vars to be applied to calls inbound to Kazoo from the endpoint
+            'out':
+              '$ref': '#/custom_channel_vars'
+              'description': |-
+                Custom Channel Vars to be applied to calls outbound from Kazoo to the endpoint
+      'description': A property list of C hannel Vars
+      'type': object
+    'custom_sip_headers':
+      'anyOf':
+        - '$ref': '#/custom_sip_headers'
+        - 'properties':
+            'in':
+              '$ref': '#/custom_sip_headers'
+              'description': |-
+                Custom SIP Headers to be applied to calls inbound to Kazoo from the endpoint
+            'out':
+              '$ref': '#/custom_sip_headers'
+              'description': |-
+                Custom SIP Headers to be applied to calls outbound from Kazoo to the endpoint
+      'description': A property list of SIP headers
+      'type': object
+    'custom_sip_interface':
+      'description': The name of a custom SIP interface
+      'type': string
     'emergency':
       'default': false
       'description': Determines if the resource represents emergency services
@@ -8169,6 +8215,20 @@
               'type': string
             'type': array
             'uniqueItems': true
+          'custom_channel_vars':
+            'anyOf':
+              - '$ref': '#/custom_channel_vars'
+              - 'properties':
+                  'in':
+                    '$ref': '#/custom_channel_vars'
+                    'description': |-
+                      Custom Channel Vars to be applied to calls inbound to Kazoo from the endpoint
+                  'out':
+                    '$ref': '#/custom_channel_vars'
+                    'description': |-
+                      Custom Channel Vars to be applied to calls outbound from Kazoo to the endpoint
+            'description': A property list of Channel Vars
+            'type': object
           'custom_sip_headers':
             'anyOf':
               - '$ref': '#/custom_sip_headers'
