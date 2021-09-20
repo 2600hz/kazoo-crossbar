@@ -4957,6 +4957,8 @@
       '$ref': '#/call_failover'
     'call_forward':
       '$ref': '#/call_forward'
+    'call_recording':
+      '$ref': '#/call_recording'
     'call_restriction':
       'additionalProperties':
         'properties':

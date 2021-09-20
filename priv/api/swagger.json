@@ -6216,6 +6216,9 @@
                 "call_forward": {
                     "$ref": "#/definitions/call_forward"
                 },
+                "call_recording": {
+                    "$ref": "#/definitions/call_recording"
+                },
                 "call_restriction": {
                     "additionalProperties": {
                         "properties": {

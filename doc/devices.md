@@ -15,6 +15,7 @@ Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `call_failover` | The device call failover parameters, to replace the device with an extension/phone number when device is offline. | [#/definitions/call_failover](#call_failover) |   | `false` |  
 `call_forward` | The device call forward parameters | [#/definitions/call_forward](#call_forward) |   | `false` |  
+`call_recording` | endpoint recording settings | [#/definitions/call_recording](#call_recording) |   | `false` |  
 `call_restriction` | Device level call restrictions for each available number classification | `object()` | `{}` | `false` |  
 `call_waiting` | Parameters for server-side call waiting | [#/definitions/call_waiting](#call_waiting) |   | `false` |  
 `caller_id` | The device caller ID parameters | [#/definitions/caller_id](#caller_id) |   | `false` |  
@@ -112,6 +113,41 @@ Key | Description | Type | Default | Required | Support Level
 `number` | The number to forward calls to | `string(0..35)` |   | `false` | `supported`
 `require_keypress` | Determines if the callee is prompted to press 1 to accept the call | `boolean()` | `true` | `false` | `supported`
 `substitute` | Determines if the call forwarding replaces the device | `boolean()` | `true` | `false` | `supported`
+
+### call_recording
+
+endpoint recording settings
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`any` | settings for any calls to/from the endpoint | [#/definitions/call_recording.source](#call_recordingsource) |   | `false` |  
+`inbound` | settings for inbound calls to the endpoint | [#/definitions/call_recording.source](#call_recordingsource) |   | `false` |  
+`outbound` | settings for outbound calls from the endpoint | [#/definitions/call_recording.source](#call_recordingsource) |   | `false` |  
+
+### call_recording.parameters
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`enabled` | is recording enabled | `boolean()` |   | `false` |  
+`format` | What format to store the recording on disk | `string('mp3' | 'wav')` |   | `false` |  
+`record_min_sec` | The minimum length, in seconds, the recording must be to be considered successful. Otherwise it is deleted | `integer()` |   | `false` |  
+`record_on_answer` | Recording should start on answer | `boolean()` |   | `false` |  
+`record_on_bridge` | Recording should start on bridge | `boolean()` |   | `false` |  
+`record_sample_rate` | What sampling rate to use on the recording | `integer()` |   | `false` |  
+`should_record_feature_calls` | Toggles whether to start a recording for calls to feature codes | `boolean()` | `true` | `false` |  
+`time_limit` | Time limit, in seconds, for the recording | `integer()` |   | `false` |  
+`url` | The URL to use when sending the recording for storage | `string()` |   | `false` |  
+
+### call_recording.source
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`any` | settings for calls from any network | [#/definitions/call_recording.parameters](#call_recordingparameters) |   | `false` |  
+`offnet` | settings for calls from offnet networks | [#/definitions/call_recording.parameters](#call_recordingparameters) |   | `false` |  
+`onnet` | settings for calls from onnet networks | [#/definitions/call_recording.parameters](#call_recordingparameters) |   | `false` |  
 
 ### call_waiting
 
