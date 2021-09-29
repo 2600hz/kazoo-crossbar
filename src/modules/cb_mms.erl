@@ -21,8 +21,6 @@
 
 -include("crossbar.hrl").
 
--type mime_tuple() :: mimemail:mimetuple().
-
 -define(CB_LIST_ALL, <<"mms/crossbar_listing">>).
 -define(CB_LIST_BY_DEVICE, <<"mms/listing_by_device">>).
 -define(CB_LIST_BY_OWNERID, <<"mms/listing_by_owner">>).
@@ -318,7 +316,7 @@ body_is_mime_encoded(Context) ->
             try mimemail:decode(Body) of
                 {_Type, _SubType, _Headers, _Parameters, _Body} ->
                     KVs = [{<<"Body">>, Body}
-                          ,{<<"body">>, null}
+                          ,{<<"body">>, 'null'}
                           ],
                     cb_context:set_doc(Context, kz_json:set_values(KVs, cb_context:doc(Context)))
             catch
@@ -341,11 +339,11 @@ body_from_files(Context) ->
 -spec body_from_files(cb_context:context(), req_files()) -> cb_context:context().
 body_from_files(Context, Files) ->
     Parts = [mimepart_from_file(File)|| File <- Files],
-    Encoded = mimemail:encode_part({<<"multipart">>, <<"related">>, [], [], Parts}),
+    Encoded = mimemail:encode_part({<<"multipart">>, <<"related">>, [], #{}, Parts}),
     Body = kz_binary:join(Encoded, <<"\r\n">>),
     cb_context:set_doc(Context, kz_im:set_body(cb_context:doc(Context), Body)).
 
--spec mimepart_from_file(req_file()) -> mime_tuple().
+-spec mimepart_from_file(req_file()) -> mimemail:mimetuple().
 mimepart_from_file({Filename, FileJObj}) ->
     ContentType = kz_json:get_value([<<"headers">>, <<"content_type">>], FileJObj),
     Headers = [{<<"Content-Type">>, <<ContentType/binary, "; name=\"", Filename/binary, "\"">>}
@@ -354,7 +352,7 @@ mimepart_from_file({Filename, FileJObj}) ->
               ],
     Content = kz_json:get_value(<<"contents">>, FileJObj),
     [Type, SubType] = binary:split(ContentType, <<"/">>),
-    {Type, SubType, Headers, [], Content}.
+    {Type, SubType, Headers, #{}, Content}.
 
 -spec account_is_enabled(cb_context:context()) -> cb_context:context().
 account_is_enabled(Context) ->
