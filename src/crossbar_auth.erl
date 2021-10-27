@@ -78,15 +78,16 @@ create_auth_token(Context, Method, JObj) ->
     AuthConfig = get_account_config(AccountId),
     Expiration = token_auth_expiry(Method, AuthConfig),
 
-    Claims = props:filter_undefined(
-               [{<<"account_id">>, AccountId}
-               ,{<<"owner_id">>, OwnerId}
-               ,{<<"as">>, kz_json:get_value(<<"as">>, Data)}
-               ,{<<"method">>, Method}
-               ,{<<"exp">>, Expiration}
-               ,{<<"mfa_resp">>, kz_json:get_ne_value(<<"multi_factor_response">>, Data)}
-               | kz_json:to_proplist(kz_json:get_value(<<"Claims">>, JObj, kz_json:new()))
-               ]),
+    ReqClaims = kz_json:to_proplist(kz_json:get_value(<<"Claims">>, JObj, kz_json:new())),
+    Claims = props:set_values([{<<"account_id">>, AccountId}
+                              ,{<<"owner_id">>, OwnerId}
+                              ,{<<"as">>, kz_json:get_value(<<"as">>, Data)}
+                              ,{<<"method">>, Method}
+                              ,{<<"exp">>, Expiration}
+                              ,{<<"mfa_resp">>, kz_json:get_ne_value(<<"multi_factor_response">>, Data)}
+                              ]
+                             ,ReqClaims
+                             ),
 
     IsMultiFactor = is_multi_factor_enabled(Context, Claims, AuthConfig),
 
