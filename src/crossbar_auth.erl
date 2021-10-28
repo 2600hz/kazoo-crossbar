@@ -80,8 +80,6 @@ create_auth_token(Context, Method, JObj) ->
 
     ReqClaims = kz_json:to_proplist(kz_json:get_json_value(<<"Claims">>, JObj, kz_json:new())),
     AdditionalClaims = props:filter_undefined([{<<"account_id">>, AccountId}
-                                              ,{<<"owner_id">>, OwnerId}
-                                              ,{<<"as">>, kz_json:get_value(<<"as">>, Data)}
                                               ,{<<"method">>, Method}
                                               ,{<<"exp">>, Expiration}
                                               ,{<<"mfa_resp">>, kz_json:get_ne_value(<<"multi_factor_response">>, Data)}
