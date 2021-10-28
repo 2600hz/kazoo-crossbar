@@ -84,7 +84,7 @@ create_auth_token(Context, Method, JObj) ->
                                               ,{<<"exp">>, Expiration}
                                               ,{<<"mfa_resp">>, kz_json:get_ne_value(<<"multi_factor_response">>, Data)}
                                               ]),
-    Claims = props:set_values(ReqClaims, AdditionalClaims),
+    Claims = props:set_values(AdditionalClaims, ReqClaims),
 
     IsMultiFactor = is_multi_factor_enabled(Context, Claims, AuthConfig),
 
