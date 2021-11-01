@@ -36,7 +36,6 @@
 
 -define(VCARD, <<"vcard">>).
 -define(PHOTO, <<"photo">>).
--define(AVATAR_PROPERTY, <<"has_avatar">>).
 
 %%%=============================================================================
 %%% API
@@ -603,12 +602,5 @@ set_org(JObj, Context) ->
 -spec add_has_avatar(cb_context:context()) -> cb_context:context().
 add_has_avatar(Context) ->
     RespData = cb_context:resp_data(Context),
-    PhotoAttachment = kz_doc:attachment(cb_context:doc(Context), ?PHOTO),
-    RespData1 = set_has_avatar(PhotoAttachment, RespData),
+    RespData1 = kzd_users:set_avatar(RespData, kzd_users:avatar(cb_context:doc(Context))),
     cb_context:set_resp_data(Context, RespData1).
-
--spec set_has_avatar(kz_json:object() | 'undefined', kz_json:object()) -> kz_json:object().
-set_has_avatar('undefined', RespData) ->
-    kz_json:set_value(?AVATAR_PROPERTY, 'false', RespData);
-set_has_avatar(_Photo, RespData) ->
-    kz_json:set_value(?AVATAR_PROPERTY, 'true', RespData).
