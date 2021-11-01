@@ -78,15 +78,13 @@ create_auth_token(Context, Method, JObj) ->
     AuthConfig = get_account_config(AccountId),
     Expiration = token_auth_expiry(Method, AuthConfig),
 
-    Claims = props:filter_undefined(
-               [{<<"account_id">>, AccountId}
-               ,{<<"owner_id">>, OwnerId}
-               ,{<<"as">>, kz_json:get_value(<<"as">>, Data)}
-               ,{<<"method">>, Method}
-               ,{<<"exp">>, Expiration}
-               ,{<<"mfa_resp">>, kz_json:get_ne_value(<<"multi_factor_response">>, Data)}
-               | kz_json:to_proplist(kz_json:get_value(<<"Claims">>, JObj, kz_json:new()))
-               ]),
+    ReqClaims = kz_json:to_proplist(kz_json:get_json_value(<<"Claims">>, JObj, kz_json:new())),
+    AdditionalClaims = props:filter_undefined([{<<"account_id">>, AccountId}
+                                              ,{<<"method">>, Method}
+                                              ,{<<"exp">>, Expiration}
+                                              ,{<<"mfa_resp">>, kz_json:get_ne_value(<<"multi_factor_response">>, Data)}
+                                              ]),
+    Claims = props:set_values(AdditionalClaims, ReqClaims),
 
     IsMultiFactor = is_multi_factor_enabled(Context, Claims, AuthConfig),
 
@@ -322,11 +320,11 @@ master_account_id() ->
 log_success_auth(AuthModule, AuthType, Reason, Context) ->
     log_success_auth(AuthModule, AuthType, Reason, Context, 'undefined', 'undefined').
 
--spec log_success_auth(atom() | kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), cb_context:context(), kz_term:api_binary()) -> 'ok'.
+-spec log_success_auth(atom() | kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), cb_context:context(), kz_term:api_ne_binary()) -> 'ok'.
 log_success_auth(AuthModule, AuthType, Reason, Context, AccountId) ->
     log_success_auth(AuthModule, AuthType, Reason, Context, AccountId, 'undefined').
 
--spec log_success_auth(atom() | kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), cb_context:context(), kz_term:api_binary(), kz_term:api_object()) -> 'ok'.
+-spec log_success_auth(atom() | kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), cb_context:context(), kz_term:api_ne_binary(), kz_term:api_object()) -> 'ok'.
 log_success_auth(AuthModule, AuthType, Reason, Context, 'undefined', AuthConfig) ->
     case cb_context:account_id(Context) of
         'undefined' -> 'ok';
@@ -354,7 +352,7 @@ log_failed_auth(AuthModule, AuthType, Reason, Context) ->
 log_failed_auth(AuthModule, AuthType, Reason, Context, AccountId) ->
     log_failed_auth(AuthModule, AuthType, Reason, Context, AccountId, 'undefined').
 
--spec log_failed_auth(atom() | kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), cb_context:context(), kz_term:api_binary(), kz_term:api_object()) -> 'ok'.
+-spec log_failed_auth(atom() | kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), cb_context:context(), kz_term:api_ne_binary(), kz_term:api_object()) -> 'ok'.
 log_failed_auth(AuthModule, AuthType, Reason, Context, 'undefined', AuthConfig) ->
     case cb_context:account_id(Context) of
         'undefined' -> 'ok';
@@ -376,7 +374,7 @@ is_log_type_enabled(<<"failed">>, Method, AuthConfig) ->
 is_log_type_enabled(<<"success">>, Method, AuthConfig) ->
     kz_json:is_true(method_config_path(Method, <<"log_successful_attempts">>), AuthConfig).
 
--spec log_attempts(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) -> 'ok'.
+-spec log_attempts(cb_context:context(), kz_term:api_ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) -> 'ok'.
 log_attempts(Context, AccountId, Method, Status, AuthType, Reason) ->
     Now = kz_time:now_s(),
     MODB = kzs_util:format_account_mod_id(AccountId, Now),
