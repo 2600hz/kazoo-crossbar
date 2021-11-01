@@ -60,8 +60,6 @@
                   ,fun add_pvt_alphanum_name/3
                   ,fun rm_read_only/3
                   ]).
--define(PHOTO_PROPERTY, [<<"_attachments">>, <<"photo">>]).
--define(AVATAR_PROPERTY, <<"has_avatar">>).
 
 -type doc_normalizer_fun() :: fun((kz_json:object()) -> kz_json:object()).
 -type load_option() :: {?OPTION_EXPECTED_TYPE, kz_term:ne_binary()} |
@@ -116,7 +114,7 @@ load(DocId, Context, Options, _RespStatus) when is_binary(DocId) ->
             case check_document_type(Context, JObj, Options) of
                 'true' ->
                     JObj1 = maybe_normalize_doc(JObj, props:get_value('doc_normalizer', Options)),
-                    handle_successful_load(Context, has_avatar(JObj1), Options);
+                    handle_successful_load(Context, JObj1, Options);
                 'false' ->
                     ErrorCause = kz_json:from_list([{<<"cause">>, DocId}]),
                     cb_context:add_system_error('bad_identifier', ErrorCause, Context)
@@ -1001,20 +999,3 @@ extract_included_docs_fold(JObj, {Docs, Context}) ->
         'true' ->
             {[Doc|Docs], Context}
     end.
-
-%%------------------------------------------------------------------------------
-%% @doc This function validate if user's document has a photo, if it has, it
-%% will set a new property as avatar = true or false otherwise
-%% @end
-%%------------------------------------------------------------------------------
--spec has_avatar(kz_json:object()) -> kz_json:object().
-has_avatar(JObj) ->
-    Photo = kz_json:get_ne_binary_value(?PHOTO_PROPERTY, JObj),
-    has_avatar(Photo, JObj).
-
--spec has_avatar(kz_json:object() | 'undefined', kz_json:object()) -> kz_json:object().
-has_avatar('undefined', JObj) ->
-    kz_json:set_value(?AVATAR_PROPERTY, 'false', JObj);
-has_avatar(_Photo, JObj) ->
-    kz_json:set_value(?AVATAR_PROPERTY, 'true', JObj).
-
