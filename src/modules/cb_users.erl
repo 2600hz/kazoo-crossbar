@@ -602,5 +602,5 @@ set_org(JObj, Context) ->
 -spec add_has_avatar(cb_context:context()) -> cb_context:context().
 add_has_avatar(Context) ->
     RespData = cb_context:resp_data(Context),
-    RespData1 = kzd_users:set_avatar(RespData, kzd_users:avatar(cb_context:doc(Context))),
+    RespData1 = kzd_users:set_has_avatar(RespData, kzd_users:has_avatar(cb_context:doc(Context))),
     cb_context:set_resp_data(Context, RespData1).

@@ -622,7 +622,7 @@ get_user_info(AccountId, UserId) ->
                       ,{fun(J, V) -> kz_json:set_value(<<"full_name">>, V, J) end, kzd_users:full_name(Doc)}
                       ,{fun kzd_users:set_username/2, kzd_users:username(Doc)}
                       ,{fun kzd_users:set_priv_level/2, kzd_users:priv_level(Doc)}
-                      ,{fun kzd_users:set_avatar/2, kzd_users:avatar(Doc)}
+                      ,{fun kzd_users:set_has_avatar/2, kzd_users:has_avatar(Doc)}
                       ],
             kz_doc:setters(Setters);
         {'error', _} -> 'undefined'
