@@ -597,6 +597,7 @@ response_auth(JObj, AccountId, UserId) ->
 populate_resp(JObj, 'undefined', _UserId) -> JObj;
 populate_resp(JObj, AccountId, UserId) ->
     Language = get_language(AccountId, UserId),
+    UserInfo = get_user_info(AccountId, UserId),
     Props = props:filter_undefined(
               [{<<"apps">>, load_apps(AccountId, UserId, Language)}
               ,{<<"language">>, Language}
@@ -607,8 +608,25 @@ populate_resp(JObj, AccountId, UserId) ->
               ,{<<"is_master_account">>, is_master_account(AccountId)}
               ,{<<"capabilities">>, get_capabilities()}
               ,{<<"ui_config">>, get_ui_config()}
+              ,{<<"user_info">>, UserInfo}
               ]),
     kz_json:set_values(Props, JObj).
+
+-spec get_user_info(kz_term:ne_binary(), kz_term:api_ne_binary()) -> kz_term:api_object().
+get_user_info(AccountId, UserId) ->
+    case kzd_users:fetch(AccountId, UserId) of
+        {'ok', Doc} ->
+            Setters = [{fun kzd_users:set_first_name/2, kzd_users:first_name(Doc)}
+                      ,{fun kzd_users:set_last_name/2, kzd_users:last_name(Doc)}
+                      ,{fun kzd_users:set_email/2, kzd_users:email(Doc)}
+                      ,{fun(J, V) -> kz_json:set_value(<<"full_name">>, V, J) end, kzd_users:full_name(Doc)}
+                      ,{fun kzd_users:set_username/2, kzd_users:username(Doc)}
+                      ,{fun kzd_users:set_priv_level/2, kzd_users:priv_level(Doc)}
+                      ,{fun kzd_users:set_has_avatar/2, kzd_users:has_avatar(Doc)}
+                      ],
+            kz_doc:setters(Setters);
+        {'error', _} -> 'undefined'
+    end.
 
 -spec get_ui_config() -> kz_json:object().
 get_ui_config() ->

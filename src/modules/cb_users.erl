@@ -504,7 +504,11 @@ load_users_summary(Context) ->
 %%------------------------------------------------------------------------------
 -spec load_user(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
 load_user(UserId, Context) ->
-    crossbar_doc:load(UserId, Context, ?TYPE_CHECK_OPTION(kzd_users:type())).
+    Context1 = crossbar_doc:load(UserId, Context, ?TYPE_CHECK_OPTION(kzd_users:type())),
+    case cb_context:resp_status(Context1) of
+        'success' -> add_has_avatar(Context1);
+        _ -> Context1
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc Validate an update request.
@@ -589,3 +593,14 @@ set_org(JObj, Context) ->
         'undefined' -> JObj;
         Val -> kz_json:set_value(<<"org">>, Val, JObj)
     end.
+
+%%------------------------------------------------------------------------------
+%% @doc This function validate if user's document has a photo, if it has, it
+%% will set a new property as avatar = true or false
+%% @end
+%%------------------------------------------------------------------------------
+-spec add_has_avatar(cb_context:context()) -> cb_context:context().
+add_has_avatar(Context) ->
+    RespData = cb_context:resp_data(Context),
+    RespData1 = kzd_users:set_has_avatar(RespData, kzd_users:has_avatar(cb_context:doc(Context))),
+    cb_context:set_resp_data(Context, RespData1).

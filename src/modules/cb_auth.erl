@@ -255,7 +255,7 @@ validate_action(Context, _Action, _Method) ->
 -spec validate_path(cb_context:context(), path_token(), http_method()) -> cb_context:context().
 %% validating /auth/authorize
 validate_path(Context, ?AUTHORIZE_PATH, ?HTTP_PUT) ->
-    cb_context:validate_request_data(<<"auth.authorize">>, Context, fun maybe_authorize/1);
+    maybe_authorize(cb_context:set_doc(Context, kz_json:get_ne_binary_value(<<"token">>, cb_context:req_data(Context))));
 
 %% validating /auth/callback
 validate_path(Context, ?CALLBACK_PATH, ?HTTP_PUT) ->
