@@ -76,7 +76,7 @@ authorize(Context, _Id, _Node) -> authorize(Context).
 
 -spec allowed_methods() -> http_methods().
 allowed_methods() ->
-    [?HTTP_GET].
+    [?HTTP_GET, ?HTTP_PUT].
 
 -spec allowed_methods(path_token()) -> http_methods().
 allowed_methods(_SystemConfigId) ->
