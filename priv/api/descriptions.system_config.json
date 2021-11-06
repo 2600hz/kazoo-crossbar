@@ -151,6 +151,7 @@
     "crossbar.conferences.invite_link_allowed_scope": "Scope to use when generating JWT token for conference invite link, default: 'crossbar:conference_join'",
     "crossbar.conferences.invite_link_whitelabel_domain": "The domain to use when generating conference invite link",
     "crossbar.contact_list.default_includes": "crossbar.contact_list default includes",
+    "crossbar.custom_route_modules": "Defines a list of single route URL segment for short circuiting how crossbar parses the URL. When crossbar sees this in one of the segment, it stops processing and adds any remaining segments as params. This segment name should be a Crossbar API module as usual.",
     "crossbar.default_allow_anonymous_quickcalls": "crossbar default allow anonymous quickcalls",
     "crossbar.default_language": "crossbar default language",
     "crossbar.devices.allow_aggregates": "crossbar.devices allow aggregates",

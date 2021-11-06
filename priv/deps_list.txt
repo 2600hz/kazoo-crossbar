@@ -21,7 +21,7 @@ please see LICENSE-MPL-RabbitMQ. For the ASL, please see LICENSE-APACHE2. |
 | erlang_localtime        | https://github.com/2600hz/erlang-localtime/blob/master/LICENSE |
 | erlydtl                 | https://github.com/erlydtl/erlydtl/blob/master/LICENSE |
 | ersip                   | https://github.com/2600hz/erlang-ersip/blob/master/LICENSE |
-| espandsp                | git@github.com:2600hz/erlang-espandsp/blob/master/LICENSE |
+| espandsp                | https://github.com/2600hz/erlang-espandsp/blob/master/LICENSE |
 | fcm                     | https://github.com/2600hz/erlang-fcm.git/blob/master/LICENSE |
 | folsom                  | https://github.com/2600hz/erlang-folsom/blob/master/LICENSE |
 | forms                   | The MIT License (MIT) |

@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2021, 2600Hz
+%%% @copyright (C) 2012-2022, 2600Hz
 %%% @doc Crossbar REST-related functions.
 %%% @author James Aimonetti
 %%% @author Karl Anderson
@@ -35,6 +35,9 @@
         ,finish_request/2
         ,create_push_response/2, create_push_response/3
         ,set_resp_headers/2
+
+        ,is_cb_module/2
+        ,which_cb_module/2
 
          %% Content
         ,create_resp_content/2
@@ -112,6 +115,13 @@
 -define(DEFAULT_JSON_ERROR_MSG, <<"All JSON must be valid">>).
 
 -define(DEFAULT_CSV_FILE_NAME, <<"result.csv">>).
+
+-define(DEFAULT_CUSTOM_ROUTES, [<<"schemas">>
+                               ,<<"braintree">>
+                               ,<<"system_configs">>
+                               ,<<"configs">>
+                               ]
+       ).
 
 -type stop_return() :: {'stop', cowboy_req:req(), cb_context:context()}.
 -type resp_file() :: {'sendfile',  non_neg_integer(),  non_neg_integer(), file:name_all()}.
@@ -778,14 +788,6 @@ parse_path_tokens(Context, Tokens) ->
           {'stop', cb_context:context()}.
 parse_path_tokens(_Context, [], Events) -> Events;
 parse_path_tokens(_Context, [<<>>], Events) -> Events;
-parse_path_tokens(_Context, [<<"schemas">>=Mod|T], Events) ->
-    [{Mod, T} | Events];
-parse_path_tokens(_Context, [<<"braintree">>=Mod|T], Events) ->
-    [{Mod, T} | Events];
-parse_path_tokens(_Context, [<<"system_configs">>=Mod|T], Events) ->
-    [{Mod, T} | Events];
-parse_path_tokens(_Context, [<<"configs">>=Mod|T], Events) ->
-    [{Mod, T} | Events];
 parse_path_tokens(_Context, [<<"scopes">>=Mod|T], Events) ->
     [{Mod, T} | Events];
 parse_path_tokens(_Context, [<<"sup">>=Mod|T], Events) ->
@@ -801,27 +803,57 @@ parse_path_tokens(Context, [<<"account">>|T], Events) ->
     end;
 parse_path_tokens(Context, [Mod|T], Events) ->
     case is_cb_module(Context, Mod) of
-        'false' -> [];
+        'false' ->
+            case is_custom_route_module(Mod) of
+                'true' ->
+                    parse_path_tokens_module(Context, [Mod|T], Events, 'true');
+                'false' ->
+                    []
+            end;
         'true' ->
-            {Params, List2} = lists:splitwith(fun(Elem) -> not is_cb_module(Context, Elem) end, T),
-            parse_path_tokens(Context, List2, [{Mod, Params} | Events])
+            IsCustomRoute = is_custom_route_module(Mod),
+            parse_path_tokens_module(Context, [Mod|T], Events, IsCustomRoute)
     end.
 
--spec is_cb_module(cb_context:context(), kz_term:ne_binary()) -> boolean().
-is_cb_module(Context, Elem) ->
+-spec parse_path_tokens_module(cb_context:context(), kz_json:path(), cb_mods_with_tokens(), boolean()) ->
+          cb_mods_with_tokens() |
+          {'stop', cb_context:context()}.
+parse_path_tokens_module(_Context, [CustomRouteModule | Params], Events, 'true') ->
+    lager:debug("reached to custom route module '~s', passing the remaining path as params", [CustomRouteModule]),
+    [{CustomRouteModule, Params} | Events];
+parse_path_tokens_module(Context, [Module | Token], Events, 'false') ->
+    {Params, List2} = lists:splitwith(fun(Elem) -> not is_cb_module(Context, Elem) end, Token),
+    parse_path_tokens(Context, List2, [{Module, Params} | Events]).
+
+-spec is_custom_route_module(kz_term:ne_binary()) -> boolean().
+is_custom_route_module(Module) ->
+    CustomRouteModules = kapps_config:get_ne_binaries(?CONFIG_CAT, <<"custom_route_modules">>, ?DEFAULT_CUSTOM_ROUTES),
+    lists:member(Module, CustomRouteModules).
+
+-spec which_cb_module(cb_context:context(), kz_term:ne_binary()) -> kz_term:api_ne_binary().
+which_cb_module(Context, Elem) ->
     ApiVersion = cb_context:api_version(Context),
 
     Modules = [<<"cb_", Elem/binary>>
               ,<<"cb_", Elem/binary, "_", ApiVersion/binary>>
               ],
 
-    is_cb_module(Modules).
+    which_cb_module(Modules).
 
--spec is_cb_module(kz_term:ne_binaries()) -> boolean().
-is_cb_module([]) -> 'false';
-is_cb_module([Module|Modules]) ->
-    'true' =:= kz_module:is_exported(Module, 'init', 0)
-        orelse is_cb_module(Modules).
+-spec which_cb_module(kz_term:ne_binaries()) -> kz_term:api_ne_binary().
+which_cb_module([]) -> 'undefined';
+which_cb_module([Module | Modules]) ->
+    case kz_module:is_exported(Module, 'init', 0) of
+        'true' -> Module;
+        'false' -> which_cb_module(Modules)
+    end.
+
+-spec is_cb_module(cb_context:context(), kz_term:ne_binary()) -> boolean().
+is_cb_module(Context, Elem) ->
+    case which_cb_module(Context, Elem) of
+        'undefined' -> 'false';
+        _CbModule -> 'true'
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc This function will find the intersection of the allowed methods
