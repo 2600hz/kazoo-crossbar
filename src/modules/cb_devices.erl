@@ -537,6 +537,7 @@ prepare_provisioner_fields(_DeviceId, Context) ->
     Keys = [<<"combo_keys">>
            ,<<"feature_keys">>
            ],
+
     ReqData = cb_context:req_data(Context),
     JObj = case cb_context:req_value(Context, <<"provision">>) of
                'undefined' -> ReqData;
@@ -544,6 +545,13 @@ prepare_provisioner_fields(_DeviceId, Context) ->
                    NewData = prune_null_provisioner_fields(Keys, Provision),
                    kz_json:set_value(<<"provision">>, NewData, ReqData)
            end,
+
+    JObj1 = kzd_devices:set_provision_endpoint_brand(JObj, kzd_devices:provision_endpoint_brand(JObj)),
+
+    update_req_with_provisioner_fields(Context, ReqData, JObj1).
+
+update_req_with_provisioner_fields(Context, ReqData, JObj) ->
+
     Setters = [{fun cb_context:set_req_data/2, JObj}
               ,{fun cb_context:store/3
                ,'unfiltered_req_data'
