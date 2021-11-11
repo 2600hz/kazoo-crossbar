@@ -9718,6 +9718,60 @@
             },
             "type": "object"
         },
+        "presence": {
+            "description": "Change and request presence status",
+            "properties": {
+                "action": {
+                    "$ref": "#/definitions/presence.action"
+                },
+                "reset": {
+                    "description": "Deprecated way of running reset action",
+                    "type": "boolean"
+                },
+                "state": {
+                    "$ref": "#/definitions/presence.state"
+                }
+            },
+            "required": [
+                "action"
+            ],
+            "type": "object"
+        },
+        "presence.action": {
+            "description": "Action to be executed on this request",
+            "properties": {
+                "action": {
+                    "description": "Action to be executed on this request",
+                    "enum": [
+                        "set",
+                        "reset"
+                    ],
+                    "type": "string"
+                }
+            },
+            "required": [
+                "action"
+            ],
+            "type": "object"
+        },
+        "presence.state": {
+            "description": "Desired state to be set on this request",
+            "properties": {
+                "state": {
+                    "description": "Desired state to be set on this request",
+                    "enum": [
+                        "early",
+                        "confirmed",
+                        "terminated"
+                    ],
+                    "type": "string"
+                }
+            },
+            "required": [
+                "state"
+            ],
+            "type": "object"
+        },
         "profile": {
             "description": "Defines user extended properties",
             "properties": {
@@ -27652,6 +27706,14 @@
             "post": {
                 "parameters": [
                     {
+                        "in": "body",
+                        "name": "presence",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/presence"
+                        }
+                    },
+                    {
                         "$ref": "#/parameters/auth_token_header"
                     },
                     {
@@ -27706,6 +27768,14 @@
             },
             "post": {
                 "parameters": [
+                    {
+                        "in": "body",
+                        "name": "presence",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/presence"
+                        }
+                    },
                     {
                         "$ref": "#/parameters/auth_token_header"
                     },

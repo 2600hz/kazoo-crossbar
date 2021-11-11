@@ -7604,6 +7604,47 @@
       'description': Gregorian timestamp at which to perform the porting
       'type': integer
   'type': object
+'presence':
+  'description': Change and request presence status
+  'properties':
+    'action':
+      '$ref': '#/presence.action'
+    'reset':
+      'description': Deprecated way of running reset action
+      'type': boolean
+      'x-support_level': deprecated
+    'state':
+      '$ref': '#/presence.state'
+  'required':
+    - action
+  'type': object
+'presence.action':
+  'description': Action to be executed on this request
+  'properties':
+    'action':
+      'description': Action to be executed on this request
+      'enum':
+        - set
+        - reset
+      'type': string
+      'x-support_level': supported
+  'required':
+    - action
+  'type': object
+'presence.state':
+  'description': Desired state to be set on this request
+  'properties':
+    'state':
+      'description': Desired state to be set on this request
+      'enum':
+        - early
+        - confirmed
+        - terminated
+      'type': string
+      'x-support_level': supported
+  'required':
+    - state
+  'type': object
 'profile':
   'description': Defines user extended properties
   'properties':

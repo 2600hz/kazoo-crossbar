@@ -151,7 +151,7 @@ validate(Context) ->
 validate(Context, ?MATCH_REPORT_PREFIX(Report)) ->
     load_report(Context, Report);
 validate(Context, Extension) ->
-    search_detail(Context, Extension).
+    validate_thing(Context, Extension, cb_context:req_verb(Context)).
 
 -spec validate_thing(cb_context:context(), http_method()) ->
           cb_context:context().
@@ -159,6 +159,11 @@ validate_thing(Context, ?HTTP_GET) ->
     search_summary(Context);
 validate_thing(Context, ?HTTP_POST) ->
     validate_presence_thing(Context).
+
+-spec validate_thing(cb_context:context(), kz_term:ne_binary(), http_method()) ->
+          cb_context:context().
+validate_thing(Context, Extension, ?HTTP_POST) ->
+    validate_presence_thing(Context, Extension).
 
 -spec search_summary(cb_context:context()) -> cb_context:context().
 search_summary(Context) ->
@@ -237,7 +242,7 @@ extract_subscriptions(JObjs, Fun) ->
 validate_presence_thing(Context) ->
     validate_presence_thing(Context, cb_context:req_nouns(Context)).
 
--spec validate_presence_thing(cb_context:context(), req_nouns()) -> cb_context:context().
+-spec validate_presence_thing(cb_context:context(), req_nouns() | kz_term:ne_binary()) -> cb_context:context().
 validate_presence_thing(Context, [{<<"presence">>, _}
                                  ,{<<"devices">>, [DeviceId]}
                                  ,{<<"accounts">>, [_AccountId]}
@@ -248,7 +253,17 @@ validate_presence_thing(Context, [{<<"presence">>, _}
                                  ,{<<"accounts">>, [_AccountId]}
                                  ]) ->
     validate_action(load_presence_for_user(Context, UserId));
+validate_presence_thing(Context, <<Extension/binary>>) ->
+    validate_presence_thing(Context, Extension, cb_context:req_nouns(Context));
 validate_presence_thing(Context, _ReqNouns) ->
+    crossbar_util:response_faulty_request(Context).
+
+-spec validate_presence_thing(cb_context:context(), kz_term:ne_binary(), req_nouns()) -> cb_context:context().
+validate_presence_thing(Context, _Extension, [{<<"presence">>, [Extension]}
+                                             ,{<<"accounts">>, [_AccountId]}
+                                             ]) ->
+    validate_action(search_detail(Context, Extension));
+validate_presence_thing(Context, _Extension, _ReqNouns) ->
     crossbar_util:response_faulty_request(Context).
 
 -spec load_device(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
@@ -281,50 +296,25 @@ load_user_devices(Context) ->
 
 -spec validate_action(cb_context:context()) -> cb_context:context().
 validate_action(Context) ->
-    case cb_context:resp_status(Context) of
-        'success' -> validate_action(Context, cb_context:req_data(Context));
-        _ -> Context
+    Context1 = cb_context:validate_request_data(<<"presence.action">>, Context),
+    case cb_context:resp_status(Context1) of
+        'success' -> validate_action(Context1, cb_context:req_data(Context1));
+        _ -> Context1
     end.
+
+-spec validate_action(cb_context:context(), kz_json:json_term()) -> cb_context:context().
 validate_action(Context, ReqData) ->
     DeprecatedReset = case kz_json:get_value(<<"reset">>, ReqData, 'false') of
                           'true' -> <<"reset">>;
                           'false' -> 'undefined'
                       end,
     validate_action(Context, ReqData, kz_json:get_value(<<"action">>, ReqData, DeprecatedReset)).
+
+-spec validate_action(cb_context:context(), kz_json:json_term(), kz_term:api_ne_binary()) -> cb_context:context().
 validate_action(Context, _ReqData, <<"reset">>) ->
     Context;
-validate_action(Context, ReqData, <<"set">>) ->
-    State = kz_json:get_value(<<"state">>, ReqData),
-    case lists:member(State, ?PRESENCE_STATES) of
-        'true' -> Context;
-        'false' -> invalid_state(Context)
-    end;
-validate_action(Context, _ReqData, _InvalidAction) ->
-    invalid_action(Context).
-
--spec invalid_action(cb_context:context()) -> cb_context:context().
-invalid_action(Context) ->
-    cb_context:add_validation_error(<<"action">>
-                                   ,<<"invalid">>
-                                   ,kz_json:from_list(
-                                      [{<<"message">>, <<"Field must be set to a valid action">>}
-                                      ,{<<"target">>, <<"invalid">>}
-                                      ]
-                                     )
-                                   ,Context
-                                   ).
-
--spec invalid_state(cb_context:context()) -> cb_context:context().
-invalid_state(Context) ->
-    cb_context:add_validation_error(<<"state">>
-                                   ,<<"invalid">>
-                                   ,kz_json:from_list(
-                                      [{<<"message">>, <<"Field must be set to a valid state">>}
-                                      ,{<<"target">>, <<"invalid">>}
-                                      ]
-                                     )
-                                   ,Context
-                                   ).
+validate_action(Context, _ReqData, <<"set">>) ->
+    cb_context:validate_request_data(<<"presence.state">>, Context).
 
 -spec post(cb_context:context()) -> cb_context:context().
 post(Context) ->
@@ -334,9 +324,15 @@ post(Context) ->
 
 -spec post(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 post(Context, Extension) ->
-    _ = collect_report(Context, Extension),
-    publish_presence_reset(Context, Extension),
-    crossbar_util:response_202(<<"reset command sent for extension ", Extension/binary>>, Context).
+    post(Context, Extension, kz_json:get_ne_binary_value(<<"action">>, cb_context:req_data(Context))).
+
+-spec post(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) -> cb_context:context().
+post(Context, Extension, <<"reset">> = Action) ->
+    post_things(Context, Extension, Action);
+post(Context, Extension, <<"set">>) ->
+    State = kz_json:get_ne_binary_value(<<"state">>, cb_context:req_data(Context)),
+    publish_presence_update(Context, Extension, State),
+    crossbar_util:response_202(<<"command sent">>, Context).
 
 -spec post_things(cb_context:context(), kz_json:object() | kz_json:objects(), kz_term:ne_binary()) ->
           cb_context:context().
@@ -371,25 +367,36 @@ publish_presence_reset(Context, PresenceId) ->
           ],
     kz_amqp_worker:cast(API, fun kapi_presence:publish_reset/1).
 
--spec publish_presence_update(cb_context:context(), kz_term:api_binary(), kz_term:ne_binary()) -> 'ok'.
-publish_presence_update(_Context, 'undefined', _PresenceState) -> 'ok';
+-spec publish_presence_update(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) -> 'ok'.
 publish_presence_update(Context, PresenceId, PresenceState) ->
     Realm = cb_context:account_realm(Context),
     AccountDb = cb_context:db_name(Context),
     lager:debug("updating presence for ~s@~s to state ~s", [PresenceId, Realm, PresenceState]),
     %% persist presence setting
-    Update = [{PresenceId, PresenceState}],
+    Update = [{[PresenceId], PresenceState}],
     UpdateOptions = [{'update', Update}],
     {'ok', _} = kz_datamgr:update_doc(AccountDb, ?MANUAL_PRESENCE_DOC, UpdateOptions),
     PresenceString = <<PresenceId/binary, "@", Realm/binary>>,
     kapps_call_command:presence(PresenceState, PresenceString, kz_term:to_hex_binary(crypto:hash('md5', PresenceString))).
 
--spec find_presence_id(kz_json:object()) -> kz_term:api_binary().
+-spec find_presence_id(kz_term:ne_binary() | kz_json:object()) -> kz_term:api_binary().
+find_presence_id(<<Extension/binary>>) ->
+    Extension;
 find_presence_id(JObj) ->
     case kzd_devices:is_device(JObj) of
-        'true' -> kzd_devices:presence_id(JObj);
-        'false' -> kzd_users:presence_id(JObj)
+        'true' ->
+            lager:debug("trying to find ~s device's presence_id", [kz_doc:id(JObj)]),
+            maybe_calculate_device_presence_id(kzd_devices:presence_id(JObj), JObj);
+        'false' ->
+            lager:debug("trying to find ~s user's presence_id", [kz_doc:id(JObj)]),
+            kzd_users:presence_id(JObj)
     end.
+
+-spec maybe_calculate_device_presence_id(kz_term:api_binary(), kz_json:object()) -> kz_term:api_binary().
+maybe_calculate_device_presence_id('undefined', JObj) ->
+    hd(binary:split(kzd_devices:calculate_presence_id(JObj), <<"@">>));
+maybe_calculate_device_presence_id(PresenceId, _JObj) ->
+    PresenceId.
 
 -spec load_report(cb_context:context(), path_token()) -> cb_context:context().
 load_report(Context, Report) ->

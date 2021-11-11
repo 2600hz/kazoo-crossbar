@@ -67,19 +67,30 @@ curl -v -X GET \
 }
 ```
 
-## Reset presence state
-
-Sometimes folks subscribe for parking slots or other values that are not represented in the Kazoo REST API.
+## Extensions
 
 > POST /v2/accounts/{ACCOUNT_ID}/presence/{EXTENSION}
 
 Where `{EXTENSION}` could be `*3101`, `110011`, or whatever other extensions are allowed.
 
+### Post To Reset Presence State
+
+Sometimes folks subscribe for parking slots or other values that are not represented in the Kazoo REST API.
+
 ```shell
 curl -v -X POST \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
-    -d '{"data": {"action": "reset"}' \
-    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/presence/{EXTENSION}
+    -d '{"data": {"action": "reset"}}' \
+    'http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/presence/{EXTENSION}'
+```
+
+### Post To Update Presence State
+
+```shell
+curl -v -X POST \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d '{"data":{"action":"set","state":"{PRESENCE_STATE}"}}' \
+    'http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/presence/{EXTENSION}'
 ```
 
 ## Devices
@@ -119,10 +130,9 @@ curl -v -X POST \
 
 ### Post To Update Presence State
 
-
 ```shell
 curl -v -X POST \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
-    -d '{"data":{"action":"reset","state":"{PRESENCE_STATE}"}}' \
+    -d '{"data":{"action":"set","state":"{PRESENCE_STATE}"}}' \
     'http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/presence'
 ```
