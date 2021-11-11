@@ -547,6 +547,7 @@ maybe_prepare_provisioner_fields(Context, ReqData, 'undefined') ->
 maybe_prepare_provisioner_fields(Context, ReqData, _Provision) ->
     Funs = [{fun kzd_devices:provision_combo_keys/1, fun kzd_devices:set_provision_combo_keys/2}
            ,{fun kzd_devices:provision_feature_keys/1, fun kzd_devices:set_provision_feature_keys/2}
+           ,{fun kzd_devices:provision_endpoint_brand/1, fun kzd_devices:set_provision_endpoint_brand/2}
            ],
     JObj = lists:foldl(fun prune_null_provisioner_field/2, ReqData, Funs),
     update_req_with_provisioner_fields(Context, ReqData, JObj).
@@ -567,6 +568,8 @@ update_req_with_provisioner_fields(Context, ReqData, JObj) ->
 prune_null_provisioner_field({Getter, Setter}, ReqData) ->
     case Getter(ReqData) of
         'undefined' -> ReqData;
+        <<Value/binary>> ->
+            Setter(ReqData, Value);
         Value ->
             FilteredValue = kz_json:filter(fun filter_null_fields/1, Value),
             Setter(ReqData, FilteredValue)
