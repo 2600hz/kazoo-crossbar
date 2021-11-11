@@ -2,7 +2,35 @@
 
 ## About Presence
 
-## Schema
+#### Schema
+
+Change and request presence status
+
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`action` | Action to be executed on this request | [#/definitions/presence.action](#presenceaction) |   | `true` |  
+`reset` | Deprecated way of running reset action | `boolean()` |   | `false` | `deprecated`
+`state` | Desired state to be set on this request | [#/definitions/presence.state](#presencestate) |   | `false` |  
+
+### presence.action
+
+Action to be executed on this request
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`action` | Action to be executed on this request | `string('set' | 'reset')` |   | `true` | `supported`
+
+### presence.state
+
+Desired state to be set on this request
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`state` | Desired state to be set on this request | `string('early' | 'confirmed' | 'terminated')` |   | `true` | `supported`
 
 
 
