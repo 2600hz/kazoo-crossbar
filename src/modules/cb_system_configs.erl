@@ -25,6 +25,8 @@
 
 -include("crossbar.hrl").
 
+-define(DIALPLANS, <<"dialplans">>).
+
 %%%=============================================================================
 %%% API
 %%%=============================================================================
@@ -140,6 +142,13 @@ validate_document(Context, Id, ?HTTP_GET) ->
 
 validate_document(Context, Id, ?HTTP_PUT) ->
     validate_document(Context, Id, ?HTTP_POST);
+
+validate_document(Context, ?DIALPLANS, ?HTTP_POST) ->
+    Dialplans = cb_context:req_data(Context),
+    [Key] = kz_json:get_keys(Dialplans),
+    Values = kz_json:get_value(Key, Dialplans),
+    _ = kapps_config:set_default(<<"dialplans">>, Key, Values),
+    cb_context:set_resp_data(cb_context:set_resp_status(Context, 'success'), Dialplans);
 
 validate_document(Context, Id, ?HTTP_POST) ->
     RequestData = strip_id(kz_doc:public_fields(cb_context:req_data(Context))),
