@@ -29,12 +29,15 @@ You can specify CAVs in two way:
 ## Schema
 
 Request options (query string in a GET or POST body):
+Call leg is first made to the requesting endpoint (A leg) and then once answered, the other call leg is generated to the destination endpoint (B leg).
 
 Key | Type | Description
 --- | ---- | -----------
 `auto_answer` | `boolean()` | Tells the SIP phone to auto-answer the call, if supported
-`cid-name` | `string()` | Set the caller ID name (defaults to "Device QuickCall")
-`cid-number` | `string()` | Set the caller ID number (defaults to the `{PHONE_NUMBER}`)
+`cid-name` | `string()` | Set the callee ID name that will appear on the B leg device (defaults to the cid name of the A user/device)
+`cid-number` | `string()` | Set the callee ID number that will appear on the B leg device (defaults to the `{PHONE_NUMBER}`/cid-number of the A user/device)
+`caller-id-name` | `string()` | Set the caller ID name that will appear on the A leg device (defaults to "Device QuickCall")
+`caller-id-number` | `string()` | Set the caller ID number that will appear on the A leg device (defaults to the requesting users phone number)
 `custom_application_vars` | `object()` | Custom data to include on the call (and events related to the call)
 `ignore-early-media` | `boolean()` | Toggle whether to ignore [early media](https://freeswitch.org/confluence/display/FREESWITCH/Early+Media)
 `media` | `string('bypass', 'process')` | Toggle whether to go peer-to-peer([bypass](https://freeswitch.org/confluence/display/FREESWITCH/Bypass+Media+Overview) with the RTP
