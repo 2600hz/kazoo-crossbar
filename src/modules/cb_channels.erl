@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2022, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -569,6 +569,7 @@ maybe_move(Context, CallId) ->
                              ,{<<"device_id">>, cb_context:req_value(Context, <<"device_id">>)}
                              ,{<<"dial_strategy">>, cb_context:req_value(Context, <<"dial_strategy">>, <<"simultaneous">>)}
                              ,{<<"owner_id">>, cb_context:req_value(Context, <<"owner_id">>)}
+                             ,{<<"timeout">>, cb_context:req_value(Context, <<"timeout">>)}
                              ]),
 
     API = [{<<"Call-ID">>, CallId}

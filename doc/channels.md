@@ -125,6 +125,7 @@ Key | Description | Type | Default | Required
 `device_id` | Move the call to a specific device | `string()` |   | `false`
 `dial_strategy` | How to ring the endpoints, if multiple | `string()` | `simultaneous` | `false`
 `owner_id` | User ID to use for finding endpoints | `string()` |   | `false`
+`timeout` | Endpoint(s) call leg timeout | `int()` |   | `false`
 
 ### Transfer
 
