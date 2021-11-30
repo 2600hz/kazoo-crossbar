@@ -13590,6 +13590,10 @@
         "system_config.crossbar.getstream": {
             "description": "Schema for crossbar.getstream system_config",
             "properties": {
+                "api_key": {
+                    "description": "crossbar getstream api_key",
+                    "type": "string"
+                },
                 "secret": {
                     "default": "",
                     "description": "crossbar getstream secret",
@@ -18837,6 +18841,18 @@
                     "default": 60000,
                     "description": "webhooks attempt failure expiry in milliseconds",
                     "type": "integer"
+                },
+                "channel_events": {
+                    "default": {
+                        "CHANNEL_ANSWER": "This webhook is triggered when a channel establishes two-way audio, such as a voicemail box or the called party answering",
+                        "CHANNEL_BRIDGE": "This webhook is triggered when two channels are bridged together, such as two users/devices connected together",
+                        "CHANNEL_CREATE": "This webhook is triggered when a new channel is created",
+                        "CHANNEL_DESTROY": "This webhook is triggered when a channel is destroyed, usually as a result of a hangup",
+                        "CHANNEL_HOLD": "This webhook is triggered when an established call gets put on hold",
+                        "CHANNEL_UNHOLD": "This webhook is triggered when an established call gets taken off hold"
+                    },
+                    "description": "webhooks channel_events",
+                    "type": "object"
                 },
                 "connect_timeout_ms": {
                     "default": 10000,
@@ -24849,7 +24865,7 @@
                 }
             }
         },
-        "/accounts/{ACCOUNT_ID}/getstream/token": {
+        "/accounts/{ACCOUNT_ID}/getstream/connect": {
             "put": {
                 "parameters": [
                     {

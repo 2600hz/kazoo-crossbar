@@ -1,7 +1,7 @@
 paths:
-  /accounts/{ACCOUNT_ID}/getstream/token:
+  /accounts/{ACCOUNT_ID}/getstream/connect:
     put:
-      operationId: PutAccountsAccountIdGetstreamToken
+      operationId: PutAccountsAccountIdGetstreamConnect
       parameters:
         - $ref: '../oas3-parameters.yml#/auth_token_header'
         - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'

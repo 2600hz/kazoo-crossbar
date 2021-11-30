@@ -3,6 +3,10 @@
     "_id": "system_config.crossbar.getstream",
     "description": "Schema for crossbar.getstream system_config",
     "properties": {
+        "api_key": {
+            "description": "crossbar getstream api_key",
+            "type": "string"
+        },
         "secret": {
             "default": "",
             "description": "crossbar getstream secret",
