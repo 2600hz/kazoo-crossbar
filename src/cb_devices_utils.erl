@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2020, 2600Hz
+%%% @copyright (C) 2010-2021, 2600Hz
 %%% @doc
 %%% @author Peter Defebvre
 %%%
@@ -13,6 +13,10 @@
 
 -export([is_ip_unique/2]).
 
+-ifdef(TEST).
+-export([extract_ip/3]).
+-endif.
+
 -include("crossbar.hrl").
 
 -define(AUTHZ_ID, <<"authorizing_id">>).
@@ -25,7 +29,6 @@
 is_ip_unique(IP, DeviceId) ->
     is_ip_acl_unique(IP, DeviceId)
         andalso is_ip_sip_auth_unique(IP, DeviceId).
-
 
 -spec is_ip_acl_unique(kz_term:ne_binary(), kz_term:ne_binary()) -> boolean().
 is_ip_acl_unique(IP, DeviceId) ->
@@ -41,14 +44,12 @@ is_ip_unique(JObj, IP, DeviceId) ->
             not (kz_network_utils:verify_cidr(IP, kz_json:get_value(<<"ip">>, JObj)))
     end.
 
-
 -spec is_ip_sip_auth_unique(kz_term:ne_binary(), kz_term:ne_binary()) -> boolean().
 is_ip_sip_auth_unique(IP, DeviceId) ->
     case kapps_util:get_ccvs_by_ip(IP) of
         {'ok', CCVs} -> props:get_value(<<"Authorizing-ID">>, CCVs) =:= DeviceId;
         {'error', 'not_found'} -> 'true'
     end.
-
 
 -spec get_all_acl_ips() -> kz_json:objects().
 get_all_acl_ips() ->
@@ -69,7 +70,6 @@ get_all_acl_ips() ->
             extract_all_ips(kapi_sysconf:get_value(JObj, kz_json:new()))
     end.
 
-
 -spec extract_all_ips(kz_json:object()) -> kz_json:objects().
 extract_all_ips(JObj) ->
     kz_json:foldl(fun extract_ip/3, [], JObj).
@@ -77,12 +77,12 @@ extract_all_ips(JObj) ->
 -spec extract_ip(kz_json:path(), kz_json:object(), kz_json:objects()) ->
           kz_json:objects().
 extract_ip(_Key, Value, Acc) ->
-    case kz_json:get_value(<<"cidr">>, Value) of
+    case kz_json:get_list_value(<<"cidr">>, Value) of
         'undefined' -> Acc;
-        CIDR ->
-            [kz_json:from_list([{<<"ip">>, CIDR}
+        CIDRs ->
+            [kz_json:from_list([{<<"ip">>, [CIDR]}
                                ,{?AUTHZ_ID, kz_json:get_value(?AUTHZ_ID, Value)}
                                ])
-            |Acc
-            ]
+             || CIDR <- CIDRs
+            ] ++ Acc
     end.
