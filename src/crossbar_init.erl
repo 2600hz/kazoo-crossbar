@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2021, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -27,8 +27,17 @@ paths_list() ->
     [api_path(), default_path()].
 
 default_path() ->
-    {'ok', Bytes} = file:read_file(filename:join(code:priv_dir(?APP), "kazoo.txt")),
-    {'_', 'crossbar_default_handler', #{body => Bytes}}.
+    {'_', 'crossbar_default_handler', #{body => [kazoo_bytes(), "\n\n", deps_bytes()]}}.
+
+kazoo_bytes() ->
+    {'ok', KAZOOBytes} = file:read_file(filename:join(code:priv_dir(?APP), "kazoo.txt")),
+    KAZOOBytes.
+
+deps_bytes() ->
+    case file:read_file(filename:join(code:priv_dir(?APP), "deps_list.txt")) of
+        {'ok', DepsBytes} -> DepsBytes;
+        {'error', _} -> <<>>
+    end.
 
 api_path() ->
     {<<"/:version/[...]">>, [api_version_constraint()], 'api_resource', []}.
