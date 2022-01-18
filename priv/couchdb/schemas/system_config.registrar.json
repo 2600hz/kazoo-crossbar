@@ -3,10 +3,45 @@
     "_id": "system_config.registrar",
     "description": "Schema for registrar system_config",
     "properties": {
+        "access_control": {
+            "patternProperties": {
+                ".+": {
+                    "description": "access_control",
+                    "type": "object"
+                }
+            },
+            "properties": {
+                "default": {
+                    "$ref": "system_config.registrar.auth_type",
+                    "default": {
+                        "allow": [],
+                        "deny": []
+                    },
+                    "description": "default ACL list",
+                    "type": "object"
+                },
+                "patternProperties": {
+                    "^[a-z_].*$": {
+                        "$ref": "system_config.registrar.auth_type",
+                        "description": "ACL list by device_type, authorization_type, etc",
+                        "type": "object"
+                    }
+                }
+            },
+            "type": "object"
+        },
         "device_enabled_default": {
             "default": true,
             "description": "registrar device enabled default",
             "type": "boolean"
+        },
+        "integrations_user_agent_regexes": {
+            "default": [],
+            "description": "list of user agents regexes for accepted integration services",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
         },
         "listeners": {
             "default": 1,

@@ -13652,10 +13652,35 @@
 'system_config.registrar':
   'description': Schema for registrar system_config
   'properties':
+    'access_control':
+      'properties':
+        'default':
+          '$ref': '#/system_config.registrar.auth_type'
+          'default':
+            'allow': []
+            'deny': []
+          'description': default ACL list
+          'type': object
+        'patternProperties':
+          '^[a-z_].*$':
+            '$ref': '#/system_config.registrar.auth_type'
+            'description': 'ACL list by device_type, authorization_type, etc'
+            'type': object
+      'type': object
+      'x-patternProperties':
+        '.+':
+          'description': access_control
+          'type': object
     'device_enabled_default':
       'default': true
       'description': registrar device enabled default
       'type': boolean
+    'integrations_user_agent_regexes':
+      'default': []
+      'description': list of user agents regexes for accepted integration services
+      'items':
+        'type': string
+      'type': array
     'listeners':
       'default': 1
       'description': registrar listeners
@@ -13668,6 +13693,22 @@
       'default': true
       'description': registrar use aggregate
       'type': boolean
+  'type': object
+'system_config.registrar.access_control.auth_type':
+  'description': Schema for registrar's ACL based on authorization type
+  'properties':
+    'allow':
+      'default': []
+      'description': list of allowed IPs to be used when registering some devices
+      'items':
+        'type': string
+      'type': array
+    'deny':
+      'default': []
+      'description': list of denied IPs to be used when registering some devices
+      'items':
+        'type': string
+      'type': array
   'type': object
 'system_config.reorder':
   'description': Schema for reorder system_config
