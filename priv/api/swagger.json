@@ -18884,6 +18884,19 @@
             "properties": {
                 "include_fields": {
                     "description": "Fields from the changed document to include in webhook payloads",
+                    "properties": {
+                        "default": {
+                            "default": [
+                                "pvt_auth_account_id",
+                                "pvt_auth_user_id"
+                            ],
+                            "description": "webhooks object include_fields default",
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        }
+                    },
                     "type": "object"
                 }
             },
