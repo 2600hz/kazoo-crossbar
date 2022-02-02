@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2022, 2600Hz
 %%% @doc Functions shared between crossbar modules
 %%% @author James Aimonetti
 %%%
@@ -199,9 +199,14 @@ token_cost(Context, Default, Suffix) when is_integer(Default), Default >= 0 ->
                      ,kz_term:api_ne_binary()
                      ) ->
           integer() | Default.
-find_token_cost(N, _Default, _Suffix, _Nouns, _ReqVerb, _AccountId) when is_integer(N) ->
-    lager:debug("flat token cost of ~p configured", [N]),
-    N;
+find_token_cost(0, _Default, _Suffix, _Nouns, _ReqVerb, _AccountId) ->
+    lager:info("no token costs configured"),
+    0;
+find_token_cost(N, Default, _Suffix, _Nouns, _ReqVerb, _AccountId)
+  when is_integer(N), is_integer(Default) ->
+    Cost = max(N, Default),
+    lager:info("token cost of ~p configured", [Cost]),
+    Cost;
 find_token_cost(JObj, Default, Suffix, [{Endpoint, _} | _], ReqVerb, 'undefined') ->
     Keys = [[Endpoint, ReqVerb | Suffix]
            ,[Endpoint | Suffix]

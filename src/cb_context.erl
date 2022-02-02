@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2021, 2600Hz
+%%% @copyright (C) 2012-2022, 2600Hz
 %%% @doc Helpers for manipulating the `#cb_context{}' record.
 %%% @author James Aimonetti
 %%%
@@ -1210,9 +1210,8 @@ add_system_error(Error, JObj, Context) ->
 add_system_error(Code, Error, JObj, Context) ->
     build_system_error(Code, Error, JObj, Context).
 
-
 -spec build_system_error(integer(), atom() | kz_term:ne_binary(), kz_term:ne_binary() | kz_json:object(), context()) -> context().
-build_system_error(Code, Error, <<_/binary>> = Message, Context) ->
+build_system_error(Code, Error, <<Message/binary>>, Context) ->
     build_system_error(Code, Error, kz_json:from_list([{<<"message">>, Message}]), Context);
 build_system_error(Code, Error, JObj, Context) ->
     ApiVersion = api_version(Context),
@@ -1229,9 +1228,9 @@ build_system_error(Code, Error, JObj, Context) ->
 %%------------------------------------------------------------------------------
 -spec add_validation_error(kz_json:get_key(), kz_term:ne_binary(), kz_term:ne_binary() | kz_json:object(), context()) ->
           context().
-add_validation_error(<<_/binary>> = Property, Code, Message, Context) ->
+add_validation_error(<<Property/binary>>, Code, Message, Context) ->
     add_validation_error([Property], Code, Message, Context);
-add_validation_error(Property, Code, <<_/binary>> = Message, Context) ->
+add_validation_error(Property, Code, <<Message/binary>>, Context) ->
     add_validation_error(Property, Code, kz_json:from_list([{<<"message">>, Message}]), Context);
 add_validation_error(Property, Code, Message, Context) ->
     {ErrorCode, ErrorMessage, ErrorJObj} =
