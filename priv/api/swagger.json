@@ -18294,6 +18294,11 @@
                     "default": false,
                     "description": "Whether to allow storage plans to skip validating attachment settings",
                     "type": "boolean"
+                },
+                "attachment_delete_enabled": {
+                    "default": false,
+                    "description": "system_data attachment_delete_enabled",
+                    "type": "boolean"
                 }
             },
             "type": "object"
