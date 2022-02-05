@@ -18,7 +18,7 @@
             "type": "array"
         },
         "hunt": {
-            "default": true,
+            "default": false,
             "description": "Determines if the callers can dial internal extensions directly",
             "support_level": "supported",
             "type": "boolean"
@@ -130,6 +130,12 @@
             "minimum": 1,
             "support_level": "supported",
             "type": "integer"
+        },
+        "stop_after_extension": {
+            "default": false,
+            "description": "If false, when calling into a menu that has a default action set and the caller dials an extension, caller will be redirected to parent's default action after extension hangs up",
+            "support_level": "supported",
+            "type": "boolean"
         },
         "suppress_media": {
             "default": false,
