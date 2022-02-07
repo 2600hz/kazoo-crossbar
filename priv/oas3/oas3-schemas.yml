@@ -6550,7 +6550,7 @@
       'type': array
       'x-support_level': supported
     'hunt':
-      'default': false
+      'default': true
       'description': Determines if the callers can dial internal extensions directly
       'type': boolean
       'x-support_level': supported

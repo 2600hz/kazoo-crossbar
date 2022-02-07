@@ -18,7 +18,7 @@
             "type": "array"
         },
         "hunt": {
-            "default": false,
+            "default": true,
             "description": "Determines if the callers can dial internal extensions directly",
             "support_level": "supported",
             "type": "boolean"
