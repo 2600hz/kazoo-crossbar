@@ -10244,6 +10244,12 @@
       'default': 35
       'description': crossbar conference_auth_tokens
       'type': integer
+    'cowboy_custom_routes_handlers':
+      'default': []
+      'description': crossbar cowboy_custom_routes_handlers
+      'items':
+        'type': string
+      'type': array
     'custom_route_modules':
       'default': []
       'description': |-

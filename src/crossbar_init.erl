@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2022, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -20,6 +20,11 @@
 
 -include("crossbar.hrl").
 
+%% types lifted from corwbow_router
+-type route_match() :: '_' | iodata().
+-type route_path() :: {Path::route_match(), Handler::module(), Opts::any()} |
+                      {Path::route_match(), cowboy:fields(), Handler::module(), Opts::any()}.
+
 -define(USE_COMPRESSION, kapps_config:get_is_true(?CONFIG_CAT, <<"compress_response_body">>, 'true')).
 -define(INBOUND_HOOKS, [?INBOUND_HOOK]).
 
@@ -28,9 +33,12 @@
 -spec crossbar_routes() -> cowboy_router:routes().
 crossbar_routes() -> [{'_', paths_list()}].
 
+-spec paths_list() -> [route_path()].
 paths_list() ->
-    [api_path(), default_path()].
+    %% api first, customs then default catch all path
+    [api_path()] ++ custom_paths() ++ [default_path()].
 
+-spec default_path() -> route_path().
 default_path() ->
     {'_', 'crossbar_default_handler', #{body => [kazoo_bytes(), "\n\n", deps_bytes()]}}.
 
@@ -44,6 +52,33 @@ deps_bytes() ->
         {'error', _} -> <<>>
     end.
 
+-spec custom_paths() -> [route_path()].
+custom_paths() ->
+    lists:foldl(fun try_get_custom_path/2
+               ,[]
+               ,kapps_config:get_ne_binaries(?CONFIG_CAT, <<"cowboy_custom_routes_handlers">>, [])
+               ).
+
+-spec try_get_custom_path(kz_term:ne_binary(), [route_path()]) -> [route_path()].
+try_get_custom_path(CustomHandlerMod, Acc) ->
+    case kz_module:is_exported(CustomHandlerMod, 'route_paths', 0) of
+        'true' ->
+            do_try_get_custom_path(kz_term:to_atom(CustomHandlerMod), Acc);
+        'false' ->
+            Acc
+    end.
+
+-spec do_try_get_custom_path(atom(), [route_path()]) -> [route_path()].
+do_try_get_custom_path(CustomHandlerMod, Acc) ->
+    try CustomHandlerMod:route_paths() of
+        Paths -> Acc ++ Paths
+    catch
+        _E:_T:_ST ->
+            lager:debug("failed to get custom paths from ~s: ~p", [CustomHandlerMod, {_E,_T}]),
+            Acc
+    end.
+
+-spec api_path() -> route_path().
 api_path() ->
     {<<"/:version/[...]">>, [api_version_constraint()], 'api_resource', []}.
 

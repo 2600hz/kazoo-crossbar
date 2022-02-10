@@ -54,6 +54,14 @@
             "description": "crossbar conference_auth_tokens",
             "type": "integer"
         },
+        "cowboy_custom_routes_handlers": {
+            "default": [],
+            "description": "crossbar cowboy_custom_routes_handlers",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
         "custom_route_modules": {
             "default": [],
             "description": "Defines a list of single route URL segment for short circuiting how crossbar parses the URL. When crossbar sees this in one of the segment, it stops processing and adds any remaining segments as params. This segment name should be a Crossbar API module as usual.",
