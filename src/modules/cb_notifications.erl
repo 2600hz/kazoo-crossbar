@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2022, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -240,7 +240,7 @@ validate(Context) ->
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, ?SMTP_LOG) ->
-    crossbar_view:load_modb(Context, ?CB_LIST_SMTP_LOG, [{mapper, crossbar_view:get_value_fun()}]);
+    crossbar_view:load_modb(Context, ?CB_LIST_SMTP_LOG, [{'mapper', crossbar_view:get_value_fun()}]);
 validate(Context, Id) ->
     ReqVerb = cb_context:req_verb(Context),
     DbId = kz_notification:db_id(Id),
@@ -620,6 +620,8 @@ publish_fun(<<"webhook_disabled">>) ->
     fun kapi_notifications:publish_webhook_disabled/1;
 publish_fun(<<"number_feature_manual_action">>) ->
     fun kapi_notifications:publish_number_feature_manual_action/1;
+publish_fun(<<"desktop_app_welcome">>) ->
+    fun kapi_notifications:publish_desktop_app_welcome/1;
 publish_fun(_Id) ->
     lager:debug("no kapi_notifications:publish_~s/1 defined", [_Id]),
     fun(_Any) -> 'ok' end.
