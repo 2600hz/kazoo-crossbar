@@ -31,6 +31,7 @@ Schema for a menus
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `allow_record_from_offnet` | Determines if the record pin can be used by external calls | `boolean()` | `false` | `false` | `supported`
+`branch_extension` | Whether or not to branch extension when caller dials an extension. If true, when caller dials an extension, call will be branched, once that branch finishes if menu has a default action set, that action will be executed | `boolean()` | `true` | `false` | `supported`
 `flags.[]` |   | `string()` |   | `false` | `supported`
 `flags` | Flags set by external applications | `array(string())` |   | `false` | `supported`
 `hunt` | Determines if the callers can dial internal extensions directly | `boolean()` | `true` | `false` | `supported`
@@ -46,7 +47,6 @@ Key | Description | Type | Default | Required | Support Level
 `name` | A friendly name for the menu | `string(1..128)` |   | `true` | `supported`
 `record_pin` | The pin number used to record the menu prompt | `string(3..6)` |   | `false` | `supported`
 `retries` | The number of times a menu should be played until a valid entry is collected | `integer()` | `3` | `false` | `supported`
-`stop_after_extension` | If false, when calling into a menu that has a default action set and the caller dials an extension, caller will be redirected to parent's default action after extension hangs up | `boolean()` | `false` | `false` | `supported`
 `suppress_media` | Determines if the playing of 'Invalid Entry' is suppressed. | `boolean()` | `false` | `false` | `supported`
 `timeout` | The amount of time (in milliseconds) to wait for the caller to begin entering digits | `integer()` |   | `false` | `supported`
 
