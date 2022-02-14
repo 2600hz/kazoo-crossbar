@@ -6326,6 +6326,12 @@
       'description': Determines if the record pin can be used by external calls
       'type': boolean
       'x-support_level': supported
+    'branch_extension':
+      'default': true
+      'description': |-
+        Whether or not to branch extension when caller dials an extension. If true, when caller dials an extension, call will be branched, once that branch finishes if menu has a default action set, that action will be executed
+      'type': boolean
+      'x-support_level': supported
     'flags':
       'description': Flags set by external applications
       'items':
@@ -10090,6 +10096,12 @@
 'system_config.callflow.menu':
   'description': Schema for callflow.menu system_config
   'properties':
+    'branch_extension':
+      'default': true
+      'description': |-
+        Whether or not to branch extension when caller dials an extension. If true, when caller dials an extension, call will be branched, once that branch finishes if menu has a default action set, that action will be executed
+      'type': boolean
+      'x-support_level': supported
     'max_wait_for_attachments_ms':
       'default': 5000
       'description': callflow menu max_wait_for_attachments_ms
