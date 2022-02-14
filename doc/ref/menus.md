@@ -11,6 +11,7 @@ Schema for a menus
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `allow_record_from_offnet` | Determines if the record pin can be used by external calls | `boolean()` | `false` | `false` | `supported`
+`branch_extension` | Whether or not to branch extension when caller dials an extension. If true, when caller dials an extension, call will be branched, once that branch finishes if menu has a default action set, that action will be executed | `boolean()` | `true` | `false` | `supported`
 `flags.[]` |   | `string()` |   | `false` | `supported`
 `flags` | Flags set by external applications | `array(string())` |   | `false` | `supported`
 `hunt` | Determines if the callers can dial internal extensions directly | `boolean()` | `true` | `false` | `supported`
