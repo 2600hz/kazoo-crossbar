@@ -663,6 +663,10 @@
   '/accounts/{ACCOUNT_ID}/whitelabel/{WHITELABEL_DOMAIN}/welcome':
     '$ref': >-
       paths/whitelabel.yml#/paths/~1accounts~1{ACCOUNT_ID}~1whitelabel~1{WHITELABEL_DOMAIN}~1welcome
+  '/accounts/{ACCOUNT_ID}/wordle':
+    '$ref': 'paths/wordle.yml#/paths/~1accounts~1{ACCOUNT_ID}~1wordle'
+  '/accounts/{ACCOUNT_ID}/wordle/{WORD_ID}':
+    '$ref': 'paths/wordle.yml#/paths/~1accounts~1{ACCOUNT_ID}~1wordle~1{WORD_ID}'
   '/accounts/{ACCOUNT_ID}/{ENDPOINT_TYPE}/{ENDPOINT_ID}/quickcall/{NUMBER}':
     '$ref': >-
       paths/quickcall.yml#/paths/~1accounts~1{ACCOUNT_ID}~1{ENDPOINT_TYPE}~1{ENDPOINT_ID}~1quickcall~1{NUMBER}

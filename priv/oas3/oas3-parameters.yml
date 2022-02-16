@@ -730,6 +730,16 @@
   'required': true
   'schema':
     'type': string
+'WORD_ID':
+  'description': request WORD_ID parameter
+  'in': path
+  'name': WORD_ID
+  'required': true
+  'schema':
+    'maxLength': 32
+    'minLength': 32
+    'pattern': '^[0-9a-f]+$'
+    'type': string
 'auth_token_header':
   'description': request authentication token
   'in': header

@@ -13775,6 +13775,17 @@
             },
             "type": "object"
         },
+        "system_config.crossbar.wordle": {
+            "description": "Schema for crossbar.wordle system_config",
+            "properties": {
+                "path_to_words": {
+                    "default": "/usr/share/dict/words",
+                    "description": "crossbar wordle path_to_words",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "system_config.datamgr": {
             "description": "Schema for datamgr system_config",
             "properties": {
@@ -21705,6 +21716,16 @@
             "description": "request WHITELABEL_DOMAIN parameter",
             "in": "path",
             "name": "WHITELABEL_DOMAIN",
+            "required": true,
+            "type": "string"
+        },
+        "WORD_ID": {
+            "description": "request WORD_ID parameter",
+            "in": "path",
+            "maxLength": 32,
+            "minLength": 32,
+            "name": "WORD_ID",
+            "pattern": "^[0-9a-f]+$",
             "required": true,
             "type": "string"
         },
@@ -31391,6 +31412,61 @@
                     },
                     {
                         "$ref": "#/parameters/WHITELABEL_DOMAIN"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/wordle": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/wordle/{WORD_ID}": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/WORD_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/WORD_ID"
                     }
                 ],
                 "responses": {
