@@ -716,7 +716,7 @@ curl -v -X POST \
            }
          }
         }' \
-    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/devices/{DEVICE_ID}/notify
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/devices/{DEVICE_ID}
 ```
 
 An example for a Yealink might look like (thanks to forum user [https://forums.2600hz.com/forums/topic/12045-sip-notify/#comment-62381](andy.wells) for the suggestion):
