@@ -6327,7 +6327,7 @@
       'type': boolean
       'x-support_level': supported
     'branch_extension':
-      'default': true
+      'default': false
       'description': |-
         Whether or not to branch extension when caller dials an extension. If true, when caller dials an extension, call will be branched, once that branch finishes if menu has a default action set, that action will be executed
       'type': boolean
