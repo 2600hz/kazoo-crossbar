@@ -337,10 +337,20 @@ maybe_authenticate_user(Context) ->
     JObj = cb_context:doc(Context),
     Credentials = kzd_user_auth:credentials(JObj),
     Method = kzd_user_auth:method(JObj),
+
     AccountName = kzd_accounts:normalize_name(kz_json:get_value(<<"account_name">>, JObj)),
     PhoneNumber = kzd_user_auth:phone_number(JObj),
     AccountRealm = kz_json:get_first_defined([<<"account_realm">>, <<"realm">>], JObj),
-    case find_account(PhoneNumber, AccountRealm, AccountName, Context) of
+    AccountId = kz_json:get_value(<<"account_id">>, JObj),
+
+    case find_account([{'phone_number', PhoneNumber}
+                      ,{'realm', AccountRealm}
+                      ,{'name', AccountName}
+                      ,{'id', AccountId}
+                      ]
+                     ,Context
+                     )
+    of
         {'error', _} ->
             cb_context:add_system_error('invalid_credentials', Context);
         {'ok', ?NE_BINARY=Account} ->
@@ -483,7 +493,16 @@ maybe_load_user_doc_via_creds(Context) ->
     AccountName = kzd_accounts:normalize_name(kz_json:get_value(<<"account_name">>, JObj)),
     PhoneNumber = kzd_user_auth:phone_number(JObj),
     AccountRealm = kz_json:get_first_defined([<<"account_realm">>, <<"realm">>], JObj),
-    case find_account(PhoneNumber, AccountRealm, AccountName, Context) of
+    AccountId = kz_json:get_ne_binary_value(<<"account_id">>, JObj),
+
+    case find_account([{'phone_number', PhoneNumber}
+                      ,{'realm', AccountRealm}
+                      ,{'name', AccountName}
+                      ,{'id', AccountId}
+                      ]
+                     ,Context
+                     )
+    of
         {'error', C} -> C;
         {'ok', [Account|_]} -> maybe_load_user_doc_by_username(Account, Context);
         {'ok', Account} ->     maybe_load_user_doc_by_username(Account, Context)
@@ -648,12 +667,15 @@ create_resetid_doc(ResetId, UserId) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec find_account(kz_term:api_binary(), kz_term:api_binary(), kz_term:api_binary(), cb_context:context()) ->
+-type account_type() :: 'phone_number' | 'name' | 'realm' | 'id'.
+-spec find_account([{account_type(), kz_term:api_ne_binary()}], cb_context:context()) ->
           {'ok', kz_term:ne_binary() | kz_term:ne_binaries()} |
           {'error', cb_context:context()}.
-find_account('undefined', 'undefined', 'undefined', Context) ->
-    {'error', Context};
-find_account('undefined', 'undefined', AccountName, Context) ->
+
+find_account([], Context) -> {'error', Context};
+find_account([{_Type, 'undefined'} | Types], Context) ->
+    find_account(Types, Context);
+find_account([{'name', AccountName} | Types], Context) ->
     case kapps_util:get_accounts_by_name(AccountName) of
         {'ok', AccountDb} ->
             lager:debug("found account by name '~s': ~s", [AccountName, AccountDb]),
@@ -662,9 +684,9 @@ find_account('undefined', 'undefined', AccountName, Context) ->
             lager:debug("the account name returned multiple results"),
             {'ok', AccountDbs};
         {'error', _} ->
-            {'error', error_no_account_name(Context, AccountName)}
+            find_account(Types, error_no_account_name(Context, AccountName))
     end;
-find_account('undefined', AccountRealm, AccountName, Context) ->
+find_account([{'realm', AccountRealm} | Types], Context) ->
     case kapps_util:get_account_by_realm(AccountRealm) of
         {'ok', _AccountDb}=OK ->
             lager:debug("found account by realm '~s': ~s", [AccountRealm, _AccountDb]),
@@ -673,18 +695,23 @@ find_account('undefined', AccountRealm, AccountName, Context) ->
             lager:debug("the account realm returned multiple results"),
             {'ok', AccountDbs};
         {'error', _} ->
-            ErrorContext = error_no_account_realm(Context, AccountRealm),
-            find_account('undefined', 'undefined', AccountName, ErrorContext)
+            find_account(Types, error_no_account_realm(Context, AccountRealm))
     end;
-find_account(PhoneNumber, AccountRealm, AccountName, Context) ->
+find_account([{'phone_number', PhoneNumber} | Types], Context) ->
     case knm_numbers:lookup_account(PhoneNumber) of
         {'ok', AccountId, _} ->
             AccountDb = kzs_util:format_account_db(AccountId),
             lager:debug("found account by phone number '~s': ~s", [PhoneNumber, AccountDb]),
             {'ok', AccountDb};
         {'error', _} ->
-            ErrorContext = error_no_account_phone_number(Context, PhoneNumber),
-            find_account('undefined', AccountRealm, AccountName, ErrorContext)
+            find_account(Types, error_no_account_phone_number(Context, PhoneNumber))
+    end;
+find_account([{'id', AccountId} | Types], Context) ->
+    case kzd_accounts:fetch(AccountId) of
+        {'ok', AccountJObj} ->
+            {'ok', kz_doc:account_db(AccountJObj)};
+        {'error', 'not_found'} ->
+            find_account(Types, error_no_account_id(Context, AccountId))
     end.
 
 -spec error_no_account_phone_number(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
@@ -695,6 +722,16 @@ error_no_account_phone_number(Context, PhoneNumber) ->
           ,{<<"cause">>, PhoneNumber}
           ]),
     cb_context:add_validation_error(<<"phone_number">>, <<"not_found">>, Msg, Context).
+
+-spec error_no_account_id(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+error_no_account_id(Context, AccountId) ->
+    Msg =
+        kz_json:from_list(
+          [{<<"message">>, <<"The provided account ID could not be found">>}
+          ,{<<"cause">>, AccountId}
+          ]),
+    cb_context:add_validation_error(<<"account_id">>, <<"not_found">>, Msg, Context).
+
 
 -spec error_no_account_realm(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 error_no_account_realm(Context, AccountRealm) ->

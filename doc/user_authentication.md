@@ -12,6 +12,7 @@ Provides an auth-token via user credentials
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
+`account_id` | The account ID of the user | `string(32)` |   | `false` |  
 `account_name` | The account name of the user | `string(1..128)` |   | `false` |  
 `account_realm` | The account realm of the user | `string(4..253)` |   | `false` |  
 `credentials` | A hash of the user credentials | `string(1..64)` |   | `true` |  

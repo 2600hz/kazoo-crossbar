@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2022, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -364,7 +364,7 @@ load_attachment(Doc, AName, Options, Context) ->
 -spec attachment_response(cb_context:context(), kz_term:ne_binary(), binary(), kz_term:ne_binary(), kz_term:proplist(), crossbar_status()) ->
           cb_context:context().
 attachment_response(Context, DocId, AttachBin, AName, Options, 'success') ->
-    Headers = attachemnt_resp_headers(Context, DocId, AName, Options),
+    Headers = attachment_resp_headers(Context, DocId, AName, Options),
     cb_context:setters(Context
                       ,[{fun cb_context:set_resp_data/2, AttachBin}
                        ,{fun cb_context:set_resp_etag/2, rev_to_etag(cb_context:doc(Context))}
@@ -373,9 +373,9 @@ attachment_response(Context, DocId, AttachBin, AName, Options, 'success') ->
 attachment_response(Context, _, _, _, _, _) ->
     Context.
 
--spec attachemnt_resp_headers(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:proplist()) ->
+-spec attachment_resp_headers(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:proplist()) ->
           cowboy:http_headers().
-attachemnt_resp_headers(Context, DocId, AName, Options) ->
+attachment_resp_headers(Context, DocId, AName, Options) ->
     Headers = maps:from_list(props:get_value('extra_resp_headers', Options, [])),
     CT = kz_doc:attachment_content_type(cb_context:doc(Context)
                                        ,AName
