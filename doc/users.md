@@ -701,7 +701,7 @@ When an account is configured to use multi-factor authentication, and uses the i
 
 ```shell
 curl -v -X GET \
-    -H "Content-Type: application/octet-stream" \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
     -H "Accept: image/png" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/qrcode
 ```
