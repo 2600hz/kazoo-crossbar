@@ -128,6 +128,19 @@ paths:
       summary: Update an instance of users
       tags:
         - users
+  /accounts/{ACCOUNT_ID}/users/{USER_ID}/qrcode:
+    get:
+      operationId: GetAccountsAccountIdUsersUserIdQrcode
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../oas3-parameters.yml#/USER_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Get qrcode of users
+      tags:
+        - users
   /accounts/{ACCOUNT_ID}/users/{USER_ID}/vcard:
     get:
       operationId: GetAccountsAccountIdUsersUserIdVcard
