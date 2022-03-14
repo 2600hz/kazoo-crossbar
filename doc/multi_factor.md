@@ -189,6 +189,14 @@ Here we use the `{PROVIDER_ID}` of the KAZOO OTP provider creation earlier.
 
 Now that the OTP provider is enabled and the account's security settings are ready for multi-factor authentication, let's look at a user's authentication flow.
 
+First, the user needs to generate their QR code to scan into their authenticator application:
+
+> GET http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/qrcode
+
+The result of the API request will be a PNG QR code. The user should then open their authenticator application to scan the QR code.
+
+Now, when the user tries to authenticate, the 401 response should include the `multi_factor_request` to indicate the need to include the current TOTP.
+
 > PUT http://{SERVER}:8000/v2/user_auth -d '{"data":{"credentials":"{HASH}", "account_name":"{NAME}"}}'
 
 ```json
@@ -206,7 +214,7 @@ Now that the OTP provider is enabled and the account's security settings are rea
 }
 ```
 
-At this point, the user should check the TOTP code on their authenticator application and include it on the subsequent request:
+At this point, the user should check the TOTP code on their authenticator application and include it on the subsequent request in the `multi_factor_response` key:
 
 > PUT http://{SERVER}:8000/v2/user_auth -d '{"data":{"credentials":"{HASH}", "account_name":"{NAME}", "multi_factor_response":"{TOTP_CODE}"}}'
 
