@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2022, 2600Hz
 %%% @doc User auth module
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -442,7 +442,7 @@ maybe_account_is_enabled(Context, Account) ->
           cb_context:context().
 load_sha1_results(Context, [JObj|_], _Account)->
     lager:debug("found more that one user with SHA1 creds, using ~s", [kz_doc:id(JObj)]),
-    cb_context:set_doc(Context, kz_json:get_value(<<"value">>, JObj));
+    set_credentials_doc(Context, kz_json:get_value(<<"value">>, JObj));
 load_sha1_results(Context, [], Account)->
     Reason = io_lib:format("failed to find a user with SHA1 creds, request from IP address: ~s", [cb_context:client_ip(Context)]),
     lager:warning("~s", [Reason]),
@@ -450,13 +450,13 @@ load_sha1_results(Context, [], Account)->
     cb_context:add_system_error('invalid_credentials', Context);
 load_sha1_results(Context, JObj, _Account)->
     lager:debug("found SHA1 credentials belong to user ~s", [kz_doc:id(JObj)]),
-    cb_context:set_doc(cb_context:store(Context, 'auth_type', <<"credentials">>), kz_json:get_value(<<"value">>, JObj)).
+    set_credentials_doc(Context, kz_json:get_value(<<"value">>, JObj)).
 
 -spec load_md5_results(cb_context:context(), kz_json:objects() | kz_json:object(), kz_term:ne_binary()) ->
           cb_context:context().
 load_md5_results(Context, [JObj|_], _Account) ->
     lager:debug("found more that one user with MD5 creds, using ~s", [kz_doc:id(JObj)]),
-    cb_context:set_doc(Context, kz_json:get_value(<<"value">>, JObj));
+    set_credentials_doc(Context, kz_json:get_value(<<"value">>, JObj));
 load_md5_results(Context, [], Account) ->
     Reason = io_lib:format("failed to find a user with MD5 creds, request from IP address: ~s", [cb_context:client_ip(Context)]),
     lager:warning("~s", [Reason]),
@@ -464,8 +464,16 @@ load_md5_results(Context, [], Account) ->
     cb_context:add_system_error('invalid_credentials', Context);
 load_md5_results(Context, JObj, _Account) ->
     lager:debug("found MD5 credentials belong to user ~s", [kz_doc:id(JObj)]),
-    cb_context:set_doc(cb_context:store(Context, 'auth_type', <<"credentials">>), kz_json:get_value(<<"value">>, JObj)).
+    set_credentials_doc(Context, kz_json:get_value(<<"value">>, JObj)).
 
+-spec set_credentials_doc(cb_context:context(), kz_json:object()) -> cb_context:context().
+set_credentials_doc(Context, JObj) ->
+    Ctx = cb_context:store(Context, 'auth_type', <<"credentials">>),
+    cb_context:set_doc(Ctx, kz_json:set_value(<<"Claims">>, base_claims(JObj), JObj)).
+
+base_claims(JObj) ->
+    Keys = [<<"account_id">>, <<"owner_id">>],
+    kz_json:filter(fun({K, _V}) -> lists:member(K, Keys) end, JObj).
 
 -spec maybe_load_user_doc_via_creds(cb_context:context()) -> cb_context:context().
 maybe_load_user_doc_via_creds(Context) ->
