@@ -193,6 +193,8 @@ validate_action(Context, ?SWITCH_USER) ->
                 ,kz_json:from_list(
                    [{<<"original_account_id">>, cb_context:auth_account_id(Context)}
                    ,{<<"original_owner_id">>, cb_context:auth_user_id(Context)}
+                   ,{<<"owner_id">>, cb_context:user_id(Context)}
+                   ,{<<"account_id">>, cb_context:account_id(Context)}
                    ])
                 }
                ]
