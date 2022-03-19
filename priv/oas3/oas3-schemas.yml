@@ -7628,6 +7628,7 @@
   'description': Action to be executed on this request
   'properties':
     'action':
+      'default': reset
       'description': Action to be executed on this request
       'enum':
         - set
