@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2013-2021, 2600Hz
+%%% @copyright (C) 2013-2022, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -162,8 +162,10 @@ validate_thing(Context, ?HTTP_POST) ->
 
 -spec validate_thing(cb_context:context(), kz_term:ne_binary(), http_method()) ->
           cb_context:context().
+validate_thing(Context, Extension, ?HTTP_GET) ->
+    search_detail(Context, Extension);
 validate_thing(Context, Extension, ?HTTP_POST) ->
-    validate_presence_thing(Context, Extension).
+    validate_presence_thing(Context, Extension, cb_context:req_nouns(Context)).
 
 -spec search_summary(cb_context:context()) -> cb_context:context().
 search_summary(Context) ->
@@ -242,7 +244,7 @@ extract_subscriptions(JObjs, Fun) ->
 validate_presence_thing(Context) ->
     validate_presence_thing(Context, cb_context:req_nouns(Context)).
 
--spec validate_presence_thing(cb_context:context(), req_nouns() | kz_term:ne_binary()) -> cb_context:context().
+-spec validate_presence_thing(cb_context:context(), req_nouns()) -> cb_context:context().
 validate_presence_thing(Context, [{<<"presence">>, _}
                                  ,{<<"devices">>, [DeviceId]}
                                  ,{<<"accounts">>, [_AccountId]}
@@ -253,8 +255,6 @@ validate_presence_thing(Context, [{<<"presence">>, _}
                                  ,{<<"accounts">>, [_AccountId]}
                                  ]) ->
     validate_action(load_presence_for_user(Context, UserId));
-validate_presence_thing(Context, <<Extension/binary>>) ->
-    validate_presence_thing(Context, Extension, cb_context:req_nouns(Context));
 validate_presence_thing(Context, _ReqNouns) ->
     crossbar_util:response_faulty_request(Context).
 
