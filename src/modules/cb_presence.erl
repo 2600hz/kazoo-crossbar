@@ -298,7 +298,7 @@ load_user_devices(Context) ->
 validate_action(Context) ->
     Context1 = cb_context:validate_request_data(<<"presence.action">>, Context),
     case cb_context:resp_status(Context1) of
-        'success' -> validate_action(Context1, cb_context:req_data(Context1));
+        'success' -> validate_action(Context, cb_context:doc(Context1));
         _ -> Context1
     end.
 
@@ -314,7 +314,12 @@ validate_action(Context, ReqData) ->
 validate_action(Context, _ReqData, <<"reset">>) ->
     Context;
 validate_action(Context, _ReqData, <<"set">>) ->
-    cb_context:validate_request_data(<<"presence.state">>, Context).
+    Ctx = cb_context:validate_request_data(<<"presence.state">>, Context),
+    case cb_context:resp_status(Ctx) of
+        'success' -> Context;
+        _Else -> Ctx
+    end.
+
 
 -spec post(cb_context:context()) -> cb_context:context().
 post(Context) ->
