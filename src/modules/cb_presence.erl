@@ -174,8 +174,10 @@ validate_thing(Context, ?HTTP_POST) ->
 
 -spec validate_thing(cb_context:context(), kz_term:ne_binary(), http_method()) ->
           cb_context:context().
+validate_thing(Context, Extension, ?HTTP_GET) ->
+    search_detail(Context, Extension);
 validate_thing(Context, Extension, ?HTTP_POST) ->
-    validate_presence_thing(Context, Extension).
+    validate_presence_thing(Context, Extension, cb_context:req_nouns(Context)).
 
 -spec search_summary(cb_context:context()) -> cb_context:context().
 search_summary(Context) ->
@@ -254,7 +256,7 @@ extract_subscriptions(JObjs, Fun) ->
 validate_presence_thing(Context) ->
     validate_presence_thing(Context, cb_context:req_nouns(Context)).
 
--spec validate_presence_thing(cb_context:context(), req_nouns() | kz_term:ne_binary()) -> cb_context:context().
+-spec validate_presence_thing(cb_context:context(), req_nouns()) -> cb_context:context().
 validate_presence_thing(Context, [{<<"presence">>, _}
                                  ,{<<"devices">>, [DeviceId]}
                                  ,{<<"accounts">>, [_AccountId]}
@@ -265,8 +267,6 @@ validate_presence_thing(Context, [{<<"presence">>, _}
                                  ,{<<"accounts">>, [_AccountId]}
                                  ]) ->
     validate_action(load_presence_for_user(Context, UserId));
-validate_presence_thing(Context, <<Extension/binary>>) ->
-    validate_presence_thing(Context, Extension, cb_context:req_nouns(Context));
 validate_presence_thing(Context, _ReqNouns) ->
     crossbar_util:response_faulty_request(Context).
 
@@ -310,7 +310,7 @@ load_user_devices(Context) ->
 validate_action(Context) ->
     Context1 = cb_context:validate_request_data(<<"presence.action">>, Context),
     case cb_context:resp_status(Context1) of
-        'success' -> validate_action(Context1, cb_context:req_data(Context1));
+        'success' -> validate_action(Context, cb_context:doc(Context1));
         _ -> Context1
     end.
 
@@ -326,7 +326,12 @@ validate_action(Context, ReqData) ->
 validate_action(Context, _ReqData, <<"reset">>) ->
     Context;
 validate_action(Context, _ReqData, <<"set">>) ->
-    cb_context:validate_request_data(<<"presence.state">>, Context).
+    Ctx = cb_context:validate_request_data(<<"presence.state">>, Context),
+    case cb_context:resp_status(Ctx) of
+        'success' -> Context;
+        _Else -> Ctx
+    end.
+
 
 -spec post(cb_context:context()) -> cb_context:context().
 post(Context) ->
@@ -385,11 +390,15 @@ publish_presence_update(Context, PresenceId, PresenceState) ->
     AccountDb = cb_context:db_name(Context),
     lager:debug("updating presence for ~s@~s to state ~s", [PresenceId, Realm, PresenceState]),
     %% persist presence setting
-    Update = [{[PresenceId], PresenceState}],
+    Update = [{[PresenceId], presence_update_state(PresenceState)}],
     UpdateOptions = [{'update', Update}],
     {'ok', _} = kz_datamgr:update_doc(AccountDb, ?MANUAL_PRESENCE_DOC, UpdateOptions),
     PresenceString = <<PresenceId/binary, "@", Realm/binary>>,
     kapps_call_command:presence(PresenceState, PresenceString, kz_term:to_hex_binary(crypto:hash('md5', PresenceString))).
+
+-spec presence_update_state(kz_term:ne_binary()) -> kz_term:ne_binary() | null.
+presence_update_state(<<"terminated">>) -> null;
+presence_update_state(PresenceState) -> PresenceState.
 
 -spec find_presence_id(kz_term:ne_binary() | kz_json:object()) -> kz_term:api_binary().
 find_presence_id(<<Extension/binary>>) ->
