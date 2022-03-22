@@ -26,7 +26,7 @@ $(TIMEZONE_JSON):
 	@ERL_LIBS=$(ROOT)/deps/:$(ROOT)/core/:$(ROOT)/applications/ $(CWD)/scripts/timezones.escript
 
 clean-port-request-scheduled-schema:
-	$(if $(wildcard $(COMPILE_MOAR)), rm $(COMPILE_MOAR))
+	$(if $(wildcard $(COMPILE_MOAR)), rm -f $(COMPILE_MOAR))
 
 deps_list:
 	@$(CWD)/scripts/list_deps.escript $(DEPS_LIST_TXT) $(ROOT)/deps
