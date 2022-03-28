@@ -46,6 +46,7 @@ the Apache License v2 and the Mozilla Public License v1.1. |
 | nklib                   | https://github.com/2600hz/erlang-nklib/blob/master/LICENSE |
 | plists                  | https://github.com/2600hz/erlang-plists/blob/master/LICENSE |
 | poolboy                 | https://github.com/devinus/poolboy/blob/master/LICENSE |
+| qrcode                  | https://github.com/2600hz/erlang-qrcode/blob/master/LICENSE |
 | ra                      | https://github.com/2600hz/erlang-ra.git/blob/master/LICENSE |
 | rabbit_common           | This package, the RabbitMQ commons library, is licensed under the MPL. For the
 MPL, please see LICENSE-MPL-RabbitMQ. |
