@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2022, 2600Hz
 %%% @doc Users module
 %%% Handle client requests for user documents
 %%%
@@ -36,6 +36,7 @@
 
 -define(VCARD, <<"vcard">>).
 -define(PHOTO, <<"photo">>).
+-define(QRCODE, <<"qrcode">>).
 
 %%%=============================================================================
 %%% API
@@ -79,6 +80,8 @@ allowed_methods(_UserId) ->
 -spec allowed_methods(path_token(), path_token()) -> http_methods().
 allowed_methods(_UserId, ?PHOTO) ->
     [?HTTP_GET, ?HTTP_POST, ?HTTP_DELETE];
+allowed_methods(_UserId, ?QRCODE) ->
+    [?HTTP_GET];
 allowed_methods(_UserId, ?VCARD) ->
     [?HTTP_GET].
 
@@ -94,26 +97,33 @@ content_types_provided(Context) ->
 
 -spec content_types_provided(cb_context:context(), path_token()) ->
           cb_context:context().
-content_types_provided(Context, _) ->
+content_types_provided(Context, _UserId) ->
     Context.
 
 -spec content_types_provided(cb_context:context(), path_token(), path_token()) ->
           cb_context:context().
-content_types_provided(Context, _, ?VCARD) ->
+content_types_provided(Context, _UserId, ?VCARD) ->
     cb_context:set_content_types_provided(Context, [{'to_binary', [{<<"text">>, <<"x-vcard">>}
                                                                   ,{<<"text">>, <<"directory">>}
                                                                   ]}
                                                    ]);
-content_types_provided(Context, _, ?PHOTO) ->
+content_types_provided(Context, _UserId, ?PHOTO) ->
     case cb_context:method(Context) of
-        ?HTTP_GET -> cb_context:set_content_types_provided(
-                       Context, [{'to_binary', [{<<"application">>, <<"octet-stream">>}
-                                               ,{<<"application">>, <<"base64">>}
-                                               ]}
-                                ]);
+        ?HTTP_GET ->
+            cb_context:set_content_types_provided(Context
+                                                 ,[{'to_binary', [{<<"application">>, <<"octet-stream">>}
+                                                                 ,{<<"application">>, <<"base64">>}
+                                                                 ]}
+                                                  ]);
         _ -> Context
     end;
-content_types_provided(Context, _, _) ->
+content_types_provided(Context, _UserId, ?QRCODE) ->
+    case cb_context:method(Context) of
+        ?HTTP_GET ->
+            cb_context:set_content_types_provided(Context, [{'to_binary', [{<<"image">>, <<"png">>}]}]);
+        _ -> Context
+    end;
+content_types_provided(Context, _UserId, _PathToken) ->
     Context.
 
 %%------------------------------------------------------------------------------
@@ -130,7 +140,8 @@ resource_exists(_UserId) -> 'true'.
 
 -spec resource_exists(path_token(), path_token()) -> 'true'.
 resource_exists(_UserId, ?VCARD) -> 'true';
-resource_exists(_UserId, ?PHOTO) -> 'true'.
+resource_exists(_UserId, ?PHOTO) -> 'true';
+resource_exists(_UserId, ?QRCODE) -> 'true'.
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -170,10 +181,10 @@ validate_resource(Context) -> Context.
 validate_resource(Context, UserId) -> validate_user_id(UserId, Context).
 
 -spec validate_resource(cb_context:context(), path_token(), path_token()) -> cb_context:context().
-validate_resource(Context, UserId, _) -> validate_user_id(UserId, Context).
+validate_resource(Context, UserId, _Token) -> validate_user_id(UserId, Context).
 
 -spec validate_resource(cb_context:context(), path_token(), path_token(), path_token()) -> cb_context:context().
-validate_resource(Context, UserId, _, _) -> validate_user_id(UserId, Context).
+validate_resource(Context, UserId, _Token1, _Token2) -> validate_user_id(UserId, Context).
 
 -spec validate_user_id(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
 validate_user_id(UserId, Context) ->
@@ -224,7 +235,9 @@ validate(Context, UserId, ?VCARD) ->
         'false' -> convert_to_vcard(Context1)
     end;
 validate(Context, UserId, ?PHOTO) ->
-    validate_photo(Context, UserId , cb_context:req_verb(Context)).
+    validate_photo(Context, UserId, cb_context:req_verb(Context));
+validate(Context, UserId, ?QRCODE) ->
+    validate_qrcode(Context, UserId).
 
 validate_users(Context, ?HTTP_GET) ->
     load_users_summary(Context);
@@ -247,13 +260,26 @@ validate_photo(Context, UserId, ?HTTP_DELETE) ->
 validate_photo(Context, UserId, ?HTTP_GET) ->
     load_attachment(UserId, ?PHOTO, Context).
 
+validate_qrcode(Context, UserId) ->
+    {'ok', QRCode} = kz_auth_qrcode:create(cb_context:account_id(Context), UserId),
+    Headers =
+        #{<<"content-disposition">> => <<"attachment; filename=qr-", UserId/binary, ".png">>
+         ,<<"content-type">> => <<"image/png">>
+         },
+    cb_context:setters(Context
+                      ,[{fun cb_context:set_resp_data/2, QRCode}
+                       ,{fun cb_context:set_resp_etag/2, kz_binary:md5(QRCode)}
+                       ,{fun cb_context:add_resp_headers/2, Headers}
+                       ,{fun cb_context:set_resp_status/2, 'success'}
+                       ]).
+
 %%------------------------------------------------------------------------------
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
 
 -spec post(cb_context:context(), path_token()) -> cb_context:context().
-post(Context, _) ->
+post(Context, _UserId) ->
     Context1 = cb_modules_util:take_sync_field(Context),
     sync_sip_data(Context1),
     Context2 = crossbar_doc:save(cb_modules_util:remove_plaintext_password(Context1)),
@@ -290,7 +316,6 @@ post(Context, UserId, ?PHOTO) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec put(cb_context:context()) -> cb_context:context().
 put(Context) ->
     Context1 = crossbar_doc:save(Context),
@@ -305,9 +330,8 @@ put(Context) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec delete(cb_context:context(), path_token()) -> cb_context:context().
-delete(Context, _Id) ->
+delete(Context, _UserId) ->
     crossbar_doc:delete(Context).
 
 -spec delete(cb_context:context(), kz_term:ne_binary(), path_token()) -> cb_context:context().
@@ -318,10 +342,9 @@ delete(Context, UserId, ?PHOTO) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
-
 -spec patch(cb_context:context(), path_token()) -> cb_context:context().
-patch(Context, Id) ->
-    post(Context, Id).
+patch(Context, UserId) ->
+    post(Context, UserId).
 
 %%------------------------------------------------------------------------------
 %% @doc

@@ -677,6 +677,9 @@ curl -v -X POST \
     -H "Content-Type: application/octet-stream" \
     --data-binary @/path/to/image.jpg \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/photo
+```
+
+```json
 {
     "auth_token": "{AUTH_TOKEN}",
     "data": {},
@@ -689,3 +692,16 @@ curl -v -X POST \
 ## Quickcalls
 
 See [the quickcall](quickcall.md) docs for how to perform this action.
+
+## QR Codes
+
+When an account is configured to use multi-factor authentication, and uses the included TOTP/HOTP provider, a user can generate their QR code for scanning into TOTP/HOTP applications like Google Authenticator.
+
+> GET /v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/qrcode
+
+```shell
+curl -v -X GET \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -H "Accept: image/png" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/qrcode
+```

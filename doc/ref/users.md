@@ -376,6 +376,16 @@ curl -v -X GET \
 
 ## Fetch
 
+> GET /v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/qrcode
+
+```shell
+curl -v -X GET \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/qrcode
+```
+
+## Fetch
+
 > GET /v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/photo
 
 ```shell

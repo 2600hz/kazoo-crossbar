@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2021, 2600Hz
+%%% @copyright (C) 2010-2022, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -42,7 +42,7 @@
           ,{<<"cb_api_auth">>, ?DEFAULT_METHOD_CONFIG('false')}
           ,{<<"cb_auth">>, ?DEFAULT_METHOD_CONFIG('false')}
           ,{<<"cb_ip_auth">>, ?DEFAULT_METHOD_CONFIG('false')}
-          ,{<<"cb_conference_auth">>, ?DEFAULT_METHOD_CONFIG('false', 'infinity')}
+          ,{<<"cb_conference_auth">>, ?DEFAULT_METHOD_CONFIG('false', <<"infinity">>)}
           ]
          )
        ).
@@ -69,17 +69,29 @@ create_auth_token(Context, AuthModule) ->
 
 -spec create_auth_token(cb_context:context(), kz_term:ne_binary(), kz_json:object()) ->
           cb_context:context().
-create_auth_token(Context, Method, JObj) ->
-    Data = cb_context:req_data(Context),
-
+create_auth_token(Context, <<Method/binary>>, JObj) ->
     AccountId = kz_json:get_first_defined([<<"account_id">>, [<<"Claims">>, <<"account_id">>]], JObj),
-    OwnerId = kz_json:get_first_defined([<<"owner_id">>, [<<"Claims">>, <<"owner_id">>]], JObj),
 
     AuthConfig = get_account_config(AccountId),
+
+    case is_auth_module_enabled(Method, AuthConfig) of
+        'false' ->
+            Reason = <<"authentication module ", Method/binary, " is disabled">>,
+            log_failed_auth(Method, <<"jwt_auth_token">>, Reason, Context, AccountId, AuthConfig),
+            crossbar_util:response('error', <<"invalid credentials">>, 401, Context);
+        'true' ->
+            create_auth_token(Context, Method, JObj, AuthConfig, AccountId)
+    end.
+
+create_auth_token(Context, Method, JObj, AuthConfig, AccountId) ->
+    Data = cb_context:req_data(Context),
+    OwnerId = kz_json:get_first_defined([<<"owner_id">>, [<<"Claims">>, <<"owner_id">>]], JObj),
+
     Expiration = token_auth_expiry(Method, AuthConfig),
 
     ReqClaims = kz_json:to_proplist(kz_json:get_json_value(<<"Claims">>, JObj, kz_json:new())),
     AdditionalClaims = props:filter_undefined([{<<"account_id">>, AccountId}
+                                              ,{<<"owner_id">>, OwnerId}
                                               ,{<<"method">>, Method}
                                               ,{<<"exp">>, Expiration}
                                               ,{<<"mfa_resp">>, kz_json:get_ne_value(<<"multi_factor_response">>, Data)}
@@ -88,13 +100,7 @@ create_auth_token(Context, Method, JObj) ->
 
     IsMultiFactor = is_multi_factor_enabled(Context, Claims, AuthConfig),
 
-    case is_auth_module_enabled(Method, AuthConfig)
-        andalso maybe_create_token(Context, Claims, AuthConfig, Method, IsMultiFactor)
-    of
-        'false' ->
-            Reason = <<"authentication module ", Method/binary, " is disabled">>,
-            log_failed_auth(Method, <<"jwt_auth_token">>, Reason, Context, AccountId, AuthConfig),
-            crossbar_util:response('error', <<"invalid credentials">>, 401, Context);
+    case  maybe_create_token(Context, Claims, AuthConfig, Method, IsMultiFactor) of
         {'ok', Token} ->
             Setters = [{fun cb_context:set_auth_token/2, Token}
                       ,{fun cb_context:set_auth_doc/2, kz_json:from_list(Claims)}
@@ -204,7 +210,14 @@ reset_identity_secret(Context) ->
 %%------------------------------------------------------------------------------
 -spec get_account_config(kz_term:api_ne_binary()) -> kz_json:object().
 get_account_config(AccountId) ->
-    kapps_account_config:get_hierarchy(AccountId, ?AUTH_CONFIG_CAT, <<"auth_modules">>, ?DEFAULT_AUTH_CONFIG).
+    get_account_config(AccountId, ?AUTH_CONFIG_CAT,<<"auth_modules">>, ?DEFAULT_AUTH_CONFIG).
+
+get_account_config(AccountId, ConfigCat, Key, Default) ->
+    kapps_account_config:get_hierarchy(AccountId
+                                      ,ConfigCat
+                                      ,Key
+                                      ,Default
+                                      ).
 
 -spec get_inherited_config(cb_context:context()) -> kz_json:object().
 get_inherited_config(Context) ->

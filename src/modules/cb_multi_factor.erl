@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2020, 2600Hz
+%%% @copyright (C) 2010-2022, 2600Hz
 %%% @doc Multi factor authentication configuration API endpoint
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -38,15 +38,18 @@
 %%------------------------------------------------------------------------------
 -spec init() -> 'ok'.
 init() ->
-    _ = crossbar_bindings:bind(<<"*.authorize.multi_factor">>, ?MODULE, 'authorize'),
-    _ = crossbar_bindings:bind(<<"*.allowed_methods.multi_factor">>, ?MODULE, 'allowed_methods'),
-    _ = crossbar_bindings:bind(<<"*.resource_exists.multi_factor">>, ?MODULE, 'resource_exists'),
-    _ = crossbar_bindings:bind(<<"*.validate.multi_factor">>, ?MODULE, 'validate'),
-    _ = crossbar_bindings:bind(<<"*.execute.get.multi_factor">>, ?MODULE, 'get'),
-    _ = crossbar_bindings:bind(<<"*.execute.put.multi_factor">>, ?MODULE, 'put'),
-    _ = crossbar_bindings:bind(<<"*.execute.post.multi_factor">>, ?MODULE, 'post'),
-    _ = crossbar_bindings:bind(<<"*.execute.patch.multi_factor">>, ?MODULE, 'patch'),
-    _ = crossbar_bindings:bind(<<"*.execute.delete.multi_factor">>, ?MODULE, 'delete').
+    Bindings = [{<<"*.authorize">>, 'authorize'}
+               ,{<<"*.allowed_methods.multi_factor">>, 'allowed_methods'}
+               ,{<<"*.resource_exists.multi_factor">>, 'resource_exists'}
+               ,{<<"*.validate.multi_factor">>, 'validate'}
+               ,{<<"*.execute.get.multi_factor">>, 'get'}
+               ,{<<"*.execute.put.multi_factor">>, 'put'}
+               ,{<<"*.execute.post.multi_factor">>, 'post'}
+               ,{<<"*.execute.patch.multi_factor">>, 'patch'}
+               ,{<<"*.execute.delete.multi_factor">>, 'delete'}
+               ],
+    cb_modules_util:bind(?MODULE, Bindings),
+    'ok'.
 
 %%------------------------------------------------------------------------------
 %% @doc Authorizes the incoming request, returning true if the requestor is
@@ -62,7 +65,7 @@ authorize(Context) ->
 -spec authorize(cb_context:context(), path_token()) ->
           boolean() |
           {'stop', cb_context:context()}.
-authorize(Context, _) ->
+authorize(Context, _ProviderId) ->
     authorize_system_multi_factor(Context, cb_context:req_nouns(Context), cb_context:req_verb(Context)).
 
 -spec authorize(cb_context:context(), path_token(), path_token()) -> 'true'.
@@ -71,12 +74,20 @@ authorize(_Context, _, _) -> 'true'.
 -spec authorize_system_multi_factor(cb_context:context(), req_nouns(), http_method()) ->
           boolean() |
           {'stop', cb_context:context()}.
-authorize_system_multi_factor(_, [{<<"multi_factor">>, []}], ?HTTP_GET) -> 'true';
-authorize_system_multi_factor(C, [{<<"multi_factor">>, []}], ?HTTP_PUT) -> cb_context:is_superduper_admin(C);
-authorize_system_multi_factor(C, [{<<"multi_factor">>, _}], ?HTTP_GET) -> cb_context:is_superduper_admin(C);
-authorize_system_multi_factor(C, [{<<"multi_factor">>, _}], ?HTTP_POST) -> cb_context:is_superduper_admin(C);
-authorize_system_multi_factor(C, [{<<"multi_factor">>, _}], ?HTTP_PATCH) -> cb_context:is_superduper_admin(C);
-authorize_system_multi_factor(C, [{<<"multi_factor">>, _}], _) -> {'stop', cb_context:add_system_error('forbidden', C)};
+authorize_system_multi_factor(_, [{<<"multi_factor">>, []}], ?HTTP_GET) ->
+    'true';
+authorize_system_multi_factor(C, [{<<"multi_factor">>, []}], ?HTTP_PUT) ->
+    cb_context:is_superduper_admin(C);
+authorize_system_multi_factor(C, [{<<"multi_factor">>, _}], ?HTTP_GET) ->
+    cb_context:is_superduper_admin(C);
+authorize_system_multi_factor(C, [{<<"multi_factor">>, _}], ?HTTP_POST) ->
+    cb_context:is_superduper_admin(C);
+authorize_system_multi_factor(C, [{<<"multi_factor">>, _}], ?HTTP_PATCH) ->
+    cb_context:is_superduper_admin(C);
+authorize_system_multi_factor(C, [{<<"multi_factor">>, [_ProviderId]}], ?HTTP_DELETE) ->
+    cb_context:is_superduper_admin(C);
+authorize_system_multi_factor(C, [{<<"multi_factor">>, _}], _) ->
+    {'stop', cb_context:add_system_error('forbidden', C)};
 authorize_system_multi_factor(_, _, _) -> 'true'.
 
 %%------------------------------------------------------------------------------
@@ -140,7 +151,10 @@ validate(Context, ?ATTEMPTS) ->
 validate(Context, ConfigId) ->
     case cb_context:req_nouns(Context) of
         [{<<"multi_factor">>, _}] ->
-            validate_multi_factor_config(cb_context:set_db_name(Context, ?KZ_AUTH_DB), ConfigId, cb_context:req_verb(Context));
+            validate_multi_factor_config(cb_context:set_db_name(Context, ?KZ_AUTH_DB)
+                                        ,ConfigId
+                                        ,cb_context:req_verb(Context)
+                                        );
         _ ->
             validate_multi_factor_config(Context, ConfigId, cb_context:req_verb(Context))
     end.

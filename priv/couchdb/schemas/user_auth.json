@@ -3,6 +3,12 @@
     "_id": "user_auth",
     "description": "Provides an auth-token via user credentials",
     "properties": {
+        "account_id": {
+            "description": "The account ID of the user",
+            "maxLength": 32,
+            "minLength": 32,
+            "type": "string"
+        },
         "account_name": {
             "description": "The account name of the user",
             "maxLength": 128,

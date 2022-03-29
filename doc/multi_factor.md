@@ -15,9 +15,212 @@ If you want to use multi factor authentication for a module, set the `multi_fact
 
 ## Multi Factor Authentication (MFA) flow summary
 
-The MFA process in Kazoo is straight forward. You configured the Kazoo integrated MFA service provider, and enabling the multi factor for an authentication endpoint. User will authenticate as usual by its own Kazoo credential. If the first factor authentication passed, second-factor provider information (usually a signed token) would be returned to client with HTTP `401 Unauthorized` status.
+The MFA process in Kazoo is straight forward. Configure the KAZOO integrated MFA service provider and enable the multi-factor setting for an authentication endpoint. A user (for example) will authenticate as usual by their KAZOO credentials. If the first factor authentication passed, second-factor provider information (usually a signed token) would be returned to client with HTTP `401 Unauthorized` status.
 
-User's client performs the second-factor authentication with the provider and sends provider response to Kazoo. If the provider validates user will be authenticated successful and a Kazoo token will be generated as usual otherwise if the second-factor provider response is not validated a HTTP `401 Unauthorized` will be returned.
+User's client performs the second-factor authentication with the provider and sends provider response to Kazoo in the `multi_factor_response` key. If the provider validates true, the user will be authenticated successfully and a KAZOO token will be generated as usual; otherwise, if the second-factor provider response is not validated, an HTTP `401 Unauthorized` will be returned.
+
+### OTP (one-time password) MFA flow
+
+KAZOO comes with a built-in OTP MFA provider that can work with users' authenticator apps (like [Google Authenticator](https://googleauthenticator.net/)). Once configured, the user will include the TOTP code as part of the payload for authentication.
+
+#### Setup OTP provider
+
+!!! warning
+    All API commands here require you to use an auth token generated for a super-duper admin.
+
+First, you can see the available providers on the cluster:
+
+> GET http://{SERVER}:8000/v2/multi_factor
+
+```json
+{
+  "auth_token": "{AUTH_TOKEN}",
+  "data": [
+    {
+      "enabled": false,
+      "id": "duo",
+      "name": "System Default Provider",
+      "provider_name": "duo",
+      "provider_type": "multi_factor"
+    }
+  ],
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REV}",
+  "status": "success"
+}
+
+```
+
+Here you can see that the [DUO integration](https://duo.com/product/multi-factor-authentication-mfa) is available already.
+
+Let's create the KAZOO OTP provider:
+
+> PUT  http://{SERVER}:8000/v2/multi_factor -d '{"data":{"enabled":true,"name":"KAZOO","provider_name":"otp","settings": {}}}'
+
+The important bit is `provider_name = otp`.
+
+```json
+{
+  "data": {
+    "_read_only": {
+      "created": 63814257545,
+      "id": "{PROVIDER_ID}",
+      "modified": 63814257545
+    },
+    "enabled": true,
+    "id": "{PROVIDER_ID}",
+    "name": "KAZOO",
+    "provider_name": "otp",
+    "settings": {
+    }
+  },
+  "revision": "{REV}",
+  "status": "success"
+}
+```
+
+Now we need to create the security policy for the account we're enabling MFA for. First, check available security options:
+
+> GET http://{SERVER}:8000/v2/security
+
+```json
+{
+  "data": {
+    "available_auth_methods": [
+      "cb_api_auth",
+      "cb_auth",
+      "cb_ip_auth",
+      "cb_user_auth"
+    ]
+  },
+  "status": "success"
+}
+```
+
+We can also look at the existing security policy for the account:
+
+> GET http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/security
+```json
+{
+  "data": {
+    "account": {
+    },
+    "inherited_config": {
+      "auth_modules": {
+        "cb_api_auth": {
+          "enabled": true,
+          "log_failed_attempts": true,
+          "log_successful_attempts": false,
+          "scopes": [
+            "crossbar"
+          ],
+          "token_auth_expiry_s": 3600
+        },
+        "cb_auth": {
+          "enabled": true,
+          "log_failed_attempts": true,
+          "log_successful_attempts": false,
+          "scopes": [
+            "crossbar"
+          ],
+          "token_auth_expiry_s": 3600
+        },
+        "cb_conference_auth": {
+          "enabled": true,
+          "log_failed_attempts": true,
+          "log_successful_attempts": false,
+          "scopes": [
+            "crossbar"
+          ],
+          "token_auth_expiry_s": "infinity"
+        },
+        "cb_ip_auth": {
+          "enabled": true,
+          "log_failed_attempts": true,
+          "log_successful_attempts": false,
+          "scopes": [
+            "crossbar"
+          ],
+          "token_auth_expiry_s": 3600
+        },
+        "cb_user_auth": {
+          "enabled": true,
+          "log_failed_attempts": true,
+          "log_successful_attempts": true,
+          "scopes": [
+            "crossbar"
+          ],
+          "token_auth_expiry_s": 3600
+        }
+      }
+    }
+  },
+  "status": "success"
+}
+```
+
+We specifically want users to be required to use MFA, so let's PATCH the `cb_user_auth` portion:
+
+> PATCH http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/security -d '{"data":{"auth_modules":{"cb_user_auth":{"multi_factor":{"configuration_id":"{PROVIDER_ID}","account_id":"{ACCOUNT_ID}","enabled":true}}}}}'
+
+Here we use the `{PROVIDER_ID}` of the KAZOO OTP provider creation earlier.
+
+```json
+{
+  "data": {
+    "auth_modules": {
+      "cb_user_auth": {
+        "multi_factor": {
+          "account_id": "{ACCOUNT_ID}",
+          "configuration_id": "{PROVIDER_ID}",
+          "enabled": true
+        },
+        "scopes": []
+      }
+    },
+    "id": "configs_crossbar.auth"
+  },
+  "status": "success"
+}
+
+```
+
+#### User MFA Authentication
+
+Now that the OTP provider is enabled and the account's security settings are ready for multi-factor authentication, let's look at a user's authentication flow.
+
+First, the user needs to generate their QR code to scan into their authenticator application:
+
+> GET http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/qrcode
+
+The result of the API request will be a PNG QR code. The user should then open their authenticator application to scan the QR code.
+
+Now, when the user tries to authenticate, the 401 response should include the `multi_factor_request` to indicate the need to include the current TOTP.
+
+> PUT http://{SERVER}:8000/v2/user_auth -d '{"data":{"credentials":"{HASH}", "account_name":"{NAME}"}}'
+
+```json
+{
+  "data": {
+    "message": "client needs to preform second-factor authentication",
+    "multi_factor_request": {
+      "key_type": "totp",
+      "provider_name": "otp"
+    }
+  },
+  "error": "401",
+  "message": "invalid_credentials",
+  "status": "error"
+}
+```
+
+At this point, the user should check the TOTP code on their authenticator application and include it on the subsequent request in the `multi_factor_response` key:
+
+> PUT http://{SERVER}:8000/v2/user_auth -d '{"data":{"credentials":"{HASH}", "account_name":"{NAME}", "multi_factor_response":"{TOTP_CODE}"}}'
+
+Here, `{TOTP_CODE}` is the 6-digit code.
+
+Assuming the TOTP is correct (and KAZOO will check one time period before, the current time period, and the next time period to account for delays), the API request should respond with the generated auth token and expected user_auth response.
 
 ## Provider Configuration Schema
 
