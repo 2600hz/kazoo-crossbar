@@ -52,6 +52,11 @@
                     "description": "callflow dialog_subscribed_mwi_prefix",
                     "type": "string"
                 },
+                "hard_stop_after_successful_group": {
+                    "default": false,
+                    "description": "callflow hard_stop_after_successful_group",
+                    "type": "boolean"
+                },
                 "voicemail": {
                     "properties": {
                         "delete_after_notify": {
@@ -12226,6 +12231,11 @@
                     "default": 5,
                     "description": "callflow fax detect duration in seconds",
                     "type": "integer"
+                },
+                "hard_stop_after_successful_group": {
+                    "default": false,
+                    "description": "callflow hard_stop_after_successful_group",
+                    "type": "boolean"
                 },
                 "max_branch_count": {
                     "default": 50,
