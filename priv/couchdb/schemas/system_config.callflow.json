@@ -78,6 +78,11 @@
             "description": "callflow fax detect duration in seconds",
             "type": "integer"
         },
+        "hard_stop_after_successful_group": {
+            "default": true,
+            "description": "callflow hard_stop_after_successful_group",
+            "type": "boolean"
+        },
         "max_branch_count": {
             "default": 50,
             "description": "callflow maximum branch count",

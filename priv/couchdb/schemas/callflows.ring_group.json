@@ -71,6 +71,10 @@
             "minLength": 1,
             "type": "string"
         },
+        "hard_stop_after_successful_group": {
+            "description": "should hard stop on successful bridge",
+            "type": "boolean"
+        },
         "ignore_forward": {
             "default": true,
             "description": "If true, will ignore SIP redirect requests for call-forwarded devices",
