@@ -781,3 +781,11 @@ curl -v -X POST \
     "status": "success"
 }
 ```
+
+#### Call recording direction
+
+`inbound` vs `outbound` is relative to the media server in KAZOO.
+
+For instance, Alice places a call from her device to KAZOO - `inbound` call to KAZOO.
+
+Bob receives a call from KAZOO on his device - `outbound` call from KAZOO.
