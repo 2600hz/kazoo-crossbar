@@ -152,7 +152,6 @@ maybe_authorize_impersonation(Context, RequestAccountId, RequestUserId, AuthAcco
     end.
 
 maybe_authorize_impersonation(Context, RequestAccountId, RequestUserId, AuthAccountId, 'undefined') ->
-    lager:info("auth user id undefined, not allowing: ~p", [cb_context:auth_doc(Context)]),
     maybe_authorize_impersonation_via_api_token(Context, RequestAccountId, RequestUserId, AuthAccountId
                                                ,kz_json:get_value(<<"method">>, cb_context:auth_doc(Context))
                                                );
