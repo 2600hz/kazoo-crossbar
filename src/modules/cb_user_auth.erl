@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2022, 2600Hz
 %%% @doc User auth module
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -112,26 +112,12 @@ authorize(Context, _) ->
 -spec authorize_nouns(cb_context:context(), req_nouns(), req_verb()) -> boolean() | {'stop', cb_context:context()}.
 authorize_nouns(Context
                ,[{<<"user_auth">>, []}
-                ,{<<"users">>, [UserId]}
-                ,{<<"accounts">>, [AccountId]}
+                ,{<<"users">>, [RequestUserId]}
+                ,{<<"accounts">>, [RequestAccountId]}
                 ]
                ,?HTTP_PUT
                ) ->
-    case cb_context:auth_account_id(Context) =/= 'undefined'
-        andalso cb_context:auth_user_id(Context) =/= 'undefined'
-        andalso cb_context:auth_account_id(Context) =/= AccountId
-        andalso cb_context:is_superduper_admin(Context)
-        andalso cb_context:is_account_admin(Context)
-    of
-        'true' ->
-            lager:debug("authorizing request"),
-            'true';
-        'false' ->
-            lager:error("non-admin user ~s in non super-duper admin account ~s tried to impersonate user ~s in account ~s"
-                       ,[cb_context:auth_user_id(Context), cb_context:auth_account_id(Context), UserId, AccountId]
-                       ),
-            {'stop', cb_context:add_system_error('forbidden', Context)}
-    end;
+    maybe_authorize_impersonation(Context, RequestAccountId, RequestUserId, cb_context:auth_account_id(Context));
 authorize_nouns(_Context, [{<<"user_auth">>, [?RECOVERY]}], Method) when Method =:= ?HTTP_POST;
                                                                          Method =:= ?HTTP_PUT ->
     %% allow recovery
@@ -155,6 +141,47 @@ authorize_nouns(_, [{<<"user_auth">>, [_AuthToken]}], ?HTTP_GET) ->
     lager:debug("authorizing request"),
     'true';
 authorize_nouns(_, _Nouns, _) -> 'false'.
+
+maybe_authorize_impersonation(Context, _RequestAccountId, _RequestUserId, 'undefined') ->
+    lager:info("no auth account on auth token"),
+    forbidden(Context);
+maybe_authorize_impersonation(Context, RequestAccountId, _RequestUserId, RequestAccountId) ->
+    lager:info("auth token's account id matches request's account id ~s, not allowed", [RequestAccountId]),
+    forbidden(Context);
+maybe_authorize_impersonation(Context, RequestAccountId, RequestUserId, AuthAccountId) ->
+    case cb_context:is_superduper_admin(Context) of
+        'false' ->
+            lager:info("auth account id ~s is not superduper", [AuthAccountId]),
+            forbidden(Context);
+        'true' ->
+            maybe_authorize_impersonation(Context, RequestAccountId, RequestUserId, AuthAccountId, cb_context:auth_user_id(Context))
+    end.
+
+maybe_authorize_impersonation(Context, RequestAccountId, RequestUserId, AuthAccountId, 'undefined') ->
+    maybe_authorize_impersonation_via_api_token(Context, RequestAccountId, RequestUserId, AuthAccountId
+                                               ,kz_json:get_value(<<"method">>, cb_context:auth_doc(Context))
+                                               );
+maybe_authorize_impersonation(Context, RequestAccountId, RequestUserId, AuthAccountId, AuthUserId) ->
+    case cb_context:is_account_admin(Context) of
+        'true' ->
+            lager:debug("authorizing request"),
+            'true';
+        'false' ->
+            lager:error("non-admin user ~s in non super-duper admin account ~s tried to impersonate user ~s in account ~s"
+                       ,[AuthUserId, AuthAccountId, RequestUserId, RequestAccountId]
+                       ),
+            forbidden(Context)
+    end.
+
+forbidden(Context) ->
+    {'stop', cb_context:add_system_error('forbidden', Context)}.
+
+maybe_authorize_impersonation_via_api_token(_Context, _RequestAccountId, _RequestUserId, _AuthAccountId, <<"cb_api_auth">>) ->
+    lager:info("API auth token used, authorizing request"),
+    'true';
+maybe_authorize_impersonation_via_api_token(Context, _RequestAccountId, _RequestUserId, _AuthAccountId, _Method) ->
+    lager:info("no auth user id supplied, and non-API auth token used, not allowing"),
+    forbidden(Context).
 
 %%------------------------------------------------------------------------------
 %% @doc
