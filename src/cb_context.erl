@@ -118,6 +118,8 @@
 
 -include("crossbar.hrl").
 
+-elvis([{elvis_style, god_modules, disable}]).
+
 -record(cb_context, {content_types_provided = [] :: crossbar_content_handlers()
                     ,content_types_accepted = [] :: crossbar_content_handlers()
                     ,allowed_methods = ?ALLOWED_METHODS :: http_methods()
