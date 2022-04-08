@@ -34,6 +34,29 @@ paths:
       summary: Update an instance of apps_store
       tags:
         - apps_store
+  /accounts/{ACCOUNT_ID}/apps_store/marketplace:
+    get:
+      operationId: GetAccountsAccountIdAppsStoreMarketplace
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Get marketplace of apps_store
+      tags:
+        - apps_store
+    patch:
+      operationId: PatchAccountsAccountIdAppsStoreMarketplace
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Patch specific fields of apps_store
+      tags:
+        - apps_store
   /accounts/{ACCOUNT_ID}/apps_store/{APP_ID}:
     delete:
       operationId: DeleteAccountsAccountIdAppsStoreAppId
