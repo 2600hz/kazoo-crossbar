@@ -6973,7 +6973,11 @@
       'type': string
     'to':
       'description': callee-id-number
-      'type': string
+      'oneOf':
+        - 'items':
+            'type': string
+          'type': array
+        - 'type': string
   'required':
     - to
   'type': object
@@ -9076,7 +9080,11 @@
       'type': string
     'to':
       'description': callee-id-number
-      'type': string
+      'oneOf':
+        - 'items':
+            'type': string
+          'type': array
+        - 'type': string
   'required':
     - body
     - to
