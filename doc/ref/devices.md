@@ -246,6 +246,7 @@ Key | Description | Type | Default | Required | Support Level
 `video.codecs.[]` |   | `string('H261' | 'H263' | 'H263+' | 'H264' | 'VP8' | 'VP9')` |   | `false` |  
 `video.codecs` | A list of video codecs the endpoint supports | `array(string('H261' | 'H263' | 'H263+' | 'H264' | 'VP8' | 'VP9'))` | `[]` | `false` |  
 `video` | The video media parameters | `object()` | `{}` | `false` |  
+`webrtc` | If true, forces a WebRTC compatible SDP on the INVITE | `boolean()` | `false` | `false` |  
 
 ### formatters
 
