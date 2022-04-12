@@ -5678,6 +5678,10 @@
           '$ref': '#/codecs.video'
           'description': A list of video codecs the endpoint supports
       'type': object
+    'webrtc':
+      'default': false
+      'description': 'If true, forces a WebRTC compatible SDP on the INVITE'
+      'type': boolean
   'type': object
 'external_numbers':
   'description': Schema for an external number
