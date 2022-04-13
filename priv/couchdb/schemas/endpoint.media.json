@@ -116,7 +116,6 @@
             "type": "object"
         },
         "webrtc": {
-            "default": false,
             "description": "If true, forces a WebRTC compatible SDP on the INVITE",
             "type": "boolean"
         }
