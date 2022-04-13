@@ -175,7 +175,7 @@ Key | Description | Type | Default | Required | Support Level
 `progress_timeout` | The progress timeout to apply to the endpoint (seconds) | `integer()` |   | `false` |  
 `video.codecs` | A list of video codecs the endpoint supports | [#/definitions/codecs.video](#codecsvideo) |   | `false` |  
 `video` | The video media parameters | `object()` | `{}` | `false` |  
-`webrtc` | If true, forces a WebRTC compatible SDP on the INVITE | `boolean()` | `false` | `false` |  
+`webrtc` | If true, forces a WebRTC compatible SDP on the INVITE | `boolean()` |   | `false` |  
 
 ### formatters
 
