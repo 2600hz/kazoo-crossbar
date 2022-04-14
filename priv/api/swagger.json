@@ -10711,8 +10711,16 @@
                             },
                             "realm": {
                                 "description": "This resource gateway authentication realm",
-                                "maxLength": 64,
-                                "type": "string"
+                                "oneOf": [
+                                    {
+                                        "maxLength": 128,
+                                        "minLength": 1,
+                                        "type": "string"
+                                    },
+                                    {
+                                        "format": "ip-address"
+                                    }
+                                ]
                             },
                             "route": {
                                 "description": "A statically configured SIP URI to route all call to",
@@ -10720,9 +10728,16 @@
                             },
                             "server": {
                                 "description": "This resource gateway server",
-                                "maxLength": 128,
-                                "minLength": 1,
-                                "type": "string"
+                                "oneOf": [
+                                    {
+                                        "maxLength": 128,
+                                        "minLength": 1,
+                                        "type": "string"
+                                    },
+                                    {
+                                        "format": "ip-address"
+                                    }
+                                ]
                             },
                             "skype_interface": {
                                 "description": "The name of the Skype interface to route the call over",
