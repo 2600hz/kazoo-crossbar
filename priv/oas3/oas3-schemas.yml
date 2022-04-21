@@ -9358,6 +9358,30 @@
                   'description': ananke timeout in seconds
                   'type': integer
   'type': object
+'system_config.appex_client':
+  'description': Schema for appex_client system_config
+  'properties':
+    'api_url':
+      'description': appex_client api_url
+      'type': string
+    'app_exchange_url':
+      'description': appex_client app_exchange_url
+      'type': string
+    'cluster_secret':
+      'description': appex_client cluster_secret
+      'type': string
+    'enabled':
+      'default': false
+      'description': appex_client enabled
+      'type': boolean
+    'fetch_timer_s':
+      'default': 3600
+      'description': appex_client fetch_timer_s
+      'type': integer
+    'marketplace_url':
+      'description': appex_client marketplace_url
+      'type': string
+  'type': object
 'system_config.auth':
   'description': Schema for auth system_config
   'properties':
