@@ -11,18 +11,19 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
+-spec has_valid_dbs_test_() -> list().
 has_valid_dbs_test_() ->
     Context = cb_context:new(),
     EmptyDbContext = cb_context:set_db_name(Context, <<>>),
     DbContext = cb_context:set_db_name(Context, <<"system_config">>),
 
     [{"Invalid databases value"
-     ,[?_assertEqual({'error', <<"invalid_db_name">>}
+     ,[?_assertEqual({'no_db', []}
                     ,get_valid_databases(
                        crossbar_view:has_valid_dbs({Context, []})
                       )
                     )
-      ,?_assertEqual({'error', <<"invalid_db_name">>}
+      ,?_assertEqual({'no_db', []}
                     ,get_valid_databases(
                        crossbar_view:has_valid_dbs({Context, [{'databases', [<<>>]}]})
                       )
@@ -32,12 +33,12 @@ has_valid_dbs_test_() ->
                        crossbar_view:has_valid_dbs({Context, [{'databases', 'atom'}]})
                       )
                     )
-      ,?_assertEqual({'error', <<"invalid_db_name">>}
+      ,?_assertEqual({'no_db', []}
                     ,get_valid_databases(
                        crossbar_view:has_valid_dbs({EmptyDbContext, [{'databases', ['marble']}]})
                       )
                     )
-      ,?_assertEqual({'error', <<"invalid_db_name">>}
+      ,?_assertEqual({'no_db', []}
                     ,get_valid_databases(
                        crossbar_view:has_valid_dbs({EmptyDbContext, [{'databases', <<>>}]})
                       )
@@ -66,5 +67,7 @@ has_valid_dbs_test_() ->
 
 get_valid_databases({'error', Context}) ->
     {cb_context:resp_status(Context), cb_context:resp_error_msg(Context)};
+get_valid_databases({'no_db', Context}) ->
+    {'no_db', cb_context:resp_data(Context)};
 get_valid_databases({'ok', {Context, Options}}) ->
     {'ok', {cb_context:db_name(Context), props:get_value('databases', Options)}}.

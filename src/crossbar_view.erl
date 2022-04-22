@@ -311,7 +311,7 @@ build_time_range_keys({'error', _}=Error) ->
 build_modb_options(Thing) ->
     case build_time_range_keys(Thing) of
         {'ok', {Context, CursorOptions}} ->
-            {'ok', {Context, props:set_value('databases', get_range_modbs(Context, CursorOptions), CursorOptions)}};
+            check_range_ne_db(Context, CursorOptions, 'modb', get_range_modbs(Context, CursorOptions));
         {'error', _}=Error -> Error
     end.
 
@@ -319,9 +319,19 @@ build_modb_options(Thing) ->
 build_yodb_options(Thing) ->
     case build_time_range_keys(Thing) of
         {'ok', {Context, CursorOptions}} ->
-            {'ok', {Context, props:set_value('databases', get_range_yodbs(Context, CursorOptions), CursorOptions)}};
+            check_range_ne_db(Context, CursorOptions, 'yodb', get_range_yodbs(Context, CursorOptions));
         {'error', _}=Error -> Error
     end.
+
+-spec check_range_ne_db(cb_context:context(), kz_view:options(), 'modb' | 'yodb', kz_term:ne_binaries()) ->
+          maybe_load_params().
+check_range_ne_db(Context, CursorOptions, _DbType, []) ->
+    lager:debug("no ~s database found for the requested range, falling back to databases from options if any", [_DbType]),
+    %% setting db_name to undefined to make sure if the options has no databases then we don't use
+    %% account db as modb/yodb again. See `has_valid_dbs/1' bellow
+    {'ok', {cb_context:set_db_name(Context, 'undefined'), CursorOptions}};
+check_range_ne_db(Context, CursorOptions, _, DbNames) ->
+    {'ok', {Context, props:set_value('databases', DbNames, CursorOptions)}}.
 %% }}}
 
 %% get_*_funs {{{
@@ -868,6 +878,13 @@ load_view(View, Selector, {'ok', ContextOptions}) ->
         {'ok', {Context, Options}} ->
             Extra = cb_context:fetch(Context, 'crossbar_view_extra'),
             maybe_apply_extra(Context, View, Selector, Options, Extra);
+        {'no_db', Context} ->
+            %% If there is no db in options or context, then there is no need to alarm the client.
+            %% In other hand we lose visibilty to underlying issue why the database list was empty?
+            %% Was it because the cb module developers forgot to set one or because modb/yodb
+            %% was missing?
+            lager:debug("no databases in options or context, returning empty result set"),
+            crossbar_doc:handle_datamgr_success([], Context);
         {'error', ErrorContext} ->
             ErrorContext
     end.
@@ -877,7 +894,7 @@ maybe_apply_extra(Context, View, Selector, Options, 'undefined') ->
 maybe_apply_extra(Context, View, Selector, Options, Fun) ->
     load_view(Fun(Context, View, Selector, Options)).
 
--spec has_valid_dbs(context_options()) -> maybe_load_params().
+-spec has_valid_dbs(context_options()) -> maybe_load_params() | {'no_db', cb_context:context()}.
 has_valid_dbs({Context, Options}) ->
     DbName = cb_context:db_name(Context),
     case {get_databases(Options)
@@ -885,8 +902,7 @@ has_valid_dbs({Context, Options}) ->
          }
     of
         {[], 'false'} ->
-            lager:debug("can not find any databases in options or context"),
-            {'error', cb_context:add_system_error('invalid_db_name', Context)};
+            {'no_db', Context};
         {[], 'true'} ->
             lager:debug("using database from context"),
             {'ok', {Context, props:set_value('databases', [cb_context:db_name(Context)], Options)}};
