@@ -396,36 +396,42 @@
                         "type": "integer"
                     },
                     "realm": {
-                        "description": "This resource gateway authentication realm",
-                        "kazoo-validation": true,
-                        "oneOf": [
+                        "anyOf": [
                             {
                                 "maxLength": 128,
                                 "minLength": 1,
                                 "type": "string"
                             },
                             {
-                                "format": "ip-address"
+                                "format": "ipv4"
+                            },
+                            {
+                                "format": "ipv6"
                             }
-                        ]
+                        ],
+                        "description": "This resource gateway authentication realm",
+                        "kazoo-validation": true
                     },
                     "route": {
                         "description": "A statically configured SIP URI to route all call to",
                         "type": "string"
                     },
                     "server": {
-                        "description": "This resource gateway server",
-                        "kazoo-validation": true,
-                        "oneOf": [
+                        "anyOf": [
                             {
                                 "maxLength": 128,
                                 "minLength": 1,
                                 "type": "string"
                             },
                             {
-                                "format": "ip-address"
+                                "format": "ipv4"
+                            },
+                            {
+                                "format": "ipv6"
                             }
-                        ]
+                        ],
+                        "description": "This resource gateway server",
+                        "kazoo-validation": true
                     },
                     "skype_interface": {
                         "description": "The name of the Skype interface to route the call over",

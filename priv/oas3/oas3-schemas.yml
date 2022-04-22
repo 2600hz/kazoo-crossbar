@@ -8411,23 +8411,25 @@
             'description': The progress timeout to apply to the resource gateway
             'type': integer
           'realm':
-            'description': This resource gateway authentication realm
-            'oneOf':
+            'anyOf':
               - 'maxLength': 128
                 'minLength': 1
                 'type': string
-              - 'format': ip-address
+              - 'format': ipv4
+              - 'format': ipv6
+            'description': This resource gateway authentication realm
             'x-kazoo-validation': true
           'route':
             'description': A statically configured SIP URI to route all call to
             'type': string
           'server':
-            'description': This resource gateway server
-            'oneOf':
+            'anyOf':
               - 'maxLength': 128
                 'minLength': 1
                 'type': string
-              - 'format': ip-address
+              - 'format': ipv4
+              - 'format': ipv6
+            'description': This resource gateway server
             'x-kazoo-validation': true
           'skype_interface':
             'description': The name of the Skype interface to route the call over
