@@ -9,7 +9,7 @@
             "type": "boolean"
         },
         "base_profile_name": {
-            "description": "",
+            "description": "name of base profile",
             "type": "string"
         },
         "bridge_password": {
