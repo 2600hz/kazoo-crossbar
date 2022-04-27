@@ -173,6 +173,10 @@
                     },
                     "description": "conferences page",
                     "type": "object"
+                },
+                "video": {
+                    "description": "conferences profiles video",
+                    "type": "object"
                 }
             },
             "type": "object"
