@@ -208,6 +208,9 @@
         'page':
           'description': conferences profiles page
           'type': object
+        'video':
+          'description': conferences profiles video
+          'type': object
       'x-patternProperties':
         '.+':
           'description': conferences profiles  +
@@ -4375,6 +4378,9 @@
       'default': false
       'description': Indicates if the conference is reachable using a public link
       'type': boolean
+    'base_profile_name':
+      'description': ''
+      'type': string
     'bridge_password':
       'description': the password used for a conference bridge
       'type': string
@@ -10248,6 +10254,9 @@
             'moh-sound': 'silence_stream://1'
             'rate': 8000
           'description': conferences page
+          'type': object
+        'video':
+          'description': conferences profiles video
           'type': object
       'type': object
       'x-patternProperties':

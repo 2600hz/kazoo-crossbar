@@ -15,6 +15,7 @@ Schema for conferences
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `allow_shareable_link` | Indicates if the conference is reachable using a public link | `boolean()` | `false` | `false` |  
+`base_profile_name` |   | `string()` |   | `false` |  
 `bridge_password` | the password used for a conference bridge | `string()` |   | `false` |  
 `bridge_username` | the username used for a conference bridge | `string()` |   | `false` |  
 `caller_controls` | caller controls (config settings) | `string()` |   | `false` |  
@@ -153,6 +154,7 @@ Schema for conferences
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `allow_shareable_link` | Indicates if the conference is reachable using a public link | `boolean()` | `false` | `false` |  
+`base_profile_name` |   | `string()` |   | `false` |  
 `bridge_password` | the password used for a conference bridge | `string()` |   | `false` |  
 `bridge_username` | the username used for a conference bridge | `string()` |   | `false` |  
 `caller_controls` | caller controls (config settings) | `string()` |   | `false` |  

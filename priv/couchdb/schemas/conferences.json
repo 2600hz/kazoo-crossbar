@@ -8,6 +8,10 @@
             "description": "Indicates if the conference is reachable using a public link",
             "type": "boolean"
         },
+        "base_profile_name": {
+            "description": "",
+            "type": "string"
+        },
         "bridge_password": {
             "description": "the password used for a conference bridge",
             "type": "string"
