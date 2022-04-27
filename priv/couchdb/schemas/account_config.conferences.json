@@ -120,6 +120,10 @@
                 "page": {
                     "description": "conferences profiles page",
                     "type": "object"
+                },
+                "video": {
+                    "description": "conferences profiles video",
+                    "type": "object"
                 }
             }
         },
