@@ -25,6 +25,11 @@
             "description": "appex_client fetch_timer_s",
             "type": "integer"
         },
+        "http_timeout_s": {
+            "default": 120,
+            "description": "appex_client http_timeout_s",
+            "type": "integer"
+        },
         "marketplace_url": {
             "description": "appex_client marketplace_url",
             "type": "string"
