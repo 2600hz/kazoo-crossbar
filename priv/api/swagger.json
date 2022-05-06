@@ -15142,6 +15142,22 @@
         "system_config.jonny5": {
             "description": "Schema for jonny5 system_config",
             "properties": {
+                "bypass_authz_classifiers": {
+                    "default": [
+                        {
+                            "classifier": "emergency"
+                        },
+                        {
+                            "classifier": "tollfree_us",
+                            "direction": "outbound"
+                        }
+                    ],
+                    "description": "Classifiers (and optional call direction) that bypass jonny5 authz checks",
+                    "items": {
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
                 "check_service_standing": {
                     "default": true,
                     "description": "jonny5 check_service_standing",
