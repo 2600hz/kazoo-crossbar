@@ -604,7 +604,7 @@ exec_dial_endpoints(Context, ConferenceId, Data, ToDial) ->
               ,{<<"Msg-ID">>, cb_context:req_id(Context)}
               ,{<<"Outbound-Call-ID">>, kz_json:get_ne_binary_value(<<"outbound_call_id">>, Data)}
               ,{<<"Participant-Flags">>, kz_json:get_list_value(<<"participant_flags">>, Data)}
-              ,{<<"Profile-Name">>, kz_json:get_ne_binary_value(<<"profile_name">>, Data)}
+              ,{<<"Profile-Name">>, kz_json:find(<<"profile_name">>, [Data, Conference])}
               ,{<<"Target-Call-ID">>, TargetCallId}
               ,{<<"Timeout">>, Timeout}
               | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
@@ -722,7 +722,9 @@ build_endpoint(<<"sip:", _/binary>>=URI, ?BUILD_ACC(_, _, _, _)=Acc) ->
     lager:info("building SIP endpoint ~s", [URI]),
     build_sip_endpoint(URI, Acc);
 build_endpoint(<<_:32/binary>>=EndpointId, ?BUILD_ACC(Endpoints, Call, Context, Element)) ->
-    Properties = kz_json:from_list([{<<"source">>, kz_term:to_binary(?MODULE)}]),
+    Properties = kz_json:from_list([{<<"source">>, kz_term:to_binary(?MODULE)}
+                                   ,{<<"endpoint_module_version">>, <<"v5">>}
+                                   ]),
     case kz_endpoint:build(EndpointId, Properties, Call) of
         {'ok', Legs} -> ?BUILD_ACC(Endpoints ++ Legs, Call, Context, Element+1);
         {'error', _E} ->
