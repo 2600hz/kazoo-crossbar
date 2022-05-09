@@ -15506,6 +15506,11 @@
                     "description": "kazoo_endpoint endpoint_module",
                     "type": "string"
                 },
+                "endpoint_module_version": {
+                    "default": "v5",
+                    "description": "kazoo_endpoint endpoint_module_version",
+                    "type": "string"
+                },
                 "restrict_to_known_types": {
                     "default": false,
                     "description": "kazoo_endpoint restrict to known types",
