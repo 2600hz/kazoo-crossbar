@@ -85,7 +85,7 @@ curl -v -X POST \
 ```
 
 **Note about *reset* request**: actually, *reset* is not what it seems to represent. *reset* action
-request subscribers to replace any state they have for the given presence\_id ({EXTENSION} in this case)
+request *presence* listeners such as *kamailio* to reset any state they have for the given presence\_id ({EXTENSION} in this case)
 with the presence state for the given presence_id within `{ACCOUNT_DB}/manual_presence` document, if any.
 
 In short, *reset* acts like a *flush* command with `{ACCOUNT_DB}/manual_presence` document as the data source.
