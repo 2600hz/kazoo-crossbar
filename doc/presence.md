@@ -88,7 +88,7 @@ curl -v -X POST \
 request *presence* listeners such as *kamailio* to reset any state they have for the given presence\_id ({EXTENSION} in this case)
 with the presence state for the given presence_id within `{ACCOUNT_DB}/manual_presence` document, if any.
 
-In short, *reset* acts like a *flush* command with `{ACCOUNT_DB}/manual_presence` document as the data source.
+In short, *reset* acts like a *flush* command
 
 ### Post To Update Presence State
 
