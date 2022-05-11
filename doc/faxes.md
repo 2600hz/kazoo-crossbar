@@ -25,7 +25,7 @@ Key | Description | Type | Default | Required | Support Level
 `document.host` | The host header to be used when fetching for transmission | `string()` |   | `false` |  
 `document.method` | The method that should be used to retrieve the document | `string('get' | 'post')` | `get` | `false` |  
 `document.referer` | The referer header to be used when fetching for transmission | `string()` |   | `false` |  
-`document.url` | The url of the fax document | `string()` |   | `true` |  
+`document.url` | The url of the fax document | `string(7..)` |   | `true` |  
 `document` | Parameters related to the storage of a fax document | `object()` |   | `false` |  
 `from_name` | The sender name for the fax | `string()` |   | `false` |  
 `from_number` | The sender number for the fax | `string()` |   | `true` |  

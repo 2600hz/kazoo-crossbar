@@ -122,7 +122,8 @@
             "type": "string"
         },
         "url": {
-            "description": "url",
+            "description": "URL to send the recording to once finished",
+            "minLength": 6,
             "name": "url",
             "type": "string"
         }

@@ -749,6 +749,7 @@
     'api_url':
       'description': Application api url
       'format': uri
+      'minLength': 7
       'type': string
     'author':
       'description': Application author
@@ -793,6 +794,7 @@
     'source_url':
       'description': Application source url
       'format': uri
+      'minLength': 7
       'type': string
     'tags':
       'items':
@@ -950,6 +952,7 @@
       'type': string
     'redirect_uri':
       'description': redirect URI
+      'minLength': 7
       'type': string
     'state':
       'description': state
@@ -1164,6 +1167,7 @@
     'url':
       'description': The URL to use when sending the recording for storage
       'format': uri
+      'minLength': 6
       'type': string
       'x-kazoo-validation': true
   'type': object
@@ -1279,7 +1283,8 @@
       'name': to
       'type': string
     'url':
-      'description': url
+      'description': URL to send the recording to once finished
+      'minLength': 6
       'name': url
       'type': string
   'type': object
@@ -3111,6 +3116,7 @@
   'properties':
     'cdr_url':
       'description': Optional URL to send the CDR to at the end of the call
+      'minLength': 7
       'pattern': '^https?://'
       'type': string
     'debug':
@@ -3151,6 +3157,7 @@
       'type': boolean
     'voice_url':
       'description': What URL to request the initial Pivot callflow
+      'minLength': 7
       'pattern': '^https?://'
       'type': string
       'x-kazoo-validation': true
@@ -3342,6 +3349,7 @@
     'url':
       'description': The URL to use when sending the recording for storage
       'format': uri
+      'minLength': 5
       'type': string
       'x-kazoo-validation': true
   'required':
@@ -3376,6 +3384,7 @@
     'url':
       'description': The URL to use when sending the recording for storage
       'format': uri
+      'minLength': 7
       'type': string
       'x-kazoo-validation': true
   'type': object
@@ -4000,6 +4009,7 @@
       'type': boolean
     'uri':
       'description': The HTTP URI to send the request
+      'minLength': 6
       'type': string
       'x-kazoo-validation': true
   'type': object
@@ -5736,6 +5746,7 @@
                   'type': string
                 'url':
                   'description': The URL to call back with the results
+                  'minLength': 7
                   'pattern': '^https?://'
                   'type': string
                   'x-kazoo-validation': true
@@ -5789,6 +5800,7 @@
                   'type': string
                 'url':
                   'description': The URL to call back with the results
+                  'minLength': 7
                   'pattern': '^https?://'
                   'type': string
                   'x-kazoo-validation': true
@@ -5880,6 +5892,7 @@
           'type': string
         'url':
           'description': The url of the fax document
+          'minLength': 7
           'pattern': '^https?://'
           'type': string
       'required':
@@ -6901,6 +6914,7 @@
   'properties':
     'cdr_url':
       'description': Optional URL to send the CDR to at the end of the call
+      'minLength': 7
       'pattern': '^https?://'
       'type': string
     'debug':
@@ -6925,6 +6939,7 @@
       'type': string
     'voice_url':
       'description': What URL to request the initial Pivot callflow
+      'minLength': 7
       'pattern': '^https?://'
       'type': string
       'x-kazoo-validation': true
@@ -6999,6 +7014,7 @@
       'type': integer
     'url':
       'description': HTTP URL to send the finished recording
+      'minLength': 7
       'type': string
       'x-kazoo-validation': true
   'type': object
@@ -7839,6 +7855,7 @@
     'cdr_url':
       'description': An optional HTTP URL to POST the CDR
       'format': uri
+      'minLength': 6
       'type': string
     'connection_timeout':
       'default': 3600
@@ -7878,6 +7895,7 @@
       'description': |-
         An optional HTTP URL to PUT the call recording after the call ends (and should respond to GET for retrieving the audio data)
       'format': uri
+      'minLength': 6
       'type': string
     'ring_simultaneously':
       'default': 1
@@ -9031,6 +9049,7 @@
           'type': boolean
         'url':
           'description': The base HTTP(s) URL to use when creating the request
+          'minLength': 7
           'type': string
           'x-kazoo-validation': true
         'verb':
@@ -16716,7 +16735,7 @@
   'type': object
 'webhooks':
   'description': |-
-    Web Hooks are subscriptions to allowed events that, when the event occurs, the event data is sent to the uri set in the Web Hook document.
+    Web Hooks are subscriptions to allowed events that, when the event occurs, the event data is sent to the URI set in the Web Hook document.
   'properties':
     'custom_data':
       'additionalProperties':
@@ -16773,6 +16792,7 @@
     'uri':
       'description': The 3rd party URI to call out to an event
       'format': uri
+      'minLength': 1
       'type': string
       'x-kazoo-validation': true
       'x-support_level': supported

@@ -41,6 +41,7 @@
                 },
                 "url": {
                     "description": "The url of the fax document",
+                    "minLength": 7,
                     "pattern": "^https?://",
                     "type": "string"
                 }

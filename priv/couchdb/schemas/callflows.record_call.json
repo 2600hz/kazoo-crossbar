@@ -79,6 +79,7 @@
             "description": "The URL to use when sending the recording for storage",
             "format": "uri",
             "kazoo-validation": true,
+            "minLength": 5,
             "type": "string"
         }
     },

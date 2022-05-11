@@ -4,7 +4,7 @@
 
 #### Schema
 
-Web Hooks are subscriptions to allowed events that, when the event occurs, the event data is sent to the uri set in the Web Hook document.
+Web Hooks are subscriptions to allowed events that, when the event occurs, the event data is sent to the URI set in the Web Hook document.
 
 
 
@@ -19,7 +19,7 @@ Key | Description | Type | Default | Required | Support Level
 `include_subaccounts` | Should the webhook be fired for subaccount events. | `boolean()` |   | `false` | `supported`
 `name` | A friendly name for the webhook | `string()` |   | `true` | `supported`
 `retries` | Retry the request this many times (if it fails) | `integer()` | `2` | `false` | `supported`
-`uri` | The 3rd party URI to call out to an event | `string()` |   | `true` | `supported`
+`uri` | The 3rd party URI to call out to an event | `string(1..)` |   | `true` | `supported`
 
 
 

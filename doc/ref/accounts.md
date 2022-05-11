@@ -111,7 +111,7 @@ Key | Description | Type | Default | Required | Support Level
 `record_sample_rate` | What sampling rate to use on the recording | `integer()` |   | `false` |  
 `should_record_feature_calls` | Toggles whether to start a recording for calls to feature codes | `boolean()` | `true` | `false` |  
 `time_limit` | Time limit, in seconds, for the recording | `integer()` |   | `false` |  
-`url` | The URL to use when sending the recording for storage | `string()` |   | `false` |  
+`url` | The URL to use when sending the recording for storage | `string(6..)` |   | `false` |  
 
 ### call_recording.source
 

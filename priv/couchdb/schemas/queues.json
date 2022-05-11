@@ -89,6 +89,7 @@
         "cdr_url": {
             "description": "An optional HTTP URL to POST the CDR",
             "format": "uri",
+            "minLength": 6,
             "type": "string"
         },
         "connection_timeout": {
@@ -131,6 +132,7 @@
         "recording_url": {
             "description": "An optional HTTP URL to PUT the call recording after the call ends (and should respond to GET for retrieving the audio data)",
             "format": "uri",
+            "minLength": 6,
             "type": "string"
         },
         "ring_simultaneously": {

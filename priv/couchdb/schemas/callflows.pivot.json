@@ -5,6 +5,7 @@
     "properties": {
         "cdr_url": {
             "description": "Optional URL to send the CDR to at the end of the call",
+            "minLength": 7,
             "pattern": "^https?://",
             "type": "string"
         },
@@ -54,6 +55,7 @@
         "voice_url": {
             "description": "What URL to request the initial Pivot callflow",
             "kazoo-validation": true,
+            "minLength": 7,
             "pattern": "^https?://",
             "type": "string"
         }
