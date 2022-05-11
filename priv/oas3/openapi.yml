@@ -31,6 +31,9 @@
   '/accounts/{ACCOUNT_ID}/apps_store/blacklist':
     '$ref': >-
       paths/apps_store.yml#/paths/~1accounts~1{ACCOUNT_ID}~1apps_store~1blacklist
+  '/accounts/{ACCOUNT_ID}/apps_store/marketplace':
+    '$ref': >-
+      paths/apps_store.yml#/paths/~1accounts~1{ACCOUNT_ID}~1apps_store~1marketplace
   '/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}':
     '$ref': 'paths/apps_store.yml#/paths/~1accounts~1{ACCOUNT_ID}~1apps_store~1{APP_ID}'
   '/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/icon':
