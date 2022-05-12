@@ -2,7 +2,7 @@
 version: 2.1
 
 orbs:
-  kazoo: official-2600hz/kazoo@0.2.10
+    kazoo: official-2600hz/kazoo@dev:alpha
 
 workflows:
   version: 2
@@ -15,31 +15,43 @@ workflows:
           context: Private-Builds
           requires:
             - kazoo/build-preparation
-      - kazoo/eunit-tests:
-          context: Private-Builds
-          requires:
-            - kazoo/build-preparation
-      - kazoo/code-checks:
-          requires:
-            - kazoo/build
-      - kazoo/docs:
-          requires:
-            - kazoo/build
-      - kazoo/analyze:
-          requires:
-            - kazoo/build
-      - kazoo/integration-test:
-          requires:
-            - kazoo/build
+      # - kazoo/eunit-tests:
+      #     context: Private-Builds
+      #     requires:
+      #       - kazoo/build-preparation
+      # - kazoo/code-checks:
+      #     requires:
+      #       - kazoo/build
+      # - kazoo/docs:
+      #     requires:
+      #       - kazoo/build
+      # - kazoo/analyze:
+      #     requires:
+      #       - kazoo/build
+      # - kazoo/integration-test:
+      #     requires:
+      #       - kazoo/build
       - kazoo/build-centos7:
           context: Private-Builds
           target-type: kapp
           requires:
-            - kazoo/eunit-tests
-            - kazoo/code-checks
-            - kazoo/docs
-            - kazoo/analyze
-            - kazoo/integration-test
+            - kazoo/build
+      # - kazoo/eunit-tests:
+            # - kazoo/eunit-tests
+            # - kazoo/code-checks
+            # - kazoo/docs
+            # - kazoo/analyze
+            # - kazoo/integration-test
+      - kazoo/build-appex:
+          context: Private-Builds
+          target-type: kapp
+          requires:
+            - kazoo/build
+            # - kazoo/eunit-tests
+            # - kazoo/code-checks
+            # - kazoo/docs
+            # - kazoo/analyze
+            # - kazoo/integration-test
 
   build_release:
     jobs:
