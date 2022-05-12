@@ -1902,6 +1902,18 @@
         When set to true this callflow action is skipped, advancing to the wildcard branch (if any)
       'type': boolean
   'type': object
+'callflows.call_pickup':
+  'description': Validator for the call_pickup callflow data object
+  'properties':
+    'skip_module':
+      'description': |-
+        When set to true this callflow action is skipped, advancing to the wildcard branch (if any)
+      'type': boolean
+    'target_call_id':
+      'description': The existing call-id to connect to the caller
+      'minLength': 1
+      'type': string
+  'type': object
 'callflows.call_waiting':
   'description': Validator for the call_waiting callflow data object
   'properties':
@@ -2299,6 +2311,41 @@
       'description': |-
         When set to true this callflow action is skipped, advancing to the wildcard branch (if any)
       'type': boolean
+  'type': object
+'callflows.doorman':
+  'description': Validator for the doorman callflow data object
+  'properties':
+    'call_timeout':
+      'default': 30
+      'description': How long to ring the callee
+      'type': integer
+    'caller_id_name':
+      'default': Doorman
+      'description': Custom Caller ID Name to denote the doorman is calling
+      'type': string
+    'id':
+      'description': The KAZOO device or user ID
+      'type': string
+    'origin':
+      'default': 'callflow : cf_doorman'
+      'description': Read-only setting if the call is recorded
+    'recording_limit':
+      'default': 8
+      'description': The caller's recording limit for name and reason for calling
+      'type': integer
+    'skip_module':
+      'description': |-
+        When set to true this callflow action is skipped, advancing to the wildcard branch (if any)
+      'type': boolean
+    'tones':
+      'description': Ring tone to play to the caller after recording their name
+      'items':
+        '$ref': '#/tone'
+        'type': object
+      'type': array
+    'vmbox_id':
+      'description': Voicemail box ID to send caller to if callee choses
+      'type': string
   'type': object
 'callflows.dynamic_cid':
   'description': Validator for the dynamic_cid callflow data object
@@ -3756,31 +3803,7 @@
     'tones':
       'description': list of tones to play to caller
       'items':
-        'properties':
-          'duration_off':
-            'description': 'duration, in milliseconds, for tone to be off'
-            'type': integer
-          'duration_on':
-            'description': 'duration, in milliseconds, for the tone to be on'
-            'type': integer
-          'frequencies':
-            'description': list of Frequencies to play
-            'items':
-              'description': 'Frequency, in Hz, to play'
-              'type': integer
-            'minItems': 1
-            'type': array
-          'repeat':
-            'description': How many times to loop the tones
-            'type': integer
-          'volume':
-            'description': 'Volume, in dB. 0 = max, negative = quieter'
-            'maximum': 0
-            'type': integer
-        'required':
-          - frequencies
-          - duration_off
-          - duration_on
+        '$ref': '#/tone'
         'type': object
       'type': array
   'type': object
@@ -4347,6 +4370,7 @@
       'description': The history of comments made on a object
       'items':
         '$ref': '#/comment'
+        'type': object
       'type': array
   'type': object
 'conference_auth':
@@ -5281,7 +5305,6 @@
   'type': object
 'devices.combo_key':
   'description': Device provisioner Combo/Feature Key
-  'nullable': true
   'oneOf':
     - 'properties':
         'type':
@@ -7550,6 +7573,7 @@
       'description': The history of comments made on a port request
       'items':
         '$ref': '#/comment'
+        'type': object
       'type': array
     'name':
       'description': A friendly name for the port request
@@ -15788,6 +15812,34 @@
                             'uniqueItems': true
                     'type': object
                   'type': array
+  'type': object
+'tone':
+  'description': Validator for a teletone config
+  'properties':
+    'duration_off':
+      'description': 'duration, in milliseconds, for tone to be off'
+      'type': integer
+    'duration_on':
+      'description': 'duration, in milliseconds, for the tone to be on'
+      'type': integer
+    'frequencies':
+      'description': list of Frequencies to play
+      'items':
+        'description': 'Frequency, in Hz, to play'
+        'type': integer
+      'minItems': 1
+      'type': array
+    'repeat':
+      'description': How many times to loop the tones
+      'type': integer
+    'volume':
+      'description': 'Volume, in dB. 0 = max, negative = quieter'
+      'maximum': 0
+      'type': integer
+  'required':
+    - frequencies
+    - duration_off
+    - duration_on
   'type': object
 'trunkstore':
   'description': |-

@@ -1,0 +1,47 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "_id": "callflows.doorman",
+    "description": "Validator for the doorman callflow data object",
+    "properties": {
+        "call_timeout": {
+            "default": 30,
+            "description": "How long to ring the callee",
+            "type": "integer"
+        },
+        "caller_id_name": {
+            "default": "Doorman",
+            "description": "Custom Caller ID Name to denote the doorman is calling",
+            "type": "string"
+        },
+        "id": {
+            "description": "The KAZOO device or user ID",
+            "type": "string"
+        },
+        "origin": {
+            "default": "callflow : cf_doorman",
+            "description": "Read-only setting if the call is recorded"
+        },
+        "recording_limit": {
+            "default": 8,
+            "description": "The caller's recording limit for name and reason for calling",
+            "type": "integer"
+        },
+        "skip_module": {
+            "description": "When set to true this callflow action is skipped, advancing to the wildcard branch (if any)",
+            "type": "boolean"
+        },
+        "tones": {
+            "description": "Ring tone to play to the caller after recording their name",
+            "items": {
+                "$ref": "tone",
+                "type": "object"
+            },
+            "type": "array"
+        },
+        "vmbox_id": {
+            "description": "Voicemail box ID to send caller to if callee choses",
+            "type": "string"
+        }
+    },
+    "type": "object"
+}
