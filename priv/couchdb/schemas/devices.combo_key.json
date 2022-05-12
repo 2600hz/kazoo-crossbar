@@ -104,8 +104,5 @@
             ]
         }
     ],
-    "type": [
-        "object",
-        "null"
-    ]
+    "type": "object"
 }

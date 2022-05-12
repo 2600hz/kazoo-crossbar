@@ -4,6 +4,33 @@
 
 Allows you to add comments to "any" documents in Kazoo.
 
+#### Schema
+
+Schema for comments
+
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`comments` | The history of comments made on a object | `array([#/definitions/comment](#comment))` |   | `false` |  
+
+### comment
+
+Schema for a single comment
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`account_id` | Account ID of the commenter. | `string()` |   | `false` |  
+`action_required` | Specified if an action is required by the user. | `boolean()` | `false` | `false` |  
+`author` | Full name of the author | `string()` |   | `true` |  
+`content` | Content of the comment | `string()` |   | `true` |  
+`is_private` | Specified if this comment is private | `boolean()` | `false` | `false` |  
+`timestamp` |   | `integer()` |   | `true` |  
+`user_id` | User ID of the commenter | `string()` |   | `false` |  
+
+
+
 ## Fetch
 
 > DELETE /v2/accounts/{ACCOUNT_ID}/comments
