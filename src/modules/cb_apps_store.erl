@@ -400,29 +400,49 @@ patch(Context, ?MARKETPLACE) ->
 
 patch_market_action(Context, ?MARKET_ACTION_ENABLE) ->
     _ = appex_client_config:set_is_enabled('true'),
+    maybe_restart_kazoo_appex(),
     crossbar_doc:handle_datamgr_success(appex_client_config:get_public_configs(), Context);
 patch_market_action(Context, ?MARKET_ACTION_DISABLE) ->
+    %% don't stop kazoo_appex to let it clean out apps when they stop
     _ = appex_client_config:set_is_enabled('false'),
     crossbar_doc:handle_datamgr_success(appex_client_config:get_public_configs(), Context);
 patch_market_action(Context, ?MARKET_ACTION_LINK) ->
     Doc = cb_context:doc(Context),
     case appex_client_client:link_cluster(Doc) of
         {'ok', _RespData} ->
+            _ = appex_client_config:set_is_enabled('true'),
+            maybe_restart_kazoo_appex(),
             crossbar_doc:handle_datamgr_success(appex_client_config:get_public_configs(), Context);
         {'error', Error} ->
             cb_context:add_system_error(500, <<"appex_passthrough_error">>, Error, Context)
     end;
 patch_market_action(Context, ?MARKET_ACTION_UNLINK) ->
+    %% don't stop kazoo_appex to let it clean out apps when they stop
     case appex_client_client:unlink_cluster() of
         {'ok', _RespData} ->
+            _ = appex_client_config:set_is_enabled('false'),
             crossbar_doc:handle_datamgr_success(appex_client_config:get_public_configs(), Context);
         {'error', Error} ->
             cb_context:add_system_error(500, <<"appex_passthrough_error">>, Error, Context)
     end;
 patch_market_action(Context, ?MARKET_ACTION_API_URL) ->
     ApiUrl = kz_json:get_value(<<"api_url">>, cb_context:doc(Context)),
+    %% TODO: we need to re-configure running mui apps source_url
     _ = appex_client_config:set_api_url(ApiUrl),
     crossbar_doc:handle_datamgr_success(appex_client_config:get_public_configs(), Context).
+
+maybe_restart_kazoo_appex() ->
+    Restart = fun() ->
+                      _ = application:stop('kazoo_appex'),
+                      application:start('kazoo_appex')
+              end,
+    case appex_client_config:is_configured() of
+        'true' ->
+            _ = spawn(Restart),
+            'ok';
+        'false' ->
+            'ok'
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc
