@@ -431,6 +431,14 @@ patch_market_action(Context, ?MARKET_ACTION_API_URL) ->
     _ = appex_client_config:set_api_url(ApiUrl),
     crossbar_doc:handle_datamgr_success(appex_client_config:get_public_configs(), Context).
 
+%% FIXME: maybe check kazoo_appex was disable (or not running before on node)
+%% so it won't lost its state
+%% * do if:
+%%      * if node was up and we went from diable->enable
+%%      * if node was up and we went from enabled+unlinked->enabled+linked
+%% * don't do if:
+%%      * if node was up we disable/enable
+%%      * if node was up and we went from enabled+linked->disable+unlink->enabled+linked
 maybe_restart_kazoo_appex() ->
     Restart = fun() ->
                       _ = application:stop('kazoo_appex'),
