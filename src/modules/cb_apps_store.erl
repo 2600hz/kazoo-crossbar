@@ -439,6 +439,8 @@ patch_market_action(Context, ?MARKET_ACTION_API_URL) ->
 %% * don't do if:
 %%      * if node was up we disable/enable
 %%      * if node was up and we went from enabled+linked->disable+unlink->enabled+linked
+%% FIXME: this only restart in the current node, we need to restart across all node?!
+%% Or at least say this user somehow
 maybe_restart_kazoo_appex() ->
     Restart = fun() ->
                       _ = application:stop('kazoo_appex'),
