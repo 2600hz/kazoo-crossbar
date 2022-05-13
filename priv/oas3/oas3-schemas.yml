@@ -3801,6 +3801,7 @@
     'timezone':
       '$ref': '#/timezone'
       'description': Timezone to use when processing temporal rules
+      'type': string
   'type': object
 'callflows.tones':
   'description': Validator for the tones callflow data object
