@@ -400,29 +400,59 @@ patch(Context, ?MARKETPLACE) ->
 
 patch_market_action(Context, ?MARKET_ACTION_ENABLE) ->
     _ = appex_client_config:set_is_enabled('true'),
+    maybe_restart_kazoo_appex(),
     crossbar_doc:handle_datamgr_success(appex_client_config:get_public_configs(), Context);
 patch_market_action(Context, ?MARKET_ACTION_DISABLE) ->
+    %% don't stop kazoo_appex to let it clean out apps when they stop
     _ = appex_client_config:set_is_enabled('false'),
     crossbar_doc:handle_datamgr_success(appex_client_config:get_public_configs(), Context);
 patch_market_action(Context, ?MARKET_ACTION_LINK) ->
     Doc = cb_context:doc(Context),
     case appex_client_client:link_cluster(Doc) of
         {'ok', _RespData} ->
+            _ = appex_client_config:set_is_enabled('true'),
+            maybe_restart_kazoo_appex(),
             crossbar_doc:handle_datamgr_success(appex_client_config:get_public_configs(), Context);
         {'error', Error} ->
             cb_context:add_system_error(500, <<"appex_passthrough_error">>, Error, Context)
     end;
 patch_market_action(Context, ?MARKET_ACTION_UNLINK) ->
+    %% don't stop kazoo_appex to let it clean out apps when they stop
     case appex_client_client:unlink_cluster() of
         {'ok', _RespData} ->
+            _ = appex_client_config:set_is_enabled('false'),
             crossbar_doc:handle_datamgr_success(appex_client_config:get_public_configs(), Context);
         {'error', Error} ->
             cb_context:add_system_error(500, <<"appex_passthrough_error">>, Error, Context)
     end;
 patch_market_action(Context, ?MARKET_ACTION_API_URL) ->
     ApiUrl = kz_json:get_value(<<"api_url">>, cb_context:doc(Context)),
+    %% TODO: we need to re-configure running mui apps source_url
     _ = appex_client_config:set_api_url(ApiUrl),
     crossbar_doc:handle_datamgr_success(appex_client_config:get_public_configs(), Context).
+
+%% FIXME: maybe check kazoo_appex was disable (or not running before on node)
+%% so it won't lost its state
+%% * do if:
+%%      * if node was up and we went from diable->enable
+%%      * if node was up and we went from enabled+unlinked->enabled+linked
+%% * don't do if:
+%%      * if node was up we disable/enable
+%%      * if node was up and we went from enabled+linked->disable+unlink->enabled+linked
+%% FIXME: this only restart in the current node, we need to restart across all node?!
+%% Or at least say this user somehow
+maybe_restart_kazoo_appex() ->
+    Restart = fun() ->
+                      _ = application:stop('kazoo_appex'),
+                      application:start('kazoo_appex')
+              end,
+    case appex_client_config:is_configured() of
+        'true' ->
+            _ = spawn(Restart),
+            'ok';
+        'false' ->
+            'ok'
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc
