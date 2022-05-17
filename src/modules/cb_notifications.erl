@@ -353,7 +353,7 @@ put(Context) ->
         'undefined' ->
             Context1 = crossbar_doc:save(set_system_macros(Context)),
             case cb_context:resp_status(Context1) of
-                'success' -> leak_doc_id(Context1);
+                'success' -> add_metadata_doc_id(Context1);
                 _Status -> Context1
             end;
         _ -> Context
@@ -381,7 +381,7 @@ do_post(Context) ->
     case cb_context:resp_status(Context1) of
         'success' ->
             maybe_set_teletype_as_default(Context1),
-            leak_doc_id(Context1);
+            add_metadata_doc_id(Context1);
         _Status -> Context1
     end.
 
@@ -660,7 +660,7 @@ delete_doc(Context, Id) ->
     case cb_context:resp_status(Context1) of
         'success' ->
             kz_datamgr:flush_cache_doc(cb_context:db_name(Context), Id),
-            leak_doc_id(Context1);
+            add_metadata_doc_id(Context1);
         _Status -> Context1
     end.
 
@@ -1055,8 +1055,8 @@ note_account_defined(JObj) ->
 
 -spec read_success(cb_context:context()) -> cb_context:context().
 read_success(Context) ->
-    cb_context:setters(Context, [fun leak_attachments/1
-                                ,fun leak_doc_id/1
+    cb_context:setters(Context, [fun add_metadata_attachments/1
+                                ,fun add_metadata_doc_id/1
                                 ]).
 
 -spec maybe_read_template(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) -> cb_context:context().
@@ -1465,25 +1465,21 @@ clean_req_doc(Doc) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec leak_doc_id(cb_context:context()) -> cb_context:context().
-leak_doc_id(Context) ->
+-spec add_metadata_doc_id(cb_context:context()) -> cb_context:context().
+add_metadata_doc_id(Context) ->
     RespData = cb_context:resp_data(Context),
-    cb_context:set_resp_data(Context
-                            ,kz_json:set_value(<<"id">>
-                                              ,kz_notification:resp_id(RespData)
-                                              ,RespData
-                                              )
-                            ).
+    Id = kz_notification:resp_id(RespData),
+    cb_context:add_metadata_value(Context, <<"id">>, Id).
 
--spec leak_attachments(cb_context:context()) -> cb_context:context().
-leak_attachments(Context) ->
+-spec add_metadata_attachments(cb_context:context()) -> cb_context:context().
+add_metadata_attachments(Context) ->
     Attachments = kz_doc:attachments(cb_context:fetch(Context, 'db_doc'), kz_json:new()),
-    Templates = kz_json:foldl(fun leak_attachments_fold/3, kz_json:new(), Attachments),
+    Templates = kz_json:foldl(fun add_metadata_attachments_fold/3, kz_json:new(), Attachments),
     NewRespData = kz_json:set_value(<<"templates">>, Templates, cb_context:resp_data(Context)),
     cb_context:set_resp_data(Context, NewRespData).
 
--spec leak_attachments_fold(kz_json:path(), kz_json:json_term(), kz_json:object()) -> kz_json:object().
-leak_attachments_fold(_Attachment, Props, Acc) ->
+-spec add_metadata_attachments_fold(kz_json:path(), kz_json:json_term(), kz_json:object()) -> kz_json:object().
+add_metadata_attachments_fold(_Attachment, Props, Acc) ->
     kz_json:set_value(kz_json:get_value(<<"content_type">>, Props)
                      ,kz_json:from_list([{<<"length">>, kz_json:get_integer_value(<<"length">>, Props)}])
                      ,Acc

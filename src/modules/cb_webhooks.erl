@@ -387,15 +387,17 @@ reenable_validation_error(Context) ->
 read(Id, Context) ->
     Context1 = crossbar_doc:load(Id, Context, ?TYPE_CHECK_OPTION(kzd_webhooks:type())),
     case cb_context:resp_status(Context1) of
-        'success' -> maybe_leak_pvt_fields(Context1);
+        'success' -> maybe_add_metadata_fields(Context1);
         _Status -> Context1
     end.
 
--spec maybe_leak_pvt_fields(cb_context:context()) -> cb_context:context().
-maybe_leak_pvt_fields(Context) ->
+-spec maybe_add_metadata_fields(cb_context:context()) -> cb_context:context().
+maybe_add_metadata_fields(Context) ->
     Doc = cb_context:doc(Context),
-    NewDoc = kz_json:set_value(<<"disable_reason">>, kzd_webhooks:disabled_message(Doc), Doc),
-    cb_context:set_doc(Context, NewDoc).
+    cb_context:add_metadata_value(Context
+                                 ,<<"disable_reason">>
+                                 ,kzd_webhooks:disabled_message(Doc)
+                                 ).
 
 %%------------------------------------------------------------------------------
 %% @doc Update an existing menu document with the data provided, if it is

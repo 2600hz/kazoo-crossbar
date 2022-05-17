@@ -727,7 +727,7 @@ handle_datamgr_success([JObj|_]=JObjs, Context) ->
     end;
 handle_datamgr_success(JObj, Context) ->
     case kz_json:is_json_object(JObj) of
-        'true' -> handle_json_success(kz_doc:set_read_only(JObj), Context);
+        'true' -> handle_json_success(JObj, Context);
         'false' -> handle_thing_success(JObj, Context)
     end.
 

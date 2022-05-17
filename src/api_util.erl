@@ -1860,25 +1860,33 @@ create_default_resp_envelope(Context) ->
                ],
     Resp = case cb_context:response(Context) of
                {'ok', RespData} ->
-                   [{<<"status">>, <<"success">>}
-                   ,{<<"request_id">>, cb_context:req_id(Context)}
-                   ,{<<"revision">>, kz_term:to_api_binary(cb_context:resp_etag(Context))}
-                   ,{<<"data">>, RespData}
-                   | BaseResp
-                   ];
+                   success_envelope(Context, BaseResp, RespData);
                {'error', {ErrorCode, ErrorMsg, RespData}} ->
-                   lager:debug("generating error ~b ~s response", [ErrorCode, ErrorMsg]),
-                   [{<<"status">>, <<"error">>}
-                   ,{<<"message">>, ErrorMsg}
-                   ,{<<"error">>, kz_term:to_binary(ErrorCode)}
-                   ,{<<"data">>, RespData}
-                   | BaseResp
-                   ]
+                   error_envelope(Context, BaseResp, RespData, ErrorCode, ErrorMsg)
            end,
-
     maybe_delete_range_keys(kz_json:set_values(Resp, cb_context:resp_envelope(Context))
                            ,cb_context:should_paginate(Context)
                            ).
+
+success_envelope(Context, BaseResp, RespData) ->
+    Metadata = cb_context:get_metadata(Context, RespData),
+    [{<<"status">>, <<"success">>}
+    ,{<<"request_id">>, cb_context:req_id(Context)}
+    ,{<<"metadata">>, Metadata}
+    ,{<<"revision">>, kz_term:to_api_binary(cb_context:resp_etag(Context))}
+    ,{<<"data">>, RespData}
+    | BaseResp
+    ].
+
+error_envelope(Context, BaseResp, RespData, ErrorCode, ErrorMsg) ->
+    lager:info("generating error ~b ~s response", [ErrorCode, ErrorMsg]),
+    [{<<"status">>, <<"error">>}
+    ,{<<"message">>, ErrorMsg}
+    ,{<<"error">>, kz_term:to_binary(ErrorCode)}
+    ,{<<"data">>, RespData}
+    ,{<<"request_id">>, cb_context:req_id(Context)}
+    | BaseResp
+    ].
 
 conditional_resp_data(Context) ->
     Fs = [fun maybe_add_version/2],

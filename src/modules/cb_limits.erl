@@ -21,8 +21,6 @@
 -include("crossbar.hrl").
 -include_lib("kazoo_stdlib/include/kazoo_json.hrl").
 
--define(PVT_TYPE, <<"limits">>).
-
 %%%=============================================================================
 %%% API
 %%%=============================================================================
@@ -82,7 +80,7 @@ validate_limits(Context, ?HTTP_POST) ->
                                        );
         'true' ->
             cb_context:validate_request_data(<<"limits">>
-                                            ,cleanup_leaky_keys(Context)
+                                            ,cleanup_metadata_keys(Context)
                                             ,fun on_successful_validation/1
                                             )
     end.
@@ -122,38 +120,34 @@ is_allowed(Context) ->
 %%------------------------------------------------------------------------------
 -spec load_limit(cb_context:context()) -> cb_context:context().
 load_limit(Context) ->
-    leak_pvt_fields(crossbar_doc:load(?PVT_TYPE, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE))).
+    add_metadata_fields(crossbar_doc:load(kzd_limits:type(), Context, ?TYPE_CHECK_OPTION(kzd_limits:type()))).
 
--spec leak_pvt_fields(cb_context:context()) -> cb_context:context().
-leak_pvt_fields(Context) ->
-    leak_pvt_fields(Context, cb_context:resp_status(Context)).
+-spec add_metadata_fields(cb_context:context()) -> cb_context:context().
+add_metadata_fields(Context) ->
+    add_metadata_fields(Context, cb_context:resp_status(Context)).
 
--spec leak_pvt_fields(cb_context:context(), crossbar_status()) -> cb_context:context().
-leak_pvt_fields(Context, 'success') ->
-    Routines = [fun leak_pvt_allow_postpay/1
-               ,fun leak_pvt_max_postpay_amount/1
+-spec add_metadata_fields(cb_context:context(), crossbar_status()) -> cb_context:context().
+add_metadata_fields(Context, 'success') ->
+    Routines = [fun add_metadata_allow_postpay/1
+               ,fun add_metadata_max_postpay_amount/1
                ],
     cb_context:setters(Context, Routines);
-leak_pvt_fields(Context, _Status) ->
+add_metadata_fields(Context, _Status) ->
     maybe_handle_load_failure(Context).
 
--spec leak_pvt_allow_postpay(cb_context:context()) -> cb_context:context().
-leak_pvt_allow_postpay(Context) ->
-    cb_context:set_resp_data(Context
-                            ,kz_json:set_value(<<"allow_postpay">>
-                                              ,kz_json:is_true(<<"pvt_allow_postpay">>, cb_context:doc(Context), 'false')
-                                              ,cb_context:resp_data(Context)
-                                              )
-                            ).
+-spec add_metadata_allow_postpay(cb_context:context()) -> cb_context:context().
+add_metadata_allow_postpay(Context) ->
+    cb_context:add_metadata_value(Context
+                                 ,<<"allow_postpay">>
+                                 ,kz_json:is_true(<<"pvt_allow_postpay">>, cb_context:doc(Context), 'false')
+                                 ).
 
--spec leak_pvt_max_postpay_amount(cb_context:context()) -> cb_context:context().
-leak_pvt_max_postpay_amount(Context) ->
-    cb_context:set_resp_data(Context
-                            ,kz_json:set_value(<<"max_postpay_amount">>
-                                              ,abs(kz_json:get_number_value(<<"pvt_max_postpay_amount">>, cb_context:doc(Context), 0))
-                                              ,cb_context:resp_data(Context)
-                                              )
-                            ).
+-spec add_metadata_max_postpay_amount(cb_context:context()) -> cb_context:context().
+add_metadata_max_postpay_amount(Context) ->
+    cb_context:add_metadata_value(Context
+                                 ,<<"max_postpay_amount">>
+                                 ,abs(kz_json:get_number_value(<<"pvt_max_postpay_amount">>, cb_context:doc(Context), 0))
+                                 ).
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -161,7 +155,7 @@ leak_pvt_max_postpay_amount(Context) ->
 %%------------------------------------------------------------------------------
 -spec on_successful_validation(cb_context:context()) -> cb_context:context().
 on_successful_validation(Context) ->
-    maybe_handle_load_failure(crossbar_doc:load_merge(?PVT_TYPE, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE))).
+    maybe_handle_load_failure(crossbar_doc:load_merge(kzd_limits:type(), Context, ?TYPE_CHECK_OPTION(kzd_limits:type()))).
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -177,8 +171,8 @@ maybe_handle_load_failure(Context) ->
           cb_context:context().
 maybe_handle_load_failure(Context, 404) ->
     Data = cb_context:req_data(Context),
-    NewLimits = kz_json:from_list([{<<"pvt_type">>, ?PVT_TYPE}
-                                  ,{<<"_id">>, ?PVT_TYPE}
+    NewLimits = kz_json:from_list([{<<"pvt_type">>, kzd_limits:type()}
+                                  ,{<<"_id">>, kzd_limits:type()}
                                   ]),
     JObj = kz_json_schema:add_defaults(kz_json:merge_jobjs(NewLimits, kz_doc:public_fields(Data))
                                       ,<<"limits">>
@@ -195,8 +189,8 @@ maybe_handle_load_failure(Context, _RespCode) -> Context.
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec cleanup_leaky_keys(cb_context:context()) -> cb_context:context().
-cleanup_leaky_keys(Context) ->
+-spec cleanup_metadata_keys(cb_context:context()) -> cb_context:context().
+cleanup_metadata_keys(Context) ->
     RemoveKeys = [<<"allow_postpay">>
                  ,<<"max_postpay_amount">>
                  ],

@@ -373,25 +373,25 @@ read(Id, Context) ->
 -spec read_job(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 read_job(Context, ?MATCH_MODB_PREFIX(Year,Month,_) = JobId) ->
     Modb = kzs_util:format_account_id(cb_context:account_id(Context), kz_term:to_integer(Year), kz_term:to_integer(Month)),
-    leak_job_fields(crossbar_doc:load(JobId, cb_context:set_db_name(Context, Modb), ?TYPE_CHECK_OPTION(<<"resource_job">>)));
+    add_metadata_for_job_fields(crossbar_doc:load(JobId, cb_context:set_db_name(Context, Modb), ?TYPE_CHECK_OPTION(<<"resource_job">>)));
 read_job(Context, ?MATCH_MODB_PREFIX_M1(Year,Month,_) = JobId) ->
     Modb = kzs_util:format_account_id(cb_context:account_id(Context), kz_term:to_integer(Year), kz_term:to_integer(Month)),
-    leak_job_fields(crossbar_doc:load(JobId, cb_context:set_db_name(Context, Modb), ?TYPE_CHECK_OPTION(<<"resource_job">>)));
+    add_metadata_for_job_fields(crossbar_doc:load(JobId, cb_context:set_db_name(Context, Modb), ?TYPE_CHECK_OPTION(<<"resource_job">>)));
 read_job(Context, JobId) ->
     lager:debug("invalid job id format: ~s", [JobId]),
     crossbar_util:response_bad_identifier(JobId, Context).
 
--spec leak_job_fields(cb_context:context()) -> cb_context:context().
-leak_job_fields(Context) ->
-    case cb_context:resp_status(Context) of
-        'success' ->
-            JObj = cb_context:doc(Context),
-            RespData = [{<<"timestamp">>, kz_doc:created(JObj)}
-                       ,{<<"status">>, kz_json:get_value(<<"pvt_status">>, JObj)}
-                       ],
-            cb_context:set_resp_data(Context, kz_json:set_values(RespData, cb_context:resp_data(Context)));
-        _Status -> Context
-    end.
+-spec add_metadata_for_job_fields(cb_context:context()) -> cb_context:context().
+add_metadata_for_job_fields(Context) ->
+    add_metadata_for_job_fields(Context, cb_context:resp_status(Context)).
+
+add_metadata_for_job_fields(Context, 'success') ->
+    JObj = cb_context:doc(Context),
+    Metadata = [{<<"timestamp">>, kz_doc:created(JObj)}
+               ,{<<"status">>, kz_json:get_value(<<"pvt_status">>, JObj)}
+               ],
+    cb_context:set_resp_data(Context, kz_json:set_values(Metadata, cb_context:resp_data(Context)));
+add_metadata_for_job_fields(Context, _Status) -> Context.
 
 %%------------------------------------------------------------------------------
 %% @doc Attempt to load a summarized listing of all instances of this

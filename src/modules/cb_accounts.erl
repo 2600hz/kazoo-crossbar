@@ -277,7 +277,7 @@ post(Context, AccountId) ->
             _ = kz_process:spawn(fun crossbar_notify_util:maybe_notify_account_change/2, [Existing, Context]),
             update_provisioner_account(Context1),
 
-            leak_pvt_fields(AccountId, Context1);
+            add_metadata_fields(AccountId, Context1);
         {'error', Error} ->
             lager:warning("failed to update account information with error: ~p", [Error]),
             crossbar_doc:handle_datamgr_errors(Error, AccountId, Context)
@@ -331,7 +331,7 @@ put(Context, PathAccountId) ->
             Tree = kzd_accounts:tree(ReqJObj),
             _ = maybe_update_descendants_count(Tree),
             _ = create_apps_store_doc(NewAccountId),
-            leak_pvt_fields(PathAccountId, Context2)
+            add_metadata_fields(PathAccountId, Context2)
     catch
         'throw':'datastore_fault' ->
             ContextErr = cb_context:add_system_error('datastore_fault', Context),
@@ -627,126 +627,117 @@ validate_patch_request(AccountId, Context) ->
 %%------------------------------------------------------------------------------
 -spec load_account(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
 load_account(AccountId, Context) ->
-    leak_pvt_fields(AccountId, crossbar_doc:load(AccountId, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE))).
+    add_metadata_fields(AccountId, crossbar_doc:load(AccountId, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE))).
 
 %%------------------------------------------------------------------------------
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
 
--spec leak_pvt_fields(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
-leak_pvt_fields(AccountId, Context) ->
-    leak_pvt_fields(AccountId, Context, cb_context:resp_status(Context)).
+-spec add_metadata_fields(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
+add_metadata_fields(AccountId, Context) ->
+    add_metadata_fields(AccountId, Context, cb_context:resp_status(Context)).
 
--spec leak_pvt_fields(kz_term:api_binary(), cb_context:context(), crossbar_status()) -> cb_context:context().
-leak_pvt_fields(AccountId, Context, 'success') ->
-    Routines = [fun leak_pvt_allow_additions/1
-               ,fun leak_pvt_superduper_admin/1
-               ,fun leak_pvt_api_key/1
-               ,fun leak_pvt_created/1
-               ,fun leak_pvt_enabled/1
-               ,{fun leak_reseller_id/2, AccountId}
-               ,fun leak_is_reseller/1
-               ,{fun leak_billing_mode/2, AccountId}
-               ,fun leak_notification_preference/1
-               ,fun leak_trial_time_left/1
+-spec add_metadata_fields(kz_term:api_binary(), cb_context:context(), crossbar_status()) -> cb_context:context().
+add_metadata_fields(AccountId, Context, 'success') ->
+    Routines = [fun add_metadata_allow_additions/1
+               ,fun add_metadata_superduper_admin/1
+               ,fun add_metadata_api_key/1
+               ,fun add_metadata_created/1
+               ,fun add_metadata_enabled/1
+               ,{fun add_metadata_reseller_id/2, AccountId}
+               ,fun add_metadata_is_reseller/1
+               ,{fun add_metadata_billing_mode/2, AccountId}
+               ,fun add_metadata_notification_preference/1
+               ,fun add_metadata_trial_time_left/1
                ],
     cb_context:setters(Context, Routines);
-leak_pvt_fields(_AccountId, Context, _Status) -> Context.
+add_metadata_fields(_AccountId, Context, _Status) -> Context.
 
--spec leak_pvt_allow_additions(cb_context:context()) -> cb_context:context().
-leak_pvt_allow_additions(Context) ->
-    cb_context:set_resp_data(Context
-                            ,kz_json:set_value(<<"wnm_allow_additions">>
-                                              ,kzd_accounts:allow_number_additions(cb_context:doc(Context))
-                                              ,cb_context:resp_data(Context)
-                                              )
-                            ).
+-spec add_metadata_allow_additions(cb_context:context()) -> cb_context:context().
+add_metadata_allow_additions(Context) ->
+    cb_context:add_metadata_value(Context
+                                 ,<<"wnm_allow_additions">>
+                                 ,kzd_accounts:allow_number_additions(cb_context:doc(Context))
+                                 ).
 
--spec leak_pvt_superduper_admin(cb_context:context()) -> cb_context:context().
-leak_pvt_superduper_admin(Context) ->
-    cb_context:set_resp_data(Context
-                            ,kz_json:set_value(<<"superduper_admin">>
-                                              ,kzd_accounts:is_superduper_admin(cb_context:doc(Context))
-                                              ,cb_context:resp_data(Context)
-                                              )
-                            ).
+-spec add_metadata_superduper_admin(cb_context:context()) -> cb_context:context().
+add_metadata_superduper_admin(Context) ->
+    cb_context:add_metadata_value(Context
+                                 ,<<"superduper_admin">>
+                                 ,kzd_accounts:is_superduper_admin(cb_context:doc(Context))
+                                 ).
 
--spec leak_pvt_api_key(cb_context:context()) -> cb_context:context().
-leak_pvt_api_key(Context) ->
+-spec add_metadata_api_key(cb_context:context()) -> cb_context:context().
+add_metadata_api_key(Context) ->
     case kz_term:is_true(cb_context:req_value(Context, <<"include_api_key">>, 'false'))
         orelse kapps_config:get_is_true(?ACCOUNTS_CONFIG_CAT, <<"expose_api_key">>, 'false')
     of
         'false' -> Context;
         'true' ->
-            cb_context:set_resp_data(Context
-                                    ,kz_json:set_value(<<"api_key">>
-                                                      ,kzd_accounts:api_key(cb_context:doc(Context))
-                                                      ,cb_context:resp_data(Context)
-                                                      )
-                                    )
+            cb_context:add_metadata_value(Context
+                                         ,<<"api_key">>
+                                         ,kzd_accounts:api_key(cb_context:doc(Context))
+                                         )
     end.
 
--spec leak_pvt_created(cb_context:context()) -> cb_context:context().
-leak_pvt_created(Context) ->
-    cb_context:set_resp_data(Context
-                            ,kz_json:set_value(<<"created">>
-                                              ,kz_doc:created(cb_context:doc(Context))
-                                              ,cb_context:resp_data(Context)
-                                              )
-                            ).
+-spec add_metadata_created(cb_context:context()) -> cb_context:context().
+add_metadata_created(Context) ->
+    cb_context:add_metadata_value(Context
+                                 ,<<"created">>
+                                 ,kz_doc:created(cb_context:doc(Context))
+                                 ).
 
--spec leak_pvt_enabled(cb_context:context()) -> cb_context:context().
-leak_pvt_enabled(Context) ->
-    RespJObj = cb_context:resp_data(Context),
+-spec add_metadata_enabled(cb_context:context()) -> cb_context:context().
+add_metadata_enabled(Context) ->
     case kzd_accounts:is_enabled(cb_context:doc(Context)) of
         'true' ->
-            cb_context:set_resp_data(Context
-                                    ,kzd_accounts:set_enabled(RespJObj, 'true')
-                                    );
+            cb_context:add_metadata_value(Context
+                                         ,<<"enabled">>
+                                         ,'true'
+                                         );
         'false' ->
-            cb_context:set_resp_data(Context
-                                    ,kzd_accounts:set_enabled(RespJObj, 'false')
-                                    )
+            cb_context:add_metadata_value(Context
+                                         ,<<"enabled">>
+                                         ,'false'
+                                         )
     end.
 
--spec leak_reseller_id(cb_context:context(), kz_term:api_binary()) -> cb_context:context().
-leak_reseller_id(Context, PathAccountId) ->
-    cb_context:set_resp_data(Context
-                            ,kz_json:set_value(<<"reseller_id">>
-                                              ,find_reseller_id(Context, PathAccountId)
-                                              ,cb_context:resp_data(Context)
-                                              )
-                            ).
+-spec add_metadata_reseller_id(cb_context:context(), kz_term:api_binary()) -> cb_context:context().
+add_metadata_reseller_id(Context, PathAccountId) ->
+    cb_context:add_metadata_value(Context
+                                 ,<<"reseller_id">>
+                                 ,find_reseller_id(Context, PathAccountId)
+                                 ).
 
--spec leak_is_reseller(cb_context:context()) -> cb_context:context().
-leak_is_reseller(Context) ->
+-spec add_metadata_is_reseller(cb_context:context()) -> cb_context:context().
+add_metadata_is_reseller(Context) ->
     IsReseller = kz_services_reseller:is_reseller(cb_context:account_id(Context)),
-    cb_context:set_resp_data(Context
-                            ,kz_json:set_value(<<"is_reseller">>
-                                              ,IsReseller
-                                              ,cb_context:resp_data(Context)
-                                              )
-                            ).
+    cb_context:add_metadata_value(Context
+                                 ,<<"is_reseller">>
+                                 ,IsReseller
+                                 ).
 
--spec leak_billing_mode(cb_context:context(), kz_term:api_binary()) -> cb_context:context().
-leak_billing_mode(Context, PathAccountId) ->
+-spec add_metadata_billing_mode(cb_context:context(), kz_term:api_binary()) -> cb_context:context().
+add_metadata_billing_mode(Context, PathAccountId) ->
     {'ok', MasterAccountId} = kapps_util:get_master_account_id(),
     AuthAccountId = cb_context:auth_account_id(Context),
-    RespJObj = cb_context:resp_data(Context),
     case find_reseller_id(Context, PathAccountId) of
         AuthAccountId ->
-            cb_context:set_resp_data(Context
-                                    ,kz_json:set_value(<<"billing_mode">>, <<"limits_only">>, RespJObj)
-                                    );
+            cb_context:add_metadata_value(Context
+                                         ,<<"billing_mode">>
+                                         ,<<"limits_only">>
+                                         );
         MasterAccountId ->
-            cb_context:set_resp_data(Context
-                                    ,kz_json:set_value(<<"billing_mode">>, <<"normal">>, RespJObj)
-                                    );
+            cb_context:add_metadata_value(Context
+                                         ,<<"billing_mode">>
+                                         ,<<"normal">>
+                                         );
         _AccountId ->
-            cb_context:set_resp_data(Context
-                                    ,kz_json:set_value(<<"billing_mode">>, <<"manual">>, RespJObj)
-                                    )
+            cb_context:add_metadata_value(Context
+                                         ,<<"billing_mode">>
+                                         ,<<"manual">>
+                                         )
     end.
 
 -spec find_reseller_id(cb_context:context(), kz_term:api_binary()) -> kz_term:api_binary().
@@ -761,31 +752,31 @@ find_reseller_id(Context, PathAccountId) ->
         'false' -> cb_context:reseller_id(Context)
     end.
 
--spec leak_notification_preference(cb_context:context()) -> cb_context:context().
-leak_notification_preference(Context) ->
-    leak_notification_preference(Context, kzd_accounts:notification_preference(cb_context:doc(Context))).
+-spec add_metadata_notification_preference(cb_context:context()) -> cb_context:context().
+add_metadata_notification_preference(Context) ->
+    add_metadata_notification_preference(Context, kzd_accounts:notification_preference(cb_context:doc(Context))).
 
--spec leak_notification_preference(cb_context:context(), kz_term:api_binary()) -> cb_context:context().
-leak_notification_preference(Context, 'undefined') ->
+-spec add_metadata_notification_preference(cb_context:context(), kz_term:api_binary()) -> cb_context:context().
+add_metadata_notification_preference(Context, 'undefined') ->
     Context;
-leak_notification_preference(Context, Pref) ->
+add_metadata_notification_preference(Context, Pref) ->
     UpdatedRespJObj = kz_json:set_value(<<"notification_preference">>, Pref, cb_context:resp_data(Context)),
     cb_context:set_resp_data(Context, UpdatedRespJObj).
 
--spec leak_trial_time_left(cb_context:context()) ->
+-spec add_metadata_trial_time_left(cb_context:context()) ->
           cb_context:context().
-leak_trial_time_left(Context) ->
+add_metadata_trial_time_left(Context) ->
     JObj = cb_context:doc(Context),
-    leak_trial_time_left(Context, JObj, kzd_accounts:trial_expiration(JObj)).
+    add_metadata_trial_time_left(Context, JObj, kzd_accounts:trial_expiration(JObj)).
 
--spec leak_trial_time_left(cb_context:context(), kz_json:object(), kz_term:api_integer()) ->
+-spec add_metadata_trial_time_left(cb_context:context(), kz_json:object(), kz_term:api_integer()) ->
           cb_context:context().
-leak_trial_time_left(Context, _JObj, 'undefined') ->
+add_metadata_trial_time_left(Context, _JObj, 'undefined') ->
     RespData = kz_json:delete_key(<<"trial_time_left">>
                                  ,cb_context:resp_data(Context)
                                  ),
     cb_context:set_resp_data(Context, RespData);
-leak_trial_time_left(Context, JObj, _Expiration) ->
+add_metadata_trial_time_left(Context, JObj, _Expiration) ->
     RespData = kz_json:set_value(<<"trial_time_left">>
                                 ,kzd_accounts:trial_time_left(JObj)
                                 ,cb_context:resp_data(Context)
@@ -894,7 +885,7 @@ format_account_tree_results(Context, JObjs) ->
            ])
          || JObj <- JObjs
         ],
-    cb_context:set_resp_data(Context, RespData).
+    crossbar_util:response(RespData, Context).
 
 %%------------------------------------------------------------------------------
 %% @doc This function will attempt to load the context with the db name of

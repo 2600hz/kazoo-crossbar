@@ -1187,22 +1187,14 @@ run_comment_filter(Comments, Filters) ->
 -spec normalize_view_results(kz_json:object(), kz_json:objects()) ->
           kz_json:objects().
 normalize_view_results(Res, Acc) ->
-    [leak_pvt_fields(Res, knm_port_request:public_fields(kz_json:get_value(<<"doc">>, Res)))
+    Doc = kz_json:get_json_value(<<"doc">>, Res),
+    [add_metadata_fields(Doc, knm_port_request:public_fields(Doc))
     | Acc
     ].
 
--spec leak_pvt_fields(kz_json:object(), kz_json:object()) -> kz_json:object().
-leak_pvt_fields(Res, JObj) ->
-    Fields = [{[<<"doc">>, <<"pvt_account_id">>], <<"account_id">>}],
-    lists:foldl(fun({Field, Key}, J) ->
-                        case kz_json:get_ne_value(Field, Res) of
-                            'undefined' -> J;
-                            Value -> kz_json:set_value(Key, Value, J)
-                        end
-                end
-               ,JObj
-               ,Fields
-               ).
+-spec add_metadata_fields(kz_json:object(), kz_json:object()) -> kz_json:object().
+add_metadata_fields(Doc, PublicJObj) ->
+    kz_json:set_value(<<"account_id">>, kz_doc:account_id(Doc), PublicJObj).
 
 %%------------------------------------------------------------------------------
 %% @doc

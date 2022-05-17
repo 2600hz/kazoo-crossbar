@@ -114,9 +114,12 @@
         ,req_value/2, req_value/3
         ,accepting_charges/1, set_accepting_charges/1
         ,req_param/2, req_param/3
+        ,add_metadata_value/3, add_metadata_values/2, get_metadata/2
         ]).
 
 -include("crossbar.hrl").
+
+-elvis([{elvis_style, god_modules, disable}]).
 
 -record(cb_context, {content_types_provided = [] :: crossbar_content_handlers()
                     ,content_types_accepted = [] :: crossbar_content_handlers()
@@ -142,6 +145,7 @@
                     ,reseller_id :: kz_term:api_ne_binary()
                     ,db_name :: kz_term:api_binary() | kz_term:ne_binaries()
                     ,doc :: kz_json:api_json_term()
+                    ,metadata = [] :: kz_term:proplist()
                     ,pretty_print = 'false' :: boolean()
                     ,resp_expires = {{1999,1,1},{0,0,0}} :: kz_time:datetime()
                     ,resp_etag :: 'automatic' | string() | kz_term:api_binary()
@@ -1313,3 +1317,32 @@ update_successfully_validated_request(Context, Doc) ->
               ,{fun set_resp_status/2, 'success'}
               ],
     passed(setters(Context, Updates)).
+
+-spec get_metadata(context(), kz_doc:doc() | kz_json:objects()) ->
+          kz_json:object().
+get_metadata(#cb_context{metadata=[]}, Docs) when is_list(Docs) ->
+    kz_json:new();
+get_metadata(#cb_context{metadata=Metadata}, Docs) when is_list(Docs) ->
+    kz_json:from_list(Metadata);
+get_metadata(#cb_context{metadata=Metadata}, Doc) ->
+    ReadOnlyJObj = kz_doc:read_only(Doc),
+    kz_json:set_values(Metadata, ReadOnlyJObj).
+
+-spec add_metadata_values(context(), kz_json:json_proplist()) -> context().
+add_metadata_values(Context, Props) when is_list(Props) ->
+    lists:foldl(fun({K, V}, Ctx) -> add_metadata_value(Ctx, K, V) end
+               ,Context
+               ,Props
+               ).
+
+%% @doc add metadata for inclusion on the response envelope
+-spec add_metadata_value(context(), kz_term:ne_binary(), kz_json:api_json_term() | 'null') -> context().
+add_metadata_value(Context, _Key, 'undefined') ->
+    lager:info("not setting meta key ~s to undefined", [_Key]),
+    Context;
+add_metadata_value(#cb_context{metadata=Metadata}=Context, Key, 'null') ->
+    lager:info("removing meta key ~s", [Key]),
+    Context#cb_context{metadata = props:delete(Key, Metadata)};
+add_metadata_value(#cb_context{metadata=Metadata}=Context, Key, Value) ->
+    lager:info("setting meta ~p: ~p", [Key, Value]),
+    Context#cb_context{metadata = props:set_value(Key, Value, Metadata)}.
