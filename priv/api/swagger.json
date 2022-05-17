@@ -5831,7 +5831,6 @@
                 }
             },
             "required": [
-                "conference_link",
                 "guests",
                 "invite_message"
             ],

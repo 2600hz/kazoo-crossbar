@@ -4605,7 +4605,6 @@
       'type': string
       'x-support_level': supported
   'required':
-    - conference_link
     - guests
     - invite_message
   'type': object
