@@ -12,7 +12,7 @@ Schema for comments
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`comments` | The history of comments made on a object | `array([#/definitions/comment](#comment))` |   | `false` |
+`comments` | The history of comments made on a object | `array([#/definitions/comment](#comment))` |   | `false` |  
 
 ### comment
 
@@ -27,7 +27,7 @@ Key | Description | Type | Default | Required | Support Level
 `content` | Content of the comment | `string()` |   | `true` |  
 `is_private` | Specified if this comment is private | `boolean()` | `false` | `false` |  
 `timestamp` |   | `integer()` |   | `true` |  
-`user_id` | User ID of the commenter | `string()` |   | `false` |
+`user_id` | User ID of the commenter | `string()` |   | `false` |  
 
 
 

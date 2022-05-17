@@ -23,8 +23,8 @@ Key | Description | Type | Default | Required | Support Level
 `bill.street_post_dir` | Street Post-Direction | `string()` |   | `false` |  
 `bill.street_pre_dir` | Street Pre-Direction | `string()` |   | `false` |  
 `bill.street_type` | The street type of the billing address the losing carrier has on record | `string()` |   | `false` |  
-`bill` | Billing information of the losing carrier | `object()` |   | `false` |
-`comments` | The history of comments made on a port request | `array([#/definitions/comment](#comment))` |   | `false` |
+`bill` | Billing information of the losing carrier | `object()` |   | `false` |  
+`comments` | The history of comments made on a port request | `array([#/definitions/comment](#comment))` |   | `false` |  
 `name` | A friendly name for the port request | `string(1..128)` |   | `true` |  
 `notifications.email.send_to` | A list or string of email recipient(s) | `string() | array(string())` |   | `false` |  
 `notifications.email` | Inbound Email Notifications | `object()` |   | `false` |  
@@ -35,7 +35,7 @@ Key | Description | Type | Default | Required | Support Level
 `signee_name` | The name of the person authorizing the release of numbers from the losing carrier | `string()` |   | `false` |  
 `signing_date` | The date in Gregorian timestamp on which the document releasing the numbers from the losing carrier was signed | `integer()` |   | `false` |  
 `transfer_date` | Requested transfer date in Gregorian timestamp | `integer()` |   | `false` |  
-`winning_carrier` | The name of winning carrier | `string()` |   | `false` |
+`winning_carrier` | The name of winning carrier | `string()` |   | `false` |  
 
 ### comment
 
@@ -50,7 +50,7 @@ Key | Description | Type | Default | Required | Support Level
 `content` | Content of the comment | `string()` |   | `true` |  
 `is_private` | Specified if this comment is private | `boolean()` | `false` | `false` |  
 `timestamp` |   | `integer()` |   | `true` |  
-`user_id` | User ID of the commenter | `string()` |   | `false` |
+`user_id` | User ID of the commenter | `string()` |   | `false` |  
 
 
 ## Fetch

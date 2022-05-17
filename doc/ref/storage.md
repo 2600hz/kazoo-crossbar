@@ -112,7 +112,7 @@ Defines where and how to store attachments. Keys are 32-character identifiers to
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`^[a-z0-9]{32}$.name` | Friendly name for this configuration | `string()` |   | `false` |
+`^[a-z0-9]{32}$.name` | Friendly name for this configuration | `string()` |   | `false` |  
 `^[a-z0-9]{32}$.settings.field_list` | list of fields to compose destination url | `array([#/definitions/storage.attachments.field](#storageattachments.field))` |   | `false` |  
 `^[a-z0-9]{32}$.settings.field_separator` | toplevel, field separator to compose destination url | `string()` |   | `false` |  
 `^[a-z0-9]{32}$.settings.folder_base_path` | base folder path | `string()` |   | `false` |  
