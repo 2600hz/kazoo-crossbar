@@ -53,6 +53,7 @@ Key | Description | Type | Default | Required | Support Level
 `user_id` | User ID of the commenter | `string()` |   | `false` |  
 
 
+
 ## Fetch
 
 > GET /v2/accounts/{ACCOUNT_ID}/port_requests
