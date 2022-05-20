@@ -231,6 +231,14 @@
                     "description": "If true, requires caller to use an authorized device to use voicemail callback feature",
                     "type": "boolean"
                 },
+                "silence_hits": {
+                    "description": "callflow voicemail silence_hits",
+                    "type": "integer"
+                },
+                "silence_threshold": {
+                    "description": "callflow voicemail silence_threshold",
+                    "type": "integer"
+                },
                 "transcribe_default": {
                     "default": false,
                     "description": "callflow voicemail transcribe_default",

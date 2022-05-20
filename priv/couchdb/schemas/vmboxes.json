@@ -175,6 +175,16 @@
             "minimum": 0,
             "type": "integer"
         },
+        "silence_hits": {
+            "description": "The number of consecutive hits to see before the channel is considered silent",
+            "minimum": 1,
+            "type": "integer"
+        },
+        "silence_threshold": {
+            "description": "Threshold value compared to score - if score drops below threshold, add a hit. Lower threshold means quieter channel before hits start",
+            "minimum": 1,
+            "type": "integer"
+        },
         "skip_envelope": {
             "default": false,
             "description": "Determines if the envelope should be skipped",

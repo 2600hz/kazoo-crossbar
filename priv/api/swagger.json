@@ -130,6 +130,14 @@
                             "description": "callflow voicemail should_disable_offnet_callback",
                             "type": "boolean"
                         },
+                        "silence_hits": {
+                            "description": "callflow voicemail silence_hits",
+                            "type": "integer"
+                        },
+                        "silence_threshold": {
+                            "description": "callflow voicemail silence_threshold",
+                            "type": "integer"
+                        },
                         "transcribe_default": {
                             "default": false,
                             "description": "callflow voicemail transcribe_default",
@@ -12497,6 +12505,14 @@
                             "description": "If true, requires caller to use an authorized device to use voicemail callback feature",
                             "type": "boolean"
                         },
+                        "silence_hits": {
+                            "description": "callflow voicemail silence_hits",
+                            "type": "integer"
+                        },
+                        "silence_threshold": {
+                            "description": "callflow voicemail silence_threshold",
+                            "type": "integer"
+                        },
                         "transcribe_default": {
                             "default": false,
                             "description": "callflow voicemail transcribe_default",
@@ -20832,6 +20848,16 @@
                     "default": 10000,
                     "description": "callflow fastforward and rewind seek duration",
                     "minimum": 0,
+                    "type": "integer"
+                },
+                "silence_hits": {
+                    "description": "The number of consecutive hits to see before the channel is considered silent",
+                    "minimum": 1,
+                    "type": "integer"
+                },
+                "silence_threshold": {
+                    "description": "Threshold value compared to score - if score drops below threshold, add a hit. Lower threshold means quieter channel before hits start",
+                    "minimum": 1,
                     "type": "integer"
                 },
                 "skip_envelope": {
