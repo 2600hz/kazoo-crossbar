@@ -17,13 +17,16 @@ has_valid_dbs_test_() ->
     EmptyDbContext = cb_context:set_db_name(Context, <<>>),
     DbContext = cb_context:set_db_name(Context, <<"system_config">>),
 
+    NoDbContext = cb_context:store(Context, 'no_db_in_range', 'true'),
+    NoDbEmptyDbContext = cb_context:store(EmptyDbContext, 'no_db_in_range', 'true'),
+
     [{"Invalid databases value"
-     ,[?_assertEqual({'no_db', []}
+     ,[?_assertEqual({'error', <<"invalid_db_name">>}
                     ,get_valid_databases(
                        crossbar_view:has_valid_dbs({Context, []})
                       )
                     )
-      ,?_assertEqual({'no_db', []}
+      ,?_assertEqual({'error', <<"invalid_db_name">>}
                     ,get_valid_databases(
                        crossbar_view:has_valid_dbs({Context, [{'databases', [<<>>]}]})
                       )
@@ -33,14 +36,40 @@ has_valid_dbs_test_() ->
                        crossbar_view:has_valid_dbs({Context, [{'databases', 'atom'}]})
                       )
                     )
-      ,?_assertEqual({'no_db', []}
+      ,?_assertEqual({'error', <<"invalid_db_name">>}
                     ,get_valid_databases(
                        crossbar_view:has_valid_dbs({EmptyDbContext, [{'databases', ['marble']}]})
                       )
                     )
-      ,?_assertEqual({'no_db', []}
+      ,?_assertEqual({'error', <<"invalid_db_name">>}
                     ,get_valid_databases(
                        crossbar_view:has_valid_dbs({EmptyDbContext, [{'databases', <<>>}]})
+                      )
+                    )
+
+     ,?_assertEqual({'no_db', []}
+                    ,get_valid_databases(
+                       crossbar_view:has_valid_dbs({NoDbContext, []})
+                      )
+                    )
+      ,?_assertEqual({'no_db', []}
+                    ,get_valid_databases(
+                       crossbar_view:has_valid_dbs({NoDbContext, [{'databases', [<<>>]}]})
+                      )
+                    )
+      ,?_assertEqual({'error', <<"internal_error">>}
+                    ,get_valid_databases(
+                       crossbar_view:has_valid_dbs({NoDbContext, [{'databases', 'atom'}]})
+                      )
+                    )
+      ,?_assertEqual({'no_db', []}
+                    ,get_valid_databases(
+                       crossbar_view:has_valid_dbs({NoDbEmptyDbContext, [{'databases', ['marble']}]})
+                      )
+                    )
+      ,?_assertEqual({'no_db', []}
+                    ,get_valid_databases(
+                       crossbar_view:has_valid_dbs({NoDbEmptyDbContext, [{'databases', <<>>}]})
                       )
                     )
       ]
