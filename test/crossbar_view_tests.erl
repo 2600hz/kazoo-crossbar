@@ -47,7 +47,7 @@ has_valid_dbs_test_() ->
                       )
                     )
 
-     ,?_assertEqual({'no_db', []}
+      ,?_assertEqual({'no_db', []}
                     ,get_valid_databases(
                        crossbar_view:has_valid_dbs({NoDbContext, []})
                       )
