@@ -9508,6 +9508,21 @@
           'items':
             'type': string
           'type': array
+    'channel_events':
+      'default':
+        - CHANNEL_CREATE
+        - CHANNEL_ANSWER
+        - CHANNEL_DESTROY
+        - CHANNEL_HOLD
+        - CHANNEL_UNHOLD
+        - CHANNEL_BRIDGE
+        - PARK_PARKED
+        - PARK_RETRIEVED
+        - PARK_ABANDONED
+      'description': blackhole channel_events
+      'items':
+        'type': string
+      'type': array
     'compress_response_body':
       'default': true
       'description': blackhole compress_response_body
