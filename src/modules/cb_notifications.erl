@@ -622,6 +622,8 @@ publish_fun(<<"number_feature_manual_action">>) ->
     fun kapi_notifications:publish_number_feature_manual_action/1;
 publish_fun(<<"desktop_app_welcome">>) ->
     fun kapi_notifications:publish_desktop_app_welcome/1;
+publish_fun(<<"conference_email_invite">>) ->
+    fun kapi_notifications:publish_email_invite/1;
 publish_fun(_Id) ->
     lager:debug("no kapi_notifications:publish_~s/1 defined", [_Id]),
     fun(_Any) -> 'ok' end.
