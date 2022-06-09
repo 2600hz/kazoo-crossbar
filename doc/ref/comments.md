@@ -10,7 +10,7 @@ Schema for comments
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`comments` | The history of comments made on a object | `["array(", "[#/definitions/comment](#comment)", ")"]` |   | `false` |  
+`comments` | The history of comments made on a object | `array([#/definitions/comment](#comment))` |   | `false` |  
 
 
 

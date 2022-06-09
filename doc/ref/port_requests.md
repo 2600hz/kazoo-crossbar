@@ -24,7 +24,7 @@ Key | Description | Type | Default | Required | Support Level
 `bill.street_pre_dir` | Street Pre-Direction | `string()` |   | `false` |  
 `bill.street_type` | The street type of the billing address the losing carrier has on record | `string()` |   | `false` |  
 `bill` | Billing information of the losing carrier | `object()` |   | `false` |  
-`comments` | The history of comments made on a port request | `["array(", "[#/definitions/comment](#comment)", ")"]` |   | `false` |  
+`comments` | The history of comments made on a port request | `array([#/definitions/comment](#comment))` |   | `false` |  
 `name` | A friendly name for the port request | `string(1..128)` |   | `true` |  
 `notifications.email.send_to` | A list or string of email recipient(s) | `string() | array(string())` |   | `false` |  
 `notifications.email` | Inbound Email Notifications | `object()` |   | `false` |  
