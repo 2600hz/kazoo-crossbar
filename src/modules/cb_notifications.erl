@@ -546,7 +546,7 @@ maybe_add_extra_data(<<"conference_email_invite">>, API) ->
                      ,{<<"Guests">>,[props:get_value(<<"Guests">>, API)]}
                      ,{<<"Conference-Call-In-Numbers">>,[props:get_value(<<"Conference-Call-In-Numbers">>, API)]}
                      ]
-                   , API);
+                    , API);
 maybe_add_extra_data(_Id, API) -> API.
 
 -spec publish_fun(kz_term:ne_binary()) -> fun((kz_term:api_terms()) -> 'ok').
