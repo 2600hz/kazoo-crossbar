@@ -541,6 +541,12 @@ maybe_add_extra_data(<<"number_feature_manual_action">>, API) ->
                      ,{<<"Feature">>, kz_json:new()}
                      ]
                     , API);
+maybe_add_extra_data(<<"conference_email_invite">>, API) ->
+    props:set_values([{<<"Conference-Participant-Pins">>,[props:get_value(<<"Conference-Participant-Pins">>, API)]}
+                     ,{<<"Guests">>,[props:get_value(<<"Guests">>, API)]}
+                     ,{<<"Conference-Call-In-Numbers">>,[props:get_value(<<"Conference-Call-In-Numbers">>, API)]}
+                     ]
+                   , API);
 maybe_add_extra_data(_Id, API) -> API.
 
 -spec publish_fun(kz_term:ne_binary()) -> fun((kz_term:api_terms()) -> 'ok').
