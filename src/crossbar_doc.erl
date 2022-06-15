@@ -30,7 +30,6 @@
 -export([handle_datamgr_success/2
         ,handle_datamgr_errors/3
         ]).
--export([public_and_read_only/1]).
 
 -ifdef(TEST).
 -export([patch_the_doc/2]).
@@ -636,7 +635,7 @@ delete(Context, ?SOFT_DELETE) ->
 delete(Context, ?HARD_DELETE) ->
     Doc = cb_context:doc(Context),
     lager:info("hard-deleting doc ~s", [kz_doc:id(Doc)]),
-    do_delete(Context, Doc, fun kz_datamgr:del_doc/2).
+    do_delete(Context, kz_doc:set_deleted(Doc, 'true'), fun kz_datamgr:del_doc/2).
 
 -spec soft_delete(cb_context:context(), kz_term:api_binary()) -> cb_context:context().
 soft_delete(Context, Rev) ->
@@ -664,7 +663,7 @@ do_delete(Context, JObj, CouchFun) ->
         {'error', Error} ->
             DocId = kz_doc:id(JObj),
             handle_datamgr_errors(Error, DocId, Context);
-        {'ok', _} ->
+        {'ok', _Tombstone} ->
             lager:debug("'deleted' ~s from ~s using ~p"
                        ,[kz_doc:id(JObj), cb_context:db_name(Context), CouchFun]
                        ),
@@ -745,14 +744,6 @@ handle_thing_success(Thing, Context) ->
 handle_json_success(JObj, Context) ->
     handle_json_success(JObj, Context, cb_context:req_verb(Context)).
 
--spec public_and_read_only(kz_json:object()) -> kz_json:object().
-public_and_read_only(JObj) ->
-    Public = kz_doc:public_fields(JObj),
-    case kz_json:get_json_value(<<"_read_only">>, JObj) of
-        'undefined' -> Public;
-        ReadOnly -> kz_json:set_value(<<"_read_only">>, ReadOnly, Public)
-    end.
-
 -spec add_location_header(kz_json:object(), map()) -> map().
 add_location_header(JObj, RHs) ->
     maps:put(<<"location">>, kz_doc:id(JObj), RHs).
@@ -760,7 +751,7 @@ add_location_header(JObj, RHs) ->
 -spec handle_json_success(kz_json:object() | kz_json:objects(), cb_context:context(), http_method()) ->
           cb_context:context().
 handle_json_success(JObjs, Context, ?HTTP_PUT) when is_list(JObjs) ->
-    RespData = [public_and_read_only(JObj)
+    RespData = [kz_doc:public_fields(JObj)
                 || JObj <- JObjs,
                    not kz_doc:is_soft_deleted(JObj)
                ],
@@ -793,26 +784,33 @@ handle_json_success(JObj, Context, ?HTTP_PUT) ->
     cb_context:setters(Context
                       ,[{fun cb_context:set_doc/2, JObj}
                        ,{fun cb_context:set_resp_status/2, 'success'}
-                       ,{fun cb_context:set_resp_data/2, public_and_read_only(JObj)}
+                       ,{fun cb_context:set_resp_data/2, kz_doc:public_fields(JObj)}
                        ,{fun cb_context:set_resp_etag/2, rev_to_etag(JObj)}
                        ,{fun cb_context:set_resp_headers/2, RespHeaders}
                        ]);
 handle_json_success(JObj, Context, ?HTTP_DELETE) ->
-    Public = public_and_read_only(JObj),
-    RespJObj = kz_json:set_value([<<"_read_only">>, <<"deleted">>], 'true', Public),
+    PublicJObj = kz_doc:public_fields(JObj),
     cb_context:setters(Context
                       ,[{fun cb_context:set_doc/2, JObj}
                        ,{fun cb_context:set_resp_status/2, 'success'}
-                       ,{fun cb_context:set_resp_data/2, RespJObj}
+                       ,{fun cb_context:set_resp_data/2, PublicJObj}
                        ,{fun cb_context:set_resp_etag/2, rev_to_etag(JObj)}
+                       ,{fun cb_context:add_metadata_value/3, <<"deleted">>, 'true'}
                        ]);
 handle_json_success(JObj, Context, _Verb) ->
     cb_context:setters(Context
                       ,[{fun cb_context:set_doc/2, JObj}
                        ,{fun cb_context:set_resp_status/2, 'success'}
-                       ,{fun cb_context:set_resp_data/2, public_and_read_only(JObj)}
+                       ,{fun cb_context:set_resp_data/2, kz_doc:public_fields(JObj)}
                        ,{fun cb_context:set_resp_etag/2, rev_to_etag(JObj)}
                        ]).
+
+public_and_read_only(JObj) ->
+    Public = kz_doc:public_fields(JObj),
+    case kz_json:get_json_value(<<"_read_only">>, JObj) of
+        'undefined' -> Public;
+        ReadOnly -> kz_json:set_value(<<"_read_only">>, ReadOnly, Public)
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc

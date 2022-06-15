@@ -114,7 +114,8 @@
         ,req_value/2, req_value/3
         ,accepting_charges/1, set_accepting_charges/1
         ,req_param/2, req_param/3
-        ,add_metadata_value/3, add_metadata_values/2, get_metadata/2
+        ,add_metadata_value/3, add_metadata_values/2
+        ,get_metadata/1, get_metadata/2
         ]).
 
 -include("crossbar.hrl").
@@ -1318,14 +1319,21 @@ update_successfully_validated_request(Context, Doc) ->
               ],
     passed(setters(Context, Updates)).
 
--spec get_metadata(context(), kz_doc:doc() | kz_json:objects()) ->
+-spec get_metadata(context()) -> kz_json:object().
+get_metadata(Context) ->
+    get_metadata(Context, doc(Context)).
+
+-spec get_metadata(context(), kz_doc:doc() | kz_json:api_objects()) ->
           kz_json:object().
 get_metadata(#cb_context{metadata=[]}, Docs) when is_list(Docs) ->
     kz_json:new();
 get_metadata(#cb_context{metadata=Metadata}, Docs) when is_list(Docs) ->
     kz_json:from_list(Metadata);
+get_metadata(#cb_context{metadata=Metadata}, 'undefined') ->
+    kz_json:from_list(Metadata);
 get_metadata(#cb_context{metadata=Metadata}, Doc) ->
     ReadOnlyJObj = kz_doc:read_only(Doc),
+    lager:info("setting ~p on ~p", [Metadata, ReadOnlyJObj]),
     kz_json:set_values(Metadata, ReadOnlyJObj).
 
 -spec add_metadata_values(context(), kz_json:json_proplist()) -> context().

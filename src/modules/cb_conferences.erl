@@ -164,8 +164,8 @@ validate_resource_conference(?HTTP_GET, Context, ConferenceId) ->
     Context1 = maybe_load_conference(ConferenceId, Context),
     case cb_context:resp_status(Context1) of
         'success' ->
-            Data = enrich_conference(ConferenceId, Context1),
-            cb_context:store(Context1, 'conference_data', Data);
+            Context2 = enrich_conference(Context1, ConferenceId),
+            cb_context:store(Context2, 'conference_data', cb_context:get_metadata(Context2));
         _Else ->
             Context1
     end;
@@ -177,8 +177,7 @@ validate_conference(?HTTP_GET, Context, ConferenceId) ->
     Context1 = maybe_load_conference(ConferenceId, Context),
     case cb_context:resp_status(Context1) of
         'success' ->
-            Data = enrich_conference(ConferenceId, Context1),
-            cb_context:set_resp_data(Context1, Data);
+            enrich_conference(Context1, ConferenceId);
         _Else ->
             Context1
     end;
@@ -421,7 +420,7 @@ build_email_invite_kapi_req(Context) ->
     Types = [<<"Conference Call-In Number">>, <<"MainConference">>],
     {'ok', Callflows} = kz_datamgr:get_results(cb_context:db_name(Context)
                                               ,<<"crossbar_listings/by_type_name">>
-                                              ,[{keys, [[kzd_callflows:type(), T] || T <- Types]}
+                                              ,[{'keys', [[kzd_callflows:type(), T] || T <- Types]}
                                                ,{'result_key', <<"doc">>}
                                                ,'include_docs'
                                                ]
@@ -789,7 +788,7 @@ build_number_endpoint(Number, ?BUILD_ACC(Endpoints, Call, Context, Element)) ->
 build_sip_endpoint(URI, Acc) ->
     build_sip_endpoint(URI, sip_uri(URI), Acc).
 
--spec build_sip_endpoint(kz_term:ne_binary(), {binary(), binary()} | undefined, build_acc()) ->
+-spec build_sip_endpoint(kz_term:ne_binary(), {binary(), binary()} | 'undefined', build_acc()) ->
           build_acc().
 build_sip_endpoint(URI, undefined, ?BUILD_ACC(Endpoints, Call, Context, Element)) ->
     ?BUILD_ACC(Endpoints, Call, add_invalid_uri_error(Context, URI, Element), Element+1);
@@ -809,16 +808,16 @@ build_sip_endpoint(URI, {SipUsername, SipRealm}, ?BUILD_ACC(Endpoints, Call, Con
             ?BUILD_ACC(Endpoints, Call, add_not_found_error(Context, URI, Element), Element+1)
     end.
 
--spec sip_uri(kz_term:ne_binary()) -> {binary(), binary()} | undefined.
+-spec sip_uri(kz_term:ne_binary()) -> {binary(), binary()} | 'undefined'.
 sip_uri(URI) ->
     try nklib_parse_uri:uris(URI) of
         [#uri{user=User, domain=Realm}] -> {User, Realm};
-        _Else -> undefined
+        _Else -> 'undefined'
     catch
         _Ex:Err:_ST ->
             lager:error("invalid uri ~p => ~p / ~p", [URI, _Ex, Err]),
             kz_log:log_stacktrace(_ST),
-            undefined
+            'undefined'
     end.
 
 -spec add_not_found_error(cb_context:context(), kz_term:ne_binary(), pos_integer()) -> cb_context:context().
@@ -985,10 +984,10 @@ enrich_participants(ConferenceId, Context) ->
     Normalized = [kz_json:normalize_jobj(JObj) || JObj <- Participants],
     cb_context:set_resp_data(Context, Normalized).
 
--spec enrich_conference(kz_term:ne_binary(), cb_context:context()) -> kz_json:object().
-enrich_conference(ConferenceId, Context) ->
+-spec enrich_conference(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+enrich_conference(Context, ConferenceId) ->
     RealtimeData = conference_realtime_data(ConferenceId),
-    kz_json:set_value(<<"_read_only">>, RealtimeData, cb_context:resp_data(Context)).
+    cb_context:add_metadata_values(Context, kz_json:to_proplist(RealtimeData)).
 
 -spec conference_realtime_data(kz_term:ne_binary()) -> kz_json:object().
 conference_realtime_data(ConferenceId) ->

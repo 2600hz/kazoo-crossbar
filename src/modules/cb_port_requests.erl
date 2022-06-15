@@ -362,7 +362,11 @@ put(Context) ->
     case cb_context:resp_status(Context1) of
         'success' ->
             Doc = cb_context:doc(Context1),
-            cb_context:set_resp_data(Context1, knm_port_request:public_fields(Doc));
+            Metadata = knm_port_request:read_only_public_fields(Doc),
+            cb_context:setters(Context1
+                              ,[{fun cb_context:set_resp_data/2, knm_port_request:public_fields(Doc)}
+                               ,{fun cb_context:add_metadata_values/2, kz_json:to_proplist(Metadata)}
+                               ]);
         _ ->
             Context1
     end.
@@ -1186,9 +1190,10 @@ run_comment_filter(Comments, Filters) ->
 %%------------------------------------------------------------------------------
 -spec normalize_view_results(kz_json:object(), kz_json:objects()) ->
           kz_json:objects().
-normalize_view_results(Res, Acc) ->
-    Doc = kz_json:get_json_value(<<"doc">>, Res),
-    [add_metadata_fields(Doc, knm_port_request:public_fields(Doc))
+normalize_view_results(ViewResult, Acc) ->
+    Doc = kz_json:get_json_value(<<"doc">>, ViewResult),
+    Normalized = knm_port_request:public_fields(Doc),
+    [add_metadata_fields(Doc, Normalized)
     | Acc
     ].
 
@@ -1223,6 +1228,7 @@ on_successful_validation(Context, Id) ->
 -spec on_successful_validation(cb_context:context(), kz_term:api_binary(), boolean()) -> cb_context:context().
 on_successful_validation(Context, Id, 'true') ->
     JObj = cb_context:doc(Context),
+
     Numbers = kz_json:get_keys(kz_json:get_value(<<"numbers">>, JObj)),
     Context1 = lists:foldl(fun(Number, ContextAcc) ->
                                    check_number_portability(Id, Number, ContextAcc)

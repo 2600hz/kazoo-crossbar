@@ -1869,7 +1869,7 @@ create_default_resp_envelope(Context) ->
                            ).
 
 success_envelope(Context, BaseResp, RespData) ->
-    Metadata = cb_context:get_metadata(Context, RespData),
+    Metadata = cb_context:get_metadata(Context),
     [{<<"status">>, <<"success">>}
     ,{<<"request_id">>, cb_context:req_id(Context)}
     ,{<<"metadata">>, Metadata}

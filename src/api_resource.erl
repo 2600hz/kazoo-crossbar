@@ -1170,7 +1170,7 @@ handle_response_data(Context, []) ->
 handle_response_data(Context, [JObj|_] = RespData) ->
     case kz_json:is_json_object(JObj) of
         'true' ->
-            JObjs = [crossbar_doc:public_and_read_only(J) || J <- RespData],
+            JObjs = [kz_doc:public_fields(J) || J <- RespData],
             cb_context:set_resp_data(Context, JObjs);
         'false' ->
             Context

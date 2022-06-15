@@ -333,15 +333,15 @@ put(Context) ->
                      ,task_account_id(Context)
                      ,Category
                      ,Action
-                     ,cb_context:fetch(Context, total_rows)
+                     ,cb_context:fetch(Context, 'total_rows')
                      ,CSVorJSON
                      ,cb_context:req_value(Context, ?RV_FILENAME)
                      )
     of
         {'ok', TaskJObj} ->
-            TaskId = kz_json:get_value([<<"_read_only">>, <<"id">>], TaskJObj),
-            _ = save_attached_data(set_db(Context), TaskId, CSVorJSON, IsCSV),
-            crossbar_util:response(TaskJObj, Context);
+            TaskId = kz_doc:id(TaskJObj),
+            _SavedContext = save_attached_data(set_db(Context), TaskId, CSVorJSON, IsCSV),
+            crossbar_util:response(kz_json:new(), cb_context:add_metadata_values(Context, kz_json:to_proplist(TaskJObj)));
         {'error', 'unknown_category_action'=Reason} ->
             crossbar_util:response_bad_identifier(Reason, Context);
         {'error', Reason} ->
@@ -403,13 +403,13 @@ patch(Context, TaskId, ?PATH_STOP) ->
     Req = [{<<"Task-ID">>, TaskId}
           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
-    {ok, Resp} = kz_amqp_worker:call(Req
-                                    ,fun kapi_tasks:publish_stop_req/1
-                                    ,fun kapi_tasks:stop_resp_v/1
-                                    ),
+    {'ok', Resp} = kz_amqp_worker:call(Req
+                                      ,fun kapi_tasks:publish_stop_req/1
+                                      ,fun kapi_tasks:stop_resp_v/1
+                                      ),
     case kapi_tasks:reply(Resp) =:= <<"not_running">> of
-        false -> crossbar_util:response(kapi_tasks:reply(Resp), Context);
-        true ->
+        'false' -> crossbar_util:response(kapi_tasks:reply(Resp), Context);
+        'true' ->
             Msg = kz_json:from_list(
                     [{<<"reason">>, <<"task is not running">>}
                     ,{<<"cause">>, TaskId}
@@ -520,11 +520,11 @@ handle_read_result(TaskId, OrigContext, ReadContext) ->
     case cb_context:resp_data(ReadContext) of
         [] -> crossbar_util:response_bad_identifier(TaskId, OrigContext);
         [TaskJObj] ->
-            JObj = kz_json:set_value(<<"_read_only">>, TaskJObj, kz_json:new()),
             lager:debug("task fetched: ~s", [kz_json:encode(TaskId)]),
             cb_context:setters(ReadContext
-                              ,[{fun cb_context:set_doc/2, JObj}
-                               ,{fun cb_context:set_resp_data/2, JObj}
+                              ,[{fun cb_context:set_doc/2, TaskJObj}
+                               ,{fun cb_context:set_resp_data/2, kz_json:new()}
+                               ,{fun cb_context:add_metadata_values/2, kz_json:to_proplist(TaskJObj)}
                                ]
                               )
     end.
