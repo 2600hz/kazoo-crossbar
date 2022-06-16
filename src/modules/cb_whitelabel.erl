@@ -538,10 +538,18 @@ format_lookup_result(_Type, Value) ->
 test_network_options(Context) ->
     Domain = find_domain(Context),
     DefaultOptions = kz_network_utils:default_options(),
+    TransportOptions =
+        case kz_term:is_true(cb_context:req_value(Context, <<"use_tcp">>, 'true')) of
+            'true' ->
+                DefaultOptions;
+            'false' ->
+                props:set_value('usevc', 'false', DefaultOptions)
+        end,
+
     case kz_network_utils:find_nameservers(Domain) of
-        [] ->  DefaultOptions;
+        [] ->  TransportOptions;
         Nameservers ->
-            kz_network_utils:set_option_nameservers(DefaultOptions, Nameservers)
+            kz_network_utils:set_option_nameservers(TransportOptions, Nameservers)
     end.
 
 -spec validate_domain(cb_context:context(), path_token(), http_method()) ->
