@@ -9420,6 +9420,10 @@
     'marketplace_url':
       'description': appex_client marketplace_url
       'type': string
+    'use_tcp':
+      'default': false
+      'description': appex_client use_tcp for dns query
+      'type': boolean
   'type': object
 'system_config.auth':
   'description': Schema for auth system_config
@@ -14484,6 +14488,10 @@
       'description': tasks aging expiry in days
       'minimum': 0
       'type': integer
+    'archive_modb_before_delete':
+      'default': true
+      'description': tasks archive_modb_before_delete
+      'type': boolean
     'attempt_upload_output_times':
       'default': 5
       'description': |-
@@ -14516,10 +14524,6 @@
       'default': 300000
       'description': tasks cycle delay time in milliseconds
       'type': integer
-    'archive_modb_before_delete':
-      'default': true
-      'description': tasks archive_modb_before_delete
-      'type': boolean
     'discovery_expiry_d':
       'default': 1
       'description': tasks discovery expiry in days

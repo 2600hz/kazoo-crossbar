@@ -11921,6 +11921,11 @@
                 "marketplace_url": {
                     "description": "appex_client marketplace_url",
                     "type": "string"
+                },
+                "use_tcp": {
+                    "default": false,
+                    "description": "appex_client use_tcp for dns query",
+                    "type": "boolean"
                 }
             },
             "type": "object"
