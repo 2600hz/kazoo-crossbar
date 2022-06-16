@@ -19,15 +19,16 @@ please see LICENSE-MPL-RabbitMQ. For the ASL, please see LICENSE-APACHE2. |
                         http://www.apache.org/licenses/ |
 | eiconv                  | https://github.com/zotonic/eiconv/blob/master/LICENSE |
 | eini                    | https://github.com/erlcloud/eini.git/blob/master/LICENSE |
-| elvis                   | git@github.com:2600hz/erlang-elvis/blob/master/LICENSE |
+| elvis                   | https://github.com/2600hz/erlang-elvis/blob/master/LICENSE |
 | elvis_core              |                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/ |
+| elvis_mk                | https://github.com/inaka/elvis.mk.git/blob/master/LICENSE |
 | epgsql                  | https://github.com/epgsql/epgsql/blob/master/LICENSE |
 | erlang_localtime        | https://github.com/2600hz/erlang-localtime/blob/master/LICENSE |
 | erlydtl                 | https://github.com/erlydtl/erlydtl/blob/master/LICENSE |
 | ersip                   | https://github.com/2600hz/erlang-ersip/blob/master/LICENSE |
-| espandsp                | git@github.com:2600hz/erlang-espandsp/blob/master/LICENSE |
+| espandsp                | https://github.com/2600hz/erlang-espandsp/blob/master/LICENSE |
 | fcm                     | https://github.com/2600hz/erlang-fcm.git/blob/master/LICENSE |
 | folsom                  | https://github.com/2600hz/erlang-folsom/blob/master/LICENSE |
 | forms                   | The MIT License (MIT) |
