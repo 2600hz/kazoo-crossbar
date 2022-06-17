@@ -12914,6 +12914,22 @@
             },
             "type": "object"
         },
+        "system_config.commland": {
+            "description": "Schema for commland system_config",
+            "properties": {
+                "base_url": {
+                    "default": "https://packages.2600hz.com/commland/compatibility",
+                    "description": "commland base_url for updates",
+                    "type": "string"
+                },
+                "base_version": {
+                    "default": "5.1",
+                    "description": "kazoo base_version to use for updates",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "system_config.conferences": {
             "description": "Schema for conferences system_config",
             "properties": {
@@ -13706,6 +13722,27 @@
                     "default": false,
                     "description": "crossbar.channels system wide channels list",
                     "type": "boolean"
+                }
+            },
+            "type": "object"
+        },
+        "system_config.crossbar.commland": {
+            "description": "Schema for crossbar.commland system_config",
+            "properties": {
+                "base_salt": {
+                    "default": "7f613340-1ebf-4710-ad57-fb4d3041af4c",
+                    "description": "crossbar commland base_salt for generating hashes",
+                    "type": "string"
+                },
+                "base_url": {
+                    "default": "https://packages.2600hz.com/commland/misc/compatibility",
+                    "description": "crossbar commland base_url for accessing updates",
+                    "type": "string"
+                },
+                "base_version": {
+                    "default": "5.1",
+                    "description": "crossbar commland base_version to return when no version can be found",
+                    "type": "string"
                 }
             },
             "type": "object"
@@ -23584,6 +23621,23 @@
                     },
                     {
                         "$ref": "#/parameters/COMMENT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/commland/compatibility": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
                     }
                 ],
                 "responses": {

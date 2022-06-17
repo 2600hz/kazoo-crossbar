@@ -211,7 +211,10 @@ response_deprecated_redirect(Context, RedirectUrl) ->
 -spec response_deprecated_redirect(cb_context:context(), kz_term:ne_binary(), kz_json:object()) ->
           cb_context:context().
 response_deprecated_redirect(Context, RedirectUrl, JObj) ->
-    create_response('error', <<"deprecated">>, 301, JObj
+    create_response('error'
+                   ,<<"deprecated">>
+                   ,301
+                   ,JObj
                    ,cb_context:add_resp_header(Context, <<"Location">>, RedirectUrl)
                    ).
 
@@ -223,7 +226,10 @@ response_redirect(Context, RedirectUrl, JObj) ->
 -spec response_redirect(cb_context:context(), kz_term:ne_binary(), kz_json:object(), pos_integer()) ->
           cb_context:context().
 response_redirect(Context, RedirectUrl, JObj, Redirect) ->
-    create_response('error', <<"redirect">>, Redirect, JObj
+    create_response('error'
+                   ,<<"redirect">>
+                   ,Redirect
+                   ,JObj
                    ,cb_context:add_resp_header(Context, <<"Location">>, RedirectUrl)
                    ).
 
