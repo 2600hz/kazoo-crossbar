@@ -164,7 +164,7 @@ validate_commland(Context, ?HTTP_GET) ->
 compatibility_redirect(Context) ->
     Url = get_redirect_url(),
     lager:debug("redirecting to upgrade url ~p", [Url]),
-    crossbar_util:response_redirect(Context, Url, kz_json:from_list([{<<"url">>, Url}])).
+    crossbar_util:response_redirect(Context, Url, kz_json:from_list([{<<"url">>, Url}]), 302).
 
 -spec get_redirect_url() -> kz_term:ne_binary().
 get_redirect_url() ->

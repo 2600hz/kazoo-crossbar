@@ -115,6 +115,11 @@
     '$ref': 'paths/comments.yml#/paths/~1accounts~1{ACCOUNT_ID}~1comments'
   '/accounts/{ACCOUNT_ID}/comments/{COMMENT_ID}':
     '$ref': 'paths/comments.yml#/paths/~1accounts~1{ACCOUNT_ID}~1comments~1{COMMENT_ID}'
+  '/accounts/{ACCOUNT_ID}/commland':
+    '$ref': 'paths/commland.yml#/paths/~1accounts~1{ACCOUNT_ID}~1commland'
+  '/accounts/{ACCOUNT_ID}/commland/compatibility':
+    '$ref': >-
+      paths/commland.yml#/paths/~1accounts~1{ACCOUNT_ID}~1commland~1compatibility
   '/accounts/{ACCOUNT_ID}/conference_auth':
     '$ref': 'paths/conference_auth.yml#/paths/~1accounts~1{ACCOUNT_ID}~1conference_auth'
   '/accounts/{ACCOUNT_ID}/conference_auth/{CONFERENCE_ID}':
