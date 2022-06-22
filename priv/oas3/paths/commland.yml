@@ -1,16 +1,4 @@
 paths:
-  /accounts/{ACCOUNT_ID}/commland:
-    get:
-      operationId: GetAccountsAccountIdCommland
-      parameters:
-        - $ref: '../oas3-parameters.yml#/auth_token_header'
-        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
-      responses:
-        200:
-          description: Successful operation
-      summary: Get all commland
-      tags:
-        - commland
   /accounts/{ACCOUNT_ID}/commland/compatibility:
     get:
       operationId: GetAccountsAccountIdCommlandCompatibility

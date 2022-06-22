@@ -14,7 +14,7 @@
 -export([init/0
         ,authorize/1, authorize/2, authorize/3
         ,authenticate/1, authenticate/2, authenticate/3
-        ,allowed_methods/0, allowed_methods/1
+        ,allowed_methods/1
         ,resource_exists/0, resource_exists/1, resource_exists/2
         ,validate/1, validate/2
         ]).
@@ -26,7 +26,7 @@
 -define(COMPAT, <<"compatibility">>).
 -define(COMPAT_NOUNS, [{<<"commland">>,[<<"compatibility">>]}]).
 -define(COMMLAND_CONFIG_CAT, <<"commland">>).
--define(BASE_URL, kapps_config:get_ne_binary(?COMMLAND_CONFIG_CAT, <<"base_url">>, <<"https://packages.2600hz.com/commland/compatibility">>)).
+-define(BASE_URL, kapps_config:get_ne_binary(?COMMLAND_CONFIG_CAT, <<"base_url">>, <<"https://packages.2600hz.com/commland/misc/compatibility">>)).
 -define(BASE_VERSION, kapps_config:get_ne_binary(?COMMLAND_CONFIG_CAT, <<"base_version">>, <<"5.1">>)).
 
 %%%=============================================================================
@@ -52,8 +52,6 @@ init() ->
 %% going to be responded to.
 %% @end
 %%------------------------------------------------------------------------------
--spec allowed_methods() -> http_methods().
-allowed_methods() -> [?HTTP_GET].
 
 -spec allowed_methods(path_token()) -> http_methods().
 allowed_methods(?COMPAT) -> [?HTTP_GET].
