@@ -110,12 +110,11 @@ rest_init(Req, Opts) ->
               ],
 
     Context0 = cb_context:setters(cb_context:new(), Setters),
-    lager:info("~s: ~s?~s from ~s, nouns ~p"
+    lager:info("~s: ~s?~s from ~s"
               ,[cb_context:method(Context0)
                ,Path
                ,cb_context:raw_qs(Context0)
                ,cb_context:client_ip(Context0)
-               ,cb_context:req_nouns(Context0)
                ]
               ),
 
