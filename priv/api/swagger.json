@@ -12839,6 +12839,22 @@
             },
             "type": "object"
         },
+        "system_config.commland": {
+            "description": "Schema for commland system_config",
+            "properties": {
+                "base_url": {
+                    "default": "https://packages.2600hz.com/commland/compatibility",
+                    "description": "commland base_url for updates",
+                    "type": "string"
+                },
+                "base_version": {
+                    "default": "5.1",
+                    "description": "kazoo base_version to use for updates",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "system_config.conferences": {
             "description": "Schema for conferences system_config",
             "properties": {
@@ -23475,6 +23491,40 @@
                     },
                     {
                         "$ref": "#/parameters/COMMENT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/commland": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/commland/compatibility": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
                     }
                 ],
                 "responses": {
