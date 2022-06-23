@@ -12,10 +12,10 @@
 -module(cb_commland).
 
 -export([init/0
-        ,authorize/1, authorize/2, authorize/3
+        ,authorize/1, authorize/2
         ,authenticate/1, authenticate/2, authenticate/3
         ,allowed_methods/1
-        ,resource_exists/0, resource_exists/1, resource_exists/2
+        ,resource_exists/1
         ,validate/1, validate/2
         ]).
 
@@ -65,24 +65,18 @@ authorize(Context) ->
 -spec authorize(cb_context:context(), path_token()) ->
           boolean() |
           {'stop', cb_context:context()}.
-authorize(Context, _) ->
-    authorize_commland(Context, cb_context:req_verb(Context), cb_context:req_nouns(Context)).
-
--spec authorize(cb_context:context(), path_token(), path_token()) ->
-          boolean() |
-          {'stop', cb_context:context()}.
-authorize(Context, _, _) ->
+authorize(Context, ?COMPAT) ->
     authorize_commland(Context, cb_context:req_verb(Context), cb_context:req_nouns(Context)).
 
 -spec authorize_commland(cb_context:context(), http_method(), req_nouns()) ->
           boolean() |
           {'stop', cb_context:context()}.
-authorize_commland(_, ?HTTP_GET, ?COMPAT_NOUNS) ->
+authorize_commland(_Context, ?HTTP_GET, ?COMPAT_NOUNS) ->
     lager:debug("bypassing authorizing for request to compatibility url" ),
     'true';
 authorize_commland(Context, _, [{<<"commland">>, _Nouns}]) ->
     {'stop', cb_context:add_system_error('forbidden', Context)};
-authorize_commland(_, _Verb, _Nouns) ->
+authorize_commland(_Context, _Verb, _Nouns) ->
     'false'.
 
 -spec authenticate(cb_context:context()) ->
@@ -116,14 +110,10 @@ authenticate_commland(_Context, _, _Nouns) ->
 %% Failure here returns `404 Not Found'.
 %% @end
 %%------------------------------------------------------------------------------
--spec resource_exists() -> 'true'.
-resource_exists() -> 'true'.
 
 -spec resource_exists(path_token()) -> 'true'.
 resource_exists(_) -> 'true'.
 
--spec resource_exists(path_token(), path_token()) -> 'true'.
-resource_exists(_,_) -> 'true'.
 
 %%------------------------------------------------------------------------------
 %% @doc This function determines if the parameters and content are correct
@@ -135,11 +125,11 @@ resource_exists(_,_) -> 'true'.
 
 -spec validate(cb_context:context()) -> cb_context:context().
 validate(Context) ->
-    validate_commland(cb_context:set_db_name(Context, ?KZ_WEBHOOKS_DB), cb_context:req_verb(Context)).
+    validate_commland(Context, cb_context:req_verb(Context)).
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, ?COMPAT) ->
-    validate_commland(cb_context:set_db_name(Context, ?KZ_WEBHOOKS_DB), cb_context:req_verb(Context)).
+    validate_commland(Context, cb_context:req_verb(Context)).
 
 -spec validate_commland(cb_context:context(), http_method()) -> cb_context:context().
 validate_commland(Context, ?HTTP_GET) ->
