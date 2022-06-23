@@ -13,7 +13,7 @@
 
 -export([init/0
         ,authorize/1, authorize/2
-        ,authenticate/1, authenticate/2, authenticate/3
+        ,authenticate/1, authenticate/2
         ,allowed_methods/1
         ,resource_exists/1
         ,validate/1, validate/2
@@ -88,13 +88,7 @@ authenticate(Context) ->
 -spec authenticate(cb_context:context(), path_token()) ->
           {'true', cb_context:context()} |
           'false'.
-authenticate(Context, _) ->
-    authenticate_commland(Context, cb_context:req_verb(Context), cb_context:req_nouns(Context)).
-
--spec authenticate(cb_context:context(), path_token(), path_token()) ->
-          {'true', cb_context:context()} |
-          'false'.
-authenticate(Context, _, _) ->
+authenticate(Context, ?COMPAT) ->
     authenticate_commland(Context, cb_context:req_verb(Context), cb_context:req_nouns(Context)).
 
 -spec authenticate_commland(cb_context:context(), http_method(), req_nouns()) ->
