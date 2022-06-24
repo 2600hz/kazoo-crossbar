@@ -12,11 +12,11 @@
 -module(cb_commland).
 
 -export([init/0
-        ,authorize/1, authorize/2
-        ,authenticate/1, authenticate/2
+        ,authorize/2
+        ,authenticate/2
         ,allowed_methods/1
         ,resource_exists/1
-        ,validate/1, validate/2
+        ,validate/2
         ]).
 
 -include("crossbar.hrl").
@@ -56,12 +56,6 @@ init() ->
 -spec allowed_methods(path_token()) -> http_methods().
 allowed_methods(?COMPAT) -> [?HTTP_GET].
 
--spec authorize(cb_context:context()) ->
-          boolean() |
-          {'stop', cb_context:context()}.
-authorize(Context) ->
-    authorize_commland(Context, cb_context:req_verb(Context), cb_context:req_nouns(Context)).
-
 -spec authorize(cb_context:context(), path_token()) ->
           boolean() |
           {'stop', cb_context:context()}.
@@ -79,11 +73,6 @@ authorize_commland(Context, _, [{<<"commland">>, _Nouns}]) ->
 authorize_commland(_Context, _Verb, _Nouns) ->
     'false'.
 
--spec authenticate(cb_context:context()) ->
-          {'true', cb_context:context()} |
-          'false'.
-authenticate(Context) ->
-    authenticate_commland(Context, cb_context:req_verb(Context), cb_context:req_nouns(Context)).
 
 -spec authenticate(cb_context:context(), path_token()) ->
           {'true', cb_context:context()} |
@@ -116,10 +105,6 @@ resource_exists(_) -> 'true'.
 %% Failure here returns 400.
 %% @end
 %%------------------------------------------------------------------------------
-
--spec validate(cb_context:context()) -> cb_context:context().
-validate(Context) ->
-    validate_commland(Context, cb_context:req_verb(Context)).
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, ?COMPAT) ->
