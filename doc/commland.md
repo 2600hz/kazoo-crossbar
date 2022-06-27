@@ -2,7 +2,7 @@
 
 ## About Commland
 
-Currently only provides an API to get referred to a core compatible version of comm.land desktop application. This API bypasses authentication.
+Provides an API that referrs the request to a core compatible version of comm.land desktop application. This API bypasses authentication as it is invoked prior to a client login.
 
 ## Schema
 
