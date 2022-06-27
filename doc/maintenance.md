@@ -3,10 +3,14 @@
 ## SUP-able functions
 
 | Function                              | Arguments                               | Description                                                                                          |
-| --------                              | ---------                               | -----------                                                                                          |
+|---------------------------------------|-----------------------------------------|------------------------------------------------------------------------------------------------------|
 | `allow_account_number_additions/1`    | `(AccountId)`                           | Allows the account to add its own numbers                                                            |
 | `app/1`                               | `(AppNameOrId)`                         | Fetch and print an App's metadata                                                                    |
 | `apps/0`                              |                                         | Fetch and print all known Apps' metadata                                                             |
+| `cascade_disable_accounts/1`          | `(AccountId)`                           | Disable the account and all descendants                                                              |
+| `cascade_disable_delinquent/1`        | `(AccountId)`                           | Disable the account and all descendants IF the account has less than -$1                             |
+| `cascade_disable_delinquent/2`        | `(AccountId,ThresholdCurrency)`         | Disable the account and all descendants IF the account has less than ThresholdCurrency               |
+| `cascade_enable_accounts/1`           | `(AccountId)`                           | Enable the account and all descendants                                                               |
 | `create_account/4`                    | `(AccountName,Realm,Username,Password)` | Create an account - typically used for the master account                                            |
 | `db_init/0`                           |                                         | Updates system schemas using files in Crossbar `priv' folder during startup                          |
 | `demote_account/1`                    | `(AccountId)`                           | Remove `superduper_admin` status from the account                                                    |

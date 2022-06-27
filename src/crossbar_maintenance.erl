@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2021, 2600Hz
+%%% @copyright (C) 2012-2022, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%%
@@ -32,6 +32,8 @@
         ]).
 
 -export([enable_account/1, disable_account/1
+        ,cascade_enable_accounts/1, cascade_disable_accounts/1
+        ,cascade_disable_delinquent/1, cascade_disable_delinquent/2
         ,promote_account/1, demote_account/1
         ,allow_account_number_additions/1, disallow_account_number_additions/1
         ,descendants_count/0, descendants_count/1
@@ -333,6 +335,64 @@ disable_account(AccountId) ->
         {'error', _} -> 'failed'
     end.
 
+-spec cascade_enable_accounts(input_term()) -> 'ok' | 'failed'.
+cascade_enable_accounts(AccountId) ->
+    Update = [{kzd_accounts:path_enabled(), 'true'}],
+    cascade_update_accounts(kz_term:to_binary(AccountId), Update).
+
+-spec cascade_disable_accounts(input_term()) -> 'ok' | 'failed'.
+cascade_disable_accounts(AccountId) ->
+    Update = [{kzd_accounts:path_enabled(), 'false'}],
+    cascade_update_accounts(kz_term:to_binary(AccountId), Update).
+
+-spec cascade_disable_delinquent(input_term()) -> 'ok' | 'failed'.
+cascade_disable_delinquent(AccountId) ->
+    cascade_disable_delinquent(AccountId, -1.0).
+
+-spec cascade_disable_delinquent(input_term(), input_term()) -> 'ok' | 'failed'.
+cascade_disable_delinquent(AccountId, ThresholdCurrency) ->
+    AccountUnits = kz_currency:available_units(AccountId),
+    ThresholdUnits = kz_currency:dollars_to_units(ThresholdCurrency),
+
+    case AccountUnits =< ThresholdUnits of
+        'false' ->
+            ?SUP_LOG_INFO("account ~s balance ~p is above threshold ~p"
+                         ,[AccountId, AccountUnits, ThresholdUnits]
+                         );
+        'true' ->
+            ?SUP_LOG_INFO("account ~s balance ~p is below threshold ~p, disabling tree"
+                         ,[AccountId, AccountUnits, ThresholdUnits]
+                         ),
+            cascade_disable_accounts(AccountId)
+    end.
+
+-spec cascade_update_accounts(kz_term:ne_binary(), kz_term:proplist()) -> 'ok'.
+cascade_update_accounts(AccountId, Update) ->
+    case kz_datamgr:get_results(?KZ_ACCOUNTS_DB
+                               ,<<"accounts/listing_by_descendants">>
+                               ,[{'startkey', [AccountId]}
+                                ,{'endkey', [AccountId, kz_json:new()]}
+                                ]
+                               )
+    of
+        {'ok', Descendants} ->
+            ?SUP_LOG_INFO("updating account ~s and descendants with: ~p", [AccountId, Update]),
+            cascade_update_to_accounts([AccountId | [kz_doc:id(D) || D <- Descendants]]
+                                      ,Update
+                                      );
+        {'error', _E} ->
+            ?SUP_LOG_INFO("failed to fetch account ~s descendants: ~p", [AccountId, _E])
+    end.
+
+cascade_update_to_accounts([], _Update) ->
+    ?SUP_LOG_INFO("finished updating accounts");
+cascade_update_to_accounts([AccountId | AccountIds], Update) ->
+    case kzd_accounts:update(AccountId, Update) of
+        {'ok', _} ->     ?SUP_LOG_INFO("  account ~s updated", [AccountId]);
+        {'error', _E} -> ?SUP_LOG_INFO("  account ~s failed to update: ~p", [AccountId, _E])
+    end,
+    cascade_update_to_accounts(AccountIds, Update).
+
 %%------------------------------------------------------------------------------
 %% @doc
 %% @end
@@ -342,9 +402,9 @@ promote_account(AccountId) ->
     Update = [{kzd_accounts:path_superduper_admin(), 'true'}],
     case kzd_accounts:update(AccountId, Update) of
         {'ok', _A} ->
-            ?SUP_LOG_INFO("  account ~s is admin-ified: ~s~n", [AccountId, kz_json:encode(_A)]);
+            ?SUP_LOG_INFO("  account ~s is admin-ified: ~s", [AccountId, kz_json:encode(_A)]);
         {'error', _R} ->
-            ?SUP_LOG_INFO("  failed to admin-ify account ~s: ~p~n", [AccountId, _R]),
+            ?SUP_LOG_INFO("  failed to admin-ify account ~s: ~p", [AccountId, _R]),
             'failed'
     end.
 
@@ -415,7 +475,7 @@ create_account(AccountName, Realm, Username, Password, AccountId, UserId) ->
 log_error(Type, Reason, ST, AccountName) ->
     ?SUP_LOG_ERROR("crashed creating account: ~s: ~p", [Type, Reason]),
     ?SUP_LOG_ERROR("stacktrace: ~p", [ST]),
-    ?SUP_LOG_INFO("failed to create '~s': ~p~n", [AccountName, Reason]),
+    ?SUP_LOG_INFO("failed to create '~s': ~p", [AccountName, Reason]),
     'failed'.
 
 -spec maybe_promote_account(cb_context:context()) -> {'ok', cb_context:context()}.
@@ -460,7 +520,7 @@ create_fold(F, {'ok', C}) -> F(C).
 -spec update_system_config(kz_term:ne_binary()) -> 'ok'.
 update_system_config(AccountId) ->
     {'ok', _} = kapps_config:set(<<"accounts">>, <<"master_account_id">>, AccountId),
-    ?SUP_LOG_INFO("updated master account id in system_config.accounts~n").
+    ?SUP_LOG_INFO("updated master account id in system_config.accounts").
 
 -spec prechecks(cb_context:context()) -> {'ok', cb_context:context()}.
 prechecks(Context) ->
