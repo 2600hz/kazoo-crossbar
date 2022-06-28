@@ -20,6 +20,7 @@ Key | Description | Type | Default | Required | Support Level
 `name` | A friendly name for the webhook | `string()` |   | `true` | `supported`
 `retries` | Retry the request this many times (if it fails) | `integer()` | `2` | `false` | `supported`
 `uri` | The 3rd party URI to call out to an event | `string()` |   | `true` | `supported`
+`version` | Whether to receive the full version of the event in the webhook payload | `string('v1' | 'v2')` | `v1` | `false` |  
 
 
 

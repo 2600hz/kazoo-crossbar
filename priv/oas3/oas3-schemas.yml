@@ -16872,6 +16872,13 @@
       'type': string
       'x-kazoo-validation': true
       'x-support_level': supported
+    'version':
+      'default': v1
+      'description': Whether to receive the full version of the event in the webhook payload
+      'enum':
+        - v1
+        - v2
+      'type': string
   'required':
     - hook
     - name
