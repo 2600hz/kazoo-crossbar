@@ -21175,6 +21175,15 @@
                     "format": "uri",
                     "minLength": 1,
                     "type": "string"
+                },
+                "version": {
+                    "default": "v1",
+                    "description": "Whether to receive the full version of the event in the webhook payload",
+                    "enum": [
+                        "v1",
+                        "v2"
+                    ],
+                    "type": "string"
                 }
             },
             "required": [
@@ -23871,9 +23880,6 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "request succeeded"
-                    },
-                    "201": {
                         "description": "request succeeded"
                     }
                 }

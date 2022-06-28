@@ -22,6 +22,7 @@ Key | Description | Type | Default | Required | Support Level
 `name` | A friendly name for the webhook | `string()` |   | `true` | `supported`
 `retries` | Retry the request this many times (if it fails) | `integer()` | `2` | `false` | `supported`
 `uri` | The 3rd party URI to call out to an event | `string(1..)` |   | `true` | `supported`
+`version` | Whether to receive the full version of the event in the webhook payload | `string('v1' | 'v2')` | `v1` | `false` |  
 
 
 
@@ -517,7 +518,13 @@ curl -v -X PATCH \
 
 Here's what you can expect to receive when a webhook fires to your server:
 
-### Base Payload
+### Versioned payloads
+
+When `version` is not set on the webhook configuration, the `v1` format of the webhook event is used (see below).
+
+When `"version" = "v2"`, the shape of the event sent to the HTTP URL will resemble that of the websocket-fired event, a more verbose version of the event.
+
+### Base Payload (version 1)
 
 * hook_event: The type of hook being fired
 * call_direction: "inbound" or "outbound", relative to Kazoo
@@ -535,7 +542,7 @@ Here's what you can expect to receive when a webhook fires to your server:
 
 Most of these fields should be present on all payloads.
 
-### Hook Specific fields
+#### Hook Specific fields
 
 * channel_create
     * hook_event: channel_create
@@ -550,6 +557,18 @@ Most of these fields should be present on all payloads.
     * action: doc_created, doc_updated, doc_deleted
     * type: user, vmbox, callflow, account, device, faxbox, media
 
+### Base payload (version 2)
+
+See the blackhole documentation for more, but the general shape of the data will be a JSON envelope:
+
+```json
+{"action":"event"
+ ,"name":"{HOOK_EVENT}"
+ ,"data":{HOOK_DATA}
+}
+```
+
+Where `{HOOK_DATA}` will be the JSON object with the data of the event.
 
 ## Hook Specific Custom Data
 
