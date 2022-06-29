@@ -541,6 +541,12 @@ maybe_add_extra_data(<<"number_feature_manual_action">>, API) ->
                      ,{<<"Feature">>, kz_json:new()}
                      ]
                     , API);
+maybe_add_extra_data(<<"conference_email_invite">>, API) ->
+    props:set_values([{<<"Conference-Participant-Pins">>,[<<"1234">>]}
+                     ,{<<"Guests">>,[<<"johndoe@gmail.com">>, <<"janesmith@gmail.com">>]}
+                     ,{<<"Conference-Call-In-Numbers">>,[<<"+15557770104">>]}
+                     ]
+                    , API);
 maybe_add_extra_data(_Id, API) -> API.
 
 -spec publish_fun(kz_term:ne_binary()) -> fun((kz_term:api_terms()) -> 'ok').
@@ -622,6 +628,8 @@ publish_fun(<<"number_feature_manual_action">>) ->
     fun kapi_notifications:publish_number_feature_manual_action/1;
 publish_fun(<<"desktop_app_welcome">>) ->
     fun kapi_notifications:publish_desktop_app_welcome/1;
+publish_fun(<<"conference_email_invite">>) ->
+    fun kapi_notifications:publish_email_invite/1;
 publish_fun(_Id) ->
     lager:debug("no kapi_notifications:publish_~s/1 defined", [_Id]),
     fun(_Any) -> 'ok' end.
