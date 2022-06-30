@@ -25,9 +25,10 @@
 -define(DOT, <<".">>).
 -define(COMPAT, <<"compatibility">>).
 -define(COMPAT_NOUNS, [{<<"commland">>,[<<"compatibility">>]}]).
--define(COMMLAND_CONFIG_CAT, <<"commland">>).
+-define(COMMLAND_CONFIG_CAT, <<"crossbar.commland">>).
 -define(BASE_URL, kapps_config:get_ne_binary(?COMMLAND_CONFIG_CAT, <<"base_url">>, <<"https://packages.2600hz.com/commland/misc/compatibility">>)).
 -define(BASE_VERSION, kapps_config:get_ne_binary(?COMMLAND_CONFIG_CAT, <<"base_version">>, <<"5.1">>)).
+-define(BASE_SALT, kapps_config:get_ne_binary(?COMMLAND_CONFIG_CAT, <<"base_salt">>, <<"7f613340-1ebf-4710-ad57-fb4d3041af4c">>)).
 
 %%%=============================================================================
 %%% API
@@ -144,8 +145,15 @@ get_hashed_version() ->
 -spec get_hashed_version(list()) -> kz_term:ne_binary().
 get_hashed_version([Major, Minor|_]) ->
     lager:debug("compatible version found is ~s~s~s", [Major, ?DOT, Minor]),
-    kz_binary:md5(kz_binary:join([Major, Minor], ?DOT));
+    to_hash(to_dotted_version(Major, Minor));
 get_hashed_version(_) ->
     lager:debug("no compatible version found using base ~s", [?BASE_VERSION]),
-    kz_binary:md5(?BASE_VERSION).
+    to_hash(?BASE_VERSION).
 
+-spec to_dotted_version(kz_term:ne_binary(), kz_term:ne_binary()) -> kz_term:ne_binary().
+to_dotted_version(Major, Minor) ->
+    kz_binary:join([Major, Minor], ?DOT).
+
+-spec to_hash(kz_term:ne_binary()) -> kz_term:ne_binary().
+to_hash(Version) ->
+    <<Version/binary, (?BASE_SALT)/binary>>.
