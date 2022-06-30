@@ -156,4 +156,4 @@ to_dotted_version(Major, Minor) ->
 
 -spec to_hash(kz_term:ne_binary()) -> kz_term:ne_binary().
 to_hash(Version) ->
-    <<Version/binary, (?BASE_SALT)/binary>>.
+    kz_binary:md5(<<Version/binary, (?BASE_SALT)/binary>>).
