@@ -1,4 +1,4 @@
-KAZOO 🧡s these Erlang dependencies:
+KAZOO 🧡s these Erlang dependencies: 
 
 | Dependency              | License |
 | amqp_client             | This package is licensed under the MPL 2.0. For the MPL 2.0, please see LICENSE-MPL-RabbitMQ. |
