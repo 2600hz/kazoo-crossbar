@@ -349,9 +349,9 @@ cascade_disable_accounts(AccountId) ->
 cascade_disable_delinquent(AccountId) ->
     cascade_disable_delinquent(AccountId, -1.0).
 
--spec cascade_disable_delinquent(input_term(), input_term()) -> 'ok' | 'failed'.
+-spec cascade_disable_delinquent(input_term(), float() | input_term()) -> 'ok' | 'failed'.
 cascade_disable_delinquent(AccountId, ThresholdCurrency) ->
-    AccountUnits = kz_currency:available_units(AccountId),
+    {'ok', AccountUnits} = kz_currency:available_units(AccountId),
     ThresholdUnits = kz_currency:dollars_to_units(ThresholdCurrency),
 
     case AccountUnits =< ThresholdUnits of

@@ -67,7 +67,6 @@
                                        ,'false'
                                        )).
 
-
 %%%=============================================================================
 %%% API
 %%%=============================================================================
@@ -76,7 +75,7 @@
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec init() -> ok.
+-spec init() -> 'ok'.
 init() ->
     _ = crossbar_bindings:bind(<<"*.authenticate.phone_numbers">>, ?MODULE, 'authenticate'),
     _ = crossbar_bindings:bind(<<"*.authorize.phone_numbers">>, ?MODULE, 'authorize'),
@@ -87,7 +86,7 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.execute.post.phone_numbers">>, ?MODULE, 'post'),
     _ = crossbar_bindings:bind(<<"*.execute.patch.phone_numbers">>, ?MODULE, 'patch'),
     _ = crossbar_bindings:bind(<<"*.execute.delete.phone_numbers">>, ?MODULE, 'delete'),
-    ok.
+    'ok'.
 
 %%------------------------------------------------------------------------------
 %% @doc Authenticates the incoming request, returning true if the requestor is
@@ -479,24 +478,25 @@ maybe_find_port_number(Context, Number, 'false') ->
     reply_number_not_found(Number, Context);
 maybe_find_port_number(Context, Number, 'true') ->
     Num = knm_converters:normalize(Number),
-    ViewOption = [{'key', [cb_context:account_id(Context), Num]}
-                 ],
+    ViewOption = [{'key', [cb_context:account_id(Context), Num]}],
     case kz_datamgr:get_single_result(?KZ_PORT_REQUESTS_DB, ?PORT_NUM_LISTING, ViewOption) of
         {'error', _} -> reply_number_not_found(Number, Context);
         {'ok', Result} ->
             Port = kz_json:get_value(<<"value">>, Result),
             {'ok', PN} = normalize_port_number(Port, Num, cb_context:auth_account_id(Context)),
-            Values = [{[<<"_read_only">>, <<"port_id">>], kz_json:get_value(<<"port_id">>, Port)}
-                     ,{[<<"_read_only">>, <<"port_state">>], kz_json:get_value(<<"port_state">>, Port)}
+            Values = [{<<"port_id">>, kz_json:get_value(<<"port_id">>, Port)}
+                     ,{<<"port_state">>, kz_json:get_value(<<"port_state">>, Port)}
                      ],
-            JObj = kz_json:set_values(Values, knm_phone_number:to_public_json(PN)),
-            port_number_summary(JObj, Context, knm_phone_number:is_authorized(PN))
+            port_number_summary(cb_context:add_metadata_values(Context, Values)
+                               ,knm_phone_number:to_public_json(PN)
+                               ,knm_phone_number:is_authorized(PN)
+                               )
     end.
 
--spec port_number_summary(kz_json:object(), cb_context:context(), boolean()) -> cb_context:context().
-port_number_summary(PhoneNumberJObj, Context, 'true') ->
+-spec port_number_summary(cb_context:context(), kz_json:object(), boolean()) -> cb_context:context().
+port_number_summary(Context, PhoneNumberJObj, 'true') ->
     crossbar_doc:handle_datamgr_success(PhoneNumberJObj, Context);
-port_number_summary(PhoneNumberJObj, Context, 'false') ->
+port_number_summary(Context, PhoneNumberJObj, 'false') ->
     reply_number_not_found(PhoneNumberJObj, Context).
 
 -spec normalize_port_number(kz_json:object(), kz_term:ne_binary(), kz_term:ne_binary()) ->
@@ -550,7 +550,6 @@ view_account_phone_numbers(Context) ->
 -spec should_include_ports(cb_context:context()) -> boolean().
 should_include_ports(Context) ->
     kz_term:is_true(cb_context:req_value(Context, <<"include_ports">>, 'true')).
-
 
 -spec maybe_add_port_request_numbers(cb_context:context()) -> kz_json:object().
 maybe_add_port_request_numbers(Context) ->
@@ -716,12 +715,10 @@ validate_collection_request(Context) ->
 
 -spec validate_collection_request(cb_context:context(), any()) -> cb_context:context().
 validate_collection_request(Context, 'undefined') ->
-    Msg = kz_json:from_list([{<<"message">>, <<"list of numbers missing">>}
-                            ]),
+    Msg = kz_json:from_list([{<<"message">>, <<"list of numbers missing">>}]),
     cb_context:add_validation_error(?COLLECTION_NUMBERS, <<"required">>, Msg, Context);
 validate_collection_request(Context, []) ->
-    Msg = kz_json:from_list([{<<"message">>, <<"minimum 1 number required">>}
-                            ]),
+    Msg = kz_json:from_list([{<<"message">>, <<"minimum 1 number required">>}]),
     cb_context:add_validation_error(?COLLECTION_NUMBERS, <<"minimum">>, Msg, Context);
 validate_collection_request(Context, Numbers)
   when is_list(Numbers) ->
@@ -729,13 +726,11 @@ validate_collection_request(Context, Numbers)
     case length(Numbers) =:= length(UniqNomalised) of
         'true' -> cb_context:set_resp_status(Context, 'success');
         'false' ->
-            Msg = kz_json:from_list([{<<"message">>, <<"some numbers appear twice">>}
-                                    ]),
+            Msg = kz_json:from_list([{<<"message">>, <<"some numbers appear twice">>}]),
             cb_context:add_validation_error(?COLLECTION_NUMBERS, <<"uniqueItems">>, Msg, Context)
     end;
 validate_collection_request(Context, _E) ->
-    Msg = kz_json:from_list([{<<"message">>, <<"numbers must be a list">>}
-                            ]),
+    Msg = kz_json:from_list([{<<"message">>, <<"numbers must be a list">>}]),
     cb_context:add_validation_error(?COLLECTION_NUMBERS, <<"type">>, Msg, Context).
 
 %%------------------------------------------------------------------------------

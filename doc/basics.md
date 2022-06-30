@@ -145,6 +145,7 @@ This request would set `update` to `this` and would remove `exists` from the ent
 When receiving JSON responses, clients will receive the response in an envelope. The response includes some duplicated data from the HTTP Response headers, since some clients do not have access to those headers.
 
 * `data`: contains the results of the request, if any
+* `metadata`: contains metadata about the result, if any
 * `auth_token`: contains the `auth_token` used on the request
 * `status`: One of `success`, `error`, or `fatal`
 * `message`: Optional message that should clarify what happened on the request
@@ -158,6 +159,11 @@ When receiving JSON responses, clients will receive the response in an envelope.
     "data": {
         "the": "response",
         "data": "is here"
+    },
+    "metadata":{
+        "id":"{ID}",
+        "created":"{GREGORIAN_TIMESTAMP}",
+        "modified":"{GREGORIAN_TIMESTAMP}"
     },
     "auth_token": "{AUTH_TOKEN}",
     "status": "success",

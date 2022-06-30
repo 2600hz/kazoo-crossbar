@@ -4,7 +4,7 @@
 
 Conference documents are enriched with real-time information along side their configuration, namely showing the number of members, number of moderators, duration of the conference, conference locked status.
 
-The real-time information (if available) is added to conference document under `_read_only` key (to avoid accident document update).
+The real-time information (if available) is added to conference document under the `_read_only` key (to avoid accidental document update).
 
 #### Schema
 

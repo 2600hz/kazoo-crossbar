@@ -1144,7 +1144,9 @@ handle_search_resp(Context, JObjs) ->
     FieldsFun = cb_context:fetch(Context, 'fields_fun'),
     RunningConferences = lists:foldl(fun search_conferences_fold/2, kz_json:new(), JObjs),
     ReadOnly = kz_json:map(fun move_to_read_only/2, RunningConferences),
-    Conferences = [add_realtime_fold(JObj, ReadOnly, FieldsFun) || JObj <-  cb_context:resp_data(Context)],
+    Conferences = [add_realtime_fold(JObj, ReadOnly, FieldsFun)
+                   || JObj <- cb_context:resp_data(Context)
+                  ],
     cb_context:set_resp_data(Context, Conferences).
 
 -spec search_conferences_fold(kz_json:object(), kz_json:object()) ->

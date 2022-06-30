@@ -121,31 +121,29 @@ curl -v -X PUT \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "type_screenpops": "persistent",
-        "post_call_extension_time": 15,
-        "custom_parameters": [
-            {
-                "type_custom_parameter": "system_data",
-                "name": "Caller Number",
-                "render_name_as_label": false,
-                "token": "<<caller_id_number>>"
-            }
-        ],
-        "id": "{SCREENPOP_ID}",
-        "_read_only": {
-            "modified": 63796784790,
-            "id": "{SCREENPOP_ID}",
-            "created": 63796784790
-        }
-    },
-    "revision": "{REVISION}",
-    "status": "success"
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+    "type_screenpops": "persistent",
+    "post_call_extension_time": 15,
+    "custom_parameters": [
+      {
+        "type_custom_parameter": "system_data",
+        "name": "Caller Number",
+        "render_name_as_label": false,
+        "token": "<<caller_id_number>>"
+      }
+    ],
+    "id": "{SCREENPOP_ID}"
+  },
+  "metadata": {
+    "modified": 63796784790,
+    "id": "{SCREENPOP_ID}",
+    "created": 63796784790
+  },
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
-
-
 
 #### Fetch
 
@@ -159,27 +157,27 @@ curl -v -X GET \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "type_screenpops": "persistent",
-        "post_call_extension_time": 15,
-        "custom_parameters": [
-            {
-                "type_custom_parameter": "system_data",
-                "name": "Caller Number",
-                "render_name_as_label": false,
-                "token": "<<caller_id_number>>"
-            }
-        ],
-        "id": "{SCREENPOP_ID}",
-        "_read_only": {
-            "modified": 63796787745,
-            "id": "{SCREENPOP_ID}",
-            "created": 63796787745
-        }
-    },
-    "revision": "{REVISION}",
-    "status": "success"
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+    "type_screenpops": "persistent",
+    "post_call_extension_time": 15,
+    "custom_parameters": [
+      {
+        "type_custom_parameter": "system_data",
+        "name": "Caller Number",
+        "render_name_as_label": false,
+        "token": "<<caller_id_number>>"
+      }
+    ],
+    "id": "{SCREENPOP_ID}"
+  },
+  "metadata": {
+    "modified": 63796787745,
+    "id": "{SCREENPOP_ID}",
+    "created": 63796787745
+  },
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 
@@ -195,27 +193,27 @@ curl -v -X PATCH \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "type_screenpops": "persistent",
-        "post_call_extension_time": 25,
-        "custom_parameters": [
-            {
-                "type_custom_parameter": "system_data",
-                "name": "Caller Number",
-                "render_name_as_label": false,
-                "token": "<<caller_id_number>>"
-            }
-        ],
-        "id": "{SCREENPOP_ID}",
-        "_read_only": {
-            "modified": 63796962651,
-            "id": "{SCREENPOP_ID}",
-            "created": 63796961940
-        }
-    },
-    "revision": "{REVISION}",
-    "status": "success"
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+    "type_screenpops": "persistent",
+    "post_call_extension_time": 25,
+    "custom_parameters": [
+      {
+        "type_custom_parameter": "system_data",
+        "name": "Caller Number",
+        "render_name_as_label": false,
+        "token": "<<caller_id_number>>"
+      }
+    ],
+    "id": "{SCREENPOP_ID}"
+  },
+  "metadata": {
+    "modified": 63796962651,
+    "id": "{SCREENPOP_ID}",
+    "created": 63796961940
+  },
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 
@@ -231,34 +229,34 @@ curl -v -X POST \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "type_screenpops": "persistent",
-        "post_call_extension_time": 25,
-        "custom_parameters": [
-            {
-                "type_custom_parameter": "system_data",
-                "name": "Caller Number",
-                "render_name_as_label": false,
-                "token": "<<caller_id_number>>"
-            },
-            {
-                "type_custom_parameter": "dynamic_link",
-                "name": "Salesforce",
-                "render_name_as_label": true,
-                "link_text": "View contact in Salesforce",
-                "custom_url": "https://salesforce.example.com/accounts/master-account/contacts/kdamas"
-            }
-        ],
-        "id": "{SCREENPOP_ID}",
-        "_read_only": {
-            "modified": 63796963125,
-            "id": "{SCREENPOP_ID}",
-            "created": 63796961974
-        }
-    },
-    "revision": "{REVISION}",
-    "status": "success"
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+    "type_screenpops": "persistent",
+    "post_call_extension_time": 25,
+    "custom_parameters": [
+      {
+        "type_custom_parameter": "system_data",
+        "name": "Caller Number",
+        "render_name_as_label": false,
+        "token": "<<caller_id_number>>"
+      },
+      {
+        "type_custom_parameter": "dynamic_link",
+        "name": "Salesforce",
+        "render_name_as_label": true,
+        "link_text": "View contact in Salesforce",
+        "custom_url": "https://salesforce.example.com/accounts/master-account/contacts/kdamas"
+      }
+    ],
+    "id": "{SCREENPOP_ID}"
+  },
+  "metadata": {
+    "modified": 63796963125,
+    "id": "{SCREENPOP_ID}",
+    "created": 63796961974
+  },
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 
