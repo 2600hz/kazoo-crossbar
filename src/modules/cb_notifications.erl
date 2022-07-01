@@ -429,7 +429,7 @@ post(Context, <<"customer_update_", _/binary>>, ?PREVIEW) ->
     post(Context, ?CUSTOMER_UPDATE, ?PREVIEW);
 
 post(Context, ReqNotificationId, ?PREVIEW) ->
-    [_, Id] = binary:split(ReqNotificationId, [<<"notification.">>]),
+    Id = kz_notification:resp_id(ReqNotificationId),
     Notification = cb_context:doc(Context),
     Preview = build_preview_payload(Context, Notification),
     {API, _} = lists:foldl(fun preview_fold/2
