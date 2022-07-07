@@ -172,6 +172,11 @@
             "description": "stepswitch route by",
             "type": "string"
         },
+        "should_enforce_account_cid": {
+            "default": false,
+            "description": "whether or not account's CID should be used instead of user's CID",
+            "type": "boolean"
+        },
         "use_first_dedicated_proxy_only": {
             "default": true,
             "description": "If gateways are generated for assigned dedicated IPs, only generate one for the first IP (usually local to the call).",
