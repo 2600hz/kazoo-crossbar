@@ -355,7 +355,7 @@ load_chunked_cdrs(Context0, JObjs) ->
     QS = cb_context:query_string(Context0),
     %% range keys are using interaction_time, crossbar_filter for create_* is using pvt_created
     %% and interaction_time could be before pvt_created
-    Context = cb_context:set_query_string(Context0, kz_json:delete_keys([<<"created_from">>, <<"create_to">>], QS)),
+    Context = cb_context:set_query_string(Context0, kz_json:delete_keys([<<"created_from">>, <<"created_to">>], QS)),
 
     SplitIds = split_to_modbs(cb_context:account_id(Context), JObjs, #{}),
 
