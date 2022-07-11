@@ -78,7 +78,7 @@
 %% See also {@link build_start_end/3}.
 
 -type range_keymap_fun() :: fun((kz_time:gregorian_seconds()) -> api_range_key()).
-%% A function of arity 1. The timestamp from `create_from' or `created_to' will pass to this function
+%% A function of arity 1. The timestamp from `created_from' or `created_to' will pass to this function
 %% to construct the start or end key.
 -type range_keymap() :: 'nil' | api_range_key() | range_keymap_fun().
 %% Creates a start/end key for ranged queries. A binary or integer or a list of binary or integer
