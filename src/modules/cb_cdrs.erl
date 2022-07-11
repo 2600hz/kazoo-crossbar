@@ -359,7 +359,6 @@ load_chunked_cdrs(Context0, JObjs) ->
 
     SplitIds = split_to_modbs(cb_context:account_id(Context), JObjs, #{}),
 
-
     ContextSetter = [{fun cb_context:set_resp_data/2, []}
                     ,{fun cb_context:set_resp_status/2, 'success'}
                     ],
