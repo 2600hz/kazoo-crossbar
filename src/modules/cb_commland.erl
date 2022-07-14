@@ -135,7 +135,7 @@ get_redirect_url() ->
 
 -spec get_hashed_version() -> kz_term:ne_binary().
 get_hashed_version() ->
-    get_hashed_version(binary:split(?DOT, kapps_util:kazoo_version(), ['global'])).
+    get_hashed_version(binary:split(kapps_util:kazoo_version(), ?DOT, [global])).
 
 -spec get_hashed_version(list()) -> kz_term:ne_binary().
 get_hashed_version([Major, Minor|_]) ->
