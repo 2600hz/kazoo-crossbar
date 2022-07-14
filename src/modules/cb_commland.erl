@@ -28,7 +28,7 @@
 -define(COMMLAND_CONFIG_CAT, <<"crossbar.commland">>).
 -define(BASE_URL, kapps_config:get_ne_binary(?COMMLAND_CONFIG_CAT, <<"base_url">>, <<"https://packages.2600hz.com/commland/misc/compatibility">>)).
 -define(BASE_VERSION, kapps_config:get_ne_binary(?COMMLAND_CONFIG_CAT, <<"base_version">>, <<"5.1">>)).
--define(BASE_SALT, kapps_config:get_ne_binary(?COMMLAND_CONFIG_CAT, <<"base_salt">>, kz_binary:rand_hex(16))).
+-define(BASE_SALT, kapps_config:get_ne_binary(?COMMLAND_CONFIG_CAT, <<"base_salt">>, <<"7f613340-1ebf-4710-ad57-fb4d3041af4c">>)).
 
 %%%=============================================================================
 %%% API
@@ -140,7 +140,7 @@ get_redirect_url() ->
 
 -spec get_hashed_version() -> kz_term:ne_binary().
 get_hashed_version() ->
-    get_hashed_version(binary:split(?DOT, kapps_util:kazoo_version())).
+    get_hashed_version(binary:split(kapps_util:kazoo_version(), ?DOT, ['global'])).
 
 -spec get_hashed_version(list()) -> kz_term:ne_binary().
 get_hashed_version([Major, Minor|_]) ->
