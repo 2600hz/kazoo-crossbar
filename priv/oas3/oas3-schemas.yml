@@ -2877,6 +2877,14 @@
       'description': Optional URL to send the CDR to at the end of the call
       'pattern': '^https?://'
       'type': string
+    'custom_request_headers':
+      'description': |-
+        Custom HTTP X- headers to be included on each Pivot request to the voice_url
+      'type': object
+      'x-patternProperties':
+        '^[x|X]-':
+          'description': Include a custom X- header
+          'type': string
     'debug':
       'default': false
       'description': Store debug logs related to processing this Pivot call
