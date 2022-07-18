@@ -18602,6 +18602,11 @@
                     "minimum": 0,
                     "type": "integer"
                 },
+                "archive_modb_before_delete": {
+                    "default": true,
+                    "description": "tasks archive_modb_before_delete",
+                    "type": "boolean"
+                },
                 "attempt_upload_output_times": {
                     "default": 5,
                     "description": "how many times will the upload of the resulting CSV be attempted, cannot be zero",
