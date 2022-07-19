@@ -590,6 +590,8 @@ delete(Context) ->
 find_whitelabel(Context, Domain) ->
     ViewOptions = [{'databases', [?KZ_ACCOUNTS_DB]}
                   ,{'key', kz_term:to_lower_binary(Domain)}
+                  ,{'should_paginate', 'false'}
+                  ,{'unchunkable', 'true'}
                   ],
     Context1 = crossbar_view:load(Context, ?AGG_VIEW_WHITELABEL_DOMAIN, ViewOptions),
     case {cb_context:resp_status(Context1)
