@@ -382,7 +382,9 @@ validate_unique_name(Id, Context) ->
 validate_unique_name(Id, Context, Name, Name) ->
     on_successful_validation(Id, Context);
 validate_unique_name(Id, Context, _OldName, NewName) ->
-    Options = [{'doc_type', <<"conference">>}],
+    Options = [{'doc_type', <<"conference">>}
+              ,{'no_batch', 'true'}
+              ],
     Selector = [{'key', [{<<"doc_type">>, <<"conference">>}, {<<"name">>, NewName}]}],
     case kz_view:find(cb_context:db_name(Context), <<"crossbar_listings/by_type_name">>, Selector, Options) of
         {'ok', []} ->

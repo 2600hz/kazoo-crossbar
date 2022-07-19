@@ -41,7 +41,7 @@
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec init() -> ok.
+-spec init() -> 'ok'.
 init() ->
     _ = crossbar_bindings:bind(<<"*.authenticate.api_auth">>, ?MODULE, 'authenticate'),
     _ = crossbar_bindings:bind(<<"*.authorize.api_auth">>, ?MODULE, 'authorize'),
@@ -49,7 +49,7 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.resource_exists.api_auth">>, ?MODULE, 'resource_exists'),
     _ = crossbar_bindings:bind(<<"*.validate.api_auth">>, ?MODULE, 'validate'),
     _ = crossbar_bindings:bind(<<"*.execute.put.api_auth">>, ?MODULE, 'put'),
-    ok.
+    'ok'.
 
 %%------------------------------------------------------------------------------
 %% @doc This function determines the verbs that are appropriate for the
@@ -138,6 +138,8 @@ on_successful_validation(Context) ->
 validate_by_api_key(Context, ApiKey) ->
     Options = [{'databases', [?KZ_ACCOUNTS_DB]}
               ,{'key', ApiKey}
+              ,{'should_paginate', 'false'}
+              ,{'unchunkable', 'true'}
               ],
     Context1 = crossbar_view:load(Context, ?AGG_VIEW_API, Options),
     case cb_context:resp_status(Context1) of

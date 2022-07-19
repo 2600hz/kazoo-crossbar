@@ -182,23 +182,29 @@ validate_patch(Id, Context) ->
 %%------------------------------------------------------------------------------
 -spec summary(cb_context:context()) -> cb_context:context().
 summary(Context) ->
-    case cb_context:user_id(Context) of
-        'undefined' ->
-            Options = [{'doc_type', <<"group">>}
-                      ,{'mapper', crossbar_view:get_value_fun()}
-                      ],
-            Selector = [{'start', [{<<"doc_type">>, <<"group">>}]}
-                       ,{'end', [{<<"doc_type">>, <<"group">>}]}
-                       ],
-            crossbar_view:find(Context, <<"crossbar_listings/by_type_id">>, Selector, Options);
-        UserId ->
-            Options = [{'doc_type', <<"group">>}
-                      ,{'mapper', crossbar_view:get_value_fun()}
-                      ],
-            Selector = [{'key', [{<<"doc_type">>, <<"group">>}, {<<"owner_id">>, UserId}]}
-                       ],
-            crossbar_view:find(Context, <<"crossbar_listings/by_type_ownerid">>, Selector, Options)
-    end.
+    Options = [{'doc_type', <<"group">>}
+              ,{'mapper', crossbar_view:get_value_fun()}
+              ],
+    UserId = cb_context:user_id(Context),
+    Selector = summary_selector(UserId),
+    View = summary_view(UserId),
+    crossbar_view:find(Context, View, Selector, Options).
+
+-spec summary_selector(kz_term:api_ne_binary()) -> kz_view:selector().
+summary_selector('undefined') ->
+    [{'start', [{<<"doc_type">>, <<"group">>}]}
+    ,{'end', [{<<"doc_type">>, <<"group">>}]}
+    ];
+summary_selector(UserId) ->
+    [{'start', [{<<"doc_type">>, <<"group">>}, {<<"owner_id">>, UserId}]}
+    ,{'end', [{<<"doc_type">>, <<"group">>}, {<<"owner_id">>, UserId}]}
+    ].
+
+-spec summary_view(kz_term:api_ne_binary()) -> kz_term:ne_binary().
+summary_view('undefined') ->
+    <<"crossbar_listings/by_type_id">>;
+summary_view(_UserId) ->
+    <<"crossbar_listings/by_type_ownerid">>.
 
 %%------------------------------------------------------------------------------
 %% @doc

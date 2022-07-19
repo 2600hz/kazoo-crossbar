@@ -31,7 +31,7 @@
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec init() -> ok.
+-spec init() -> 'ok'.
 init() ->
     _ = crossbar_bindings:bind(<<"*.allowed_methods.hotdesks">>, ?MODULE, 'allowed_methods'),
     _ = crossbar_bindings:bind(<<"*.resource_exists.hotdesks">>, ?MODULE, 'resource_exists'),
@@ -39,7 +39,7 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.execute.put.hotdesks">>, ?MODULE, 'put'),
     _ = crossbar_bindings:bind(<<"*.execute.post.hotdesks">>, ?MODULE, 'post'),
     _ = crossbar_bindings:bind(<<"*.execute.delete.hotdesks">>, ?MODULE, 'delete'),
-    ok.
+    'ok'.
 
 %%------------------------------------------------------------------------------
 %% @doc This function determines the verbs that are appropriate for the
@@ -113,21 +113,39 @@ fetch_user_hotdesks(DeviceId, Context) ->
 
 -spec fetch_users(kz_term:ne_binaries(), cb_context:context()) -> cb_context:context().
 fetch_users(UserIds, Context) ->
-    Options = [{'doc_type', <<"user">>}
-              ,{'mapper', crossbar_view:get_value_fun()}
-              ],
-    Selector = [{'keys', [[{<<"doc_type">>, <<"user">>}, {<<"id">>, Id}]
-                          || Id <- UserIds
-                         ]
-                }
-               ],
-    crossbar_view:find(Context, <<"crossbar_listings/by_type_id">>, Selector, Options).
+    crossbar_view:find(Context
+                      ,<<"crossbar_listings/by_type_id">>
+                      ,fetch_user_selector(UserIds)
+                      ,fetch_user_options()
+                      ).
+
+-spec fetch_user_selector(kz_term:ne_binaries()) -> kz_view:selector().
+fetch_user_selector(UserIds) ->
+    [{'keys', [[{<<"doc_type">>, <<"user">>}, {<<"id">>, Id}]
+               || Id <- UserIds
+              ]
+     }
+    ].
+
+-spec fetch_user_options() -> crossbar_view:options().
+fetch_user_options() ->
+    [{'doc_type', <<"user">>}
+    ,{'mapper', crossbar_view:get_value_fun()}
+    ,{'should_paginate', 'false'}
+    ,{'unchunkable', 'true'}
+    ].
 
 -spec fetch_device_hotdesks(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
 fetch_device_hotdesks(UserId, Context) ->
     Options = [{'doc_type', <<"hotdesk">>}
               ,{'mapper', crossbar_view:get_value_fun()}
+              ,{'should_paginate', 'false'}
+              ,{'unchunkable', 'true'}
               ],
+
+    %% we can use start/key here instead if turning off pagination and batching,
+    %% but to be consistence with fetch_users above which uses keys and can not use start/end
+    %% we opt to turn off pagination and batching in both cases.
     Selector = [{'key', [{<<"doc_type">>, <<"hotdesk">>}, {<<"owner_id">>, UserId}]}
                ],
     crossbar_view:find(Context, <<"crossbar_listings/by_type_ownerid">>, Selector, Options).

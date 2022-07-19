@@ -391,6 +391,8 @@ maybe_authenticate_user(Context) ->
 maybe_authenticate_user(Context, Credentials, <<"md5">>, ?NE_BINARY=Account) ->
     Options = [{'key', Credentials}
               ,{'databases', [kzs_util:format_account_db(Account)]}
+              ,{'should_paginate', 'false'}
+              ,{'unchunkable', 'true'}
               ],
     Context1 = crossbar_view:load(Context, ?ACCT_MD5_LIST, Options),
     case cb_context:resp_status(Context1) of
@@ -405,6 +407,8 @@ maybe_authenticate_user(Context, Credentials, <<"md5">>, ?NE_BINARY=Account) ->
 maybe_authenticate_user(Context, Credentials, <<"sha">>, ?NE_BINARY=Account) ->
     Options = [{'key', Credentials}
               ,{'databases', [kzs_util:format_account_db(Account)]}
+              ,{'should_paginate', 'false'}
+              ,{'unchunkable', 'true'}
               ],
     Context1 = crossbar_view:load(Context, ?ACCT_SHA1_LIST, Options),
     case cb_context:resp_status(Context1) of
