@@ -139,9 +139,20 @@ authorize_nouns(_, _Nouns, _) -> 'false'.
 maybe_authorize_impersonation(Context, _RequestAccountId, _RequestUserId, 'undefined') ->
     lager:info("no auth account on auth token"),
     forbidden(Context);
-maybe_authorize_impersonation(Context, RequestAccountId, _RequestUserId, RequestAccountId) ->
-    lager:info("auth token's account id matches request's account id ~s, not allowed", [RequestAccountId]),
-    forbidden(Context);
+maybe_authorize_impersonation(Context, RequestAccountId, RequestUserId, RequestAccountId) ->
+    {'ok', RootAccountId} = kapps_util:get_master_account_id(),
+    Method = kz_json:get_ne_binary_value(<<"method">>, cb_context:auth_doc(Context)),
+    case
+        (RootAccountId =:= RequestAccountId)
+        andalso (Method =:= <<"cb_api_auth">>)
+    of
+        'false' ->
+            lager:info("auth token's account id matches request's account id ~s, not allowed", [RequestAccountId]),
+            forbidden(Context);
+        'true' ->
+            lager:info("auth token's account id matches root account id ~s, auth method ~s", [RequestAccountId, Method]),
+            maybe_authorize_impersonation(Context, RequestAccountId, RequestUserId, RequestAccountId, cb_context:auth_user_id(Context))
+    end;
 maybe_authorize_impersonation(Context, RequestAccountId, RequestUserId, AuthAccountId) ->
     case cb_context:is_superduper_admin(Context) of
         'false' ->
