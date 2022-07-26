@@ -10456,6 +10456,10 @@
       'default': 120000
       'description': timeout (in milliseconds) when no data is being sent
       'type': integer
+    'intra_account_impersanation':
+      'default': false
+      'description': intra account impersanation
+      'type': boolean
     'ip':
       'description': crossbar ip
       'type': string
@@ -10594,10 +10598,6 @@
       'default': 35
       'description': crossbar user auth tokens
       'type': integer
-    'intra_account_impersanation':
-      'default': false
-      'description': intra account impersanation
-      'type': boolean
     'windows_dowload_url':
       'description': crossbar windows_dowload_url
       'type': string
