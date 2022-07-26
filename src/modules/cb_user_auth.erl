@@ -29,6 +29,7 @@
 -define(ACCT_MD5_LIST, <<"users/creds_by_md5">>).
 -define(ACCT_SHA1_LIST, <<"users/creds_by_sha">>).
 -define(USER_AUTH_TOKENS, kapps_config:get_integer(?CONFIG_CAT, <<"user_auth_tokens">>, 35)).
+-define(INTRA_ACCOUNT_IMPERSANATION, kapps_config:get_boolean(?CONFIG_CAT, <<"intra_account_impersanation">>, false)).
 
 -define(SWITCH_USER, <<"impersonate_user">>).
 -define(RECOVERY, <<"recovery">>).
@@ -139,9 +140,15 @@ authorize_nouns(_, _Nouns, _) -> 'false'.
 maybe_authorize_impersonation(Context, _RequestAccountId, _RequestUserId, 'undefined') ->
     lager:info("no auth account on auth token"),
     forbidden(Context);
-maybe_authorize_impersonation(Context, RequestAccountId, _RequestUserId, RequestAccountId) ->
-    lager:info("auth token's account id matches request's account id ~s, not allowed", [RequestAccountId]),
-    forbidden(Context);
+maybe_authorize_impersonation(Context, RequestAccountId, RequestUserId, RequestAccountId) ->
+    case ?INTRA_ACCOUNT_IMPERSANATION of
+        false ->
+            lager:info("auth token's account id matches request's account id ~s, not allowed", [RequestAccountId]),
+            forbidden(Context);
+        true ->
+            lager:info("auth token's account id matches request's account id ~s, intra account impersanation enabled", [RequestAccountId]),
+            maybe_authorize_impersonation(Context, RequestAccountId, RequestUserId, RequestAccountId, cb_context:auth_user_id(Context))
+    end;
 maybe_authorize_impersonation(Context, RequestAccountId, RequestUserId, AuthAccountId) ->
     case cb_context:is_superduper_admin(Context) of
         'false' ->
