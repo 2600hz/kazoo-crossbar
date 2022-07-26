@@ -13392,6 +13392,11 @@
                     "description": "crossbar user auth tokens",
                     "type": "integer"
                 },
+                "intra_account_impersanation": {
+                    "default": false,
+                    "description": "intra account impersanation",
+                    "type": "boolean"
+                },
                 "windows_dowload_url": {
                     "description": "crossbar windows_dowload_url",
                     "type": "string"
