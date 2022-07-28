@@ -21,6 +21,8 @@
         ,validate/1, validate/2
         ,put/1, put/2
         ,post/2
+
+        ,find_account/2
         ]).
 
 -include("crossbar.hrl").

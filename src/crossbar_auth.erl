@@ -9,7 +9,7 @@
 %%%-----------------------------------------------------------------------------
 -module(crossbar_auth).
 
--export([create_auth_token/2
+-export([create_auth_token/2, create_auth_token/3
         ,validate_auth_token/1, validate_auth_token/2
         ,authorize_auth_token/1
         ,reset_identity_secret/1
@@ -54,6 +54,14 @@
 -spec create_auth_token(cb_context:context(), atom()) ->
           cb_context:context().
 create_auth_token(Context, AuthModule) ->
+    create_auth_token(Context, AuthModule, []).
+
+-type token_option() :: {'expiration_timestamp', pos_integer()}. % unix seconds
+-type token_options() :: [token_option()].
+
+-spec create_auth_token(cb_context:context(), atom(), token_options()) ->
+          cb_context:context().
+create_auth_token(Context, AuthModule, TokenOptions) ->
     JObj = cb_context:doc(Context),
     Method = kz_term:to_binary(AuthModule),
     AccountId = kz_json:get_first_defined([<<"account_id">>, [<<"Claims">>, <<"account_id">>]], JObj),
@@ -64,14 +72,12 @@ create_auth_token(Context, AuthModule) ->
             log_failed_auth(Method, <<"jwt_auth_token">>, Reason, Context, AccountId),
             crossbar_util:response('error', <<"invalid credentials">>, 401, Context);
         'false' ->
-            create_auth_token(Context, Method, JObj)
+            create_auth_token(Context, Method, TokenOptions, JObj, AccountId)
     end.
 
--spec create_auth_token(cb_context:context(), kz_term:ne_binary(), kz_json:object()) ->
+-spec create_auth_token(cb_context:context(), kz_term:ne_binary(), token_options(), kz_json:object(), kz_term:api_ne_binary()) ->
           cb_context:context().
-create_auth_token(Context, <<Method/binary>>, JObj) ->
-    AccountId = kz_json:get_first_defined([<<"account_id">>, [<<"Claims">>, <<"account_id">>]], JObj),
-
+create_auth_token(Context, <<Method/binary>>, TokenOptions, JObj, AccountId) ->
     AuthConfig = get_account_config(AccountId),
 
     case is_auth_module_enabled(Method, AuthConfig) of
@@ -80,14 +86,14 @@ create_auth_token(Context, <<Method/binary>>, JObj) ->
             log_failed_auth(Method, <<"jwt_auth_token">>, Reason, Context, AccountId, AuthConfig),
             crossbar_util:response('error', <<"invalid credentials">>, 401, Context);
         'true' ->
-            create_auth_token(Context, Method, JObj, AuthConfig, AccountId)
+            create_auth_token(Context, Method, TokenOptions, JObj, AccountId, AuthConfig)
     end.
 
-create_auth_token(Context, Method, JObj, AuthConfig, AccountId) ->
+create_auth_token(Context, Method, TokenOptions, JObj, AccountId, AuthConfig) ->
     Data = cb_context:req_data(Context),
     OwnerId = kz_json:get_first_defined([<<"owner_id">>, [<<"Claims">>, <<"owner_id">>]], JObj),
 
-    Expiration = token_auth_expiry(Method, AuthConfig),
+    Expiration = token_auth_expiry(Method, TokenOptions, AuthConfig),
 
     ReqClaims = kz_json:to_proplist(kz_json:get_json_value(<<"Claims">>, JObj, kz_json:new())),
     AdditionalClaims = props:filter_undefined([{<<"account_id">>, AccountId}
@@ -100,7 +106,7 @@ create_auth_token(Context, Method, JObj, AuthConfig, AccountId) ->
 
     IsMultiFactor = is_multi_factor_enabled(Context, Claims, AuthConfig),
 
-    case  maybe_create_token(Context, Claims, AuthConfig, Method, IsMultiFactor) of
+    case maybe_create_token(Context, Claims, AuthConfig, Method, IsMultiFactor) of
         {'ok', Token} ->
             Setters = [{fun cb_context:set_auth_token/2, Token}
                       ,{fun cb_context:set_auth_doc/2, kz_json:from_list(Claims)}
@@ -210,7 +216,7 @@ reset_identity_secret(Context) ->
 %%------------------------------------------------------------------------------
 -spec get_account_config(kz_term:api_ne_binary()) -> kz_json:object().
 get_account_config(AccountId) ->
-    get_account_config(AccountId, ?AUTH_CONFIG_CAT,<<"auth_modules">>, ?DEFAULT_AUTH_CONFIG).
+    get_account_config(AccountId, ?AUTH_CONFIG_CAT, <<"auth_modules">>, ?DEFAULT_AUTH_CONFIG).
 
 get_account_config(AccountId, ConfigCat, Key, Default) ->
     kapps_account_config:get_hierarchy(AccountId
@@ -245,8 +251,11 @@ method_config_path(Method, Key) -> [Method, Key].
 -spec method_mfa_path(kz_term:ne_binary(), kz_term:ne_binary()) -> kz_json:path().
 method_mfa_path(Method, Key) -> [Method, <<"multi_factor">>, Key].
 
--spec token_auth_expiry(kz_term:ne_binary(), kz_json:object()) -> non_neg_integer().
-token_auth_expiry(Method, AuthConfig) ->
+-spec token_auth_expiry(kz_term:ne_binary(), token_options(), kz_json:object()) -> non_neg_integer().
+token_auth_expiry(Method, TokenOptions, AuthConfig) ->
+    token_auth_expiry(Method, TokenOptions, AuthConfig, props:get_integer_value('expiration', TokenOptions)).
+
+token_auth_expiry(Method, _TokenOptions, AuthConfig, 'undefined') ->
     Path = method_config_path(Method, <<"token_auth_expiry_s">>),
     case kz_json:get_integer_value(Path, AuthConfig, 'undefined') of
         'undefined' ->
@@ -259,7 +268,10 @@ token_auth_expiry(Method, AuthConfig) ->
             kz_time:current_unix_tstamp() + TokenExp;
         _Else ->
             'undefined'
-    end.
+    end;
+token_auth_expiry(_Method, _TokenOptions, _AuthConfig, Expiration) ->
+    lager:info("using options-supplied exipration ~p", [Expiration]),
+    Expiration.
 
 %%------------------------------------------------------------------------------
 %% @doc Check if is authenticator module is enabled or not.
