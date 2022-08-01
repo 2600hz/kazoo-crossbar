@@ -29,7 +29,6 @@
 -define(ACCT_MD5_LIST, <<"users/creds_by_md5">>).
 -define(ACCT_SHA1_LIST, <<"users/creds_by_sha">>).
 -define(USER_AUTH_TOKENS, kapps_config:get_integer(?CONFIG_CAT, <<"user_auth_tokens">>, 35)).
--define(INTRA_ACCOUNT_IMPERSANATION, kapps_config:get_boolean(?CONFIG_CAT, <<"intra_account_impersanation">>, false)).
 
 -define(SWITCH_USER, <<"impersonate_user">>).
 -define(RECOVERY, <<"recovery">>).
@@ -141,7 +140,14 @@ maybe_authorize_impersonation(Context, _RequestAccountId, _RequestUserId, 'undef
     lager:info("no auth account on auth token"),
     forbidden(Context);
 maybe_authorize_impersonation(Context, RequestAccountId, RequestUserId, RequestAccountId) ->
-    case ?INTRA_ACCOUNT_IMPERSANATION of
+    RootAccountId = kapps_util:get_master_account_id(),
+    AuthToken = cb_context:auth_token(Context),
+    {ok, AuthJObj} = kz_auth:validate_token(AuthToken),
+    Method = kz_json:get_string_value(<<"method">>, AuthJObj),
+    case 
+        (RootAccountId == RequestAccountId) 
+        andalso (Method == "cb_api_auth")
+    of
         false ->
             lager:info("auth token's account id matches request's account id ~s, not allowed", [RequestAccountId]),
             forbidden(Context);

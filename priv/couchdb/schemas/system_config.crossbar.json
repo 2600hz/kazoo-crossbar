@@ -99,11 +99,6 @@
             "description": "timeout (in milliseconds) when no data is being sent",
             "type": "integer"
         },
-        "intra_account_impersanation": {
-            "default": false,
-            "description": "intra account impersanation",
-            "type": "boolean"
-        },
         "ip": {
             "description": "crossbar ip",
             "type": "string"
