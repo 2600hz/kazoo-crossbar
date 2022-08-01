@@ -152,7 +152,7 @@ maybe_authorize_impersonation(Context, RequestAccountId, RequestUserId, RequestA
             lager:info("auth token's account id matches request's account id ~s, not allowed", [RequestAccountId]),
             forbidden(Context);
         true ->
-            lager:info("auth token's account id matches request's account id ~s, intra account impersanation enabled", [RequestAccountId]),
+            lager:info("auth token's account id matches root account id ~s, auth method ~s", [RequestAccountId, Method]),
             maybe_authorize_impersonation(Context, RequestAccountId, RequestUserId, RequestAccountId, cb_context:auth_user_id(Context))
     end;
 maybe_authorize_impersonation(Context, RequestAccountId, RequestUserId, AuthAccountId) ->
