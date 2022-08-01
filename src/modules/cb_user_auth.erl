@@ -140,12 +140,12 @@ maybe_authorize_impersonation(Context, _RequestAccountId, _RequestUserId, 'undef
     lager:info("no auth account on auth token"),
     forbidden(Context);
 maybe_authorize_impersonation(Context, RequestAccountId, RequestUserId, RequestAccountId) ->
-    RootAccountId = kapps_util:get_master_account_id(),
+    {'ok', RootAccountId} = kapps_util:get_master_account_id(),
     AuthToken = cb_context:auth_token(Context),
-    {ok, AuthJObj} = kz_auth:validate_token(AuthToken),
+    {'ok', AuthJObj} = kz_auth:validate_token(AuthToken),
     Method = kz_json:get_string_value(<<"method">>, AuthJObj),
-    case 
-        (RootAccountId == RequestAccountId) 
+    case
+        (RootAccountId == RequestAccountId)
         andalso (Method == "cb_api_auth")
     of
         false ->
