@@ -204,6 +204,8 @@ scope_summary(Context, Scope) ->
                 [{'databases', [?SCOPES_CAT]}
                 ,{'key', Scope}
                 ,{'mapper', crossbar_view:get_doc_fun()}
+                ,{'should_paginate', 'false'}
+                ,{'unchunkable', 'true'}
                 ,'include_docs'
                 ]),
     crossbar_view:load(Context, ?SCOPES_LIST, Options).

@@ -268,7 +268,8 @@ load_device_summary(Context) ->
 -spec load_device_summary(cb_context:context(), req_nouns()) ->
           cb_context:context().
 load_device_summary(Context, [{<<"devices">>, []}, {<<"users">>, [UserId]} | _]) ->
-    Selector = [{'key', [{<<"doc_type">>, kzd_devices:type()}, {<<"owner_id">>, UserId}]}
+    Selector = [{'start', [{<<"doc_type">>, kzd_devices:type()}, {<<"owner_id">>, UserId}]}
+               ,{'end', [{<<"doc_type">>, kzd_devices:type()}, {<<"owner_id">>, UserId}]}
                ],
     WithRegs = kz_term:is_true(cb_context:req_param(Context, <<"with_status">>)),
     maybe_with_device_status(Context, <<"crossbar_listings/by_type_ownerid">>, Selector, WithRegs);

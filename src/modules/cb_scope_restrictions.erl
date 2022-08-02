@@ -91,7 +91,10 @@ validate(Context, ScopeRestriction) ->
 %%------------------------------------------------------------------------------
 -spec validate_scope_restriction(cb_context:context(), http_method()) -> cb_context:context().
 validate_scope_restriction(Context, ?HTTP_GET) ->
-    scope_restriction_summary(Context);
+    Options = [{'mapper', crossbar_view:get_doc_fun()}
+              ,'include_docs'
+              ],
+    crossbar_view:load(Context, ?SCOPE_RESTRICTIONS_LIST, Options);
 validate_scope_restriction(Context, ?HTTP_PUT) ->
     validate_request(Context).
 
@@ -103,7 +106,12 @@ validate_scope_restriction(Context, ?HTTP_PUT) ->
 validate_scope_restriction(Context, ScopeRestriction, ?HTTP_DELETE) ->
     crossbar_doc:load(ScopeRestriction, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE));
 validate_scope_restriction(Context, ScopeRestriction, ?HTTP_GET) ->
-    scope_restriction_summary(Context, ScopeRestriction);
+    Options = [{'startkey', ScopeRestriction}
+              ,{'endkey', ScopeRestriction}
+              ,{'mapper', crossbar_view:get_doc_fun()}
+              ,'include_docs'
+              ],
+    crossbar_view:load(Context, ?SCOPE_RESTRICTIONS_LIST, Options);
 validate_scope_restriction(Context, ScopeRestriction, ?HTTP_POST) ->
     validate_request(Context, ScopeRestriction).
 
@@ -136,7 +144,7 @@ on_successful_validation(Context, ScopeRestriction) ->
 %%------------------------------------------------------------------------------
 -spec post(cb_context:context(), path_token()) -> cb_context:context().
 post(Context, _ScopeRestriction) ->
-    save_scope_restriction(Context).
+    crossbar_doc:save(Context).
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -144,33 +152,8 @@ post(Context, _ScopeRestriction) ->
 %%------------------------------------------------------------------------------
 -spec put(cb_context:context()) -> cb_context:context().
 put(Context) ->
-    save_scope_restriction(Context).
+    crossbar_doc:save(Context).
 
 -spec delete(cb_context:context(), path_token()) -> cb_context:context().
 delete(Context, _) ->
     crossbar_doc:delete(Context).
-
-%%------------------------------------------------------------------------------
-%% @doc
-%% @end
-%%------------------------------------------------------------------------------
--spec save_scope_restriction(cb_context:context()) -> cb_context:context().
-save_scope_restriction(Context) ->
-    crossbar_doc:save(Context).
-
-%%------------------------------------------------------------------------------
-%% @doc returns summary of scope restrictions
-%% @end
-%%------------------------------------------------------------------------------
--spec scope_restriction_summary(cb_context:context()) -> cb_context:context().
-scope_restriction_summary(Context) ->
-    scope_restriction_summary(Context, 'undefined').
-
--spec scope_restriction_summary(cb_context:context(), path_token() | 'undefined') -> cb_context:context().
-scope_restriction_summary(Context, ScopeRestriction) ->
-    Options = props:filter_undefined(
-                [{'key', ScopeRestriction}
-                ,{'mapper', crossbar_view:get_doc_fun()}
-                ,'include_docs'
-                ]),
-    crossbar_view:load(Context, ?SCOPE_RESTRICTIONS_LIST, Options).

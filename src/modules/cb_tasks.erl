@@ -505,6 +505,8 @@ read_doc(TaskId, Context, AccountId) ->
     Options = [{'key', [AccountId, TaskId]}
               ,{'databases', [?KZ_TASKS_DB]}
               ,{'mapper', crossbar_view:get_value_fun()}
+              ,{'should_paginate', 'false'}
+              ,{'unchunkable', 'true'}
               ],
     ReadResult = crossbar_view:load(Context, ?KZ_TASKS_BY_ACCOUNT, Options),
     handle_read_result(TaskId, Context, ReadResult).

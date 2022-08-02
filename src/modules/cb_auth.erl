@@ -51,7 +51,7 @@
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec init() -> ok.
+-spec init() -> 'ok'.
 init() ->
     _ = crossbar_bindings:bind(<<"*.authenticate.auth">>, ?MODULE, 'authenticate'),
     _ = crossbar_bindings:bind(<<"*.authorize.auth">>, ?MODULE, 'authorize'),
@@ -63,7 +63,7 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.execute.put.auth">>, ?MODULE, 'put'),
     _ = crossbar_bindings:bind(<<"*.execute.post.auth">>, ?MODULE, 'post'),
     _ = crossbar_bindings:bind(<<"*.execute.delete.auth">>, ?MODULE, 'delete'),
-    ok.
+    'ok'.
 
 %%------------------------------------------------------------------------------
 %% @doc This function determines the verbs that are appropriate for the
@@ -283,6 +283,8 @@ validate_path(Context, ?LINKS_PATH, ?HTTP_GET) ->
     Options = [{'key', [cb_context:auth_account_id(Context), cb_context:auth_user_id(Context)]}
               ,{'databases', [?KZ_AUTH_DB]}
               ,{'mapper', crossbar_view:get_value_fun()}
+              ,{'should_paginate', 'false'}
+              ,{'unchunkable', 'true'}
               ,'include_docs'
               ],
     crossbar_view:load(Context, ?LINKS_VIEW, Options);
@@ -301,6 +303,8 @@ validate_path(Context, ?APPS_PATH, ?HTTP_GET) ->
     Options = [{'key', account_id(Context)}
               ,{'databases', [?KZ_AUTH_DB]}
               ,{'mapper', crossbar_view:get_value_fun()}
+              ,{'should_paginate', 'false'}
+              ,{'unchunkable', 'true'}
               ,'include_docs'
               ],
     crossbar_view:load(Context, ?APPS_VIEW, Options);
