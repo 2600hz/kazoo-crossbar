@@ -1,7 +1,7 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
-%%% @doc Devices module
-%%% Handle client requests for device documents
+%%% @copyright (C) 2011-2022, 2600Hz
+%%% @doc Quickcall module
+%%% Handle client requests for quickcalls
 %%%
 %%%
 %%% @author Karl Anderson
@@ -23,6 +23,8 @@
         ]).
 
 -include("crossbar.hrl").
+
+-define(QUICKCALL_PATH_TOKEN, <<"quickcall">>).
 
 -define(QCALL_NUMBER_FILTER, [<<" ">>, <<",">>, <<".">>, <<"-">>, <<"(">>, <<")">>]).
 
@@ -265,10 +267,10 @@ originate_quickcall(Endpoints, Call, Context) ->
           ,{<<"Ignore-Early-Media">>, get_ignore_early_media(Context)}
           ,{<<"Media">>, get_media(Context)}
           ,{<<"Msg-ID">>, MsgId}
-          ,{<<"Outbound-Callee-ID-Name">>, get_cid_name(Context, DefaultCIDName)}
-          ,{<<"Outbound-Callee-ID-Number">>, get_cid_number(Context, DefaultCIDNumber)}
-          ,{<<"Outbound-Caller-ID-Name">>, <<"Device QuickCall">>}
-          ,{<<"Outbound-Caller-ID-Number">>, kapps_call:request_user(Call)}
+          ,{<<"Outbound-Callee-ID-Name">>, get_uri_decoded_value(<<"cid-name">>, Context, DefaultCIDName)}
+          ,{<<"Outbound-Callee-ID-Number">>, get_uri_decoded_value(<<"cid-number">>, Context, DefaultCIDNumber)}
+          ,{<<"Outbound-Caller-ID-Name">>, get_uri_decoded_value(<<"caller-id-name">>, Context, <<"Device QuickCall">>)}
+          ,{<<"Outbound-Caller-ID-Number">>, get_uri_decoded_value(<<"caller-id-number">>, Context, kapps_call:request_user(Call))}
           ,{<<"Timeout">>, CallTimeoutS}
           | kz_api:default_headers(<<"resource">>, <<"originate_req">>, ?APP_NAME, ?APP_VERSION)
           ]),
@@ -374,18 +376,18 @@ get_media(Context) ->
         _Else -> <<"process">>
     end.
 
--spec get_cid_name(cb_context:context(), kz_term:api_binary()) -> kz_term:api_binary().
-get_cid_name(Context, Default) ->
-    case cb_context:req_value(Context, <<"cid-name">>, Default) of
+%%------------------------------------------------------------------------------
+%% @doc Get the uri decoded value of the `Key' from the context. If the key does
+%% not exist then return the uri decoded value of `Default' or the atom
+%% `undefined' if its supplied as the value of `Default' or set as the value of
+%% the key.
+%% @end
+%%------------------------------------------------------------------------------
+-spec get_uri_decoded_value(kz_json:get_key(), cb_context:context(), kz_term:api_binary()) -> kz_term:api_binary().
+get_uri_decoded_value(Key, Context, Default) ->
+    case cb_context:req_value(Context, Key, Default) of
         'undefined' -> 'undefined';
-        CIDName -> kz_http_util:urldecode(CIDName)
-    end.
-
--spec get_cid_number(cb_context:context(), kz_term:api_binary()) -> kz_term:api_binary().
-get_cid_number(Context, Default) ->
-    case cb_context:req_value(Context, <<"cid-number">>, Default) of
-        'undefined' -> 'undefined';
-        CIDNumber -> kz_http_util:urldecode(CIDNumber)
+        Value -> kz_http_util:urldecode(Value)
     end.
 
 -spec maybe_retain_cid(cb_context:context()) -> kz_term:proplist().

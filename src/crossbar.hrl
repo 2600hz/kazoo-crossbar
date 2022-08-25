@@ -52,7 +52,7 @@
                          ,?HTTP_PATCH
                          ,?HTTP_OPTIONS
                          ]).
--define(QUICKCALL_PATH_TOKEN, <<"quickcall">>).
+
 -define(DEVICES_QCALL_NOUNS(DeviceId, Number)
        ,[{<<"quickcall">>, [Number]}
         ,{<<"devices">>, [DeviceId]}
