@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2022, 2600Hz
 %%% @doc Account module
 %%% @author Jon Blanton <jon@2600hz.com>
 %%%
@@ -589,6 +589,8 @@ delete(Context) ->
 find_whitelabel(Context, Domain) ->
     ViewOptions = [{'databases', [?KZ_ACCOUNTS_DB]}
                   ,{'key', kz_term:to_lower_binary(Domain)}
+                  ,{'should_paginate', 'false'}
+                  ,{'unchunkable', 'true'}
                   ],
     Context1 = crossbar_view:load(Context, ?AGG_VIEW_WHITELABEL_DOMAIN, ViewOptions),
     case {cb_context:resp_status(Context1)

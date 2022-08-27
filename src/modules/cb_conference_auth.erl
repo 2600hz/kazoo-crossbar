@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2022, 2600Hz
 %%% @doc Conference auth module.
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -31,7 +31,7 @@
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec init() -> ok.
+-spec init() -> 'ok'.
 init() ->
     _ = crossbar_bindings:bind(<<"*.authenticate.conference_auth">>, ?MODULE, 'authenticate'),
     _ = crossbar_bindings:bind(<<"*.authorize.conference_auth">>, ?MODULE, 'authorize'),
@@ -40,7 +40,7 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.validate.conference_auth">>, ?MODULE, 'validate'),
     _ = crossbar_bindings:bind(<<"*.execute.put.conference_auth">>, ?MODULE, 'put'),
     _ = crossbar_bindings:bind(<<"*.execute.post.conference_auth">>, ?MODULE, 'post'),
-    ok.
+    'ok'.
 
 %%------------------------------------------------------------------------------
 %% @doc This function determines the verbs that are appropriate for the
@@ -288,10 +288,7 @@ maybe_account_is_expired(Context) ->
 -spec find_conferences_by_name(cb_context:context()) -> kz_either:either(cb_context:context(), cb_context:context()).
 find_conferences_by_name(Context) ->
     Name = kzd_conference_auth:conference_name(cb_context:req_data(Context)),
-    Options = [{'doc_type', <<"conference">>}
-              ,{'filtermap', crossbar_view:get_doc_fun()}
-              ,'include_docs'
-              ],
+    Options = by_name_options(),
     Selector = [{'key', [{<<"doc_type">>, <<"conference">>}, {<<"name">>, Name}]}],
     case kz_view:find(cb_context:db_name(Context), <<"crossbar_listings/by_type_name">>, Selector, Options) of
         {'ok', []} ->
@@ -304,6 +301,14 @@ find_conferences_by_name(Context) ->
             lager:debug("failed to query for conference name ~p", [Reason]),
             {'ok', cb_context:add_system_error('bad_identifier', Name,  Context)}
     end.
+
+by_name_options() ->
+    [{'doc_type', <<"conference">>}
+    ,{'filtermap', crossbar_view:get_doc_fun()}
+    ,{'should_paginate', 'false'}
+    ,{'no_batch', 'true'}
+    ,'include_docs'
+    ].
 
 %%------------------------------------------------------------------------------
 %% @doc
