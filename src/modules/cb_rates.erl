@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2021, 2600Hz
+%%% @copyright (C) 2012-2022, 2600Hz
 %%% @doc Upload a rate deck, query rates for a given DID
 %%% @author James Aimonetti
 %%%
@@ -320,9 +320,12 @@ summary(Context, 'undefined') ->
               ],
     crossbar_view:load(Context, ?CB_LIST, Options);
 summary(Context, Prefix) ->
+    %% thankfully there is not much ?prefix=123 rows, we are okay with turning off pagination
     Options = [{'databases', [cb_context:db_name(Context)]}
               ,{'keys', kzdb_ratedeck:prefix_keys(Prefix)}
               ,{'mapper', crossbar_view:get_doc_fun()}
+              ,{'should_paginate', 'false'}
+              ,{'unchunkable', 'true'}
               ,'include_docs'
               ],
     crossbar_view:load(Context, <<"rates/lookup">>, Options).

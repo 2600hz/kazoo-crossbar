@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2022, 2600Hz
 %%% @doc Match list module
 %%% Handle client requests for match list documents, api v2
 %%%
@@ -152,7 +152,11 @@ validate_req(?HTTP_PUT, Context, []) ->
 validate_req(?HTTP_GET, Context, [ListId]) ->
     crossbar_doc:load(ListId, Context, ?TYPE_CHECK_OPTION(?TYPE_LIST));
 validate_req(?HTTP_DELETE, Context, [ListId]) ->
-    crossbar_view:load(Context, ?ENTRIES_VIEW, [{'key', ListId}]);
+    Options = [{'key', ListId}
+              ,{'should_paginate', 'false'}
+              ,{'unchunkable', 'true'}
+              ],
+    crossbar_view:load(Context, ?ENTRIES_VIEW, Options);
 validate_req(?HTTP_POST, Context, [ListId]) ->
     validate_doc(ListId, ?TYPE_LIST, Context);
 validate_req(?HTTP_PATCH, Context, [ListId] = Path) ->
@@ -160,12 +164,20 @@ validate_req(?HTTP_PATCH, Context, [ListId] = Path) ->
 
 validate_req(?HTTP_GET, Context, [ListId, ?ENTRIES]) ->
     %% FIXME: why this doesn't normalize the db result??
-    crossbar_view:load(Context, ?ENTRIES_VIEW, [{'key', ListId}]);
+    Options = [{'key', ListId}
+              ,{'should_paginate', 'false'}
+              ,{'unchunkable', 'true'}
+              ],
+    crossbar_view:load(Context, ?ENTRIES_VIEW, Options);
 validate_req(?HTTP_PUT, Context, [ListId, ?ENTRIES]) ->
     ReqData = kz_json:set_values([{<<"list_id">>, ListId}], cb_context:req_data(Context)),
     validate_doc('undefined', ?TYPE_LIST_ENTRY, cb_context:set_req_data(Context, ReqData));
 validate_req(?HTTP_DELETE, Context, [ListId, ?ENTRIES]) ->
-    crossbar_view:load(Context, ?ENTRIES_VIEW, [{'key', ListId}]);
+    Options = [{'key', ListId}
+              ,{'should_paginate', 'false'}
+              ,{'unchunkable', 'true'}
+              ],
+    crossbar_view:load(Context, ?ENTRIES_VIEW, Options);
 
 validate_req(?HTTP_GET, Context, [_ListId, ?ENTRIES, EntryId]) ->
     crossbar_doc:load(EntryId, Context, ?TYPE_CHECK_OPTION(?TYPE_LIST_ENTRY));

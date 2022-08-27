@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2022, 2600Hz
 %%% @doc Manage system_auth scopes
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -196,6 +196,8 @@ scope_summary(Context, Scope) ->
                 [{'databases', [?SCOPES_CAT]}
                 ,{'key', Scope}
                 ,{'mapper', crossbar_view:get_doc_fun()}
+                ,{'should_paginate', 'false'}
+                ,{'unchunkable', 'true'}
                 ,'include_docs'
                 ]),
     crossbar_view:load(Context, ?SCOPES_LIST, Options).

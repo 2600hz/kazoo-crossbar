@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2022, 2600Hz
 %%% @doc Conference auth module.
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -31,7 +31,7 @@
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec init() -> ok.
+-spec init() -> 'ok'.
 init() ->
     _ = crossbar_bindings:bind(<<"*.authenticate.conference_auth">>, ?MODULE, 'authenticate'),
     _ = crossbar_bindings:bind(<<"*.authorize.conference_auth">>, ?MODULE, 'authorize'),
@@ -40,7 +40,7 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.validate.conference_auth">>, ?MODULE, 'validate'),
     _ = crossbar_bindings:bind(<<"*.execute.put.conference_auth">>, ?MODULE, 'put'),
     _ = crossbar_bindings:bind(<<"*.execute.post.conference_auth">>, ?MODULE, 'post'),
-    ok.
+    'ok'.
 
 %%------------------------------------------------------------------------------
 %% @doc This function determines the verbs that are appropriate for the
@@ -305,6 +305,8 @@ find_conferences_by_name(Context) ->
 by_name_options() ->
     [{'doc_type', <<"conference">>}
     ,{'filtermap', crossbar_view:get_doc_fun()}
+    ,{'should_paginate', 'false'}
+    ,{'no_batch', 'true'}
     ,'include_docs'
     ].
 
