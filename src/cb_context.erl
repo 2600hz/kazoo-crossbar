@@ -51,7 +51,7 @@
         ,auth_doc/1, set_auth_doc/2
         ,auth_token/1, set_auth_token/2
         ,auth_token_type/1, set_auth_token_type/2
-        ,client_ip/1, set_client_ip/2
+        ,client_ip/1, port/1, set_client_ip/2
         ,db_name/1, set_db_name/2
         ,device_id/1, set_device_id/2
         ,doc/1, set_doc/2, update_doc/2
@@ -439,6 +439,9 @@ req_param(#cb_context{query_json=JObj}, K, Default) -> kz_json:get_value(K, JObj
 
 -spec client_ip(context()) -> kz_term:api_ne_binary().
 client_ip(#cb_context{client_ip=IP}) -> IP.
+
+-spec port(context()) -> integer().
+port(#cb_context{port=Port}) -> Port.
 
 -spec req_id(context()) -> kz_term:ne_binary().
 req_id(#cb_context{req_id=ReqId}) -> ReqId.
