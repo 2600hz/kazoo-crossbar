@@ -431,6 +431,7 @@ build_email_invite_kapi_req(Context) ->
     Conf = cb_context:fetch(Context, 'conference_doc'),
     ReqData = cb_context:req_data(Context),
     [{<<"Conference-ID">>, kz_doc:id(Conf)}
+    ,{<<"Conference-Numbers">>, kzd_conferences:conference_numbers(Conf)}
     ,{<<"Conference-Name">>, kzd_conferences:name(Conf)}
     ,{<<"Conference-Link">>, kz_json:get_binary_value(<<"conference_link">>, ReqData)}
     ,{<<"Conference-Call-In-Numbers">>, [kz_json:get_binary_value(<<"numbers">>, CF) || CF <- Callflows]}

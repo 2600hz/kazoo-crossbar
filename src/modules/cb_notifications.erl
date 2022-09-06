@@ -545,6 +545,7 @@ maybe_add_extra_data(<<"conference_email_invite">>, API) ->
     props:set_values([{<<"Conference-Participant-Pins">>,[<<"1234">>]}
                      ,{<<"Guests">>,[<<"johndoe@gmail.com">>, <<"janesmith@gmail.com">>]}
                      ,{<<"Conference-Call-In-Numbers">>,[<<"+15557770104">>]}
+                     ,{<<"Conference-Numbers">>,[<<"12345">>]}
                      ]
                     , API);
 maybe_add_extra_data(_Id, API) -> API.
