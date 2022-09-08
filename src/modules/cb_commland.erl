@@ -25,7 +25,7 @@
 -define(COMPAT, <<"compatibility">>).
 -define(COMPAT_NOUNS, [{<<"commland">>,[<<"compatibility">>]}]).
 -define(COMMLAND_CONFIG_CAT, <<"crossbar.commland">>).
--define(BASE_URL, kapps_config:get_ne_binary(?COMMLAND_CONFIG_CAT, <<"base_url">>, <<"https://packages.2600hz.com/commland/misc/compatibility">>)).
+-define(BASE_URL, kapps_config:get_ne_binary(?COMMLAND_CONFIG_CAT, <<"base_url">>, <<"https://packages.2600hz.com/commland/dist/compatibility">>)).
 -define(BASE_VERSION, kapps_config:get_ne_binary(?COMMLAND_CONFIG_CAT, <<"base_version">>, <<"5.1">>)).
 -define(BASE_SALT, kapps_config:get_ne_binary(?COMMLAND_CONFIG_CAT, <<"base_salt">>, <<"7f613340-1ebf-4710-ad57-fb4d3041af4c">>)).
 
@@ -109,7 +109,7 @@ validate(Context, ?COMPAT) ->
 -spec validate_commland(cb_context:context(), http_method()) -> cb_context:context().
 validate_commland(Context, ?HTTP_GET) ->
     case cb_context:req_nouns(Context) of
-        ?COMPAT_NOUNS -> compatibility_redirect(Context);
+        ?COMPAT_NOUNS -> compatibility(Context);
         _Nouns ->
             lager:debug("invalid request ~p", [_Nouns]),
             Context
@@ -123,11 +123,11 @@ validate_commland(Context, ?HTTP_GET) ->
 %% @doc Display the current version of kazoo
 %% @end
 %%---------------------------`---------------------------------------------------
--spec compatibility_redirect(cb_context:context()) -> cb_context:context().
-compatibility_redirect(Context) ->
+-spec compatibility(cb_context:context()) -> cb_context:context().
+compatibility(Context) ->
     Url = get_redirect_url(),
-    lager:debug("redirecting to upgrade url ~p", [Url]),
-    crossbar_util:response_redirect(Context, Url, kz_json:from_list([{<<"url">>, Url}]), 302).
+    lager:debug("returning upgrade url ~p", [Url]),
+    crossbar_util:response(kz_json:from_list([{<<"auto_updater_url">>, Url}]), Context).
 
 -spec get_redirect_url() -> kz_term:ne_binary().
 get_redirect_url() ->
@@ -135,7 +135,7 @@ get_redirect_url() ->
 
 -spec get_hashed_version() -> kz_term:ne_binary().
 get_hashed_version() ->
-    get_hashed_version(binary:split(kapps_util:kazoo_version(), ?DOT, [global])).
+    get_hashed_version(binary:split(kapps_util:kazoo_version(), ?DOT, ['global'])).
 
 -spec get_hashed_version(list()) -> kz_term:ne_binary().
 get_hashed_version([Major, Minor|_]) ->
