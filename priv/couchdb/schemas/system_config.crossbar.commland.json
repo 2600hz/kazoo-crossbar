@@ -4,6 +4,7 @@
     "description": "Schema for crossbar.commland system_config",
     "properties": {
         "base_salt": {
+            "default": "",
             "description": "crossbar commland base_salt for generating hashes",
             "type": "string"
         },
