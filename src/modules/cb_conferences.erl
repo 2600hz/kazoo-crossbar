@@ -444,8 +444,8 @@ build_email_invite_kapi_req(Context) ->
 
 -spec maybe_remove_not_numeric_values(list()) -> list().
 maybe_remove_not_numeric_values(ConferenceCallInNumbers)->
-  ToFilterOut = [<<"undefinedconf">>],
-  [N || N <- ConferenceCallInNumbers, not lists:member(N, ToFilterOut)].
+    ToFilterOut = [<<"undefinedconf">>],
+    [N || N <- ConferenceCallInNumbers, not lists:member(N, ToFilterOut)].
 
 
 
