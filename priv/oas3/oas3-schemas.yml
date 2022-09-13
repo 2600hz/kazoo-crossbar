@@ -4363,6 +4363,82 @@
     - extension
     - name
   'type': object
+'codecs':
+  'description': A list of codecs the endpoint supports
+  'items':
+    'enum':
+      - AMR
+      - AMR-WB
+      - CELT_32
+      - CELT_48
+      - CELT_64
+      - CELT@32000h
+      - CELT@48000h
+      - CELT@64000h
+      - G7221@32000h
+      - G7221@16000h
+      - G722
+      - G722_16
+      - G722_32
+      - G729
+      - GSM
+      - OPUS
+      - PCMA
+      - PCMU
+      - speex
+      - speex@16000h
+      - speex@32000h
+      - H261
+      - H263
+      - H263+
+      - H264
+      - VP8
+      - VP9
+    'type': string
+  'type': array
+  'uniqueItems': true
+'codecs.audio':
+  'description': A list of audio codecs the endpoint supports
+  'items':
+    'enum':
+      - AMR
+      - AMR-WB
+      - CELT_32
+      - CELT_48
+      - CELT_64
+      - CELT@32000h
+      - CELT@48000h
+      - CELT@64000h
+      - G7221@32000h
+      - G7221@16000h
+      - G722
+      - G722_16
+      - G722_32
+      - G729
+      - GSM
+      - OPUS
+      - PCMA
+      - PCMU
+      - speex
+      - speex@16000h
+      - speex@32000h
+    'type': string
+  'type': array
+  'uniqueItems': true
+'codecs.video':
+  'default': []
+  'description': A list of video codecs the endpoint supports
+  'items':
+    'enum':
+      - H261
+      - H263
+      - H263+
+      - H264
+      - VP8
+      - VP9
+    'type': string
+  'type': array
+  'uniqueItems': true
 'comment':
   'description': Schema for a single comment
   'properties':
@@ -5553,31 +5629,8 @@
       'description': The audio media parameters
       'properties':
         'codecs':
+          '$ref': '#/codecs.audio'
           'description': A list of audio codecs the endpoint supports
-          'items':
-            'enum':
-              - OPUS
-              - CELT@32000h
-              - G7221@32000h
-              - G7221@16000h
-              - G722
-              - speex@32000h
-              - speex@16000h
-              - PCMU
-              - PCMA
-              - G729
-              - GSM
-              - CELT@48000h
-              - CELT@64000h
-              - G722_16
-              - G722_32
-              - CELT_48
-              - CELT_64
-              - Speex
-              - speex
-            'type': string
-          'type': array
-          'uniqueItems': true
       'type': object
     'bypass_media':
       'description': |-
@@ -5622,19 +5675,8 @@
       'description': The video media parameters
       'properties':
         'codecs':
-          'default': []
+          '$ref': '#/codecs.video'
           'description': A list of video codecs the endpoint supports
-          'items':
-            'enum':
-              - H261
-              - H263
-              - H263+
-              - H264
-              - VP8
-              - VP9
-            'type': string
-          'type': array
-          'uniqueItems': true
       'type': object
   'type': object
 'external_numbers':
@@ -8321,27 +8363,9 @@
               - descending
             'type': string
           'codecs':
+            '$ref': '#/codecs'
             'description': |-
               A list of single list codecs supported by this gateway (to support backward compatibility)
-            'items':
-              'enum':
-                - G729
-                - PCMU
-                - PCMA
-                - G722_16
-                - G722_32
-                - CELT_48
-                - CELT_64
-                - Speex
-                - GSM
-                - OPUS
-                - H261
-                - H263
-                - H264
-                - VP8
-              'type': string
-            'type': array
-            'uniqueItems': true
           'custom_channel_vars':
             'anyOf':
               - '$ref': '#/custom_channel_vars'

@@ -60,8 +60,7 @@ Key | Description | Type | Default | Required | Support Level
 `gateways.[].bypass_media` | The resource gateway bypass media mode | `boolean()` |   | `false` |  
 `gateways.[].caller_id_type` | The type of caller id to use | `string('internal' | 'external' | 'emergency')` |   | `false` |  
 `gateways.[].channel_selection` | Automatic selection of the channel within the span: ascending starts at 1 and moves up; descending is the opposite | `string('ascending' | 'descending')` | `ascending` | `false` |  
-`gateways.[].codecs.[]` |   | `string('G729' | 'PCMU' | 'PCMA' | 'G722_16' | 'G722_32' | 'CELT_48' | 'CELT_64' | 'Speex' | 'GSM' | 'OPUS' | 'H261' | 'H263' | 'H264' | 'VP8')` |   | `false` |  
-`gateways.[].codecs` | A list of single list codecs supported by this gateway (to support backward compatibility) | `array(string('G729' | 'PCMU' | 'PCMA' | 'G722_16' | 'G722_32' | 'CELT_48' | 'CELT_64' | 'Speex' | 'GSM' | 'OPUS' | 'H261' | 'H263' | 'H264' | 'VP8'))` |   | `false` |  
+`gateways.[].codecs` | A list of single list codecs supported by this gateway (to support backward compatibility) | [#/definitions/codecs](#codecs) |   | `false` |  
 `gateways.[].custom_channel_vars.in` | Custom Channel Vars to be applied to calls inbound to Kazoo from the endpoint | [#/definitions/custom_channel_vars](#custom_channel_vars) |   | `false` |  
 `gateways.[].custom_channel_vars.out` | Custom Channel Vars to be applied to calls outbound from Kazoo to the endpoint | [#/definitions/custom_channel_vars](#custom_channel_vars) |   | `false` |  
 `gateways.[].custom_channel_vars.^[a-zA-z0-9_\-]+$` | The Custom Channel Var to add | `string() | boolean() | integer() | object()` |   | `false` |  
@@ -131,6 +130,30 @@ Key | Description | Type | Default | Required | Support Level
 `show_rate` | Whether to show the rate | `boolean()` |   | `false` |  
 `type` | Caller ID on endpoint to choose | `string('internal' | 'external' | 'emergency')` |   | `false` |  
 
+### codecs
+
+A list of codecs the endpoint supports
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+
+### codecs.audio
+
+A list of audio codecs the endpoint supports
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+
+### codecs.video
+
+A list of video codecs the endpoint supports
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+
 ### custom_channel_vars
 
 Custom Channel Vars applied to an INVITE
@@ -156,8 +179,7 @@ Schema for endpoint media options
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`audio.codecs.[]` |   | `string('OPUS' | 'CELT@32000h' | 'G7221@32000h' | 'G7221@16000h' | 'G722' | 'speex@32000h' | 'speex@16000h' | 'PCMU' | 'PCMA' | 'G729' | 'GSM' | 'CELT@48000h' | 'CELT@64000h' | 'G722_16' | 'G722_32' | 'CELT_48' | 'CELT_64' | 'Speex' | 'speex')` |   | `false` |  
-`audio.codecs` | A list of audio codecs the endpoint supports | `array(string('OPUS' | 'CELT@32000h' | 'G7221@32000h' | 'G7221@16000h' | 'G722' | 'speex@32000h' | 'speex@16000h' | 'PCMU' | 'PCMA' | 'G729' | 'GSM' | 'CELT@48000h' | 'CELT@64000h' | 'G722_16' | 'G722_32' | 'CELT_48' | 'CELT_64' | 'Speex' | 'speex'))` |   | `false` |  
+`audio.codecs` | A list of audio codecs the endpoint supports | [#/definitions/codecs.audio](#codecsaudio) |   | `false` |  
 `audio` | The audio media parameters | `object()` | `{}` | `false` |  
 `bypass_media` | Default bypass media mode (The string type is deprecated, please use this as a boolean) | `boolean() | string('auto' | 'false' | 'true')` |   | `false` |  
 `encryption.enforce_security` | Is Encryption Enabled? | `boolean()` | `false` | `false` |  
@@ -167,8 +189,7 @@ Key | Description | Type | Default | Required | Support Level
 `fax_option` | Is T.38 Supported? | `boolean()` |   | `false` |  
 `ignore_early_media` | The option to determine if early media from the endpoint should always be ignored | `boolean()` |   | `false` |  
 `progress_timeout` | The progress timeout to apply to the endpoint (seconds) | `integer()` |   | `false` |  
-`video.codecs.[]` |   | `string('H261' | 'H263' | 'H263+' | 'H264' | 'VP8' | 'VP9')` |   | `false` |  
-`video.codecs` | A list of video codecs the endpoint supports | `array(string('H261' | 'H263' | 'H263+' | 'H264' | 'VP8' | 'VP9'))` | `[]` | `false` |  
+`video.codecs` | A list of video codecs the endpoint supports | [#/definitions/codecs.video](#codecsvideo) |   | `false` |  
 `video` | The video media parameters | `object()` | `{}` | `false` |  
 
 ### formatters
