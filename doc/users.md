@@ -319,6 +319,14 @@ The default timezone
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 
+### users_delete
+
+Defines DELETE user extended functionality
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`object_types` | List of object types owned by the user that should also be deleted as part of the user delete process. NOTE: If "phone_numbers" is included in the list, numbers assigned to callflows owned by the user will also be released. | `array(string('phone_numbers' | 'callflow' | 'vmbox' | 'device' | 'conference' | 'faxbox' | 'media')) | string('all')` |   | `false` |
+
 
 
 ## Fetch
@@ -461,6 +469,80 @@ curl -v -X DELETE \
             }
         },
         "music_on_hold": {},
+        "priv_level": "user",
+        "profile": {},
+        "require_password_update": false,
+        "ringtones": {},
+        "verified": false,
+        "vm_to_email_enabled": true
+    },
+    "request_id": "{REQUEST_ID}",
+    "revision": "{REVISION}",
+    "status": "success"
+}
+```
+
+When deleting a user, a list of `object_types` could be passed either within the request body or the query string.
+If object_types are included in the request, along deleting the user, the objects owned by the user that are listed
+will be deleted as well. See [#/definitions/users_delete](#users_delete) for more information.
+
+If object_types were included in the request, the API response will include a `object_types` field in the response with
+a list with the objects that were tried to be deleted with the response status for each request, something like:
+
+`[{"type": {OBJECT_TYPE}, "id": {OBJECT_ID}, "status": {RESPONSE_STATUS}}, ...]`
+
+If any of the requests to delete an object failed, the object response will have 2 extra fields: error_code, and error_msg.
+
+`{"type": ..., "id": ..., "status": ..., "error_code": {ERROR_CODE}, "error_msg", {ERROR_MSG}}`
+
+```shell
+curl -v -X DELETE \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d '{"data": {"object_types": ["callflow", "vmbox"]}}'
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}
+{
+    "auth_token": "{AUTH_TOKEN}",
+    "data": {
+        "call_restriction": {},
+        "caller_id": {},
+        "contact_list": {},
+        "dial_plan": {},
+        "enabled": false,
+        "first_name": "User",
+        "hotdesk": {
+            "enabled": false,
+            "keep_logged_in_elsewhere": false,
+            "require_pin": false
+        },
+        "id": "{USER_ID}",
+        "last_name": "Three",
+        "media": {
+            "audio": {
+                "codecs": [
+                    "PCMU"
+                ]
+            },
+            "encryption": {
+                "enforce_security": false,
+                "methods": []
+            },
+            "video": {
+                "codecs": []
+            }
+        },
+        "music_on_hold": {},
+        "object_types": [
+            {
+                "type": "vmbox",
+                "id": "{VMBOX_ID}",
+                "status": "success"
+            },
+            {
+                "type": "callflow",
+                "id": "{CALLFLOW_ID}",
+                "status": "success"
+            }
+        ]
         "priv_level": "user",
         "profile": {},
         "require_password_update": false,

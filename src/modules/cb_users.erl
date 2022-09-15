@@ -33,6 +33,8 @@
 -include("crossbar.hrl").
 
 -define(LIST_BY_PRESENCE_ID, <<"devices/listing_by_presence_id">>).
+-define(CROSSBAR_LISTING_BY_OWNER_ID, <<"crossbar_listings/by_ownerid">>).
+-define(CROSSBAR_LISTING_BY_OWNER_ID_TYPE, <<"crossbar_listings/by_ownerid_type">>).
 
 -define(VCARD, <<"vcard">>).
 -define(PHOTO, <<"photo">>).
@@ -249,7 +251,7 @@ validate_user(Context, UserId, ?HTTP_GET) ->
 validate_user(Context, UserId, ?HTTP_POST) ->
     validate_request(UserId, Context);
 validate_user(Context, UserId, ?HTTP_DELETE) ->
-    load_user(UserId, Context);
+    validate_delete(Context, UserId);
 validate_user(Context, UserId, ?HTTP_PATCH) ->
     validate_patch(UserId, Context).
 
@@ -272,6 +274,12 @@ validate_qrcode(Context, UserId) ->
                        ,{fun cb_context:add_resp_headers/2, Headers}
                        ,{fun cb_context:set_resp_status/2, 'success'}
                        ]).
+
+-spec validate_delete(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+validate_delete(Context, UserId) ->
+    Context1 = cb_context:validate_request_data(<<"users_delete">>, Context),
+    ObjectTypes = cb_context:req_value(Context, <<"object_types">>),
+    maybe_load_user_objects(UserId, load_user(UserId, Context1), ObjectTypes).
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -326,17 +334,204 @@ put(Context) ->
         _ -> Context1
     end.
 
-%%------------------------------------------------------------------------------
+%%%%------------------------------------------------------------------------------
 %% @doc
+%% If `object_types' was declared and `object_types /= all':
+%%     Default to delete: user (of course, duh), callflow, vmbox.
+%%      DELETE /v2/accounts/{ACCOUNT_ID}/callflows/{CALLFLOW_ID}
+%%      DELETE /v2/accounts/{ACCOUNT_ID}/vmboxes/{VMBOX_ID}
+%%      DELETE /v2/accounts/{ACCOUNT_ID}/users/{USER_ID}
+%%
+%%     Default to unassign: device, conference, number.
+%%      POST /v2/accounts/{ACCOUNT_ID}/devices/{DEVICE_ID} -d {DEVICE_OBJECT_WITHOUT_OWNER_ID}
+%%      DELETE /callflows request will also cause numbers associated to this callflow to be released/unassigned.
+%% Else:
+%%     Only delete the user:
+%%     DELETE /v2/accounts/{ACCOUNT_ID}/users/{USER_ID}
+%%%% @end
+%%%%------------------------------------------------------------------------------
+-spec delete(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+delete(Context, UserId) ->
+    delete(Context, UserId, cb_context:req_value(Context, <<"object_types">>, [])).
+
+-spec delete(cb_context:context(), kz_term:ne_binary(), path_token() | kz_term:api_ne_binary() | kz_term:ne_binaries()) -> cb_context:context().
+delete(Context, _UserId, []) ->
+    lager:debug("not object_types specified to be deleted along ~p user", [_UserId]),
+    crossbar_doc:delete(Context);
+delete(Context, UserId, ?PHOTO) ->
+    lager:debug("deleting user's photo"),
+    crossbar_doc:delete_attachment(UserId, ?PHOTO, Context);
+delete(Context, _UserId, _ObjectTypes) ->
+    lager:debug("deleting ~p object_types owned by ~p user", [_ObjectTypes, _UserId]),
+    UserJObjsResps = delete_user_objects(Context),
+    Context1 = crossbar_doc:delete(Context),
+    RespData = kz_json:set_value(<<"object_types">>, UserJObjsResps, cb_context:resp_data(Context1)),
+    Context2 = cb_context:set_resp_data(Context1, RespData),
+    case 'success' =:= cb_context:resp_status(Context2)
+        andalso did_any_user_object_delete_failed(UserJObjsResps)
+    of
+        'true' ->
+            %% If user itself was deleted successfully and any of the requests to delete any of the user's
+            %% objects failed, set "custom" failure response.
+            Setters = [{fun cb_context:set_resp_status/2, 'error'}
+                      ,{fun cb_context:set_resp_error_code/2, 500}
+                      ,{fun cb_context:set_resp_error_msg/2
+                       ,<<"At least one object failed to be deleted">>
+                       }
+                      ],
+            cb_context:setters(Context2, Setters);
+        'false' ->
+            %% Either user failed to be deleted or everything (user + user_objects) was deleted successfully.
+            Context2
+    end.
+
+-spec did_any_user_object_delete_failed(kz_json:objects()) -> boolean().
+did_any_user_object_delete_failed(UserJObjsResps) ->
+    lists:any(fun(RespJObj) ->
+                      'success' =/= kz_json:get_atom_value(<<"status">>, RespJObj)
+              end
+             ,UserJObjsResps
+             ).
+
+%%------------------------------------------------------------------------------
+%% @doc Delete all the objects loaded in Context's doc field.
+%%
+%% Returns a list of JSON objects, one for each object that was tried to be deleted.
+%% By default, every response has these keys: type, id, and status. If DELETE request failed, the
+%% response will have these extra keys: error_code, and error_msg.
+%% See build_and_log_user_object_response/3 function for more details.
 %% @end
 %%------------------------------------------------------------------------------
--spec delete(cb_context:context(), path_token()) -> cb_context:context().
-delete(Context, _UserId) ->
-    crossbar_doc:delete(Context).
+-spec delete_user_objects(cb_context:context()) -> kz_json:objects().
+delete_user_objects(Context) ->
+    UserObjects = cb_context:fetch(Context, <<"objects">>, []),
+    lager:debug("maybe deleting: ~p", [[{kz_doc:type(Obj), kz_doc:id(Obj)} || Obj <- UserObjects]]),
+    lists:foldl(fun(JObj, Acc) ->
+                        fold_delete_user_objects(Context, {kz_doc:type(JObj), JObj}, Acc)
+                end
+               ,[]
+               ,UserObjects
+               ).
 
--spec delete(cb_context:context(), kz_term:ne_binary(), path_token()) -> cb_context:context().
-delete(Context, UserId, ?PHOTO) ->
-    crossbar_doc:delete_attachment(UserId, ?PHOTO, Context).
+-spec fold_delete_user_objects(cb_context:context(), {kz_term:ne_binary(), kz_doc:doc()}, kz_json:objects()) ->
+          kz_json:objects().
+fold_delete_user_objects(Context, {<<"callflow">>=Type, JObj}=ToDelete, Acc) ->
+    ObjTypes = cb_context:req_value(Context, <<"object_types">>),
+    %% Even though callflow may not be going to be deleted, maybe the numbers associated to it should
+    %% be deleted. In which case, callflow numbers' list should be updated.
+    Acc1 = case <<"all">> =:= ObjTypes
+               orelse lists:member(Type, ObjTypes)
+           of
+               'true' -> maybe_delete_user_object(Context, ToDelete, Acc);
+               'false' -> maybe_update_user_callflow(Context, JObj, Acc)
+           end,
+    maybe_delete_cf_numbers(Context, {<<"phone_numbers">>, kzd_callflows:numbers(JObj)}, Acc1);
+fold_delete_user_objects(Context, ToDelete, Acc) ->
+    maybe_delete_user_object(Context, ToDelete, Acc).
+
+-spec maybe_update_user_callflow(cb_context:context(), kzd_callflows:doc(), kz_json:objects()) ->
+          kz_json:objects().
+maybe_update_user_callflow(Context, CFDoc, Acc) ->
+    CFId = kz_doc:id(CFDoc),
+    CFNumbers = kzd_callflows:numbers(CFDoc),
+    case CFNumbers -- [Num || Num <- CFNumbers, knm_converters:is_reconcilable(Num)] of
+        CFNumbers ->
+            lager:debug("not reconcilable numbers found, not need to update callflow/~s", [CFId]),
+            Acc;
+        NewCFNums ->
+            lager:debug("updating callflow/~s", [CFId]),
+            Setters = [{fun cb_context:set_req_data/2, kzd_callflows:set_numbers(CFDoc, NewCFNums)}
+                      ,{fun cb_context:set_req_verb/2, ?HTTP_POST}
+                      ],
+            Context1 = cb_context:setters(Context, Setters),
+            [validate_and_maybe_run_cb_action(Context1, <<"callflow">>, 'post', CFId) | Acc]
+    end.
+
+-spec maybe_delete_cf_numbers(cb_context:context(), {kz_term:ne_binary(), kz_term:ne_binaries()}, kz_json:objects()) ->
+          kz_json:objects().
+maybe_delete_cf_numbers(Context, {<<"phone_numbers">>=Type, Nums}, Acc) ->
+    ObjTypes = cb_context:req_value(Context, <<"object_types">>),
+    Numbers = [Num || Num <- Nums, knm_converters:is_reconcilable(Num)],
+    case (<<"all">> =:= ObjTypes
+          orelse lists:member(<<"phone_numbers">>, ObjTypes))
+        %% If there are not numbers, do not try to delete "it", otherwise, it may generate confusing
+        %% errors like 404 and will cause the whole user's delete request to be marked as failed.
+        andalso length(Numbers) > 0
+    of
+        'true' ->
+            lager:debug("deleting ~s/~s/~p", [Type, ?NUMBERS_COLLECTION, Numbers]),
+            Context1 = cb_context:set_req_data(Context, kz_json:from_list([{<<"numbers">>, Numbers}])),
+            [validate_and_maybe_run_cb_action(Context1, Type, ?NUMBERS_COLLECTION) | Acc];
+        'false' ->
+            lager:debug("not deleting numbers or not numbers to delete were found"),
+            Acc
+    end.
+
+-spec maybe_delete_user_object(cb_context:context(), {kz_term:ne_binary(), kz_doc:doc()}, kz_json:objects()) ->
+          kz_json:objects().
+maybe_delete_user_object(Context, {<<Type/binary>>, JObj}, Acc) ->
+    DocId = kz_doc:id(JObj),
+    lager:debug("deleting ~s/~s", [Type, DocId]),
+    [validate_and_maybe_run_cb_action(Context, Type, DocId) | Acc].
+
+-spec validate_and_maybe_run_cb_action(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) ->
+          kz_json:object().
+validate_and_maybe_run_cb_action(Context, <<Type/binary>>, <<ObjId/binary>>) ->
+    validate_and_maybe_run_cb_action(Context, Type, 'delete', ObjId).
+
+-type cb_action() :: 'post' | 'delete'.
+-spec validate_and_maybe_run_cb_action(cb_context:context(), kz_term:ne_binary(), cb_action(), kz_term:ne_binary()) ->
+          kz_json:object().
+validate_and_maybe_run_cb_action(Context, <<Type/binary>>, Action, <<ObjId/binary>>) ->
+    Mod = cb_module_by_type(Type),
+    Context1 = maybe_run_cb_action(Mod:validate(Context, ObjId), Mod, Action, ObjId),
+    %% When `Type=phone_numbers', `ObjId=?NUMBERS_COLLECTION', and since the ObjId is being used for
+    %% building the response, it makes more sense to use the actual numbers as the id instead of the
+    %% ?NUMBERS_COLLECTION path token.
+    Id = case Type of
+             <<"phone_numbers">> -> kz_json:get_list_value(<<"numbers">>, cb_context:req_data(Context));
+             _ -> ObjId
+         end,
+    build_and_log_user_object_response(Type, Id, Context1).
+
+-spec maybe_run_cb_action(cb_context:context(), cb_module(), cb_action(), kz_term:ne_binary()) ->
+          cb_context:context().
+maybe_run_cb_action(Context, Mod, Action, <<ObjId/binary>>) ->
+    case cb_context:resp_status(Context) of
+        'success' -> Mod:Action(Context, ObjId);
+        _ -> Context
+    end.
+
+-spec build_and_log_user_object_response(kz_term:ne_binary(), kz_term:ne_binary() | kz_term:ne_binaries(), cb_context:context()) ->
+          kz_json:object().
+build_and_log_user_object_response(<<Type/binary>>, Id, Context) ->
+    Status = cb_context:resp_status(Context),
+    BaseResp = kz_json:from_list([{<<"type">>, Type}
+                                 ,{<<"id">>, Id}
+                                 ,{<<"status">>, kz_term:to_binary(Status)}
+                                 ]),
+    Resp = case Status of
+               'success' ->
+                   BaseResp;
+               _ ->
+                   kz_json:set_values([{<<"error_code">>, cb_context:resp_error_code(Context)}
+                                      ,{<<"error_msg">>, cb_context:resp_error_msg(Context)}
+                                      ]
+                                     ,BaseResp
+                                     )
+           end,
+    lager:debug("DELETE ~s/~s -> ~s: ~p", [Type, Id, Status, Resp]),
+    Resp.
+
+-type cb_module() :: atom().
+-spec cb_module_by_type(kz_term:ne_binary()) -> cb_module().
+cb_module_by_type(<<"phone_numbers">>) -> 'cb_phone_numbers';
+cb_module_by_type(<<"callflow">>) -> 'cb_callflows';
+cb_module_by_type(<<"vmbox">>) -> 'cb_vmboxes';
+cb_module_by_type(<<"device">>) -> 'cb_devices';
+cb_module_by_type(<<"conference">>) -> 'cb_conferences';
+cb_module_by_type(<<"faxbox">>) -> 'cb_faxboxes';
+cb_module_by_type(<<"media">>) -> 'cb_media'. %% vmbox unavailable greeting.
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -532,6 +727,73 @@ load_user(UserId, Context) ->
         'success' -> add_has_avatar(Context1);
         _ -> Context1
     end.
+
+
+%%------------------------------------------------------------------------------
+%% @doc This function tries to load the user's document and all the object_types' documents listed
+%% (if any) that belong to the user.
+%% @end
+%%------------------------------------------------------------------------------
+-spec maybe_load_user_objects(kz_term:ne_binary(), cb_context:context(), kz_term:api_ne_binary() | kz_term:ne_binaries()) ->
+          cb_context:context().
+maybe_load_user_objects(<<_UserId/binary>>, Context, 'undefined') ->
+    Context;
+maybe_load_user_objects(<<UserId/binary>>, Context, ObjectTypes) ->
+    case cb_context:resp_status(Context) of
+        'success' ->
+            UserJObj = cb_context:doc(Context), %% Backup.
+            LoadUserRespData = cb_context:resp_data(Context),
+            Options = load_user_objects_options(UserId, ObjectTypes),
+            lager:debug("loading user objects from ~p with options: ~p",
+                        [?CROSSBAR_LISTING_BY_OWNER_ID_TYPE, Options]),
+            Context1 = crossbar_view:load(Context, ?CROSSBAR_LISTING_BY_OWNER_ID_TYPE, Options),
+            UserJObjs = cb_context:doc(Context1),
+            lager:debug("loaded user objects: ~p",
+                        [[{kz_doc:type(JObj), kz_doc:id(JObj)} || JObj <- UserJObjs]]),
+            case cb_context:resp_status(Context1) of
+                'success' ->
+                    cb_context:setters(Context1
+                                      ,[{fun cb_context:store/3, <<"objects">>, UserJObjs}
+                                       ,{fun cb_context:set_doc/2, UserJObj}
+                                       ,{fun cb_context:set_resp_data/2, LoadUserRespData}
+                                       ]
+                                      );
+                _ ->
+                    Context1
+            end;
+        _ ->
+            Context
+    end.
+
+-spec load_user_objects_base_options() -> crossbar_view:options().
+load_user_objects_base_options() ->
+    [{'mapper', crossbar_view:get_doc_fun()}, 'include_docs'].
+
+-spec load_user_objects_options(kz_term:ne_binary()
+                               ,kz_term:ne_binary() | kz_term:ne_binaries()
+                               ) -> crossbar_view:options().
+load_user_objects_options(UserId, <<"all">>) ->
+    [{'startkey', [UserId]}, {'endkey', [UserId, kz_term:high_unicode_value()]}
+    | load_user_objects_base_options()
+    ];
+load_user_objects_options(UserId, ObjectTypes) ->
+    %% If `phone_numbers' was included in the list of object_types to be deleted along the user,
+    %% callflows owned by the user need to be loaded in order to get those numbers. Even in the
+    %% cases when the callflows are not requested to be deleted along the user.
+    ObjTypes = case lists:member(<<"phone_numbers">>, ObjectTypes)
+                   %% If an object type is duplicated, it will be loaded twice, and then, the API
+                   %% will try to delete it twice as well, getting a 404 error for the second request.
+                   andalso not lists:member(<<"callflow">>, ObjectTypes)
+               of
+                   %% Needed to be able to access the numbers that are going to be deleted from
+                   %% callflows that belongs to the user being deleted.
+                   'true' -> [<<"callflow">> | ObjectTypes];
+                   'false' -> ObjectTypes
+               end,
+    ObjTypes1 = lists:usort(ObjTypes), %% Remove possible duplicates, just in case :shrugh:
+    [{'keys', [[UserId, ObjType] || ObjType <- ObjTypes1, ObjType /= <<"phone_numbers">>]}
+    | load_user_objects_base_options()
+    ].
 
 %%------------------------------------------------------------------------------
 %% @doc Validate an update request.

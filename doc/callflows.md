@@ -22,6 +22,7 @@ Key | Description | Type | Default | Required | Support Level
 `name` | Friendly name of the callflow | `string()` |   | `false` |  
 `numbers.[]` |   | `string(1..36)` |   | `false` |  
 `numbers` | A list of static numbers that the callflow should execute for | `array(string(1..36))` | `[]` | `false` |  
+`owner_id` | Callflow's owner id | `string()` |   | `false` |  
 `patterns.[]` |   | `string(1..)` |   | `false` |  
 `patterns` | A list of regular expressions that the callflow should execute for, with optional capture groups | `array(string(1..))` | `[]` | `false` |  
 `ringback.early` | Media ID for the early ringback media | `string()` |   | `false` |  

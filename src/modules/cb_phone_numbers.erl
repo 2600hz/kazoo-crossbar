@@ -40,7 +40,7 @@
 
 -define(CLASSIFIERS, <<"classifiers">>).
 -define(IDENTIFY, <<"identify">>).
--define(COLLECTION, <<"collection">>).
+-define(COLLECTION, ?NUMBERS_COLLECTION). %% ?NUMBERS_COLLECTION is defined within crossbar.hrl file.
 -define(COLLECTION_NUMBERS, <<"numbers">>).
 -define(CARRIERS_INFO, <<"carriers_info">>).
 -define(FIX, <<"fix">>).
@@ -722,8 +722,8 @@ validate_collection_request(Context, []) ->
     cb_context:add_validation_error(?COLLECTION_NUMBERS, <<"minimum">>, Msg, Context);
 validate_collection_request(Context, Numbers)
   when is_list(Numbers) ->
-    UniqNomalised = lists:usort([knm_converters:normalize(N) || N <- Numbers]),
-    case length(Numbers) =:= length(UniqNomalised) of
+    UniqNormalized = lists:usort([knm_converters:normalize(N) || N <- Numbers]),
+    case length(Numbers) =:= length(UniqNormalized) of
         'true' -> cb_context:set_resp_status(Context, 'success');
         'false' ->
             Msg = kz_json:from_list([{<<"message">>, <<"some numbers appear twice">>}]),

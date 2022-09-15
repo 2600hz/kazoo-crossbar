@@ -1788,6 +1788,10 @@
                     "type": "array",
                     "uniqueItems": true
                 },
+                "owner_id": {
+                    "description": "Callflow's owner id",
+                    "type": "string"
+                },
                 "patterns": {
                     "default": [],
                     "description": "A list of regular expressions that the callflow should execute for, with optional capture groups",
@@ -20772,6 +20776,39 @@
                 "first_name",
                 "last_name"
             ],
+            "type": "object"
+        },
+        "users_delete": {
+            "description": "Schema for deleting a user",
+            "properties": {
+                "object_types": {
+                    "oneOf": [
+                        {
+                            "description": "List of object types owned by the user that should also be deleted as part of the user delete process. NOTE: If \"phone_numbers\" is included in the list, numbers assigned to callflows owned by the user will also be released.",
+                            "items": {
+                                "enum": [
+                                    "phone_numbers",
+                                    "callflow",
+                                    "vmbox",
+                                    "device",
+                                    "conference",
+                                    "faxbox",
+                                    "media"
+                                ],
+                                "type": "string"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "description": "List of object types owned by the user that should also be deleted as part of the user delete process.",
+                            "enum": [
+                                "all"
+                            ],
+                            "type": "string"
+                        }
+                    ]
+                }
+            },
             "type": "object"
         },
         "vm_message_metadata": {

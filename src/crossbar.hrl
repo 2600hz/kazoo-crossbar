@@ -119,6 +119,8 @@
                                                )
        ).
 
+-define(NUMBERS_COLLECTION, <<"collection">>).
+
 -define(OPTION_EXPECTED_TYPE, 'expected_type').
 -define(TYPE_CHECK_OPTION(ExpectedType), [{?OPTION_EXPECTED_TYPE, ExpectedType}]).
 -define(TYPE_CHECK_OPTION_ANY, ?TYPE_CHECK_OPTION(<<"any">>)).
