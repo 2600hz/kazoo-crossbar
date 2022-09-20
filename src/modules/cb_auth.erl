@@ -377,6 +377,7 @@ send_token_info(Context, Token, Claims) ->
     AccountId = kz_json:get_value(<<"account_id">>, Claims),
     OwnerId = kz_json:get_value(<<"owner_id">>, Claims),
     Props = [{<<"account_id">>, AccountId}
+            ,{<<"account_realm">>, kzd_accounts:fetch_value(AccountId, fun kzd_accounts:realm/1)}
             ,{<<"owner_id">>, OwnerId}
             ],
     Resp = crossbar_util:response_auth(kz_json:from_list(Props), AccountId, OwnerId),
