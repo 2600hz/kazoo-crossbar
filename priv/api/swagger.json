@@ -7025,6 +7025,10 @@
                         }
                     },
                     "type": "object"
+                },
+                "webrtc": {
+                    "description": "If true, forces a WebRTC compatible SDP on the INVITE",
+                    "type": "boolean"
                 }
             },
             "type": "object"
@@ -17690,6 +17694,11 @@
                     "default": 1,
                     "description": "registrar listeners",
                     "type": "integer"
+                },
+                "migrate_softphone_to_ms_teams": {
+                    "default": false,
+                    "description": "registrar migrate_softphone_to_ms_teams",
+                    "type": "boolean"
                 },
                 "owner_enabled_default": {
                     "default": true,
