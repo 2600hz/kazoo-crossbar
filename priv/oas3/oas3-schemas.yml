@@ -13655,6 +13655,10 @@
       'default': anonymous
       'description': privacy default_privacy_number
       'type': string
+    'default_privacy_realm':
+      'default': anonymous.invalid
+      'description': privacy default_privacy_realm
+      'type': string
     'method':
       'default': kazoo
       'description': privacy method
@@ -13671,6 +13675,10 @@
       'default': 0000000000
       'description': Default Caller ID Number should be shown for anonymous calls
       'type': string
+    'should_hide_realm':
+      'default': false
+      'description': privacy should_hide_realm
+      'type': boolean
     'use_sip_privacy_header':
       'default': true
       'description': privacy use_sip_privacy_header
