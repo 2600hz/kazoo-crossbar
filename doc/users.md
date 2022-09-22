@@ -115,6 +115,7 @@ Key | Description | Type | Default | Required | Support Level
 `record_on_answer` | Recording should start on answer | `boolean()` |   | `false` |  
 `record_on_bridge` | Recording should start on bridge | `boolean()` |   | `false` |  
 `record_sample_rate` | What sampling rate to use on the recording | `integer()` |   | `false` |  
+`should_announce_when_recording` | Whether or not a prompt should be played (after bridge) when the call is being recorded | `boolean()` |   | `false` |  
 `should_record_feature_calls` | Toggles whether to start a recording for calls to feature codes | `boolean()` | `true` | `false` |  
 `time_limit` | Time limit, in seconds, for the recording | `integer()` |   | `false` |  
 `url` | The URL to use when sending the recording for storage | `string(6..)` |   | `false` |  
@@ -319,14 +320,6 @@ The default timezone
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 
-### users_delete
-
-Defines DELETE user extended functionality
-
-Key | Description | Type | Default | Required | Support Level
---- | ----------- | ---- | ------- | -------- | -------------
-`object_types` | List of object types owned by the user that should also be deleted as part of the user delete process. NOTE: If "phone_numbers" is included in the list, numbers assigned to callflows owned by the user will also be released. | `array(string('phone_numbers' | 'callflow' | 'vmbox' | 'device' | 'conference' | 'faxbox' | 'media')) | string('all')` |   | `false` |
-
 
 
 ## Fetch
@@ -481,6 +474,17 @@ curl -v -X DELETE \
     "status": "success"
 }
 ```
+
+### Enhanced User deletion
+
+Defines DELETE user extended functionality
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`object_types` | List of object types owned by the user that should also be deleted as part of the user delete process. NOTE: If "phone_numbers" is included in the list, numbers assigned to callflows owned by the user will also be released. | `array(string('phone_numbers' | 'callflow' | 'vmbox' | 'device' | 'conference' | 'faxbox' | 'media')) | string('all')` |   | `false` |
+
+
+
 
 When deleting a user, a list of `object_types` could be passed either within the request body or the query string.
 If object_types are included in the request, along deleting the user, the objects owned by the user that are listed
