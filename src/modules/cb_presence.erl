@@ -259,10 +259,10 @@ validate_presence_thing(Context, _ReqNouns) ->
     crossbar_util:response_faulty_request(Context).
 
 -spec validate_presence_thing(cb_context:context(), kz_term:ne_binary(), req_nouns()) -> cb_context:context().
-validate_presence_thing(Context, _Extension, [{<<"presence">>, [Extension]}
-                                             ,{<<"accounts">>, [_AccountId]}
-                                             ]) ->
-    validate_action(search_detail(Context, Extension));
+validate_presence_thing(Context, Extension, [{<<"presence">>, [Extension]}
+                                            ,{<<"accounts">>, [_AccountId]}
+                                            ]) ->
+    validate_action(Context);
 validate_presence_thing(Context, _Extension, _ReqNouns) ->
     crossbar_util:response_faulty_request(Context).
 
@@ -298,7 +298,7 @@ load_user_devices(Context) ->
 validate_action(Context) ->
     Context1 = cb_context:validate_request_data(<<"presence.action">>, Context),
     case cb_context:resp_status(Context1) of
-        'success' -> validate_action(Context, cb_context:doc(Context1));
+        'success' -> validate_action(Context1, cb_context:doc(Context1));
         _ -> Context1
     end.
 
@@ -314,11 +314,7 @@ validate_action(Context, ReqData) ->
 validate_action(Context, _ReqData, <<"reset">>) ->
     Context;
 validate_action(Context, _ReqData, <<"set">>) ->
-    Ctx = cb_context:validate_request_data(<<"presence.state">>, Context),
-    case cb_context:resp_status(Ctx) of
-        'success' -> Context;
-        _Else -> Ctx
-    end.
+    cb_context:validate_request_data(<<"presence.state">>, Context).
 
 
 -spec post(cb_context:context()) -> cb_context:context().
