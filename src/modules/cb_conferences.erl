@@ -461,9 +461,27 @@ handle_conference_action(Context, ConferenceId, <<"dial">>) ->
     dial(Context, ConferenceId, cb_context:req_value(Context, <<"data">>));
 handle_conference_action(Context, ConferenceId, <<"record">>) ->
     record_conference(Context, ConferenceId, cb_context:req_value(Context, <<"data">>));
+handle_conference_action(Context, ConferenceId, <<"vars">>) ->
+    vars_conference(Context, ConferenceId);
 handle_conference_action(Context, ConferenceId, Action) ->
     lager:error("unhandled conference id ~p action: ~p", [ConferenceId, Action]),
-    cb_context:add_system_error('faulty_request', Context).
+    Error = kz_json:from_list([{<<"message">>, <<"Value not found in enumerated list of values">>}
+                              ,{<<"target">>, [<<"lock">>, <<"unlock">>, ?PLAY, <<"dial">>, <<"record">>, <<"vars">>]}
+                              ,{<<"value">>, Action}
+                              ]),
+    cb_context:add_validation_error(<<"action">>, <<"enum">>, Error, Context).
+
+-spec vars_conference(cb_context:context(), kz_term:ne_binary()) ->
+          cb_context:context().
+vars_conference(Context, ConferenceId) ->
+    CCVs = kz_json:from_list(cb_modules_util:ccvs_from_context(Context)),
+    API = [{<<"Conference-ID">>, ConferenceId}
+          ,{<<"Custom-Conference-Vars">>, CCVs}
+          | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+          ],
+    lager:info("API: ~p", [API]),
+    _ = kz_amqp_worker:cast(API, fun(P) -> kapi_conference:publish_vars(ConferenceId, P) end),
+    crossbar_util:response_202(<<"vars sent">>, Context).
 
 -spec record_conference(cb_context:context(), kz_term:ne_binary(), kz_term:api_object()) ->
           cb_context:context().

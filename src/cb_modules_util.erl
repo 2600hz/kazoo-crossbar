@@ -14,6 +14,7 @@
 -export([pass_hashes/2
         ,get_devices_owned_by/2
         ,cavs_from_context/1
+        ,ccvs_from_context/1
 
         ,attachment_name/2
         ,parse_media_type/1
@@ -81,14 +82,22 @@ get_devices_owned_by(OwnerID, DB) ->
 
 -spec cavs_from_context(cb_context:context()) -> kz_term:proplist().
 cavs_from_context(Context) ->
+    cvs_from_context(Context, <<"custom_application_vars">>).
+
+-spec ccvs_from_context(cb_context:context()) -> kz_term:proplist().
+ccvs_from_context(Context) ->
+    cvs_from_context(Context, <<"custom_conference_vars">>).
+
+-spec cvs_from_context(cb_context:context(), kz_term:ne_binary()) -> kz_term:proplist().
+cvs_from_context(Context, CustomVars) ->
     ReqData = cb_context:req_data(Context),
     QueryString = cb_context:query_string(Context),
-    cavs_from_request(ReqData, QueryString).
+    cvs_from_request(ReqData, QueryString, CustomVars).
 
--spec cavs_from_request(kz_json:object(), kz_json:object()) -> kz_term:proplist().
-cavs_from_request(ReqData, QueryString) ->
-    CAVs = kz_json:get_json_value(<<"custom_application_vars">>, ReqData, kz_json:new()),
-    kapps_call_util:filter_ccvs(kz_json:merge(CAVs, QueryString)).
+-spec cvs_from_request(kz_json:object(), kz_json:object(), kz_term:ne_binary()) -> kz_term:proplist().
+cvs_from_request(ReqData, QueryString, CustomVars) ->
+    CVs = kz_json:get_json_value(CustomVars, ReqData, kz_json:new()),
+    kapps_call_util:filter_ccvs(kz_json:merge(CVs, QueryString)).
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -419,7 +428,7 @@ get_request_action(Context) ->
 normalize_alphanum_name('undefined') ->
     'undefined';
 normalize_alphanum_name(Name) when is_binary(Name) ->
-    re:replace(kz_term:to_lower_binary(Name), <<"[^a-z0-9]">>, <<>>, [global, {return, binary}]);
+    re:replace(kz_term:to_lower_binary(Name), <<"[^a-z0-9]">>, <<>>, ['global', {'return', 'binary'}]);
 normalize_alphanum_name(Context) ->
     Doc = cb_context:doc(Context),
     Name = kz_json:get_ne_binary_value(<<"name">>, Doc),

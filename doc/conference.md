@@ -106,6 +106,7 @@ curl -v -X PUT \
  `dial` | Dial an endpoint (user/device/DID)
  `play` | Play media to the conference (all participants)
  `record` | Start/stop the recording of the conference
+ `vars` | Put custom conference variables on the conference
 
 ### Lock / unlock
 
@@ -140,6 +141,20 @@ curl -v -X PUT \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/conferences/{CONFERENCE_ID}
 ```
 
+### Set custom conference variables
+
+This action allows the client to associate custom conference variables on a running (active) conference. No effect if the conference isn't running.
+
+Optionally, a SIP NOTIFY can be sent to participants with the `X-Conference-Vars` header where the key/value pairs will be encoded `X-Conference-Vars: key=value;key-value`
+
+```shell
+curl -v -X PUT \
+    -d '{"action":"vars","data":{"custom_conference_vars":{"key_the_first":"value_the_first"}}}'
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/conferences/{CONFERENCE_ID}
+```
+
+When the conference config is fetched, custom conference variables will appear in the `metadata` top-level key.
 
 ### Dialing an endpoint
 
