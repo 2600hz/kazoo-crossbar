@@ -464,7 +464,7 @@ handle_conference_action(Context, ConferenceId, <<"record">>) ->
 handle_conference_action(Context, ConferenceId, <<"vars">>) ->
     vars_conference(Context, ConferenceId);
 handle_conference_action(Context, ConferenceId, Action) ->
-    lager:error("unhandled conference id ~p action: ~p", [ConferenceId, Action]),
+    lager:warning("unhandled conference id ~p action: ~p", [ConferenceId, Action]),
     Error = kz_json:from_list([{<<"message">>, <<"Value not found in enumerated list of values">>}
                               ,{<<"target">>, [<<"lock">>, <<"unlock">>, ?PLAY, <<"dial">>, <<"record">>, <<"vars">>]}
                               ,{<<"value">>, Action}
