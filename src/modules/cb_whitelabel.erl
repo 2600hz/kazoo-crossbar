@@ -510,7 +510,7 @@ test_host(Host, HostConfig, DomainType, Options) ->
           kz_term:ne_binaries().
 lookup(Host, DomainType, Options) ->
     Type = kz_term:to_atom(kz_term:to_lower_binary(DomainType)),
-    {'ok', Lookup} = kz_network_utils:lookup_dns(Host, Type, Options),
+    {'ok', Lookup} = kz_network_utils:lookup_dns(string:trim(Host), Type, Options),
     lager:debug("lookup of ~s(~s): ~p", [Host, Type, Lookup]),
     format_lookup_results(Type, Lookup).
 
