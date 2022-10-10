@@ -10813,6 +10813,10 @@
       'default': 5.1
       'description': crossbar commland base_version to return when no version can be found
       'type': string
+    'force_url':
+      'default': ''
+      'description': crossbar commland force_url
+      'type': string
   'type': object
 'system_config.crossbar.conference_auth':
   'description': Schema for crossbar.conference_auth system_config
