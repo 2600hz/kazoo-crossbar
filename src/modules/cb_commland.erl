@@ -25,9 +25,10 @@
 -define(COMPAT, <<"compatibility">>).
 -define(COMPAT_NOUNS, [{<<"commland">>,[<<"compatibility">>]}]).
 -define(COMMLAND_CONFIG_CAT, <<"crossbar.commland">>).
--define(BASE_URL, kapps_config:get_ne_binary(?COMMLAND_CONFIG_CAT, <<"base_url">>, <<"https://packages.2600hz.com/commland/dist/compatibility">>)).
+-define(BASE_URL, kapps_config:get_ne_binary(?COMMLAND_CONFIG_CAT, <<"base_url">>, <<"https://packages.2600hz.com/commland/dist/compatibility/stable">>)).
 -define(BASE_VERSION, kapps_config:get_ne_binary(?COMMLAND_CONFIG_CAT, <<"base_version">>, <<"5.1">>)).
 -define(BASE_SALT, kapps_config:get_ne_binary(?COMMLAND_CONFIG_CAT, <<"base_salt">>, <<"7f613340-1ebf-4710-ad57-fb4d3041af4c">>)).
+-define(FORCE_URL, kapps_config:get_ne_binary(?COMMLAND_CONFIG_CAT, <<"force_url">>, "")).
 
 %%%=============================================================================
 %%% API
@@ -127,7 +128,10 @@ validate_commland(Context, ?HTTP_GET) ->
 compatibility(Context) ->
     Url = get_redirect_url(),
     lager:debug("returning upgrade url ~p", [Url]),
-    crossbar_util:response(kz_json:from_list([{<<"auto_updater_url">>, Url}]), Context).
+    case ?FORCE_URL of
+        <<"">> -> crossbar_util:response(kz_json:from_list([{<<"auto_updater_url">>, Url}]), Context);
+        ForceUrl -> crossbar_util:response(kz_json:from_list([{<<"auto_updater_url">>, ForceUrl}]), Context)
+    end.
 
 -spec get_redirect_url() -> kz_term:ne_binary().
 get_redirect_url() ->
