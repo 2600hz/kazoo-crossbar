@@ -7,6 +7,18 @@
             "default": true,
             "description": "cdr ignore loopback bowout",
             "type": "boolean"
+        },
+        "ignore_reorder_reasons": {
+            "default": [],
+            "description": "cdr ignore_reorder_reasons",
+            "items": {
+                "enum": [
+                    "known_number",
+                    "unknown_number"
+                ],
+                "type": "string"
+            },
+            "type": "array"
         }
     },
     "type": "object"
