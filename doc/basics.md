@@ -56,6 +56,7 @@ The HTTP verb will determine the class of actions to take against the resource. 
 * `/v2/accounts/{ACCOUNT_ID}/resources/{RESOURCE_ID}`
     * `GET`: Fetches the full representation of the resource
     * `POST`: Updates the full representation of the resource
+    * `PATCH`: Sends a partial representation of the resource, merged with the existing, and then validated/saved
     * `DELETE`: Deletes the resource
 
 ### PATCH
