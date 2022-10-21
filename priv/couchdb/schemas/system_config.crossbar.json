@@ -142,6 +142,11 @@
             "minimum": 1,
             "type": "integer"
         },
+        "mdn_provider": {
+            "default": "tower-of-power",
+            "description": "crossbar mdn_provider",
+            "type": "string"
+        },
         "pagination_page_size": {
             "default": 50,
             "description": "crossbar pagination page size",

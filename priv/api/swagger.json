@@ -6505,6 +6505,16 @@
                     "$ref": "#/definitions/metaflows",
                     "description": "The device metaflow parameters"
                 },
+                "mobile": {
+                    "description": "KAZOO devices that integrate with mobile providers",
+                    "properties": {
+                        "mdn": {
+                            "description": "The MDN - mobile device number",
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                },
                 "music_on_hold": {
                     "default": {},
                     "description": "The music on hold parameters used if not a property of the device owner",
@@ -13324,6 +13334,11 @@
                     "description": "crossbar maximum range",
                     "minimum": 1,
                     "type": "integer"
+                },
+                "mdn_provider": {
+                    "default": "tower-of-power",
+                    "description": "crossbar mdn_provider",
+                    "type": "string"
                 },
                 "pagination_page_size": {
                     "default": 50,

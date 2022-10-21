@@ -38,6 +38,8 @@ Key | Description | Type | Default | Required | Support Level
 `mac_address` | The MAC Address of the device (if applicable) | `string()` |   | `false` | `supported`
 `media` | Configure audio/video/etc media options for this device | [#/definitions/endpoint.media](#endpointmedia) |   | `false` |  
 `metaflows` | The device metaflow parameters | [#/definitions/metaflows](#metaflows) |   | `false` |  
+`mobile.mdn` | The MDN - mobile device number | `string()` |   | `false` |  
+`mobile` | KAZOO devices that integrate with mobile providers | `object()` |   | `false` |  
 `music_on_hold.media_id` | The ID of a media object that should be used as the music on hold | `string(0..2048)` |   | `false` |  
 `music_on_hold` | The music on hold parameters used if not a property of the device owner | `object()` | `{}` | `false` |  
 `mwi_unsolicited_updates` | When true enables unsolicited mwi notifications | `boolean()` | `true` | `false` |  
