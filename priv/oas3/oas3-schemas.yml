@@ -531,6 +531,14 @@
             The ID of a media object that should be used as the default music on hold
           'maxLength': 2048
           'type': string
+        'options':
+          'description': Options for playing music on hold
+          'items':
+            'enum':
+              - preserve-position
+              - random-start
+            'type': string
+          'type': array
       'type': object
     'name':
       'description': A friendly name for the account
@@ -4056,6 +4064,14 @@
           'description': The ID of a media object that should be used as the music on hold
           'maxLength': 2048
           'type': string
+        'options':
+          'description': Options for playing music on hold
+          'items':
+            'enum':
+              - preserve-position
+              - random-start
+            'type': string
+          'type': array
       'type': object
     'name':
       'description': A friendly name for the click to call
@@ -4851,6 +4867,14 @@
           'description': The ID of a media object that should be used as the music on hold
           'maxLength': 2048
           'type': string
+        'options':
+          'description': Options for playing music on hold
+          'items':
+            'enum':
+              - preserve-position
+              - random-start
+            'type': string
+          'type': array
       'type': object
     'mwi_unsolicited_updates':
       'default': true
@@ -5847,6 +5871,14 @@
           'description': The ID of a media object that should be used as music on hold
           'maxLength': 128
           'type': string
+        'options':
+          'description': Options for playing music on hold
+          'items':
+            'enum':
+              - preserve-position
+              - random-start
+            'type': string
+          'type': array
       'type': object
       'x-support_level': beta
     'name':
@@ -15790,6 +15822,14 @@
           'description': The ID of a media object that should be used as the music on hold
           'maxLength': 128
           'type': string
+        'options':
+          'description': Options for playing music on hold
+          'items':
+            'enum':
+              - preserve-position
+              - random-start
+            'type': string
+          'type': array
       'type': object
     'password':
       'description': The GUI login password

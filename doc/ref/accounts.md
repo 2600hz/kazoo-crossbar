@@ -29,6 +29,8 @@ Key | Description | Type | Default | Required | Support Level
 `language` | The language for this account | `string()` |   | `false` | `supported`
 `metaflows` | Actions applied to a call outside of the normal callflow, initiated by the caller(s) | [#/definitions/metaflows](#metaflows) |   | `false` |  
 `music_on_hold.media_id` | The ID of a media object that should be used as the default music on hold | `string(0..2048)` |   | `false` |  
+`music_on_hold.options.[]` |   | `string('preserve-position' | 'random-start')` |   | `false` |  
+`music_on_hold.options` | Options for playing music on hold | `array(string('preserve-position' | 'random-start'))` |   | `false` |  
 `music_on_hold` | The default music on hold parameters | `object()` | `{}` | `false` |  
 `name` | A friendly name for the account | `string(1..128)` |   | `true` | `supported`
 `notifications.first_occurrence.sent_initial_call` | has the account made their first call | `boolean()` | `false` | `false` |  
