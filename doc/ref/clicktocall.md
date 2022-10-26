@@ -24,6 +24,8 @@ Key | Description | Type | Default | Required | Support Level
 `media.ignore_early_media` | The option to determine if early media from the endpoint should always be ignored | `boolean()` |   | `false` |  
 `media` |   | `object()` |   | `false` |  
 `music_on_hold.media_id` | The ID of a media object that should be used as the music on hold | `string(0..2048)` |   | `false` |  
+`music_on_hold.options.[]` |   | `string('preserve-position' | 'random-start')` |   | `false` |  
+`music_on_hold.options` | Options for playing music on hold | `array(string('preserve-position' | 'random-start'))` |   | `false` |  
 `music_on_hold` | The music on hold parameters used if not a property of the device owner | `object()` |   | `false` |  
 `name` | A friendly name for the click to call | `string(1..128)` |   | `true` |  
 `outbound_callee_id_name` | Callee ID Name of the device calling out to the contact number | `string()` |   | `false` |  
