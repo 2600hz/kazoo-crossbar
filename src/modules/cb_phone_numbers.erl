@@ -25,6 +25,7 @@
         ,delete/2
 
         ,set_response/3
+        ,default_knm_options/1
         ]).
 
 -include("crossbar.hrl").
@@ -355,25 +356,26 @@ post(Context, Number) ->
     CB = fun() -> ?MODULE:post(cb_context:set_accepting_charges(Context), Number) end,
     set_response(Result, Context, CB).
 
-
 -spec put(cb_context:context(), path_token()) -> cb_context:context().
 put(Context, ?COLLECTION) ->
     {Numbers, ReqData} = take_collection_numbers(Context),
-    Options = [{'assign_to', cb_context:account_id(Context)}
-              ,{'public_fields', kz_json:delete_key(?PUBLIC_FIELDS_STATE, ReqData)}
-              | maybe_ask_for_state(kz_json:get_ne_binary_value(?PUBLIC_FIELDS_STATE, ReqData))
-               ++ default_knm_options(Context)
-              ],
+    Options = props:set_values([{'assign_to', cb_context:account_id(Context)}
+                               ,{'public_fields', kz_json:delete_key(?PUBLIC_FIELDS_STATE, ReqData)}
+                               | maybe_ask_for_state(kz_json:get_ne_binary_value(?PUBLIC_FIELDS_STATE, ReqData))
+                               ]
+                              ,default_knm_options(Context)
+                              ),
     Results = knm_numbers:create(Numbers, Options),
     CB = fun() -> ?MODULE:put(cb_context:set_accepting_charges(Context), ?COLLECTION) end,
     set_response(Results, Context, CB, ?COLLECTION);
 put(Context, Number) ->
     Doc = cb_context:doc(Context),
-    Options = [{'assign_to', cb_context:account_id(Context)}
-              ,{'public_fields', kz_json:delete_key(?PUBLIC_FIELDS_STATE, Doc)}
-              | maybe_ask_for_state(kz_json:get_ne_binary_value(?PUBLIC_FIELDS_STATE, Doc))
-               ++ default_knm_options(Context)
-              ],
+    Options = props:set_values([{'assign_to', cb_context:account_id(Context)}
+                               ,{'public_fields', kz_json:delete_key(?PUBLIC_FIELDS_STATE, Doc)}
+                               | maybe_ask_for_state(kz_json:get_ne_binary_value(?PUBLIC_FIELDS_STATE, Doc))
+                               ]
+                              ,default_knm_options(Context)
+                              ),
     Result = knm_numbers:create(Number, Options),
     CB = fun() -> ?MODULE:put(cb_context:set_accepting_charges(Context), Number) end,
     set_response(Result, Context, CB).

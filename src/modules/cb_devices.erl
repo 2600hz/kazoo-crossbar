@@ -481,7 +481,7 @@ get_mac_address(Context) ->
 %%------------------------------------------------------------------------------
 -spec get_mdn(kzd_devices:doc()) -> kz_term:api_binary().
 get_mdn(JObj) ->
-    case kz_json:get_ne_value(?KEY_MDN, JObj) of
+    case kzd_devices:mobile_mdn(JObj) of
         'undefined' -> 'undefined';
         MDN -> knm_converters:normalize(MDN)
     end.
@@ -630,7 +630,7 @@ check_mdn_changed(MDN, DeviceId, Context) ->
 
 -spec error_mdn_changed(cb_context:context()) -> cb_context:context().
 error_mdn_changed(Context) ->
-    _OldMDN = kz_json:get_ne_value(?KEY_MDN, cb_context:fetch(Context, 'db_doc')),
+    _OldMDN = kzd_devices:mobile_mdn(cb_context:fetch(Context, 'db_doc')),
     NewMDN = cb_context:req_value(Context, ?KEY_MDN),
     lager:debug("mobile device number attempted to be changed from ~p to ~p"
                ,[_OldMDN, NewMDN]
@@ -644,7 +644,7 @@ error_mdn_changed(Context) ->
 -spec check_mdn_taken(kz_term:ne_binary(), kz_term:api_binary(), cb_context:context()) -> cb_context:context().
 check_mdn_taken(MDN, DeviceId, Context) ->
     case knm_numbers:get(MDN, knm_options:mdn_options()) of
-        {'ok', [], [{_, 'not_found'}|_]} ->
+        {'ok', [], [{MDN, 'not_found'}]} ->
             lager:debug("endpoint mdn ~s is not taken", [MDN]),
             check_mdn_registered(DeviceId, Context);
         {'ok', _Number} ->
@@ -1031,7 +1031,7 @@ is_new_device(Context) ->
 -spec was_mdn_changed_and_user_is_super_admin(cb_context:context(), kz_term:ne_binary()) -> boolean().
 was_mdn_changed_and_user_is_super_admin(Context, NewMDN) ->
     %% Check if MDN has been changed.
-    kz_json:get_ne_value(?KEY_MDN, cb_context:fetch(Context, 'db_doc')) =/= NewMDN
+    kzd_devices:mobile_mdn(cb_context:fetch(Context, 'db_doc')) =/= NewMDN
     %% only superduper admins can change the MDN once created.
         andalso cb_context:is_superduper_admin(Context).
 
@@ -1040,16 +1040,20 @@ add_mdn(MDN, Context) ->
     AuthAccountId = cb_context:auth_account_id(Context),
     MobileField =
         kz_json:from_list(
-          [{<<"provider">>, <<"tower-of-power">>}
+          [{<<"provider">>, kapps_config:get_ne_binary(?CONFIG_CAT, <<"mdn_provider">>, <<"tower-of-power">>)}
           ,{<<"authorizing">>, kz_json:from_list([{<<"account-id">>, AuthAccountId}])}
           ,{<<"device-id">>, kz_doc:id(cb_context:doc(Context))}
           ]),
     PublicFields = kz_json:from_list([{<<"mobile">>, MobileField}]),
-    Options = [{'assign_to', cb_context:account_id(Context)}
-              ,{'public_fields', PublicFields}
-              ,{'module_name', ?CARRIER_MDN}
-              |knm_options:mdn_options()
-              ],
+    Options = props:set_values([{'assign_to', cb_context:account_id(Context)}
+                               ,{'public_fields', PublicFields}
+                               ,{'module_name', ?CARRIER_MDN}
+                               ,{'dry_run', 'false'}
+                               | knm_options:mdn_options()
+                               ]
+                              ,cb_phone_numbers:default_knm_options(Context)
+                              ),
+
     case knm_numbers:create(MDN, Options) of
         {'ok', [_JObj]} ->
             lager:debug("created new mdn ~s with public fields set to ~s"
@@ -1057,6 +1061,7 @@ add_mdn(MDN, Context) ->
                        ),
             Context;
         Else ->
+            lager:info("failed to create ~s: ~p", [MDN, Else]),
             _ = crossbar_doc:delete(Context),
             cb_phone_numbers:set_response(Else, Context, fun() -> Context end)
     end.
@@ -1167,7 +1172,8 @@ remove_mdn(MDN, Context) ->
                     Context;
                 Mobile ->
                     lager:debug("hard removing old mdn ~s with mobile properties ~s"
-                               ,[MDN, kz_json:encode(Mobile)]),
+                               ,[MDN, kz_json:encode(Mobile)]
+                               ),
                     _ = knm_numbers:delete(MDN, knm_options:mdn_options()),
                     Context
             end;
