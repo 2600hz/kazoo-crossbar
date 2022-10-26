@@ -25,6 +25,17 @@
                     "description": "The ID of a media object that should be used as music on hold",
                     "maxLength": 128,
                     "type": "string"
+                },
+                "options": {
+                    "description": "Options for playing music on hold",
+                    "items": {
+                        "enum": [
+                            "preserve-position",
+                            "random-start"
+                        ],
+                        "type": "string"
+                    },
+                    "type": "array"
                 }
             },
             "support_level": "beta",

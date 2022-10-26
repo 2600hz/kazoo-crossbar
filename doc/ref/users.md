@@ -41,6 +41,8 @@ Key | Description | Type | Default | Required | Support Level
 `media` | Configure audio/video/etc media options for this user | [#/definitions/endpoint.media](#endpointmedia) |   | `false` |  
 `metaflows` | The device metaflow parameters | [#/definitions/metaflows](#metaflows) |   | `false` |  
 `music_on_hold.media_id` | The ID of a media object that should be used as the music on hold | `string(0..128)` |   | `false` |  
+`music_on_hold.options.[]` |   | `string('preserve-position' | 'random-start')` |   | `false` |  
+`music_on_hold.options` | Options for playing music on hold | `array(string('preserve-position' | 'random-start'))` |   | `false` |  
 `music_on_hold` | The music on hold parameters used if not a property of the device owner | `object()` | `{}` | `false` |  
 `password` | The GUI login password | `string()` |   | `false` | `supported`
 `presence_id` | Static presence ID (used instead of SIP username) | `string()` |   | `false` | `supported`
