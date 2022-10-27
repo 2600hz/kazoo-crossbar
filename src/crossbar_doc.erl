@@ -302,6 +302,7 @@ patch_and_validate_doc(Id, Context, ValidateFun, 'success') ->
     Context1 = cb_context:set_req_data(Context, PatchedJObj),
     ValidateFun(Id, Context1);
 patch_and_validate_doc(Id, Context, ValidateFun, _RespStatus) ->
+    %% FIXME: Why calling ValidateFun when load is failed?
     ValidateFun(Id, Context).
 
 -spec patch_the_doc(kz_json:object(), kz_json:object()) -> kz_json:object().
