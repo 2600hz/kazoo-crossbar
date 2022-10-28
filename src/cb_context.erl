@@ -1326,7 +1326,7 @@ update_successfully_validated_request(Context, Doc) ->
 get_metadata(Context) ->
     get_metadata(Context, doc(Context)).
 
--spec get_metadata(context(), kz_doc:doc() | kz_json:api_objects()) ->
+-spec get_metadata(context(), kz_doc:doc() | kz_term:api_objects()) ->
           kz_json:object().
 get_metadata(#cb_context{metadata=[]}, Docs) when is_list(Docs) ->
     kz_json:new();

@@ -64,6 +64,16 @@
             "support_level": "supported",
             "type": "integer"
         },
+        "security_settings": {
+            "description": "Security settings to harden webhook delivery",
+            "properties": {
+                "sha256_key": {
+                    "description": "Secret key to create a SHA256 HMAC with, so receiver can validate the webhook came from the cluster",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "uri": {
             "description": "The 3rd party URI to call out to an event",
             "format": "uri",
