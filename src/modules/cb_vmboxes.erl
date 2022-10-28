@@ -26,7 +26,7 @@
         ,post/2, post/3, post/4
         ,patch/2
         ,delete/2, delete/3, delete/4
-
+        ,authorize/1, authorize/2, authorize/3, authorize/4
         ,acceptable_content_types/0
         ]).
 
@@ -53,6 +53,13 @@
 -define(NORMALIZATION_FORMAT, kapps_config:get_ne_binary(?MOD_CONFIG_CAT, <<"normalization_format">>, <<"mp3">>)).
 -define(TRANSCRIBE_FORMAT, kapps_config:get_ne_binary(?MOD_CONFIG_CAT, <<"transcribe_format">>)).
 
+-define(SHOULD_RESTRICT_ACCESS_TO_OWNER
+       ,kapps_config:get_is_true(?MOD_CONFIG_CAT, <<"should_restrict_access_to_owner">>, 'false')
+       ).
+-define(SHOULD_RESTRICT_ACCESS_TO_UNOWNED
+       ,kapps_config:get_is_true(?MOD_CONFIG_CAT, <<"should_restrict_access_to_unowned">>, 'false')
+       ).
+
 %%%=============================================================================
 %%% API
 %%%=============================================================================
@@ -67,6 +74,7 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.content_types_provided.vmboxes">>, ?MODULE, 'content_types_provided'),
     _ = crossbar_bindings:bind(<<"*.allowed_methods.vmboxes">>, ?MODULE, 'allowed_methods'),
     _ = crossbar_bindings:bind(<<"*.resource_exists.vmboxes">>, ?MODULE, 'resource_exists'),
+    _ = crossbar_bindings:bind(<<"*.authorize.vmboxes">>, ?MODULE, 'authorize'),
     _ = crossbar_bindings:bind(<<"*.validate.vmboxes">>, ?MODULE, 'validate'),
     _ = crossbar_bindings:bind(<<"*.execute.put.vmboxes">>, ?MODULE, 'put'),
     _ = crossbar_bindings:bind(<<"*.execute.post.vmboxes">>, ?MODULE, 'post'),
@@ -139,6 +147,82 @@ allowed_methods(_VMBoxId, ?MESSAGES_RESOURCE, _VMMsgId) ->
 -spec allowed_methods(path_token(), path_token(), path_token(), path_token()) -> http_methods().
 allowed_methods(_VMBoxId, ?MESSAGES_RESOURCE, _VMMsgId, ?BIN_DATA) ->
     [?HTTP_GET, ?HTTP_PUT].
+
+
+%%------------------------------------------------------------------------------
+%% @doc Returns true if the requested account id is an superduper admin, admin
+%% or the user is the owner of the requested data
+%% @end
+%%------------------------------------------------------------------------------
+-spec authorize(cb_context:context()) -> boolean() | {'stop', cb_context:context()}.
+authorize(Context) ->
+    authorize_user(Context, cb_context:is_superduper_admin(Context)).
+
+-spec authorize(cb_context:context(), path_token()) -> boolean() | {'stop', cb_context:context()}.
+authorize(Context, _VMBoxId) ->
+    authorize_user(Context, cb_context:is_superduper_admin(Context)).
+
+-spec authorize(cb_context:context(), path_token(), path_token()) -> boolean() | {'stop', cb_context:context()}.
+authorize(Context, _VMBoxId, _MessagePath) ->
+    authorize_user(Context, cb_context:is_superduper_admin(Context)).
+
+-spec authorize(cb_context:context(), path_token(), path_token(), path_token()) -> boolean() | {'stop', cb_context:context()}.
+authorize(Context, _VMBoxId, _MessagePath, _MsdId) ->
+    authorize_user(Context, cb_context:is_superduper_admin(Context)).
+
+%%------------------------------------------------------------------------------
+%% @doc Returns true if user is the owner of the requested data
+%% @end
+%%------------------------------------------------------------------------------
+-spec authorize_user(cb_context:context(), boolean()) -> boolean().
+authorize_user(_Context, 'true') -> 'true';
+authorize_user(Context, 'false') ->
+    case cb_context:is_account_admin(Context) of
+        'true' -> 'true';
+        'false' ->
+            case ?SHOULD_RESTRICT_ACCESS_TO_OWNER of
+                'false' -> 'true';
+                'true' ->
+                    validate_request_for_user(Context, cb_context:req_nouns(Context))
+            end
+    end.
+
+%%------------------------------------------------------------------------------
+%% @doc Returns true if user is the owner of the requested data
+%% @end
+%%------------------------------------------------------------------------------
+-spec validate_request_for_user(cb_context:context(), req_nouns()) -> boolean().
+validate_request_for_user(Context, [{<<"vmboxes">>, [VMBoxID | _Args]} | _ReqNouns]) ->
+    check_if_user_is_owner(Context, VMBoxID);
+validate_request_for_user(_Context, _ReqNouns) ->
+    'true'.
+
+%%------------------------------------------------------------------------------
+%% @doc Returns true if user is the owner of the requested data
+%% @end
+%%------------------------------------------------------------------------------
+-spec check_if_user_is_owner(cb_context:context(), kz_term:ne_binary()) -> boolean().
+check_if_user_is_owner(Context, VMBoxId) ->
+    VMBox = crossbar_doc:load(VMBoxId, Context, ?TYPE_CHECK_OPTION(kzd_vmboxes:type())),
+    AuthUserId = cb_context:auth_user_id(Context),
+
+    ShouldRestrictToUnowned = ?SHOULD_RESTRICT_ACCESS_TO_UNOWNED,
+    case kzd_vmboxes:owner_id(cb_context:doc(VMBox)) of
+        AuthUserId -> 'true';
+        'undefined' when ShouldRestrictToUnowned ->
+            lager:debug("vmbox ~s has no owner, auth user ~s cannot access this box"
+                       ,[VMBoxId, AuthUserId]
+                       ),
+            {'stop', cb_context:add_system_error('forbidden', Context)};
+        'undefined' ->
+            lager:debug("vmbox ~s has no owner, no restrictions on access", [VMBoxId]),
+            'true';
+        _OwnerId  ->
+            lager:debug("access to vmbox ~s for auth user ~s denied, box is owned by ~s"
+                       ,[VMBoxId, AuthUserId, _OwnerId]
+                       ),
+            {'stop', cb_context:add_system_error('forbidden', Context)}
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc This function determines if the provided list of Nouns are valid.
@@ -737,11 +821,12 @@ find_schema() ->
 -spec validate_media_extension(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
 validate_media_extension(VMBoxId, Context) ->
     MediaExt = ?TRANSCRIBE_FORMAT,
-    case MediaExt /= 'undefined'
+    case MediaExt =/= 'undefined'
         andalso cb_context:req_value(Context, <<"transcribe">>, 'false')
-        andalso cb_context:req_value(Context, <<"media_extension">>) /= MediaExt of
+        andalso cb_context:req_value(Context, <<"media_extension">>) =/= MediaExt
+    of
         'true' ->
-            Resp = [{<<"message">>, <<"if you want transcribe message, then use '", MediaExt/binary, "' media extension">>}],
+            Resp = [{<<"message">>, <<"if you want transcribe the message, use '", MediaExt/binary, "' media extension">>}],
             cb_context:add_validation_error(<<"media_extension">>, <<"invalid">>, kz_json:from_list(Resp), Context);
         'false' -> on_successful_validation(VMBoxId, Context)
     end.

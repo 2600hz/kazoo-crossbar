@@ -14138,8 +14138,18 @@
                     "description": "Whether or not normalize voicemail audio file",
                     "type": "boolean"
                 },
+                "should_restrict_access_to_owner": {
+                    "default": false,
+                    "description": "When true, API access to a voicemail box (and messages) is restricted to admins and the owner of the box",
+                    "type": "boolean"
+                },
+                "should_restrict_access_to_unowned": {
+                    "default": false,
+                    "description": "When true, API access to an unowned voicemail box (and messages) is restricted to admins",
+                    "type": "boolean"
+                },
                 "transcribe_format": {
-                    "description": "crossbar voicemail transcribe_format",
+                    "description": "Voicemail message format needed for transcription",
                     "type": "string"
                 }
             },
