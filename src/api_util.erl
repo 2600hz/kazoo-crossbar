@@ -1869,10 +1869,9 @@ create_default_resp_envelope(Context) ->
                            ).
 
 success_envelope(Context, BaseResp, RespData) ->
-    Metadata = cb_context:get_metadata(Context),
     [{<<"status">>, <<"success">>}
     ,{<<"request_id">>, cb_context:req_id(Context)}
-    ,{<<"metadata">>, Metadata}
+    ,{<<"metadata">>, cb_context:get_metadata(Context)}
     ,{<<"revision">>, kz_term:to_api_binary(cb_context:resp_etag(Context))}
     ,{<<"data">>, RespData}
     | BaseResp
@@ -1885,6 +1884,7 @@ error_envelope(Context, BaseResp, RespData, ErrorCode, ErrorMsg) ->
     ,{<<"error">>, kz_term:to_binary(ErrorCode)}
     ,{<<"data">>, RespData}
     ,{<<"request_id">>, cb_context:req_id(Context)}
+    ,{<<"metadata">>, cb_context:get_metadata(Context)}
     | BaseResp
     ].
 
