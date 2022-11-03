@@ -276,7 +276,8 @@ put(Context) ->
 -spec put(cb_context:context(), path_token()) -> cb_context:context().
 put(Context, ?RECOVERY) ->
     _ = cb_context:put_reqid(Context),
-    save_reset_id_then_send_email(Context).
+    MoDb = kazoo_modb:get_modb(cb_context:db_name(Context)),
+    save_reset_id_then_send_email(Context, MoDb).
 
 -spec post(cb_context:context(), path_token()) -> cb_context:context().
 post(Context, ?RECOVERY) ->
@@ -593,9 +594,12 @@ maybe_load_user_doc_by_username(Account, Context) ->
             cb_context:add_validation_error(<<"username">>, <<"not_found">>, Msg, Context)
     end.
 
--spec save_reset_id_then_send_email(cb_context:context()) -> cb_context:context().
-save_reset_id_then_send_email(Context) ->
-    MoDb = kazoo_modb:get_modb(cb_context:db_name(Context)),
+-spec save_reset_id_then_send_email(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+save_reset_id_then_send_email(Context, 'undefined') ->
+    lager:debug("it failed but we must validate it to avoid leaking information"),
+    Cntxt = cb_context:set_validation_errors(Context, kz_json:new()),
+    cb_context:set_resp_status(Cntxt, 'success');
+save_reset_id_then_send_email(Context, MoDb) ->
     ResetId = reset_id(MoDb),
     UserDoc = cb_context:doc(Context),
     UserId = kz_doc:id(UserDoc),
@@ -758,41 +762,23 @@ find_account([{'id', AccountId} | Types], Context) ->
 
 -spec error_no_account_phone_number(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 error_no_account_phone_number(Context, PhoneNumber) ->
-    Msg =
-        kz_json:from_list(
-          [{<<"message">>, <<"The provided phone number could not be found">>}
-          ,{<<"cause">>, PhoneNumber}
-          ]),
-    cb_context:add_validation_error(<<"phone_number">>, <<"not_found">>, Msg, Context).
+    lager:debug("failed to find phone number: '~s'", [PhoneNumber]),
+    Context.
 
 -spec error_no_account_id(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 error_no_account_id(Context, AccountId) ->
-    Msg =
-        kz_json:from_list(
-          [{<<"message">>, <<"The provided account ID could not be found">>}
-          ,{<<"cause">>, AccountId}
-          ]),
-    cb_context:add_validation_error(<<"account_id">>, <<"not_found">>, Msg, Context).
-
+    lager:debug("failed to find account ID: '~s'", [AccountId]),
+    Context.
 
 -spec error_no_account_realm(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 error_no_account_realm(Context, AccountRealm) ->
-    Msg =
-        kz_json:from_list(
-          [{<<"message">>, <<"The provided account realm could not be found">>}
-          ,{<<"cause">>, AccountRealm}
-          ]),
-    cb_context:add_validation_error(<<"account_realm">>, <<"not_found">>, Msg, Context).
+    lager:debug("failed to find account realm: '~s'", [AccountRealm]),
+    Context.
 
 -spec error_no_account_name(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 error_no_account_name(Context, AccountName) ->
-    Msg =
-        kz_json:from_list(
-          [{<<"message">>, <<"The provided account name could not be found">>}
-          ,{<<"cause">>, AccountName}
-          ]),
     lager:debug("failed to find account by name: '~s'", [AccountName]),
-    cb_context:add_validation_error(<<"account_name">>, <<"not_found">>, Msg, Context).
+    Context.
 
 -spec consume_tokens(cb_context:context()) -> cb_context:context().
 consume_tokens(Context) ->
