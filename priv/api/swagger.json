@@ -1248,6 +1248,170 @@
             },
             "type": "object"
         },
+        "application_blocklist": {
+            "description": "List of blocked apps for the account which queries for API endpoint applications",
+            "properties": {
+                "app_id": {
+                    "description": "ID of the application that has been blocklisted",
+                    "type": "string"
+                },
+                "app_type": {
+                    "description": "Application type either monster-ui or commland or some other type",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "application_entitlement": {
+            "description": "List of entitlements related to query accounts for endpoint cb_applications",
+            "oneOf": [
+                {
+                    "properties": {
+                        "type": {
+                            "description": "Type of entitlement granted or users with the entitlement",
+                            "enum": [
+                                "all",
+                                "admins"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "type"
+                    ]
+                },
+                {
+                    "properties": {
+                        "type": {
+                            "description": "Type of entitlement granted or users with the entitlement",
+                            "enum": [
+                                "specific"
+                            ],
+                            "type": "string"
+                        },
+                        "users": {
+                            "default": [],
+                            "description": "Specific User IDs granting access to the app",
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "required": [
+                        "type"
+                    ]
+                }
+            ],
+            "properties": {
+                "app_id": {
+                    "description": "Id of the application that has been entitled",
+                    "type": "string"
+                },
+                "app_type": {
+                    "description": "Application type either monster-ui or commland or some other type of wrap",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "applications": {
+            "description": "UI application metadata schema",
+            "properties": {
+                "api_url": {
+                    "description": "Optional API URL that application can use. default to Kazoo Crossbar API",
+                    "format": "uri",
+                    "minLength": 7,
+                    "type": "string"
+                },
+                "author": {
+                    "description": "Name of app publisher",
+                    "maxLength": 64,
+                    "minLength": 2,
+                    "type": "string"
+                },
+                "i18n": {
+                    "$ref": "#/definitions/app_i18n",
+                    "type": "object"
+                },
+                "icon": {
+                    "description": "Name of application icon",
+                    "type": "string"
+                },
+                "license": {
+                    "description": "Application license",
+                    "type": "string"
+                },
+                "masqueradable": {
+                    "default": true,
+                    "description": "Whether an application is masqueradable or not",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "Application name",
+                    "maxLength": 64,
+                    "minLength": 3,
+                    "type": "string"
+                },
+                "phase": {
+                    "description": "Application test phase",
+                    "enum": [
+                        "alpha",
+                        "beta",
+                        "gold"
+                    ],
+                    "type": "string"
+                },
+                "price": {
+                    "description": "Application price",
+                    "minimum": 0,
+                    "type": "number"
+                },
+                "published": {
+                    "default": true,
+                    "description": "Indicated if the app is published",
+                    "type": "boolean"
+                },
+                "screenshots": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "source_url": {
+                    "description": "an URL which indicates where the UI must load the application source files",
+                    "format": "uri",
+                    "type": "string"
+                },
+                "tags": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "type": {
+                    "description": "Type of application that can be used, for example commland_ui, monster_ui",
+                    "maxLength": 64,
+                    "minLength": 2,
+                    "type": "string"
+                },
+                "urls": {
+                    "type": "object"
+                },
+                "version": {
+                    "description": "Application version",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "author",
+                "license",
+                "name",
+                "version",
+                "type"
+            ],
+            "type": "object"
+        },
         "audit_logs": {
             "description": "Audit log of what caused a billing event to occur",
             "properties": {
@@ -22618,6 +22782,16 @@
             "required": true,
             "type": "string"
         },
+        "APP_TYPE": {
+            "description": "request APP_TYPE parameter",
+            "in": "path",
+            "maxLength": 32,
+            "minLength": 32,
+            "name": "APP_TYPE",
+            "pattern": "^[0-9a-f]+$",
+            "required": true,
+            "type": "string"
+        },
         "ARGS": {
             "description": "request ARGS parameter",
             "in": "path",
@@ -23172,6 +23346,16 @@
             "required": true,
             "type": "string"
         },
+        "SCREENSHOT_ID": {
+            "description": "request SCREENSHOT_ID parameter",
+            "in": "path",
+            "maxLength": 32,
+            "minLength": 32,
+            "name": "SCREENSHOT_ID",
+            "pattern": "^[0-9a-f]+$",
+            "required": true,
+            "type": "string"
+        },
         "SELECTOR_NAME": {
             "description": "request SELECTOR_NAME parameter",
             "in": "path",
@@ -23642,6 +23826,603 @@
                     },
                     {
                         "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/application/{APP_ID}": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "patch": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "applications",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/applications"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "put": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "applications",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/applications"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/application/{APP_ID}/icon": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "applications",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/applications"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/application/{APP_ID}/screenshots": {
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "applications",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/applications"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/application/{APP_ID}/screenshots/{SCREENSHOT_ID}": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/SCREENSHOT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/SCREENSHOT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}/blocklists": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}/entitlements": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}/{APP_ID}": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}/{APP_ID}/block": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "applications",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/applications"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "put": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "applications",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/applications"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}/{APP_ID}/entitlement": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "applications",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/applications"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "put": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "applications",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/applications"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}/{APP_ID}/icon": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}/{APP_ID}/screenshots/{SCREENSHOT_ID}": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/SCREENSHOT_ID"
                     }
                 ],
                 "responses": {

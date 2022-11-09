@@ -24,6 +24,44 @@
     '$ref': 'paths/allotments.yml#/paths/~1accounts~1{ACCOUNT_ID}~1allotments~1consumed'
   '/accounts/{ACCOUNT_ID}/api_key':
     '$ref': 'paths/accounts.yml#/paths/~1accounts~1{ACCOUNT_ID}~1api_key'
+  '/accounts/{ACCOUNT_ID}/applications':
+    '$ref': 'paths/applications.yml#/paths/~1accounts~1{ACCOUNT_ID}~1applications'
+  '/accounts/{ACCOUNT_ID}/applications/application/{APP_ID}':
+    '$ref': >-
+      paths/applications.yml#/paths/~1accounts~1{ACCOUNT_ID}~1applications~1application~1{APP_ID}
+  '/accounts/{ACCOUNT_ID}/applications/application/{APP_ID}/icon':
+    '$ref': >-
+      paths/applications.yml#/paths/~1accounts~1{ACCOUNT_ID}~1applications~1application~1{APP_ID}~1icon
+  '/accounts/{ACCOUNT_ID}/applications/application/{APP_ID}/screenshots':
+    '$ref': >-
+      paths/applications.yml#/paths/~1accounts~1{ACCOUNT_ID}~1applications~1application~1{APP_ID}~1screenshots
+  '/accounts/{ACCOUNT_ID}/applications/application/{APP_ID}/screenshots/{SCREENSHOT_ID}':
+    '$ref': >-
+      paths/applications.yml#/paths/~1accounts~1{ACCOUNT_ID}~1applications~1application~1{APP_ID}~1screenshots~1{SCREENSHOT_ID}
+  '/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}':
+    '$ref': >-
+      paths/applications.yml#/paths/~1accounts~1{ACCOUNT_ID}~1applications~1{APP_TYPE}
+  '/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}/blocklists':
+    '$ref': >-
+      paths/applications.yml#/paths/~1accounts~1{ACCOUNT_ID}~1applications~1{APP_TYPE}~1blocklists
+  '/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}/entitlements':
+    '$ref': >-
+      paths/applications.yml#/paths/~1accounts~1{ACCOUNT_ID}~1applications~1{APP_TYPE}~1entitlements
+  '/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}/{APP_ID}':
+    '$ref': >-
+      paths/applications.yml#/paths/~1accounts~1{ACCOUNT_ID}~1applications~1{APP_TYPE}~1{APP_ID}
+  '/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}/{APP_ID}/block':
+    '$ref': >-
+      paths/applications.yml#/paths/~1accounts~1{ACCOUNT_ID}~1applications~1{APP_TYPE}~1{APP_ID}~1block
+  '/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}/{APP_ID}/entitlement':
+    '$ref': >-
+      paths/applications.yml#/paths/~1accounts~1{ACCOUNT_ID}~1applications~1{APP_TYPE}~1{APP_ID}~1entitlement
+  '/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}/{APP_ID}/icon':
+    '$ref': >-
+      paths/applications.yml#/paths/~1accounts~1{ACCOUNT_ID}~1applications~1{APP_TYPE}~1{APP_ID}~1icon
+  '/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}/{APP_ID}/screenshots/{SCREENSHOT_ID}':
+    '$ref': >-
+      paths/applications.yml#/paths/~1accounts~1{ACCOUNT_ID}~1applications~1{APP_TYPE}~1{APP_ID}~1screenshots~1{SCREENSHOT_ID}
   '/accounts/{ACCOUNT_ID}/apps_link/authorize':
     '$ref': 'paths/apps_link.yml#/paths/~1accounts~1{ACCOUNT_ID}~1apps_link~1authorize'
   '/accounts/{ACCOUNT_ID}/apps_store':

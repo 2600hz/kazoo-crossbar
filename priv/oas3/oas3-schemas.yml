@@ -974,26 +974,32 @@
     '[a-z]{2}\-[A-Z]{2}':
       'properties':
         'description':
+          'description': Application Summary
           'minLength': 3
           'type': string
         'extended_description':
+          'description': Application extended description
           'type': string
         'features':
+          'description': Application features list
           'items':
             'type': string
           'type': array
         'icon':
-          'description': I18N application icon attachment name
+          'description': Application icon name
           'type': string
         'label':
+          'description': Application label
           'maxLength': 64
           'minLength': 3
           'type': string
         'screenshots':
+          'description': Application screenshot names
           'items':
             'type': string
           'type': array
         'urls':
+          'description': Application urls
           'type': object
       'required':
         - description
@@ -1011,6 +1017,129 @@
       'items':
         'type': string
       'type': array
+  'type': object
+'application_blocklist':
+  'description': |-
+    List of blocked apps for the account which queries for API endpoint applications
+  'properties':
+    'app_id':
+      'description': ID of the application that has been blocklisted
+      'type': string
+    'app_type':
+      'description': Application type either monster-ui or commland or some other type
+      'type': string
+  'type': object
+'application_entitlement':
+  'description': List of entitlements related to query accounts for endpoint cb_applications
+  'oneOf':
+    - 'properties':
+        'type':
+          'description': Type of entitlement granted or users with the entitlement
+          'enum':
+            - all
+            - admins
+          'type': string
+      'required':
+        - type
+    - 'properties':
+        'type':
+          'description': Type of entitlement granted or users with the entitlement
+          'enum':
+            - specific
+          'type': string
+        'users':
+          'default': []
+          'description': Specific User IDs granting access to the app
+          'items':
+            'type': string
+          'type': array
+      'required':
+        - type
+  'properties':
+    'app_id':
+      'description': Id of the application that has been entitled
+      'type': string
+    'app_type':
+      'description': |-
+        Application type either monster-ui or commland or some other type of wrap
+      'type': string
+  'type': object
+'applications':
+  'description': UI application metadata schema
+  'properties':
+    'api_url':
+      'description': Optional API URL that application can use. default to Kazoo Crossbar API
+      'format': uri
+      'minLength': 7
+      'type': string
+    'author':
+      'description': Name of app publisher
+      'maxLength': 64
+      'minLength': 2
+      'type': string
+    'i18n':
+      '$ref': '#/app_i18n'
+      'type': object
+    'icon':
+      'description': Name of application icon
+      'type': string
+    'license':
+      'description': Application license
+      'type': string
+    'masqueradable':
+      'default': true
+      'description': Whether an application is masqueradable or not
+      'type': boolean
+    'name':
+      'description': Application name
+      'maxLength': 64
+      'minLength': 3
+      'type': string
+    'phase':
+      'description': Application test phase
+      'enum':
+        - alpha
+        - beta
+        - gold
+      'type': string
+    'price':
+      'description': Application price
+      'minimum': 0
+      'type': number
+    'published':
+      'default': true
+      'description': Indicated if the app is published
+      'type': boolean
+    'screenshots':
+      'items':
+        'type': string
+      'type': array
+    'source_url':
+      'description': |-
+        an URL which indicates where the UI must load the application source files
+      'format': uri
+      'type': string
+    'tags':
+      'items':
+        'type': string
+      'type': array
+    'type':
+      'description': |-
+        Type of application that can be used, for example commland_ui, monster_ui
+      'maxLength': 64
+      'minLength': 2
+      'type': string
+    'urls':
+      'type': object
+    'version':
+      'description': Application version
+      'type': string
+  'required':
+    - author
+    - license
+    - name
+    - version
+    - type
   'type': object
 'audit_logs':
   'description': Audit log of what caused a billing event to occur
