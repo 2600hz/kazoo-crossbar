@@ -185,6 +185,8 @@
                     ,socket_url = 'undefined' :: kz_term:api_ne_binary()
                     }).
 
+-type after_fun() :: fun((context()) -> context()) | 'undefined'.
+
 -define(KEY_ACCEPT_CHARGES, <<"accept_charges">>).
 
 -define(SHOULD_ENSURE_SCHEMA_IS_VALID
@@ -211,6 +213,7 @@
              ,setter_fun_3/0
              ,setters/0
              ,resp_etag/0
+             ,after_fun/0
              ]).
 
 -type setter_kv() :: setter_fun_1() |
@@ -1009,8 +1012,6 @@ response(#cb_context{resp_error_code=Code
                     {_, _} -> DataJObj
                 end,
     {'error', {ErrorCode, ErrorMsg, ErrorData}}.
-
--type after_fun() :: fun((context()) -> context()) | 'undefined'.
 
 %%------------------------------------------------------------------------------
 %% @doc Validate the request data with schema.
