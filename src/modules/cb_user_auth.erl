@@ -256,7 +256,12 @@ validate_action(Context, _Action) ->
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, ?RECOVERY) ->
     Context1 = consume_tokens(Context),
-    case cb_context:req_verb(Context1) of
+    case cb_context:resp_status(Context1) of
+        'success' -> validate(Context1, <<"user_auth_recovery">>);
+        'error' -> Context1
+    end;
+validate(Context, <<"user_auth_recovery">>) ->
+    case cb_context:req_verb(Context) of
         ?HTTP_PUT ->
             Schema = <<"user_auth_recovery">>,
             OnSuccess = fun maybe_load_user_doc_via_creds/1;
@@ -264,7 +269,7 @@ validate(Context, ?RECOVERY) ->
             Schema = <<"user_auth_recovery_reset">>,
             OnSuccess = fun maybe_load_user_doc_via_reset_id/1
     end,
-    cb_context:validate_request_data(Schema, Context1, OnSuccess);
+    cb_context:validate_request_data(Schema, Context, OnSuccess);
 validate(Context, AuthToken) ->
     Context1 = cb_context:set_db_name(Context, ?KZ_TOKEN_DB),
     maybe_get_auth_token(Context1, AuthToken).
