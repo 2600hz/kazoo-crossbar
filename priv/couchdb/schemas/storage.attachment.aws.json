@@ -73,9 +73,7 @@
                 }
             },
             "required": [
-                "bucket",
-                "key",
-                "secret"
+                "bucket"
             ],
             "type": "object"
         }

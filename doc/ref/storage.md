@@ -27,11 +27,11 @@ Key | Description | Type | Default | Required | Support Level
 `settings.bucket_access_method` | how to access the host. | `string('auto' | 'vhost' | 'path')` |   | `false` |  
 `settings.bucket_after_host` | use bucket after host as part of url | `boolean()` |   | `false` |  
 `settings.host` | the s3 host, leave empty for default | `string(1..)` |   | `false` |  
-`settings.key` | AWS Key to use | `string(1..128)` |   | `true` |  
+`settings.key` | AWS Key to use | `string(1..128)` |   | `false` |  
 `settings.port` | port to use | `integer()` |   | `false` |  
 `settings.region` | the region where the bucket is located | `string(1..)` |   | `false` |  
 `settings.scheme` | scheme to use to access host | `string('http' | 'https')` |   | `false` |  
-`settings.secret` | AWS Secret to use | `string(1..128)` |   | `true` |  
+`settings.secret` | AWS Secret to use | `string(1..128)` |   | `false` |  
 `settings` | AWS API settings | `object()` |   | `true` |  
 
 ### storage.attachment.azure

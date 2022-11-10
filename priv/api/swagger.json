@@ -11398,9 +11398,7 @@
                         }
                     },
                     "required": [
-                        "bucket",
-                        "key",
-                        "secret"
+                        "bucket"
                     ],
                     "type": "object"
                 }
@@ -12079,6 +12077,17 @@
                 "use_tcp": {
                     "default": false,
                     "description": "appex_client use_tcp for dns query",
+                    "type": "boolean"
+                }
+            },
+            "type": "object"
+        },
+        "system_config.attachments.s3": {
+            "description": "Schema for AWS S3 attachment handler system config",
+            "properties": {
+                "allow_metadata_credentials": {
+                    "default": false,
+                    "description": "Whether to allow using AWS task or instance metadata credentials for authentication. Not recommended if storage plans are openly configurable (e.g. by users) on your system.",
                     "type": "boolean"
                 }
             },
