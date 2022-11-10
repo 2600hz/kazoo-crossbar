@@ -277,9 +277,14 @@ validate(Context, ?COLLECTION, ?ACTIVATE) ->
 validate(Context, ?CLASSIFIERS, Number) ->
     classify_number(Context, Number);
 validate(Context, _Number, ?ACTIVATE) ->
-    case has_tokens(Context) of
-        'true' -> validate_request(Context);
-        'false' -> cb_context:add_system_error('too_many_requests', Context)
+    BucketName = <<(cb_context:account_id(Context))/binary, "/", ?PHONE_NUMBERS_CONFIG_CAT/binary>>,
+    Cost = cb_modules_util:token_cost(Context, 1),
+    case cb_modules_util:consume_tokens(Context, Cost, BucketName) of
+        {'true', Context1} ->
+            validate_request(Context1);
+        {'false', Context1} ->
+            lager:warning("rate limiting activation limit reached, rejecting"),
+            cb_context:add_system_error('too_many_requests', Context1)
     end;
 validate(Context, _Number, ?RESERVE) ->
     validate_request(Context);
@@ -1004,21 +1009,6 @@ maybe_ask_for_state(StateAskedFor) -> [{'state', StateAskedFor}].
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
-
--spec has_tokens(cb_context:context()) -> boolean().
-has_tokens(Context) -> has_tokens(Context, 1).
-
--spec has_tokens(cb_context:context(), pos_integer()) -> boolean().
-has_tokens(Context, Count) ->
-    Name = <<(cb_context:account_id(Context))/binary, "/", ?PHONE_NUMBERS_CONFIG_CAT/binary>>,
-    Cost = cb_modules_util:token_cost(Context, Count),
-    case kz_buckets:consume_tokens(?APP_NAME, Name, Cost) of
-        'true' -> 'true';
-        'false' ->
-            lager:warning("rate limiting activation limit reached, rejecting"),
-            'false'
-    end.
-
 -spec default_knm_options(cb_context:context()) -> knm_options:options().
 default_knm_options(Context) ->
     AuthAccountId = cb_context:auth_account_id(Context),
