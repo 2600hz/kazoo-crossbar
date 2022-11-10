@@ -633,7 +633,6 @@ save_reset_id_then_send_email(Context, MoDb) ->
             crossbar_doc:handle_datamgr_errors(Reason, 'undefined', Context)
     end.
 
-
 -spec maybe_load_user_doc_via_reset_id(cb_context:context()) -> cb_context:context().
 maybe_load_user_doc_via_reset_id(Context) ->
     ResetId = kz_json:get_ne_binary_value(?RESET_ID, cb_context:req_data(Context)),
@@ -679,8 +678,8 @@ maybe_load_user_doc_via_reset_id(Context, _, ResetId, _) ->
 reset_id(?MATCH_MODB_SUFFIX_ENCODED(A, B, Rest, YYYY, MM)) ->
     <<Y1:1/binary, Y2:1/binary, Y3:1/binary, Y4:1/binary>> = YYYY,
     <<M1:1/binary, M2:1/binary>> = MM,
-    SomeNoise = kz_binary:rand_hex((reset_id_size() - (32 + 4 + 2 + 3 + 1)) div 2),
-    <<N1:1/binary, N2:1/binary, N3:1/binary, Noise/binary>> = SomeNoise,
+    <<N1:1/binary, N2:1/binary, N3:1/binary, Noise/binary>> = kz_binary:rand_hex((reset_id_size() - (32 + 4 + 2 + 3 + 1)) div 2),
+
     <<(?MATCH_ACCOUNT_RAW(A, B, Rest))/binary,
       N1/binary, Y1/binary, Y4/binary,
       N2/binary, M2/binary, Y2/binary,
@@ -796,8 +795,5 @@ consume_tokens(Context) ->
 
 -spec reset_id_size() -> integer().
 reset_id_size() ->
-    case kapps_config:get_integer(?CONFIG_CAT, <<"reset_id_size">>, ?RESET_ID_SIZE_DEFAULT) of
-        _TooBig when _TooBig >= 180 -> ?RESET_ID_SIZE_DEFAULT;
-        _TooSmall when _TooSmall < 42 -> ?RESET_ID_SIZE_DEFAULT;
-        Ok -> Ok
-    end.
+    Size = kapps_config:get_integer(?CONFIG_CAT, <<"reset_id_size">>, ?RESET_ID_SIZE_DEFAULT),
+    kz_math:clamp(180, 42, Size).
