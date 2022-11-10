@@ -77,6 +77,9 @@
         ,start/1, set_start/2
         ,user_id/1, set_user_id/2
 
+        ,consumed_token_buckets/1, set_consumed_token_buckets/2, add_consumed_token_buckets/2
+        ,token_bucket_names/1, set_token_bucket_names/2, add_token_bucket_name/2
+
         ,pretty_print/1
         ,path_tokens/1
         ,should_soft_delete/1
@@ -782,6 +785,29 @@ set_client_ip(#cb_context{}=Context, Value) ->
 set_profile_id(#cb_context{}=Context, Value) ->
     Context#cb_context{profile_id = Value}.
 
+%% Token Bucket accessors
+
+-spec consumed_token_buckets(context()) -> non_neg_integer().
+consumed_token_buckets(#cb_context{consumed_token_buckets = ConsumedTokens}) -> ConsumedTokens.
+
+-spec set_consumed_token_buckets(context(), non_neg_integer()) -> context().
+set_consumed_token_buckets(#cb_context{}=Context, ConsumedTokens) ->
+    Context#cb_context{consumed_token_buckets = ConsumedTokens}.
+
+-spec add_consumed_token_buckets(context(), non_neg_integer()) -> context().
+add_consumed_token_buckets(#cb_context{consumed_token_buckets = Current}=Context, ConsumedTokens) ->
+    set_consumed_token_buckets(Context, Current + ConsumedTokens).
+
+-spec token_bucket_names(context()) -> kz_term:ne_binaries().
+token_bucket_names(#cb_context{token_bucket_names = BucketNames}) -> BucketNames.
+
+-spec set_token_bucket_names(context(), kz_term:ne_binaries()) -> context().
+set_token_bucket_names(#cb_context{}=Context, BucketNames) when is_list(BucketNames) ->
+    Context#cb_context{token_bucket_names = BucketNames}.
+
+-spec add_token_bucket_name(context(), kz_term:ne_binary()) -> context().
+add_token_bucket_name(#cb_context{token_bucket_names = Current}=Context, <<BucketName/binary>>) ->
+    set_token_bucket_names(Context, lists:usort([BucketName | Current])).
 
 -spec update_doc(context(), setter_kv() | setters()) -> context().
 update_doc(#cb_context{doc=Doc}=Context, Updaters)

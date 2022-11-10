@@ -46,7 +46,13 @@ resource_exists(_Number) -> 'true'.
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, _Number) ->
-    validate_quickcall(Context, cb_context:req_nouns(Context)).
+    TokenCost = cb_modules_util:token_cost(Context, 1, [?QUICKCALL_PATH_TOKEN]),
+    case cb_modules_util:consume_tokens(Context, TokenCost) of
+        {'true', Context1} ->
+            validate_quickcall(Context1, cb_context:req_nouns(Context1));
+        {'false', Context1} ->
+            Context1
+    end.
 
 validate_quickcall(Context, ?DEVICES_QCALL_NOUNS(DeviceId, _Number)) ->
     validate_quickcall(load_endpoint(Context, DeviceId, kzd_devices:type()));
@@ -80,14 +86,7 @@ post(Context, _Number) ->
 -spec maybe_validate_quickcall(cb_context:context()) ->
           cb_context:context().
 maybe_validate_quickcall(Context) ->
-    case kz_buckets:consume_tokens(?APP_NAME
-                                  ,cb_modules_util:bucket_name(Context)
-                                  ,cb_modules_util:token_cost(Context, 1, [?QUICKCALL_PATH_TOKEN])
-                                  )
-    of
-        'false' -> cb_context:add_system_error('too_many_requests', Context);
-        'true' -> maybe_validate_quickcall(Context, cb_context:resp_status(Context))
-    end.
+    maybe_validate_quickcall(Context, cb_context:resp_status(Context)).
 
 -spec maybe_validate_quickcall(cb_context:context(), crossbar_status()) ->
           cb_context:context().

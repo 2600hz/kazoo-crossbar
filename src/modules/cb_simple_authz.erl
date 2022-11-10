@@ -48,7 +48,6 @@ init() ->
 
 -spec authorize(cb_context:context()) -> boolean().
 authorize(Context) ->
-    _ = cb_context:put_reqid(Context),
     authorize(Context, cb_context:req_verb(Context), cb_context:req_nouns(Context)).
 
 authorize(Context, Verb, [{?KZ_ACCOUNTS_DB, []}]) ->
