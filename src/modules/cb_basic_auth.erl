@@ -57,16 +57,12 @@ authenticate(Context) ->
           'false' |
           {'true' | 'stop', cb_context:context()}.
 authenticate(Context, 'basic') ->
-    _ = cb_context:put_reqid(Context),
-    case kz_buckets:consume_tokens(?APP_NAME
-                                  ,cb_modules_util:bucket_name(Context)
-                                  ,cb_modules_util:token_cost(Context)
-                                  )
-    of
-        'true' -> check_basic_token(Context, cb_context:auth_token(Context));
-        'false' ->
-            lager:warning("rate limiting threshold hit for ~s!", [cb_context:client_ip(Context)]),
-            {'stop', cb_context:add_system_error('too_many_requests', Context)}
+    case cb_modules_util:consume_tokens(Context, cb_modules_util:token_cost(Context)) of
+        {'true', Context1} ->
+            check_basic_token(Context1, cb_context:auth_token(Context1));
+        {'false', Context1} ->
+            lager:warning("rate limiting threshold hit for ~s!", [cb_context:client_ip(Context1)]),
+            {'stop', cb_context:add_system_error('too_many_requests', Context1)}
     end;
 authenticate(_Context, _TokenType) -> 'false'.
 
