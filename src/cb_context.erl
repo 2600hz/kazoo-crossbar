@@ -1070,7 +1070,8 @@ failed_error(Error, Context) ->
                                    ]),
     {ErrorCode, ErrorMessage, ErrorJObj} = kz_json_schema:error_to_jobj(Error, Props),
     JObj = validation_errors(Context),
-    Context#cb_context{validation_errors = kz_json:merge_jobjs(ErrorJObj, JObj)
+
+    Context#cb_context{validation_errors = kz_json:merge(ErrorJObj, JObj)
                       ,resp_error_code = ErrorCode
                       ,resp_data = kz_json:new()
                       ,resp_error_msg = ErrorMessage
