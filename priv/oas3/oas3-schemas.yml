@@ -16701,7 +16701,11 @@
       'type': boolean
       'x-support_level': supported
     'envelope_type':
+      'default': default
       'description': The voicemail envelope type to determine the envelope format
+      'enum':
+        - default
+        - caller_and_time
       'type': string
     'flags':
       'description': Flags set by external applications
