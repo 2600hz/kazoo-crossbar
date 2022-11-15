@@ -16700,6 +16700,9 @@
       'description': Move the voicemail to delete folder after the notification has been sent
       'type': boolean
       'x-support_level': supported
+    'envelope_type':
+      'description': The voicemail envelope type to determine the envelope format
+      'type': string
     'flags':
       'description': Flags set by external applications
       'items':
