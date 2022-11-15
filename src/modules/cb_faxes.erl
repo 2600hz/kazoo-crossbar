@@ -702,7 +702,7 @@ do_load_fax_binary(FaxId, Folder, Context) ->
 
 -spec set_fax_binary(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) -> cb_context:context().
 set_fax_binary(Context, Content, ContentType, Filename) ->
-    Disposition = cb_context:req_param(Context, <<"disposition">>, <<"attachment">>),
+    Disposition = cb_context:req_param(Context, <<"disposition">>, <<"inline">>),
     cb_context:setters(cb_context:setters(Context
                                          ,[{fun cb_context:set_resp_data/2, Content}
                                           ,{fun cb_context:set_resp_etag/2, crossbar_doc:rev_to_etag(cb_context:doc(Context))}
