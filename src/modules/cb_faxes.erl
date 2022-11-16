@@ -714,7 +714,7 @@ set_fax_binary(Context, Content, ContentType, Filename) ->
                           }
                         }
                        ]
-                      ).
+                      ). 
 
 -spec get_file_name(cb_context:context(), kz_json:object(), kz_term:ne_binary()) -> kz_term:ne_binary().
 get_file_name(Context, Doc, ContentType) ->
