@@ -36,3 +36,15 @@ paths:
       summary: Get a recordings by ID
       tags:
         - recordings
+    patch:
+      operationId: PatchAccountsAccountIdRecordingsRecordingId
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../oas3-parameters.yml#/RECORDING_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Patch specific fields of recordings
+      tags:
+        - recordings

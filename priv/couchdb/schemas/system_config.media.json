@@ -15,6 +15,10 @@
         },
         "call_recording": {
             "properties": {
+                "default_user_metadata": {
+                    "description": "Default user-defined metadata to set on call recordings",
+                    "type": "object"
+                },
                 "extension": {
                     "default": "mp3",
                     "description": "Default media file format",

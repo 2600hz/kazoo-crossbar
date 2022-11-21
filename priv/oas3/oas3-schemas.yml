@@ -367,6 +367,9 @@
   'properties':
     'call_recording':
       'properties':
+        'default_user_metadata':
+          'description': Default user-defined metadata to set on call recordings
+          'type': object
         'extension':
           'default': mp3
           'description': Default media file format
@@ -1274,6 +1277,10 @@
       'minimum': 0
       'name': duration_ms
       'type': integer
+    'endpoint_id':
+      'description': ID of the endpoint that was recorded
+      'name': endpoint_id
+      'type': string
     'from':
       'description': from
       'name': from
@@ -1323,6 +1330,10 @@
       'minLength': 6
       'name': url
       'type': string
+    'user_metadata':
+      'description': |-
+        Arbitrary user-defined metadata. May be used in part or in full by storage handlers depending on the active storage configuration.
+      'type': object
   'type': object
 'call_reports':
   'description': Schema for a call report
@@ -9021,6 +9032,12 @@
           'minLength': 1
           'pattern': '^[^\s]*$'
           'type': string
+        'tags_key_path':
+          'description': |-
+            The key path to an array of values in the document to use as S3 object tags
+          'items':
+            'type': string
+          'type': array
       'required':
         - bucket
       'type': object
@@ -12755,6 +12772,9 @@
       'type': boolean
     'call_recording':
       'properties':
+        'default_user_metadata':
+          'description': Default user-defined metadata to set on call recordings
+          'type': object
         'extension':
           'default': mp3
           'description': Default media file format

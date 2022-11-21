@@ -66,6 +66,11 @@
             "name": "duration_ms",
             "type": "integer"
         },
+        "endpoint_id": {
+            "description": "ID of the endpoint that was recorded",
+            "name": "endpoint_id",
+            "type": "string"
+        },
         "from": {
             "description": "from",
             "name": "from",
@@ -126,6 +131,10 @@
             "minLength": 6,
             "name": "url",
             "type": "string"
+        },
+        "user_metadata": {
+            "description": "Arbitrary user-defined metadata. May be used in part or in full by storage handlers depending on the active storage configuration.",
+            "type": "object"
         }
     },
     "type": "object"

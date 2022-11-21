@@ -45,6 +45,36 @@ curl -v -X GET \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/recordings/{RECORDING_ID}
 ```
 
+## Change writable properties on a recording
+
+You can change user metadata on a recording to store extra information with the recording for your own purposes. This metadata can also be used by some [storage back-ends](./storage.md#attachments).
+
+> PATCH /v2/accounts/{ACCOUNT_ID}/recordings/{RECORDING_ID}
+
+```shell
+curl -v -X PATCH \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d '{"data": {
+          "user_metadata": { "tags": { "important": 1 } }
+         }
+        }' \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/recordings/{RECORDING_ID}
+```
+
+```json
+{
+    "data": {
+        "user_metadata": {
+            "tags": {
+                "important": 1
+            }
+        },
+        ...
+    }
+}
+```
+
 ## Remove a recording
 
 > DELETE /v2/accounts/{ACCOUNT_ID}/recordings/{RECORDING_ID}

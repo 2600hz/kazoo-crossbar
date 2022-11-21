@@ -32,6 +32,8 @@ Key | Description | Type | Default | Required | Support Level
 `settings.region` | the region where the bucket is located | `string(1..)` |   | `false` |  
 `settings.scheme` | scheme to use to access host | `string('http' | 'https')` |   | `false` |  
 `settings.secret` | AWS Secret to use | `string(1..128)` |   | `false` |  
+`settings.tags_key_path.[]` |   | `string()` |   | `false` |  
+`settings.tags_key_path` | The key path to an array of values in the document to use as S3 object tags | `array(string())` |   | `false` |  
 `settings` | AWS API settings | `object()` |   | `true` |  
 
 ### storage.attachment.azure
