@@ -238,6 +238,8 @@ curl -v -X PUT \
 
 ### Fetch The Fax Payload
 
+Fetch the fax in outbox.
+
 > GET /v2/accounts/{ACCOUNT_ID}/faxes/outbox/{FAX_ID}/attachment
 
 ```shell
@@ -246,6 +248,15 @@ curl -v -X GET \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/faxes/outbox/{FAX_ID}/attachment
 ```
 
+#### Downloading vs viewing the payload
+
+How the attachment is fetched can be controlled by the [`Content-Disposition`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition) response header. If `Content-Disposition: inline` the content fetched will typically be viewed in the web browser (or whatever client is fetching the data). `Content-Disposition: attachment` will cause most clients to offer a download/'Save as' dialog.
+
+The client request can control the response's `Content-Disposition` by setting `disposition` on the querystring:
+
+`GET /v2/accounts/{ACCOUNT_ID}/faxes/outbox/{FAX_ID}/attachment?disposition=attachment`
+
+`attachment` is the default response disposition.
 
 ### Fetch Logs Related To Outbound Faxes Submitted Via Email
 
@@ -323,8 +334,6 @@ curl -v -X GET \
 
 ### Fetch The Fax Payload
 
-Retrieve the fax document / attachments for a particular inbound fax for which you have the fax ID.
-
 > GET /v2/accounts/{ACCOUNT_ID}/faxes/inbox/{FAX_ID}/attachment
 
 ```shell
@@ -332,6 +341,8 @@ curl -v -X GET \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/faxes/inbox/{FAX_ID}/attachment
 ```
+
+See the `outbox` equivalent above for instructions on setting the `disposition` of the response for download vs viewing of the attachment.
 
 ### Remove A Fax From The Inbox Folder
 
