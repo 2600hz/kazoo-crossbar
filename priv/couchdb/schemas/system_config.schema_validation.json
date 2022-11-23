@@ -1,0 +1,13 @@
+{
+    "type": "object",
+    "properties": {
+        "validate_sip_hosts": {
+            "type": "boolean",
+            "description": "schema_validation validate_sip_hosts",
+            "default": true
+        }
+    },
+    "description": "Schema for schema_validation system_config",
+    "_id": "system_config.schema_validation",
+    "$schema": "http://json-schema.org/draft-04/schema#"
+}
