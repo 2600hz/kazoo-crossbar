@@ -13901,6 +13901,13 @@
       'default': true
       'description': registrar device enabled default
       'type': boolean
+    'integration_device_types':
+      'default':
+        - teammate
+      'description': registrar integration_device_types
+      'items':
+        'type': string
+      'type': array
     'integrations_user_agent_regexes':
       'default': []
       'description': list of user agents regexes for accepted integration services
