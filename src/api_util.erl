@@ -132,12 +132,21 @@
 -type req_fun_2() :: fun((any(), cowboy_req:req()) -> cowboy_req:req()).
 -type req_fun_3() :: fun((any(), any(), cowboy_req:req()) -> cowboy_req:req()).
 -type req_fun() :: req_fun_1() | req_fun_2() | req_fun_3().
+
+%% The arguments/payload provided to a `request_data' event binding.
+-type request_data_args() :: {cowboy_req:req()
+                             ,cb_context:context()
+                             ,cowboy_content_type()
+                             ,kz_json:object()
+                             }.
+
 -export_type([pull_response_return/0
              ,req_fun/0
              ,req_fun_1/0
              ,req_fun_2/0
              ,req_fun_3/0
              ,req_funs/0
+             ,request_data_args/0
              ]).
 
 -type req_kv() :: req_fun_1() |
@@ -394,7 +403,7 @@ set_valid_data_in_context(Context, JObj, QS) ->
               ],
     cb_context:setters(Context, Setters).
 
--spec try_json(kz_term:ne_binary(), kz_json:object(), cb_context:context(), cowboy_req:req()) ->
+-spec try_json(binary(), kz_json:object(), cb_context:context(), cowboy_req:req()) ->
           {cb_context:context(), cowboy_req:req()} |
           stop_return().
 try_json(ReqBody, QS, Context, Req) ->
@@ -649,10 +658,11 @@ get_request_body(_, Acc, {'ok', Data, Req1}) ->
     lager:debug("received request body payload (size: ~b bytes)", [size(Body)]),
     {'ok', Body, Req1}.
 
--type get_json_return() :: {kz_term:api_object(), cowboy_req:req()} |
-                           {{'malformed', kz_term:ne_binary()}, cowboy_req:req()}.
--spec get_json_body(binary(), cowboy_req:req()) -> get_json_return().
+-type get_json_return() :: {'undefined', cowboy_req:req()} | decode_json_return().
+-type decode_json_return() :: {kz_json:object(), cowboy_req:req()} |
+                              {{'malformed', kz_term:ne_binary()}, cowboy_req:req()}.
 
+-spec get_json_body(binary(), cowboy_req:req()) -> get_json_return().
 get_json_body(<<>>, Req) -> {'undefined', Req};
 get_json_body(ReqBody, Req) -> decode_json_body(ReqBody, Req).
 
@@ -673,7 +683,7 @@ handle_max_filesize_exceeded(Context, Req1) ->
 
     ?MODULE:stop(Req1, Context1).
 
--spec decode_json_body(binary(), cowboy_req:req()) -> get_json_return().
+-spec decode_json_body(binary(), cowboy_req:req()) -> decode_json_return().
 decode_json_body(ReqBody, Req) ->
     try kz_json:unsafe_decode(ReqBody) of
         JObj ->
@@ -696,8 +706,7 @@ decode_json_body(ReqBody, Req) ->
 normalize_envelope_keys(JObj) ->
     kz_json:foldl(fun normalize_envelope_keys_foldl/3, kz_json:new(), JObj).
 
--spec normalize_envelope_keys_foldl(kz_json:path(), kz_json:json_term(), kz_json:object()) -> kz_json:object().
-normalize_envelope_keys_foldl(_K, 'undefined', JObj) -> JObj;
+-spec normalize_envelope_keys_foldl(kz_json:key(), kz_json:json_term(), kz_json:object()) -> kz_json:object().
 normalize_envelope_keys_foldl(K, V, JObj) -> kz_json:set_value(kz_json:normalize_key(K), V, JObj).
 
 %%------------------------------------------------------------------------------
