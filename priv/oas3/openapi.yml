@@ -644,6 +644,10 @@
   '/accounts/{ACCOUNT_ID}/webhooks/{WEBHOOK_ID}/attempts':
     '$ref': >-
       paths/webhooks.yml#/paths/~1accounts~1{ACCOUNT_ID}~1webhooks~1{WEBHOOK_ID}~1attempts
+  '/accounts/{ACCOUNT_ID}/websites':
+    '$ref': 'paths/websites.yml#/paths/~1accounts~1{ACCOUNT_ID}~1websites'
+  '/accounts/{ACCOUNT_ID}/websites/{WEBSITE_ID}':
+    '$ref': 'paths/websites.yml#/paths/~1accounts~1{ACCOUNT_ID}~1websites~1{WEBSITE_ID}'
   '/accounts/{ACCOUNT_ID}/websockets':
     '$ref': 'paths/websockets.yml#/paths/~1accounts~1{ACCOUNT_ID}~1websockets'
   '/accounts/{ACCOUNT_ID}/websockets/{SOCKET_ID}':
