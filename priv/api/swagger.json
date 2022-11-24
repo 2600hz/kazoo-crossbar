@@ -18100,6 +18100,17 @@
             },
             "type": "object"
         },
+        "system_config.schema_validation": {
+            "description": "Schema for schema_validation system_config",
+            "properties": {
+                "validate_sip_hosts": {
+                    "default": true,
+                    "description": "schema_validation validate_sip_hosts",
+                    "type": "boolean"
+                }
+            },
+            "type": "object"
+        },
         "system_config.servers": {
             "description": "Schema for servers system_config",
             "properties": {
