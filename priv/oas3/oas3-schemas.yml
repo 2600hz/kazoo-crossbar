@@ -503,6 +503,8 @@
       '$ref': '#/call_failover'
     'call_forward':
       '$ref': '#/call_forward'
+    'call_limits':
+      '$ref': '#/call_limits'
     'call_recording':
       'additionalProperties': false
       'description': call recording configuration
@@ -1138,6 +1140,13 @@
       'description': Determines if the call forwarding replaces the device
       'type': boolean
       'x-support_level': supported
+  'type': object
+'call_limits':
+  'description': Schema for call limits
+  'properties':
+    'max_concurrent':
+      'description': Maximum number of concurrent calls allowed per endpoint
+      'type': integer
   'type': object
 'call_recording':
   'additionalProperties': false
@@ -5134,6 +5143,8 @@
       '$ref': '#/call_failover'
     'call_forward':
       '$ref': '#/call_forward'
+    'call_limits':
+      '$ref': '#/call_limits'
     'call_recording':
       '$ref': '#/call_recording'
     'call_restriction':
@@ -16416,6 +16427,8 @@
       '$ref': '#/call_failover'
     'call_forward':
       '$ref': '#/call_forward'
+    'call_limits':
+      '$ref': '#/call_limits'
     'call_recording':
       '$ref': '#/call_recording'
     'call_restriction':

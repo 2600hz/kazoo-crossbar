@@ -673,6 +673,9 @@
                 "call_forward": {
                     "$ref": "#/definitions/call_forward"
                 },
+                "call_limits": {
+                    "$ref": "#/definitions/call_limits"
+                },
                 "call_recording": {
                     "additionalProperties": false,
                     "description": "call recording configuration",
@@ -1368,6 +1371,16 @@
                     "default": true,
                     "description": "Determines if the call forwarding replaces the device",
                     "type": "boolean"
+                }
+            },
+            "type": "object"
+        },
+        "call_limits": {
+            "description": "Schema for call limits",
+            "properties": {
+                "max_concurrent": {
+                    "description": "Maximum number of concurrent calls allowed per endpoint",
+                    "type": "integer"
                 }
             },
             "type": "object"
@@ -6419,6 +6432,9 @@
                 },
                 "call_forward": {
                     "$ref": "#/definitions/call_forward"
+                },
+                "call_limits": {
+                    "$ref": "#/definitions/call_limits"
                 },
                 "call_recording": {
                     "$ref": "#/definitions/call_recording"
@@ -20667,6 +20683,9 @@
                 },
                 "call_forward": {
                     "$ref": "#/definitions/call_forward"
+                },
+                "call_limits": {
+                    "$ref": "#/definitions/call_limits"
                 },
                 "call_recording": {
                     "$ref": "#/definitions/call_recording"
