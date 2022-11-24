@@ -723,6 +723,16 @@
     'minLength': 32
     'pattern': '^[0-9a-f]+$'
     'type': string
+'WEBSITE_ID':
+  'description': request WEBSITE_ID parameter
+  'in': path
+  'name': WEBSITE_ID
+  'required': true
+  'schema':
+    'maxLength': 32
+    'minLength': 32
+    'pattern': '^[0-9a-f]+$'
+    'type': string
 'WHITELABEL_DOMAIN':
   'description': request WHITELABEL_DOMAIN parameter
   'in': path

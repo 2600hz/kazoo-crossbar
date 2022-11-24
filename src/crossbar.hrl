@@ -109,6 +109,7 @@
                          ,'cb_users'
                          ,'cb_vmboxes'
                          ,'cb_webhooks'
+                         ,'cb_websites'
                          ,'cb_websockets'
                          ,'cb_whitelabel'
                          ]).
