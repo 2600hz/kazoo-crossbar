@@ -15800,6 +15800,11 @@
                     "description": "kazoo_endpoint default can text self",
                     "type": "boolean"
                 },
+                "default_cavs": {
+                    "default": {},
+                    "description": "kazoo_endpoint default custom application variables to add to CDRs",
+                    "type": "object"
+                },
                 "default_ignore_completed_elsewhere": {
                     "default": true,
                     "description": "kazoo_endpoint default ignore completed elsewhere",
