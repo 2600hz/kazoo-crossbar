@@ -9,6 +9,9 @@
         "call_forward": {
             "$ref": "call_forward"
         },
+        "call_limits": {
+            "$ref": "call_limits"
+        },
         "call_recording": {
             "$ref": "call_recording"
         },
