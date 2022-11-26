@@ -7070,6 +7070,10 @@
                         }
                     },
                     "type": "object"
+                },
+                "webrtc": {
+                    "description": "If true, forces a WebRTC compatible SDP on the INVITE",
+                    "type": "boolean"
                 }
             },
             "type": "object"
@@ -17756,6 +17760,16 @@
                     "description": "registrar device enabled default",
                     "type": "boolean"
                 },
+                "integration_device_types": {
+                    "default": [
+                        "teammate"
+                    ],
+                    "description": "registrar integration_device_types",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
                 "integrations_user_agent_regexes": {
                     "default": [],
                     "description": "list of user agents regexes for accepted integration services",
@@ -17768,6 +17782,11 @@
                     "default": 1,
                     "description": "registrar listeners",
                     "type": "integer"
+                },
+                "migrate_softphone_to_ms_teams": {
+                    "default": false,
+                    "description": "registrar migrate_softphone_to_ms_teams",
+                    "type": "boolean"
                 },
                 "owner_enabled_default": {
                     "default": true,
