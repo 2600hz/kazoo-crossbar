@@ -10,6 +10,14 @@ A device be it a SIP phone or landline number
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
+`addresses.emergency.caller_name` |   | `string()` |   | `true` |  
+`addresses.emergency.extended_address` |   | `string()` |   | `true` |  
+`addresses.emergency.locality` |   | `string()` |   | `true` |  
+`addresses.emergency.postal_code` |   | `string()` |   | `true` |  
+`addresses.emergency.region` |   | `string()` |   | `true` |  
+`addresses.emergency.street_address` |   | `string()` |   | `true` |  
+`addresses.emergency` | Emergency address for device | `object()` |   | `false` |  
+`addresses` | List of addresses for device | `object()` |   | `false` |  
 `call_failover` | The device call failover parameters, to replace the device with an extension/phone number when device is offline. | [#/definitions/call_failover](#call_failover) |   | `false` |  
 `call_forward` | The device call forward parameters | [#/definitions/call_forward](#call_forward) |   | `false` |  
 `call_limits` | Schema for call limits | [#/definitions/call_limits](#call_limits) |   | `false` |  

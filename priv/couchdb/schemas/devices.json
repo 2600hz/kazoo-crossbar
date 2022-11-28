@@ -3,6 +3,44 @@
     "_id": "devices",
     "description": "A device be it a SIP phone or landline number",
     "properties": {
+        "addresses": {
+            "description": "List of addresses for device",
+            "properties": {
+                "emergency": {
+                    "description": "Emergency address for device",
+                    "properties": {
+                        "caller_name": {
+                            "type": "string"
+                        },
+                        "extended_address": {
+                            "type": "string"
+                        },
+                        "locality": {
+                            "type": "string"
+                        },
+                        "postal_code": {
+                            "type": "string"
+                        },
+                        "region": {
+                            "type": "string"
+                        },
+                        "street_address": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "caller_name",
+                        "extended_address",
+                        "locality",
+                        "postal_code",
+                        "region",
+                        "street_address"
+                    ],
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        },
         "call_failover": {
             "$ref": "call_failover"
         },

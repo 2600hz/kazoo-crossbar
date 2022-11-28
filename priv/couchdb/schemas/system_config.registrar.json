@@ -68,6 +68,11 @@
             "description": "registrar owner enabled default",
             "type": "boolean"
         },
+        "should_check_device_emergency_address": {
+            "default": false,
+            "description": "When enabled, REGISTER requests will be rejected if the registering device does not have an emergency address set",
+            "type": "boolean"
+        },
         "use_aggregate": {
             "default": true,
             "description": "registrar use aggregate",
