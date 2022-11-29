@@ -57,7 +57,7 @@ authenticate(Context, _Schema) ->
     auth_nouns(Context, cb_context:req_nouns(Context)).
 
 -spec auth_nouns(cb_context:context(), req_nouns()) -> boolean().
-auth_nouns(Context, [{<<"schemas">>,_}]) ->
+auth_nouns(Context, [{<<"schemas">>,_} | _]) ->
     lager:debug("authenticating request to fetch schema(s)"),
     cb_context:req_verb(Context) =:= ?HTTP_GET.
 
