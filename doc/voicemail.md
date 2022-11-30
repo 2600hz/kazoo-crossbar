@@ -22,6 +22,8 @@ Schema for a voicemail box
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `after_forward_action` | Action to perform after forwarding a voicemail message | `string('prompt' | 'save')` | `save` | `false` |  
+`aliases.[]` |   | `string(1..36)` |   | `false` |  
+`aliases` | The voicemail box aliases string list | `array(string(1..36))` | `[]` | `false` |  
 `announcement_only` | Determine if the mailbox should only play announcements | `boolean()` | `false` | `false` | `unsupported`
 `check_if_owner` | Determines if when the user calls their own voicemail they should be prompted to sign in | `boolean()` | `true` | `false` | `supported`
 `delete_after_notify` | Move the voicemail to delete folder after the notification has been sent | `boolean()` | `false` | `false` | `supported`

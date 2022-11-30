@@ -12,6 +12,17 @@
             ],
             "type": "string"
         },
+        "aliases": {
+            "default": [],
+            "description": "The voicemail box aliases string list",
+            "items": {
+                "maxLength": 36,
+                "minLength": 1,
+                "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+        },
         "announcement_only": {
             "default": false,
             "description": "Determine if the mailbox should only play announcements",

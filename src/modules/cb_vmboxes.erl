@@ -785,12 +785,17 @@ validate_unique_vmbox(VMBoxId, Context) ->
 validate_unique_vmbox(VMBoxId, Context, 'undefined') ->
     check_vmbox_schema(VMBoxId, Context);
 validate_unique_vmbox(VMBoxId, Context, _AccountDb) ->
-    case check_uniqueness(VMBoxId, Context) of
-        'true' -> check_vmbox_schema(VMBoxId, Context);
-        'false' ->
-            Msg = kz_json:from_list([{<<"message">>, <<"Invalid mailbox number or already exists">>}]),
-            C = cb_context:add_validation_error(<<"mailbox">>, <<"unique">>, Msg, Context),
-            check_vmbox_schema(VMBoxId, C)
+    ValidatedContext = check_vmbox_schema(VMBoxId, Context),
+    case cb_context:resp_status(ValidatedContext) of
+        'success' ->
+            case check_uniqueness(VMBoxId, ValidatedContext) of
+                'true' -> ValidatedContext;
+                'false' ->
+                    Msg = kz_json:from_list([{<<"message">>, <<"Invalid mailbox number, alias or already exists">>}]),
+                    cb_context:add_validation_error(<<"mailbox">>, <<"unique">>, Msg, ValidatedContext)
+            end;
+        _SchemaInvalid ->
+            ValidatedContext
     end.
 
 %%------------------------------------------------------------------------------
@@ -1273,24 +1278,19 @@ generate_media_name(CallerId, GregorianSeconds, Ext, Timezone) ->
     list_to_binary([CallerId, "_", Date, Ext]).
 
 %%------------------------------------------------------------------------------
-%% @doc
+%% @doc Returns true if all the aliases and the vmbox number are unique
+%% to the vmbox docs (also a vmbox number and an aliase can not be the same)
 %% @end
 %%------------------------------------------------------------------------------
 
 -spec check_uniqueness(kz_term:api_binary(), cb_context:context()) -> boolean().
 check_uniqueness(VMBoxId, Context) ->
-    try kz_json:get_integer_value(<<"mailbox">>, cb_context:req_data(Context)) of
-        Mailbox ->
-            check_uniqueness(VMBoxId, Context, Mailbox)
-    catch
-        _:_ ->
-            lager:debug("can't convert mailbox number to integer"),
-            'false'
-    end.
+    BoxIdentities = get_aliases_and_mailbox(Context),
+    check_uniqueness(VMBoxId, Context, BoxIdentities).
 
--spec check_uniqueness(kz_term:api_binary(), cb_context:context(), pos_integer()) -> boolean().
-check_uniqueness(VMBoxId, Context, Mailbox) ->
-    ViewOptions = [{'key', Mailbox}],
+-spec check_uniqueness(kz_term:api_binary(), cb_context:context(), kz_term:ne_binaries()) -> boolean().
+check_uniqueness(VMBoxId, Context, BoxIdentities) ->
+    ViewOptions = [{'keys', BoxIdentities}],
     case kz_datamgr:get_results(cb_context:db_name(Context)
                                ,<<"vmboxes/listing_by_mailbox">>
                                ,ViewOptions
@@ -1299,9 +1299,9 @@ check_uniqueness(VMBoxId, Context, Mailbox) ->
         {'ok', []} -> 'true';
         {'ok', [VMBox]} ->
             VMBoxId =:= kz_doc:id(VMBox);
-        {'ok', _} ->
-            lager:warning("found multiple mailboxes for '~p'", [Mailbox]),
-            'false';
+        {'ok', Boxes} ->
+            lists:all(fun(VMBox) -> VMBoxId =:= kz_doc:id(VMBox) end, Boxes)
+                andalso length(BoxIdentities) =:= length(props:unique(BoxIdentities));
         {'error', _E} ->
             lager:debug("failed to load listing_by_mailbox view: ~p", [_E]),
             'false'
@@ -1327,3 +1327,11 @@ update_mwi(Context, BoxId, 'success') ->
     Context;
 update_mwi(Context, _BoxId, _Status) ->
     Context.
+
+get_aliases_and_mailbox(Context)->
+    [BoxIdentity
+     || BoxIdentity <- [kzd_vmboxes:mailbox(cb_context:req_data(Context))
+                       | kzd_vmboxes:aliases(cb_context:req_data(Context), [])
+                       ],
+        kz_term:is_not_empty(BoxIdentity)
+    ].
