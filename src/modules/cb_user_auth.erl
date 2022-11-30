@@ -736,7 +736,8 @@ find_account([{'name', AccountName} | Types], Context) ->
             lager:debug("the account name returned multiple results"),
             {'ok', AccountDbs};
         {'error', _} ->
-            find_account(Types, error_no_account_name(Context, AccountName))
+            Paths = cb_context:path_tokens(Context),
+            find_account(Types, error_no_account_name(Context, lists:last(Paths), AccountName))
     end;
 find_account([{'realm', AccountRealm} | Types], Context) ->
     case kapps_util:get_account_by_realm(AccountRealm) of
@@ -747,7 +748,8 @@ find_account([{'realm', AccountRealm} | Types], Context) ->
             lager:debug("the account realm returned multiple results"),
             {'ok', AccountDbs};
         {'error', _} ->
-            find_account(Types, error_no_account_realm(Context, AccountRealm))
+            Paths = cb_context:path_tokens(Context),
+            find_account(Types, error_no_account_realm(Context, lists:last(Paths), AccountRealm))
     end;
 find_account([{'phone_number', PhoneNumber} | Types], Context) ->
     case knm_numbers:lookup_account(PhoneNumber) of
@@ -756,35 +758,66 @@ find_account([{'phone_number', PhoneNumber} | Types], Context) ->
             lager:debug("found account by phone number '~s': ~s", [PhoneNumber, AccountDb]),
             {'ok', AccountDb};
         {'error', _} ->
-            find_account(Types, error_no_account_phone_number(Context, PhoneNumber))
+            Paths = cb_context:path_tokens(Context),
+            find_account(Types, error_no_account_phone_number(Context, lists:last(Paths), PhoneNumber))
     end;
 find_account([{'id', AccountId} | Types], Context) ->
     case kzd_accounts:fetch(AccountId) of
         {'ok', AccountJObj} ->
             {'ok', kz_doc:account_db(AccountJObj)};
         {'error', 'not_found'} ->
-            find_account(Types, error_no_account_id(Context, AccountId))
+            Paths = cb_context:path_tokens(Context),
+            find_account(Types, error_no_account_id(Context, lists:last(Paths), AccountId))
     end.
 
--spec error_no_account_phone_number(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
-error_no_account_phone_number(Context, PhoneNumber) ->
+-spec error_no_account_phone_number(cb_context:context(), path_token(), kz_term:ne_binary()) -> cb_context:context().
+error_no_account_phone_number(Context, ?RECOVERY, PhoneNumber) ->
     lager:debug("failed to find phone number: '~s'", [PhoneNumber]),
-    Context.
+    Context;
+error_no_account_phone_number(Context, _, PhoneNumber) ->
+    Msg =
+        kz_json:from_list(
+          [{<<"message">>, <<"The provided phone number could not be found">>}
+          ,{<<"cause">>, PhoneNumber}
+          ]),
+    cb_context:add_validation_error(<<"phone_number">>, <<"not_found">>, Msg, Context).
 
--spec error_no_account_id(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
-error_no_account_id(Context, AccountId) ->
+-spec error_no_account_id(cb_context:context(), path_token(), kz_term:ne_binary()) -> cb_context:context().
+error_no_account_id(Context, ?RECOVERY, AccountId) ->
     lager:debug("failed to find account ID: '~s'", [AccountId]),
-    Context.
+    Context;
+error_no_account_id(Context, _, AccountId) ->
+    Msg =
+        kz_json:from_list(
+          [{<<"message">>, <<"The provided account ID could not be found">>}
+          ,{<<"cause">>, AccountId}
+          ]),
+    cb_context:add_validation_error(<<"account_id">>, <<"not_found">>, Msg, Context).
 
--spec error_no_account_realm(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
-error_no_account_realm(Context, AccountRealm) ->
+-spec error_no_account_realm(cb_context:context(), path_token(), kz_term:ne_binary()) -> cb_context:context().
+error_no_account_realm(Context, ?RECOVERY, AccountRealm) ->
     lager:debug("failed to find account realm: '~s'", [AccountRealm]),
-    Context.
+    Context;
+error_no_account_realm(Context, _, AccountRealm) ->
+    Msg =
+        kz_json:from_list(
+          [{<<"message">>, <<"The provided account realm could not be found">>}
+          ,{<<"cause">>, AccountRealm}
+          ]),
+    cb_context:add_validation_error(<<"account_realm">>, <<"not_found">>, Msg, Context).
 
--spec error_no_account_name(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
-error_no_account_name(Context, AccountName) ->
+-spec error_no_account_name(cb_context:context(), path_token(), kz_term:ne_binary()) -> cb_context:context().
+error_no_account_name(Context, ?RECOVERY, AccountName) ->
     lager:debug("failed to find account by name: '~s'", [AccountName]),
-    Context.
+    Context;
+error_no_account_name(Context, _, AccountName) ->
+    Msg =
+        kz_json:from_list(
+          [{<<"message">>, <<"The provided account name could not be found">>}
+          ,{<<"cause">>, AccountName}
+          ]),
+    lager:debug("failed to find account by name: '~s'", [AccountName]),
+    cb_context:add_validation_error(<<"account_name">>, <<"not_found">>, Msg, Context).
 
 -spec consume_tokens(cb_context:context()) -> cb_context:context().
 consume_tokens(Context) ->
