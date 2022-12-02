@@ -349,11 +349,20 @@ cascade_disable_accounts(AccountId) ->
 cascade_disable_delinquent(AccountId) ->
     cascade_disable_delinquent(AccountId, -1.0).
 
--spec cascade_disable_delinquent(input_term(), input_term()) -> 'ok' | 'failed'.
+-spec cascade_disable_delinquent(input_term(), kz_term:text() | kz_currency:dollars()) ->
+          'ok' | 'failed'.
 cascade_disable_delinquent(AccountId, ThresholdCurrency) ->
-    AccountUnits = kz_currency:available_units(AccountId),
-    ThresholdUnits = kz_currency:dollars_to_units(ThresholdCurrency),
+    cascade_disable_delinquent(AccountId
+                              ,kz_currency:available_units(AccountId)
+                              ,kz_currency:dollars_to_units(ThresholdCurrency)
+                              ).
 
+-spec cascade_disable_delinquent(input_term(), {'ok', kz_currency:units()}, kz_currency:units()) ->
+          'ok' | 'failed'.
+cascade_disable_delinquent(AccountId
+                          ,{'ok', AccountUnits}
+                          ,ThresholdUnits
+                          ) ->
     case AccountUnits =< ThresholdUnits of
         'false' ->
             ?SUP_LOG_INFO("account ~s balance ~p is above threshold ~p"
