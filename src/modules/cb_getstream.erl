@@ -279,8 +279,7 @@ create_getstream_user(Context)->
     Headers = create_headers(Context, <<"write">>),
 
     case kz_http:post(URL, Headers, ReqBody) of
-        {'ok', 201, _RespHeaders, RespBody} ->
-            lager:debug("getstream user created: ~p",[RespBody]),
+        {'ok', 201, _RespHeaders, _RespBody} ->
             'true';
         {'error', _E} ->
             lager:debug("failed to create getstream user: ~p", [_E]),
@@ -305,8 +304,7 @@ update_getstream_user(Context, UpdatedValues)->
     Headers = create_headers(Context, <<"write">>),
 
     case kz_http:patch(URL, Headers, ReqBody) of
-        {'ok', 200, _RespHeaders, RespBody} ->
-            lager:debug("getstream user updated: ~p",[RespBody]),
+        {'ok', 200, _RespHeaders, _RespBody} ->
             'true';
         {'error', _E} ->
             lager:debug("failed to update getstream user: ~p", [_E]),
