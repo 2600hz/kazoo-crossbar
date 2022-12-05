@@ -97,11 +97,13 @@ authenticate_nouns(_Nouns) -> 'false'.
 %%------------------------------------------------------------------------------
 -spec validate(cb_context:context()) -> cb_context:context().
 validate(Context) ->
-    Context1 = consume_tokens(Context),
-    case cb_context:resp_status(Context1) of
-        'success' ->
-            cb_context:validate_request_data(<<"api_auth">>, Context, fun on_successful_validation/1);
-        _Status -> Context1
+    TokenCost = cb_modules_util:token_cost(Context, ?API_AUTH_TOKENS),
+    case cb_modules_util:consume_tokens_until(Context, TokenCost) of
+        {'true', Context1} ->
+            cb_context:validate_request_data(<<"api_auth">>, Context1, fun on_successful_validation/1);
+        {'false', Context1} ->
+            lager:debug("client has no tokens left"),
+            cb_context:add_system_error('too_many_requests', Context1)
     end.
 
 %%------------------------------------------------------------------------------
@@ -166,16 +168,3 @@ validate_by_api_key(Context, ApiKey, Doc) ->
                        ,{fun cb_context:store/3, 'auth_type', <<"account_api_token">>}
                        ]
                       ).
-
--spec consume_tokens(cb_context:context()) -> cb_context:context().
-consume_tokens(Context) ->
-    case kz_buckets:consume_tokens_until(?APP_NAME
-                                        ,cb_modules_util:bucket_name(Context)
-                                        ,cb_modules_util:token_cost(Context, ?API_AUTH_TOKENS)
-                                        )
-    of
-        'true' -> cb_context:set_resp_status(Context, 'success');
-        'false' ->
-            lager:debug("client has no tokens left"),
-            cb_context:add_system_error('too_many_requests', Context)
-    end.
