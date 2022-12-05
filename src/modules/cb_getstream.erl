@@ -100,18 +100,16 @@ validate_api_key(Context) ->
 
 -spec put(cb_context:context(), path_token()) -> cb_context:context().
 put(Context, ?CONNECT_PATH) ->
-    UserData = cb_context:doc(Context),
-    UserId = kz_json:get_first_defined([[<<"getstream">>, <<"user_id">>], <<"_id">>],UserData),
-    Secret = cb_context:fetch(Context, 'getstream_secret'),
     ApiKey = cb_context:fetch(Context, 'getstream_api_key'),
 
-    case validate_if_user_exist_on_getstream(UserId, Context, Secret, ApiKey, UserData) of
+    case create_or_update_user_on_getstream(Context) of
         'false' ->
-            cb_context:set_resp_status(Context, 'error');
+            ErrMsg = <<"something went wrong during communication with getstream">>,
+            cb_context:add_system_error(503, <<"service_unavailable">>, ErrMsg, Context);
         'true' ->
             TokenId = kz_datamgr:get_uuid(),
 
-            {_, Token} = create_token_for_getstream('body', UserId, Secret),
+            Token = create_getstream_jwt_token(Context),
 
             Setters = [{fun cb_context:set_resp_status/2, 'success'}
                       ,{fun cb_context:set_resp_data/2
@@ -201,103 +199,185 @@ maybe_get_default_secret(_Context) ->
 maybe_get_default_api_key(_Context) ->
     kapps_config:get_ne_binary(<<(?CONFIG_CAT)/binary, ".getstream">>, <<"api_key">>).
 
--spec validate_if_user_exist_on_getstream(kz_term:api_binary(), cb_context:context(), kz_term:api_binary(), kz_term:api_ne_binary(), kz_json:api_json_term()) -> boolean().
-validate_if_user_exist_on_getstream(UserId, Context, Secret, APIKey, UserData) ->
-    {_, TokenHeader} = create_token_for_getstream('header' ,<<"read">>, Secret),
+-spec create_or_update_user_on_getstream(cb_context:context()) -> kz_either:either(any(), kz_json:object()).
+create_or_update_user_on_getstream(Context) ->
+    case get_getstream_user(Context) of
+        {'ok', GetStreamUsers} ->
+            create_or_update_user_on_getstream(Context, GetStreamUsers);
+        {'error', _E} ->
+            lager:debug("failed to get getstream user: ~p", [_E]),
+            'false'
+    end.
 
-    Headers = create_headers(TokenHeader),
+-spec create_or_update_user_on_getstream(cb_context:context(), kz_json:objects()) -> boolean().
+create_or_update_user_on_getstream(Context, []) ->
+    create_getstream_user(Context);
+create_or_update_user_on_getstream(Context, [GetStreamUser]) ->
+    maybe_update_getstream_user(Context, GetStreamUser).
 
-    Eq = kz_json:from_list([{<<"$eq">>,UserId}]),
-    Id = kz_json:from_list([{<<"id">>, Eq}]),
-    Params = kz_json:from_list([{<<"filter_conditions">>, Id}]),
-    JsParams = kz_json:encode(Params),
+maybe_update_getstream_user(Context, GetStreamUser) ->
+    case diff_current_info(Context, GetStreamUser) of
+        [] ->
+            %% the data is valid and no update is required, continue with jwt token generation
+            'true';
+        UpdatedValues ->
+            update_getstream_user(Context, UpdatedValues)
+    end.
 
-    QS = [{<<"api_key">>, APIKey}
-         ,{<<"payload">>, kz_http_util:urlencode(JsParams)}
-         ],
+diff_current_info(Context, GetStreamUser) ->
+    CurrentGetStreamInfo = kz_json:from_list(getstream_user_info(Context)),
 
-    URL = create_getstream_url(<<"users">>, QS),
+    lists:filtermap(fun({Key, CurrentValue}) ->
+                            case kz_json:get_ne_binary_value(Key, CurrentGetStreamInfo) of
+                                CurrentValue -> 'false';
+                                NewValue -> {'true', {Key, NewValue}}
+                            end
+                    end
+                   ,[{<<"role">>, kz_json:get_ne_binary_value(<<"role">>, GetStreamUser)}
+                    ,{<<"username">>, kz_json:get_ne_binary_value(<<"username">>, GetStreamUser)}
+                    ,{<<"name">>, kz_json:get_ne_binary_value(<<"name">>, GetStreamUser)}
+                    ]
+                   ).
 
-    lager:warning("URL: ~p",[URL]),
+-spec get_getstream_user(cb_context:context()) -> kz_either:either(any(), kz_json:objects()).
+get_getstream_user(Context) ->
+    UserId = kz_doc:id(cb_context:doc(Context)),
+
+    Payload = kz_json:from_list(
+                [{<<"filter_conditions">>
+                 ,kz_json:from_list(
+                    [{<<"id">>, kz_json:from_list([{<<"$eq">>, UserId}])}])
+                 }
+                ]
+               ),
+    QS = [{<<"payload">>, kz_http_util:urlencode(kz_json:encode(Payload))}],
+    URL = build_url(Context, QS),
+    Headers = create_headers(Context, <<"read">>),
 
     case kz_http:get(URL, Headers) of
         {'ok', _Code, _RespHeaders, RespBody} ->
             RespDecoded = kz_json:decode(RespBody),
-            check_getstream_body(kz_json:get_list_value(<<"users">>, RespDecoded), UserId, Context, APIKey, Secret, UserData);
-        _E ->
-            lager:debug("failed: ~p", [_E]),
-            'false'
+            {'ok', kz_json:get_list_value(<<"users">>, RespDecoded, [])};
+        {'error', _}=Error ->
+            Error
     end.
 
--spec create_getstream_url(kz_term:ne_binary(), kz_term:protardplist()) -> kz_http:url().
-create_getstream_url(Resource, QS) ->
-    BaseUrl = <<"https://chat.stream-io-api.com">>,
-    iolist_to_binary([BaseUrl, "/", Resource, "?", kz_http_util:props_to_querystring(QS)]).
+-spec create_getstream_user(cb_context:context()) -> boolean().
+create_getstream_user(Context)->
+    UserDoc = cb_context:doc(Context),
+    UserId = kz_doc:id(UserDoc),
 
--spec check_getstream_body(kz_term:api_list(), kz_term:api_binary(), cb_context:context(), kz_term:api_ne_binary(), kz_term:api_binary(), kz_json:api_json_term()) -> boolean().
-check_getstream_body([], UserId, Context, APIKey, Secret, UserData) ->
-    create_getstream_user(UserId, Context, APIKey, Secret, UserData);
-check_getstream_body(_User, _UserId, _Context, _APIKey, _Secret, _UserData) ->
-    'true'.
+    User = kz_json:from_list(getstream_user_info(Context)),
+    Body = kz_json:from_list([{<<"users">>
+                              ,kz_json:from_list([{UserId, User}])
+                              }
+                             ]
+                            ),
+    ReqBody = kz_json:encode(Body),
 
--spec create_getstream_user(kz_term:api_binary(), cb_context:context(), kz_term:api_ne_binary(), kz_term:api_binary(), kz_json:api_json_term()) -> boolean().
-create_getstream_user(UserId, Context, APIKey, Secret, UserData)->
-    QS = [{<<"api_key">>, APIKey}],
-    URL = create_getstream_url(<<"users">>, QS),
+    URL = build_url(Context, []),
+    Headers = create_headers(Context, <<"write">>),
 
-    {_, TokenHeader} = create_token_for_getstream('header', <<"write">>, Secret),
-
-    Headers = create_headers(TokenHeader),
-
-    FirstName = kz_json:get_first_defined([[<<"getstream">>, <<"user_id">>],<<"first_name">>],UserData),
-    LastName = kz_json:get_first_defined([[<<"getstream">>, <<"user_id">>],<<"last_name">>],UserData),
-
-    Body = kz_json:from_list(
-             [{<<"id">>, UserId},
-              {<<"teams">>, [cb_context:account_id(Context)]},
-              {<<"username">>, kz_json:get_first_defined([[<<"getstream">>, <<"user_id">>], <<"username">>], UserData)},
-              {<<"name">>, <<FirstName/binary, LastName/binary>>},
-              {<<"role">>, kz_json:get_first_defined([[<<"getstream">>, <<"user_id">>], <<"priv_level">>], UserData)}
-             ]),
-
-    Account = kz_json:from_list([{UserId, Body}]),
-    Params = kz_json:from_list([{<<"users">>, Account}]),
-    JsParams = kz_json:encode(Params),
-
-    case kz_http:post(URL, Headers, JsParams) of
-        {'ok', 201, _RespHeaders, RespBody} ->
-            lager:debug("user created: ~p",[RespBody]),
+    case kz_http:post(URL, Headers, ReqBody) of
+        {'ok', 201, _RespHeaders, _RespBody} ->
             'true';
         {'error', _E} ->
-            lager:debug("failed: ~p", [_E]),
+            lager:debug("failed to create getstream user: ~p", [_E]),
             'false'
     end.
 
--spec create_token_for_getstream(atom(), kz_term:api_binary(), kz_term:api_binary()) ->
-          {'ok', kz_term:ne_binary()} |
-          {'error', any()}.
-create_token_for_getstream('header', Value, Secret) ->
-    kz_auth_jwt:encode(
-      #{claims => [{<<"resource">>, <<"users">>}
-                  ,{<<"action">>, Value}
-                  ,{<<"feed_id">>, <<"*">>}
-                  ]
-       ,issuer => ?ISSUER
-       ,alg => ?ALG
-       ,key => Secret
-       });
-create_token_for_getstream(_Type, Value, Secret) ->
-    kz_auth_jwt:encode(
-      #{claims => [{<<"user_id">>, Value}]
-       ,issuer => ?ISSUER
-       ,alg => ?ALG
-       ,key => Secret
-       }).
+-spec update_getstream_user(cb_context:context(), kz_term:proplist()) -> boolean().
+update_getstream_user(Context, UpdatedValues)->
+    UserDoc = cb_context:doc(Context),
+    UserId = kz_doc:id(UserDoc),
 
--spec create_headers(kz_term:ne_binary()) -> kz_http:headers().
-create_headers(TokenHeader) ->
+    UserProperties = kz_json:from_list(
+                       [{<<"id">>, UserId}
+                       ,{<<"set">>, kz_json:from_list(UpdatedValues)}
+                       ]
+                      ),
+
+    Params = kz_json:from_list([{<<"users">>, [UserProperties]}]),
+    ReqBody = kz_json:encode(Params),
+
+    URL = build_url(Context, []),
+    Headers = create_headers(Context, <<"write">>),
+
+    case kz_http:patch(URL, Headers, ReqBody) of
+        {'ok', 200, _RespHeaders, _RespBody} ->
+            'true';
+        {'error', _E} ->
+            lager:debug("failed to update getstream user: ~p", [_E]),
+            'false'
+    end.
+
+-spec getstream_user_info(cb_context:context()) -> kz_term:proplist().
+getstream_user_info(Context) ->
+    UserDoc = cb_context:doc(Context),
+    FirstName = kz_json:get_ne_binary_value([<<"getstream">>, <<"first_name">>]
+                                           ,UserDoc
+                                           ,kzd_users:first_name(UserDoc)
+                                           ),
+    LastName = kz_json:get_ne_binary_value([<<"getstream">>, <<"last_name">>]
+                                          ,UserDoc
+                                          ,kzd_users:last_name(UserDoc)
+                                          ),
+    Username = kz_json:get_ne_binary_value([<<"getstream">>, <<"username">>]
+                                          ,UserDoc
+                                          ,kzd_users:username(UserDoc)
+                                          ),
+    UserRole = kz_json:get_ne_binary_value([<<"getstream">>, <<"priv_level">>]
+                                          ,UserDoc
+                                          ,kzd_users:priv_level(UserDoc)
+                                          ),
+    [{<<"id">>, kz_doc:id(UserDoc)}
+    ,{<<"teams">>, [cb_context:account_id(Context)]}
+    ,{<<"username">>, Username}
+    ,{<<"name">>, <<FirstName/binary, LastName/binary>>}
+    ,{<<"role">>, UserRole}
+    ].
+
+-spec create_getstream_jwt_token(cb_context:context()) -> kz_term:ne_binary().
+create_getstream_jwt_token(Context) ->
+    UserDoc = cb_context:doc(Context),
+    UserId = kz_doc:id(UserDoc),
+
+    Secret = cb_context:fetch(Context, 'getstream_secret'),
+    {'ok', Token} = kz_auth_jwt:encode(
+                      #{claims => [{<<"user_id">>, UserId}]
+                       ,issuer => ?ISSUER
+                       ,alg => ?ALG
+                       ,key => Secret
+                       }),
+    Token.
+
+-spec create_headers(cb_context:context(), kz_term:ne_binary()) -> kz_http:headers().
+create_headers(Context, Action) ->
+    Secret = cb_context:fetch(Context, 'getstream_secret'),
+    {'ok', TokenHeader} = kz_auth_jwt:encode(
+                            #{claims => [{<<"resource">>, <<"users">>}
+                                        ,{<<"action">>, Action}
+                                        ,{<<"feed_id">>, <<"*">>}
+                                        ]
+                             ,issuer => ?ISSUER
+                             ,alg => ?ALG
+                             ,key => Secret
+                             }),
+
     props:filter_undefined(
       [{"Stream-Auth-Type", "jwt"}
       ,{"Authorization", TokenHeader}
       ,{"te", "trailers"}
       ]).
+
+-spec build_url(cb_context:context(), kz_term:proplist()) -> kz_http:url().
+build_url(Context, QS) ->
+    BaseUrl = <<"https://chat.stream-io-api.com">>,
+    NewQS = props:set_value(<<"api_key">>, cb_context:fetch(Context, 'getstream_api_key'), QS),
+    kz_term:to_binary(
+      [BaseUrl
+      ,"/users"
+      ,"?"
+      ,kz_http_util:props_to_querystring(NewQS)
+      ]
+     ).
