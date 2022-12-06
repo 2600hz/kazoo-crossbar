@@ -26,7 +26,7 @@
         ,validate/1, validate/2, validate/3
         ,put/1
         ,post/2, post/3
-        ,delete/2 ,delete/3
+        ,delete/2, delete/3
         ,patch/2
         ]).
 
@@ -180,10 +180,12 @@ authorize_users(_Nouns, _Verb) -> 'false'.
 validate_resource(Context) -> Context.
 
 -spec validate_resource(cb_context:context(), path_token()) -> cb_context:context().
-validate_resource(Context, UserId) -> validate_user_id(UserId, Context).
+validate_resource(Context, UserId) ->
+    validate_user_id(UserId, Context).
 
 -spec validate_resource(cb_context:context(), path_token(), path_token()) -> cb_context:context().
-validate_resource(Context, UserId, _Token) -> validate_user_id(UserId, Context).
+validate_resource(Context, UserId, _Token) ->
+    validate_user_id(UserId, Context).
 
 -spec validate_resource(cb_context:context(), path_token(), path_token(), path_token()) -> cb_context:context().
 validate_resource(Context, UserId, _Token1, _Token2) -> validate_user_id(UserId, Context).

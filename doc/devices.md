@@ -817,6 +817,10 @@ curl -v -X GET \
 }
 ```
 
+## Push payload to device
+
+See [pushes.md](./pushes.md) for information about this action.
+
 ## Reboot a device
 
 Some devices support receiving SIP NOTIFY packets with `event` = `check-sync`. This is typically used to reboot the phone if the configuration has changed. Kazoo will generate the NOTIFY packet if the device is registered.

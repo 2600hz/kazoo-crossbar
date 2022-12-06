@@ -736,6 +736,10 @@ curl -v -X POST \
 }
 ```
 
+## Push payload to user's devices
+
+See [pushes.md](./pushes.md) for information about this action.
+
 ## Fetch (or create) a vCard
 
 [vCard](https://en.wikipedia.org/wiki/VCard) is a file format typically used in emails as a form of business card. Kazoo currently generates a 3.0 compatible vCard.

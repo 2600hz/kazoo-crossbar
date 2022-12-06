@@ -681,6 +681,9 @@
     '$ref': 'paths/wordle.yml#/paths/~1accounts~1{ACCOUNT_ID}~1wordle'
   '/accounts/{ACCOUNT_ID}/wordle/{WORD_ID}':
     '$ref': 'paths/wordle.yml#/paths/~1accounts~1{ACCOUNT_ID}~1wordle~1{WORD_ID}'
+  '/accounts/{ACCOUNT_ID}/{ENDPOINT_TYPE}/{ENDPOINT_ID}/pushes':
+    '$ref': >-
+      paths/pushes.yml#/paths/~1accounts~1{ACCOUNT_ID}~1{ENDPOINT_TYPE}~1{ENDPOINT_ID}~1pushes
   '/accounts/{ACCOUNT_ID}/{ENDPOINT_TYPE}/{ENDPOINT_ID}/quickcall/{NUMBER}':
     '$ref': >-
       paths/quickcall.yml#/paths/~1accounts~1{ACCOUNT_ID}~1{ENDPOINT_TYPE}~1{ENDPOINT_ID}~1quickcall~1{NUMBER}
