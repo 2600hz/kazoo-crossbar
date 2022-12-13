@@ -12457,6 +12457,12 @@
       'default': true
       'description': kazoo_endpoint default can text self
       'type': boolean
+    'default_cavs':
+      'description': kazoo_endpoint default_cavs
+      'type': object
+    'default_ccvs':
+      'description': kazoo_endpoint default_ccvs
+      'type': object
     'default_ignore_completed_elsewhere':
       'default': true
       'description': kazoo_endpoint default ignore completed elsewhere
