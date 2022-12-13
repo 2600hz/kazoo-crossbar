@@ -9666,6 +9666,13 @@
       'default': 50
       'description': blackhole max_queued_messages
       'type': integer
+    'notification_events':
+      'default':
+        - missed_call
+      'description': blackhole notification_events
+      'items':
+        'type': string
+      'type': array
     'port':
       'default': 5555
       'description': blackhole port
