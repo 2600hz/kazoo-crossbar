@@ -224,14 +224,18 @@ validate_account_path(Context, AccountId, ?API_KEY, ?HTTP_GET) ->
         _Else -> Context1
     end;
 validate_account_path(Context, AccountId, ?API_KEY, ?HTTP_PUT) ->
-    case cb_context:is_account_admin(Context) of
+    case cb_context:is_account_admin(Context)
+        orelse cb_context:is_superduper_admin(Context)
+    of
+        'false' ->
+            lager:info("requestor is forbidden from this request"),
+            cb_context:add_system_error('forbidden', Context);
         'true' ->
-            Context1 = crossbar_doc:load(AccountId, prepare_context('undefined', Context), ?TYPE_CHECK_OPTION(?PVT_TYPE)),
+            Context1 = load_account(AccountId, prepare_context(AccountId, Context)),
             case cb_context:resp_status(Context1) of
                 'success' -> add_pvt_api_key(Context1);
                 _Else -> Context1
-            end;
-        'false' -> cb_context:add_system_error('forbidden', Context)
+            end
     end;
 validate_account_path(Context, AccountId, ?MOVE, ?HTTP_POST) ->
     Data = cb_context:req_data(Context),
@@ -350,15 +354,16 @@ unroll(Context, NewAccountId) ->
     Context.
 
 -spec put(cb_context:context(), path_token(), path_token()) -> cb_context:context().
-put(Context, _AccountId, ?API_KEY) ->
-    C1 = crossbar_doc:save(Context),
-    case cb_context:resp_status(C1) of
-        'success' ->
-            JObj = cb_context:doc(C1),
-            ApiKey = kzd_accounts:api_key(JObj),
+put(Context, AccountId, ?API_KEY) ->
+    AccountDoc = cb_context:doc(Context),
+    case kzd_accounts:save(AccountDoc) of
+        {'ok', Saved} ->
+            ApiKey = kzd_accounts:api_key(Saved),
             RespJObj = kz_json:from_list([{<<"api_key">>, ApiKey}]),
-            cb_context:set_resp_data(C1, RespJObj);
-        _ -> C1
+            crossbar_doc:handle_json_success(RespJObj, Context, ?HTTP_GET);
+        {'error', E} ->
+            lager:info("failed to save API key reset: ~p", [E]),
+            crossbar_doc:handle_datamgr_errors(E, AccountId, Context)
     end;
 put(Context, AccountId, ?RESELLER) ->
     case kz_services_reseller:promote(AccountId) of
