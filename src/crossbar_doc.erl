@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2022, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -26,7 +26,7 @@
         ,update_pvt_parameters/2, add_pvt_auth/3, pvt_updates/2
         ]).
 
--export([handle_json_success/2]).
+-export([handle_json_success/2, handle_json_success/3]).
 -export([handle_datamgr_success/2
         ,handle_datamgr_errors/3
         ]).
