@@ -12,6 +12,11 @@
             "description": "kazoo_endpoint custom sip interface",
             "type": "string"
         },
+        "default_call_limits": {
+            "default": {},
+            "description": "kazoo_endpoint default_call_limits",
+            "type": "object"
+        },
         "default_caller_id_name": {
             "description": "kazoo_endpoint default caller id name",
             "type": "string"
