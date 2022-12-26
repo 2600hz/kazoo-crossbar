@@ -307,6 +307,7 @@ get_view_options([{<<"cdrs">>, [?PATH_INTERACTION]}, {?KZ_ACCOUNTS_DB, _}|_]) ->
     ,props:filter_undefined(
        [{'range_start_keymap', []}
        ,{'range_end_keymap', crossbar_view:suffix_key_fun([kz_json:new()])}
+       ,{'key_min_length', 3}
        ,{'group', 'true'}
        ,{'group_level', 2}
        ,{'reduce', 'true'}
