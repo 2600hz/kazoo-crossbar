@@ -356,7 +356,7 @@ unroll(Context, NewAccountId) ->
 -spec put(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 put(Context, AccountId, ?API_KEY) ->
     AccountDoc = cb_context:doc(Context),
-    case kzd_accounts:save(AccountDoc) of
+    case kzd_accounts:save(kz_json:delete_key(<<"_read_only">>, AccountDoc)) of
         {'ok', Saved} ->
             ApiKey = kzd_accounts:api_key(Saved),
             RespJObj = kz_json:from_list([{<<"api_key">>, ApiKey}]),
