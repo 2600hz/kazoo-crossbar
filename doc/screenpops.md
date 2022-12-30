@@ -8,6 +8,8 @@ This API is intended to serve as an information source for screenpops:
 * Show the data in the preview of how the screenpop should look like.
 * Serve the screenpop data when receiving a call.
 
+Permissions object used to set/identify which users are allowed and not allowed for an screenpop. This has 3 keys, all_users, allow and deny. For a screenpop for a specific userid if (all_users=true or userid in allow list) and (userid not in deny list) the screenpop will be allowed for that specific userid.
+
 #### Schema
 
 
@@ -26,13 +28,19 @@ Key | Description | Type | Default | Required | Support Level
 `custom_parameters.[].url_parameters.[].value` | Contains the value for the url_parameters | `string()` |   | `false` |  
 `custom_parameters.[].url_parameters` | Contains all the url custom params defined to concat to the custom url | `array(object())` |   | `false` |  
 `custom_parameters` |   | `array(object())` |   | `false` |  
+`permissions.all_users` | Whether the screenpop allowed for all users in the account | `boolean()` | `true` | `false` |  
+`permissions.allow.[]` |   | `string()` |   | `false` |  
+`permissions.allow` | Specific list of users who are allowed the screenpop | `array(string())` | `[]` | `false` |  
+`permissions.deny.[]` |   | `string()` |   | `false` |  
+`permissions.deny` | Specific list of users who are not allowed the screenpop | `array(string())` | `[]` | `false` |  
+`permissions` | Used when screenpops are allowed for userwise, this object contains which users are allowed and not allowed for a screenpop | `object()` | `{}` | `false` |  
 `post_call_extension_time` | Contains the time the screenpop will remain active when the temporal type is selected. | `number()` |   | `false` |  
 `show_location_call_time` | Flag field for location and local time of customer call | `boolean()` | `false` | `false` |  
 `type_screenpops` | Type of screenpops | `string()` | `notification` | `false` |  
 
 
 
-#### Fetch
+#### Fetch all screenpops for an Account
 
 > GET /v2/accounts/{ACCOUNT_ID}/screenpops
 
@@ -46,106 +54,123 @@ curl -v -X GET \
 {
   "auth_token": "{AUTH_TOKEN}",
   "data": [
-    {
-      "id": "{SCREENPOP_ID}",
-      "custom_parameters": [
         {
-          "type_custom_parameter": "system_data",
-          "name": "Caller Number",
-          "render_name_as_label": false,
-          "token": "<<caller_id_number>>"
-        },
-        {
-          "type_custom_parameter": "dynamic_link",
-          "name": "Salesforce",
-          "render_name_as_label": true,
-          "link_text": "View contact in Salesforce",
-          "custom_url": "https://salesforce.example.com/accounts/master-account/contacts/kdamas"
-        }
-      ],
-      "type_screenpops": "notification"
-    },
-    {
-      "id": "{SCREENPOP_ID}",
-      "custom_parameters": [
-        {
-          "type_custom_parameter": "system_data",
-          "name": "Caller Number",
-          "render_name_as_label": false,
-          "token": "<<caller_id_number>>"
-        },
-        {
-          "type_custom_parameter": "dynamic_link",
-          "name": "Salesforce",
-          "render_name_as_label": true,
-          "link_text": "View contact in Salesforce",
-          "custom_url": "https://salesforce.example.com/accounts/master-account/contacts/kdamas"
-        },
-        {
-          "type_custom_parameter": "external_data",
-          "name": "CRM Lookup",
-          "render_name_as_label": false,
-          "url": "example.com/crm_lookup",
-          "request_method": "GET",
-          "url_parameters": [
-            {
-              "name": "Name",
-              "value": "<<caller_id_name>>"
-            },
-            {
-              "name": "Custom",
-              "value": "2600hz FTW!"
+            "id": "3e665f11ca893955d7dd770b7241b6b6",
+            "flags": [],
+            "features": [],
+            "custom_parameters": [
+                {
+                    "type_custom_parameter": "external_data",
+                    "name": "CRM Lookup",
+                    "render_name_as_label": false,
+                    "url": "example.com/crm_lookup"
+                }
+            ],
+            "post_call_extension_time": 35,
+            "type_screenpops": "persistent",
+            "show_location_call_time": false,
+            "permissions": {
+                "allow": [
+                    "56dfa34418a30b7f14b7a71d29774071"
+                ],
+                "deny": [],
+                "all_users": false
             }
-          ]
+        },
+        {
+            "id": "03568e5dd9a35aa0afed4eec58e6d9ab",
+            "flags": [],
+            "features": [],
+            "custom_parameters": [
+                {
+                    "type_custom_parameter": "system_data",
+                    "name": "Caller Number",
+                    "render_name_as_label": false,
+                    "token": "<<caller_id_number>>"
+                }
+            ],
+            "post_call_extension_time": 15,
+            "type_screenpops": "notification",
+            "show_location_call_time": false,
+            "permissions": {
+                "allow": [],
+                "deny": [],
+                "all_users": true
+            }
         }
-      ],
-      "post_call_extension_time": 15,
-      "type_screenpops": "persistent"
-    }
-  ],
+    ],
   "revision": "{REVISION}",
+  "metadata": {},
   "status": "success"
 
 }
 ```
 
-#### Create
+#### Fetch screenpops allowed for an user
 
-> PUT /v2/accounts/{ACCOUNT_ID}/screenpops
+> GET /v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/screenpops
 
 ```shell
-curl -v -X PUT \
+curl -v -X GET \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
-    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/screenpops
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/screenpops
 ```
 
 ```json
-{
-  "auth_token": "{AUTH_TOKEN}",
-  "data": {
-    "type_screenpops": "persistent",
-    "post_call_extension_time": 15,
-    "custom_parameters": [
-      {
-        "type_custom_parameter": "system_data",
-        "name": "Caller Number",
-        "render_name_as_label": false,
-        "token": "<<caller_id_number>>"
-      }
+{ "auth_token": "{AUTH_TOKEN}",
+  "data": [
+        {
+            "type_screenpops": "notification",
+            "post_call_extension_time": 15,
+            "custom_parameters": [
+                {
+                    "type_custom_parameter": "system_data",
+                    "name": "Caller Number",
+                    "render_name_as_label": false,
+                    "token": "<<caller_id_number>>"
+                }
+            ],
+            "permissions": {
+                "allow": [],
+                "deny": [],
+                "all_users": true
+            },
+            "show_location_call_time": false,
+            "flags": [],
+            "features": [],
+            "id": "03568e5dd9a35aa0afed4eec58e6d9ab"
+        },
+        {
+            "type_screenpops": "persistent",
+            "post_call_extension_time": 35,
+            "custom_parameters": [
+                {
+                    "type_custom_parameter": "external_data",
+                    "name": "CRM Lookup",
+                    "render_name_as_label": false,
+                    "url": "example.com/crm_lookup"
+                }
+            ],
+            "permissions": {
+                "allow": [
+                    "56dfa34418a30b7f14b7a71d29774071"
+                ],
+                "deny": [],
+                "all_users": false
+            },
+            "show_location_call_time": false,
+            "flags": [],
+            "features": [],
+            "id": "3e665f11ca893955d7dd770b7241b6b6"
+        }
     ],
-    "id": "{SCREENPOP_ID}"
-  },
-  "metadata": {
-    "modified": 63796784790,
-    "id": "{SCREENPOP_ID}",
-    "created": 63796784790
-  },
-  "revision": "{REVISION}",
-  "status": "success"
+    "revision": "3d1c7f179a36c496c708032b8417ff8a",
+    "metadata": {},
+    "status": "success"
 }
 ```
 
-#### Fetch
+#### Fetch a screenpop by id
 
 > GET /v2/accounts/{ACCOUNT_ID}/screenpops/{SCREENPOPS_ID}
 
@@ -159,17 +184,25 @@ curl -v -X GET \
 {
   "auth_token": "{AUTH_TOKEN}",
   "data": {
-    "type_screenpops": "persistent",
-    "post_call_extension_time": 15,
-    "custom_parameters": [
-      {
-        "type_custom_parameter": "system_data",
-        "name": "Caller Number",
-        "render_name_as_label": false,
-        "token": "<<caller_id_number>>"
-      }
-    ],
-    "id": "{SCREENPOP_ID}"
+      "type_screenpops": "persistent",
+      "post_call_extension_time": 35,
+      "custom_parameters": [
+          {
+              "type_custom_parameter": "external_data",
+              "name": "CRM Lookup",
+              "render_name_as_label": false,
+              "url": "example.com/crm_lookup"
+          }
+      ],
+      "permissions": {
+          "allow": [
+              "56dfa34418a30b7f14b7a71d29774071"
+          ],
+          "deny": [],
+          "all_users": false
+      },
+      "show_location_call_time": false,
+      "id": "{SCREENPOPS_ID}"
   },
   "metadata": {
     "modified": 63796787745,
@@ -181,6 +214,49 @@ curl -v -X GET \
 }
 ```
 
+#### Create a new screenpop
+
+> PUT /v2/accounts/{ACCOUNT_ID}/screenpops
+
+```shell
+curl -v -X PUT \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d "{"data":{"type_screenpops": "notification","post_call_extension_time": 15,"custom_parameters": [{"type_custom_parameter": "system_data","name": "Caller Number","render_name_as_label": false,"token": "Token"}],"permissions": {"allow": [],"deny": [],"all_users": true}}}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/screenpops
+```
+
+```json
+{
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+      "type_screenpops": "notification",
+      "post_call_extension_time": 15,
+      "custom_parameters": [
+          {
+              "type_custom_parameter": "system_data",
+              "name": "Caller Number",
+              "render_name_as_label": false,
+              "token": "Token"
+          }
+      ],
+      "permissions": {
+          "allow": [],
+          "deny": [],
+          "all_users": true
+      },
+      "show_location_call_time": false,
+      "id": "03568e5dd9a35aa0afed4eec58e6d9ab"
+  },
+  "revision": "1-b171790b8c3687ca2026395a7f086603",
+  "metadata": {
+      "id": "03568e5dd9a35aa0afed4eec58e6d9ab",
+      "created": 63839872247,
+      "modified": 63839872247
+  },
+  "status": "success"
+}
+```
+
 #### Patch
 
 > PATCH /v2/accounts/{ACCOUNT_ID}/screenpops/{SCREENPOPS_ID}
@@ -188,6 +264,7 @@ curl -v -X GET \
 ```shell
 curl -v -X PATCH \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d "{"data":{"permissions": {"allow": ["56dfa34418a30b7f14b7a71d29774071"],"deny": [],"all_users": false}}}" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/screenpops/{SCREENPOPS_ID}
 ```
 
@@ -195,17 +272,25 @@ curl -v -X PATCH \
 {
   "auth_token": "{AUTH_TOKEN}",
   "data": {
-    "type_screenpops": "persistent",
-    "post_call_extension_time": 25,
-    "custom_parameters": [
-      {
-        "type_custom_parameter": "system_data",
-        "name": "Caller Number",
-        "render_name_as_label": false,
-        "token": "<<caller_id_number>>"
-      }
-    ],
-    "id": "{SCREENPOP_ID}"
+      "type_screenpops": "notification",
+      "show_location_call_time": false,
+      "post_call_extension_time": 15,
+      "permissions": {
+          "deny": [],
+          "allow": [
+              "56dfa34418a30b7f14b7a71d29774071"
+          ],
+          "all_users": false
+      },
+      "custom_parameters": [
+          {
+              "type_custom_parameter": "system_data",
+              "name": "Caller Number",
+              "render_name_as_label": false,
+              "token": "<<caller_id_number>>"
+          }
+      ],
+      "id": "03568e5dd9a35aa0afed4eec58e6d9ab"
   },
   "metadata": {
     "modified": 63796962651,
@@ -224,6 +309,7 @@ curl -v -X PATCH \
 ```shell
 curl -v -X POST \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d "{"data": {"type_screenpops": "notification","show_location_call_time": false,"post_call_extension_time": 15,"permissions": {"deny": [],"allow": ["56dfa34418a30b7f14b7a71d29774071"],"all_users": false},"custom_parameters": [{"type_custom_parameter": "system_data","name": "Caller Number","render_name_as_label": false,"token": "Token2"}]}}" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/screenpops/{SCREENPOPS_ID}
 ```
 
@@ -231,24 +317,25 @@ curl -v -X POST \
 {
   "auth_token": "{AUTH_TOKEN}",
   "data": {
-    "type_screenpops": "persistent",
-    "post_call_extension_time": 25,
-    "custom_parameters": [
-      {
-        "type_custom_parameter": "system_data",
-        "name": "Caller Number",
-        "render_name_as_label": false,
-        "token": "<<caller_id_number>>"
+      "type_screenpops": "notification",
+      "show_location_call_time": false,
+      "post_call_extension_time": 15,
+      "permissions": {
+          "deny": [],
+          "allow": [
+              "56dfa34418a30b7f14b7a71d29774071"
+          ],
+          "all_users": false
       },
-      {
-        "type_custom_parameter": "dynamic_link",
-        "name": "Salesforce",
-        "render_name_as_label": true,
-        "link_text": "View contact in Salesforce",
-        "custom_url": "https://salesforce.example.com/accounts/master-account/contacts/kdamas"
-      }
-    ],
-    "id": "{SCREENPOP_ID}"
+      "custom_parameters": [
+          {
+              "type_custom_parameter": "system_data",
+              "name": "Caller Number",
+              "render_name_as_label": false,
+              "token": "Token2"
+          }
+      ],
+      "id": "03568e5dd9a35aa0afed4eec58e6d9ab"
   },
   "metadata": {
     "modified": 63796963125,
@@ -268,4 +355,39 @@ curl -v -X POST \
 curl -v -X DELETE \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/screenpops/{SCREENPOP_ID}
+```
+
+```json
+{
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+      "type_screenpops": "notification",
+      "show_location_call_time": false,
+      "post_call_extension_time": 15,
+      "permissions": {
+          "deny": [],
+          "allow": [
+              "56dfa34418a30b7f14b7a71d29774071"
+          ],
+          "all_users": false
+      },
+      "custom_parameters": [
+          {
+              "type_custom_parameter": "system_data",
+              "name": "Caller Number",
+              "render_name_as_label": false,
+              "token": "Token2"
+          }
+      ],
+      "id": "03568e5dd9a35aa0afed4eec58e6d9ab"
+  },
+  "revision": "4-d438fec8866aaf89186307232f3a42ae",
+  "metadata": {
+      "id": "03568e5dd9a35aa0afed4eec58e6d9ab",
+      "created": 63839872247,
+      "modified": 63839874971,
+      "deleted": true
+  },
+  "status": "success"
+}
 ```

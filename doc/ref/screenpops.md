@@ -20,6 +20,12 @@ Key | Description | Type | Default | Required | Support Level
 `custom_parameters.[].url_parameters.[].value` | Contains the value for the url_parameters | `string()` |   | `false` |  
 `custom_parameters.[].url_parameters` | Contains all the url custom params defined to concat to the custom url | `array(object())` |   | `false` |  
 `custom_parameters` |   | `array(object())` |   | `false` |  
+`permissions.all_users` | Whether the screenpop allowed for all users in the account | `boolean()` | `true` | `false` |  
+`permissions.allow.[]` |   | `string()` |   | `false` |  
+`permissions.allow` | Specific list of users who are allowed the screenpop | `array(string())` | `[]` | `false` |  
+`permissions.deny.[]` |   | `string()` |   | `false` |  
+`permissions.deny` | Specific list of users who are not allowed the screenpop | `array(string())` | `[]` | `false` |  
+`permissions` | Used when screenpops are allowed for userwise, this object contains which users are allowed and not allowed for a screenpop | `object()` | `{}` | `false` |  
 `post_call_extension_time` | Contains the time the screenpop will remain active when the temporal type is selected. | `number()` |   | `false` |  
 `show_location_call_time` | Flag field for location and local time of customer call | `boolean()` | `false` | `false` |  
 `type_screenpops` | Type of screenpops | `string()` | `notification` | `false` |  

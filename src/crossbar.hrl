@@ -93,6 +93,7 @@
                          ,'cb_schemas'
                          ,'cb_scopes'
                          ,'cb_scope_retrictions'
+                         ,'cb_screenpops'
                          ,'cb_search'
                          ,'cb_security'
                          ,'cb_services'
