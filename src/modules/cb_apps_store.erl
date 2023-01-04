@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2013-2022, 2600Hz
+%%% @copyright (C) 2013-2023, 2600Hz
 %%% @doc Crossbar API for apps store.
 %%% @author Peter Defebvre
 %%%

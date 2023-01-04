@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2013-2022, 2600Hz
+%%% @copyright (C) 2013-2023, 2600Hz
 %%% @doc Quickroutes - bypass any app processing and go direct to endpoint
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
