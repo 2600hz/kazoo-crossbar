@@ -168,6 +168,10 @@
                     ,account_name :: kz_term:api_ne_binary()
                     ,user_id :: kz_term:api_ne_binary()   % Will be loaded in validate stage for endpoints such as /accounts/{acct-id}/users/{user-id}/*
                     ,device_id :: kz_term:api_ne_binary()   % Will be loaded in validate stage for endpoints such as /accounts/{acct-id}/devices/{device-id}/*
+
+                    ,consumed_token_buckets = 0 :: non_neg_integer()
+                    ,token_bucket_names = [] :: kz_term:ne_binaries()
+
                     ,reseller_id :: kz_term:api_ne_binary()
                     ,db_name :: kz_term:api_binary() | kz_term:ne_binaries()
                     ,doc :: kz_json:api_json_term()

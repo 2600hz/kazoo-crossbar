@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2022, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc Conference auth module.
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -113,20 +113,20 @@ authenticate_nouns(_, _) ->
 -spec validate(cb_context:context()) -> cb_context:context().
 validate(Context) ->
     case consume_tokens(Context) of
-        'false' ->
-            cb_context:add_system_error('too_many_requests', Context);
-        'true' ->
+        {'false', Context1} ->
+            cb_context:add_system_error('too_many_requests', Context1);
+        {'true', Context1} ->
             OnSuccess = fun(C) -> validate_conference_auth(C) end,
-            cb_context:validate_request_data(<<"conference_auth">>, Context, OnSuccess)
+            cb_context:validate_request_data(<<"conference_auth">>, Context1, OnSuccess)
     end.
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, ConferenceId) ->
     case consume_tokens(Context) of
-        'false' ->
-            cb_context:add_system_error('too_many_requests', Context);
-        'true' ->
-            validate_link(Context, ConferenceId)
+        {'false', Context1} ->
+            cb_context:add_system_error('too_many_requests', Context1);
+        {'true', Context1} ->
+            validate_link(Context1, ConferenceId)
     end.
 
 %%------------------------------------------------------------------------------
@@ -149,11 +149,10 @@ put(Context, _ConferenceId) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec consume_tokens(cb_context:context()) -> boolean().
+-spec consume_tokens(cb_context:context()) -> {boolean(), cb_context:context()}.
 consume_tokens(Context) ->
-    BucketName = cb_modules_util:bucket_name(Context),
     TokenCost = cb_modules_util:token_cost(Context, ?CONFERENCE_AUTH_TOKENS),
-    kz_buckets:consume_tokens_until(?APP_NAME, BucketName, TokenCost).
+    cb_modules_util:consume_tokens_until(Context, TokenCost).
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -494,7 +493,6 @@ get_context_reason(Context) ->
 %%------------------------------------------------------------------------------
 -spec create_auth_token(cb_context:context()) -> cb_context:context().
 create_auth_token(Context) ->
-    _ = cb_context:put_reqid(Context),
     JObj = cb_context:doc(Context),
     [Pin|_] = kzd_conferences:member_pins(JObj),
     Prop = [{<<"Claims">>, [{<<"account_id">>, cb_context:account_id(Context)}

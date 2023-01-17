@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc Simple authorization module
 %%% Authenticates tokens if they are accessing the parent or
 %%% child account only
@@ -48,7 +48,6 @@ init() ->
 
 -spec authorize(cb_context:context()) -> boolean().
 authorize(Context) ->
-    _ = cb_context:put_reqid(Context),
     authorize(Context, cb_context:req_verb(Context), cb_context:req_nouns(Context)).
 
 authorize(Context, Verb, [{?KZ_ACCOUNTS_DB, []}]) ->
