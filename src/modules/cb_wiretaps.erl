@@ -69,7 +69,7 @@ allowed_methods(_EndpointId) ->
 -spec authorize(cb_context:context()) -> cb_context:context().
 authorize(Context) ->
     cb_context:is_superduper_admin(Context)
-        %% Hide existence of wiretaps API
+    %% Hide existence of wiretaps API
         orelse {'stop', cb_context:add_system_error('not_found', Context)}.
 
 -spec authorize(cb_context:context(), path_token()) -> cb_context:context().
