@@ -10615,6 +10615,9 @@
       'default': 35
       'description': crossbar conference_auth_tokens
       'type': integer
+    'deb_download_url':
+      'description': crossbar deb_download_url
+      'type': string
     'default_allow_anonymous_quickcalls':
       'default': true
       'description': crossbar default allow anonymous quickcalls
@@ -10623,6 +10626,10 @@
       'default': en-US
       'description': crossbar default language
       'type': string
+    'desktop_auth_tokens':
+      'default': 35
+      'description': crossbar desktop_auth_tokens
+      'type': integer
     'ensure_valid_schema':
       'default': true
       'description': crossbar ensure valid schema
@@ -10639,6 +10646,9 @@
       'description': crossbar load_view_chunk_size
       'minimum': 1
       'type': integer
+    'mac_dowload_url':
+      'description': crossbar mac_dowload_url
+      'type': string
     'magic_path_patterns':
       'default':
         - |-
@@ -10711,6 +10721,9 @@
       'items':
         'type': string
       'type': array
+    'rpm_download_url':
+      'description': crossbar rpm_download_url
+      'type': string
     'schema_strict_validation':
       'default': false
       'description': crossbar schema strict validation
@@ -10763,6 +10776,9 @@
       'default': 35
       'description': crossbar user auth tokens
       'type': integer
+    'windows_dowload_url':
+      'description': crossbar windows_dowload_url
+      'type': string
     'workers':
       'default': 100
       'description': crossbar workers
