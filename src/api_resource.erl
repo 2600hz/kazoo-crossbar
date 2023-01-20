@@ -99,7 +99,7 @@ rest_init(Req, Opts) ->
               ,{fun cb_context:set_method/2, kz_term:to_binary(cowboy_req:method(Req))}
               ,{fun cb_context:set_resp_status/2, 'fatal'}
               ,{fun cb_context:set_resp_error_msg/2, <<"init failed">>}
-              ,{fun cb_context:set_resp_error_code/2, 500}
+              ,{fun cb_context:set_resp_error_code/2, ?DEFAULT_RESP_ERROR_CODE}
               ,{fun cb_context:set_client_ip/2, get_client_ip(Req)}
               ,{fun cb_context:set_profile_id/2, get_profile_id(Req)}
               ,{fun cb_context:set_api_version/2, find_version(Path, Req)}
@@ -812,7 +812,7 @@ delete_resource(Req, Context) ->
     api_util:execute_request(Req, Context).
 
 -spec delete_completed(cowboy_req:req(), cb_context:context()) ->
-          {boolean(), cowboy_req:req(), cb_context:context()}.
+          {boolean() | 'stop', cowboy_req:req(), cb_context:context()}.
 delete_completed(Req, Context) ->
     lager:debug("run: delete_completed"),
     api_util:create_push_response(Req, Context).
@@ -865,7 +865,7 @@ create_from_response(Req, Context) ->
     create_from_response(Req, Context, cb_context:req_header(Context, <<"accept">>)).
 
 -spec create_from_response(cowboy_req:req(), cb_context:context(), kz_term:api_binary()) ->
-          {boolean(), cowboy_req:req(), cb_context:context()}.
+          {boolean() | 'stop', cowboy_req:req(), cb_context:context()}.
 create_from_response(Req, Context, 'undefined') ->
     create_from_response(Req, Context, <<"*/*">>);
 create_from_response(Req, Context, Accept) ->

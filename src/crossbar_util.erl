@@ -24,6 +24,7 @@
 -export([response_redirect/3
         ,response_redirect/4
         ]).
+-export([response_200/2]).
 -export([response_202/2, response_202/3]).
 -export([response_400/3
         ,response_401/1
@@ -93,6 +94,11 @@
           cb_context:context().
 response(JTerm, Context) ->
     create_response('success', 'undefined', 'undefined', JTerm, Context).
+
+-spec response_200(kz_json:json_term(), cb_context:context()) ->
+          cb_context:context().
+response_200(JTerm, Context) ->
+    create_response('success', 'undefined', 200, JTerm, Context).
 
 -spec response_202(kz_term:api_ne_binary(), cb_context:context()) ->
           cb_context:context().
@@ -1130,11 +1136,11 @@ maybe_update_descendants_count(AccountId, NewCount) ->
 
 -spec maybe_update_descendants_count(kz_term:ne_binary(), integer(), integer()) -> 'ok'.
 maybe_update_descendants_count(AccountId, _, Try) when Try =< 0 ->
-    io:format("too many attempts to update descendants count for ~s~n", [AccountId]);
+    lager:warning("too many attempts to update descendants count for ~s~n", [AccountId]);
 maybe_update_descendants_count(AccountId, NewCount, Try) ->
     case kzd_accounts:fetch(AccountId) of
         {'error', _E} ->
-            io:format("could not load account ~s: ~p~n", [AccountId, _E]);
+            lager:info("could not load account ~s: ~p~n", [AccountId, _E]);
         {'ok', AccountJObj} ->
             maybe_update_descendants_count(AccountId, AccountJObj, NewCount, Try)
     end.

@@ -114,6 +114,8 @@
                          ,'cb_whitelabel'
                          ]).
 
+-define(DEFAULT_RESP_ERROR_CODE, 500).
+
 -define(MAX_RANGE, kapps_config:get_pos_integer(?CONFIG_CAT
                                                ,<<"maximum_range">>
                                                ,(?SECONDS_IN_DAY * 31 + ?SECONDS_IN_HOUR)

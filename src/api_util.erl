@@ -1849,16 +1849,33 @@ csv_body(Context, JObjs) when is_list(JObjs) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec create_push_response(cowboy_req:req(), cb_context:context()) ->
-          {boolean(), cowboy_req:req(), cb_context:context()}.
+          {boolean() | 'stop', cowboy_req:req(), cb_context:context()}.
 create_push_response(Req0, Context) ->
     create_push_response(Req0, Context, fun create_resp_content/2).
 
 -spec create_push_response(cowboy_req:req(), cb_context:context(), resp_content_fun()) ->
-          {boolean(), cowboy_req:req(), cb_context:context()}.
+          {boolean() | 'stop', cowboy_req:req(), cb_context:context()}.
 create_push_response(Req0, Context, Fun) ->
-    {Content, Req1} = Fun(Req0, Context),
-    Req2 = set_resp_headers(Req1, Context),
-    {succeeded(Context), cowboy_req:set_resp_body(Content, Req2), Context}.
+    case should_use_explicit_error_code(cb_context:resp_error_code(Context)) of
+        {'true', _CustomHTTPStatus} ->
+            lager:debug("using explicit ~p HTTP status code for reply", [_CustomHTTPStatus]),
+            stop(Req0, Context);
+        'false' ->
+            {Content, Req1} = Fun(Req0, Context),
+            Req2 = set_resp_headers(Req1, Context),
+            {succeeded(Context), cowboy_req:set_resp_body(Content, Req2), Context}
+    end.
+
+-spec should_use_explicit_error_code(kz_term:api_non_neg_integer()) ->
+          {'true', non_neg_integer()} | 'false'.
+should_use_explicit_error_code(?DEFAULT_RESP_ERROR_CODE) ->
+    %% Not explicit HTTP status set, ignore.
+    'false';
+should_use_explicit_error_code('undefined') ->
+    %% Places like `crossbar_util:response/2' will set 'resp_error_code=undefined'. Ignore.
+    'false';
+should_use_explicit_error_code(CustomHTTPStatus) when is_integer(CustomHTTPStatus) ->
+    {'true', CustomHTTPStatus}.
 
 %%------------------------------------------------------------------------------
 %% @doc This function will create response expected for a request that
