@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc Crossbar API for comment.
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -13,8 +13,6 @@
 -module(cb_comments).
 
 -export([init/0
-        ,authenticate/1
-        ,authorize/1
         ,allowed_methods/0, allowed_methods/1
         ,resource_exists/0, resource_exists/1
         ,validate/1, validate/2
@@ -40,8 +38,6 @@
 %%------------------------------------------------------------------------------
 -spec init() -> 'ok'.
 init() ->
-    _ = crossbar_bindings:bind(<<"*.authenticate">>, ?MODULE, 'authenticate'),
-    _ = crossbar_bindings:bind(<<"*.authorize">>, ?MODULE, 'authorize'),
     _ = crossbar_bindings:bind(<<"*.allowed_methods.comments">>, ?MODULE, 'allowed_methods'),
     _ = crossbar_bindings:bind(<<"*.resource_exists.comments">>, ?MODULE, 'resource_exists'),
     _ = crossbar_bindings:bind(<<"*.validate.comments">>, ?MODULE, 'validate'),
@@ -49,22 +45,6 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.execute.post.comments">>, ?MODULE, 'post'),
     _ = crossbar_bindings:bind(<<"*.execute.delete.comments">>, ?MODULE, 'delete'),
     _ = crossbar_bindings:bind(<<"*.finish_request.*.comments">>, ?MODULE, 'finish_request').
-
-%%------------------------------------------------------------------------------
-%% @doc Authenticates the incoming request, returning true if the requestor is
-%% known, or false if not.
-%% @end
-%%------------------------------------------------------------------------------
--spec authenticate(cb_context:context()) -> 'false'.
-authenticate(_) -> 'false'.
-
-%%------------------------------------------------------------------------------
-%% @doc Authorizes the incoming request, returning true if the requestor is
-%% allowed to access the resource, or false if not.
-%% @end
-%%------------------------------------------------------------------------------
--spec authorize(cb_context:context()) -> boolean().
-authorize(_) -> 'false'.
 
 %%------------------------------------------------------------------------------
 %% @doc Given the path tokens related to this module, what HTTP methods are

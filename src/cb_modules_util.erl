@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2022, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc Functions shared between crossbar modules
 %%% @author James Aimonetti
 %%%
@@ -21,6 +21,9 @@
         ,bucket_name/1
         ,token_cost/1, token_cost/2, token_cost/3
         ,tokens_remaining/1
+        ,consume_tokens/2, consume_tokens/3
+        ,consume_tokens_until/2, consume_tokens_until/3
+
         ,bind/2
 
         ,take_sync_field/1
@@ -166,14 +169,47 @@ bucket_name(IP, AccountId) ->
 
 -spec tokens_remaining(cb_context:context()) -> non_neg_integer().
 tokens_remaining(Context) ->
-    kz_buckets:tokens_remaining(<<"crossbar">>, bucket_name(Context)).
+    lists:sum([kz_buckets:tokens_remaining(<<"crossbar">>, BucketName)
+               || BucketName <- cb_context:token_bucket_names(Context)
+              ]).
+
+-spec consume_tokens(cb_context:context(), non_neg_integer()) ->
+          {boolean(), cb_context:context()}.
+consume_tokens(Context, Cost) ->
+    consume_tokens(Context, Cost, bucket_name(Context)).
+
+-spec consume_tokens(cb_context:context(), non_neg_integer(), kz_term:ne_binary()) ->
+          {boolean(), cb_context:context()}.
+consume_tokens(Context, Cost, <<BucketName/binary>>) ->
+    consume_tokens(Context, BucketName, Cost, fun kz_buckets:consume_tokens/3).
+
+-spec consume_tokens_until(cb_context:context(), non_neg_integer()) ->
+          {boolean(), cb_context:context()}.
+consume_tokens_until(Context, Cost) ->
+    consume_tokens_until(Context, Cost, bucket_name(Context)).
+
+-spec consume_tokens_until(cb_context:context(), non_neg_integer(), kz_term:ne_binary()) ->
+          {boolean(), cb_context:context()}.
+consume_tokens_until(Context, Cost, BucketName) ->
+    consume_tokens(Context, BucketName, Cost, fun kz_buckets:consume_tokens_until/3).
+
+-type consume_fun() :: fun((kz_term:ne_binary(), kz_term:ne_binary(), non_neg_integer()) -> boolean()).
+-spec consume_tokens(cb_context:context(), kz_term:ne_binary(), non_neg_integer(), consume_fun()) ->
+          {boolean(), cb_context:context()}.
+consume_tokens(Context, BucketName, Cost, ConsumeFun) ->
+    Setters = [{fun cb_context:add_consumed_token_buckets/2, Cost}
+              ,{fun cb_context:add_token_bucket_name/2, BucketName}
+              ],
+    {ConsumeFun(?APP_NAME, BucketName, Cost)
+    ,cb_context:setters(Context, Setters)
+    }.
 
 -spec token_cost(cb_context:context()) -> non_neg_integer().
 token_cost(Context) ->
     token_cost(Context, 1).
 
 -spec token_cost(cb_context:context(), non_neg_integer() | kz_json:path()) -> non_neg_integer().
-token_cost(Context, <<_/binary>> = Suffix) ->
+token_cost(Context, <<Suffix/binary>>) ->
     token_cost(Context, 1, [Suffix]);
 token_cost(Context, [_|_]=Suffix) ->
     token_cost(Context, 1, Suffix);

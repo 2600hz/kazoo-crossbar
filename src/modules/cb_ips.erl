@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc
 %%% @author Peter Defebvre
 %%%
@@ -47,12 +47,10 @@ init() ->
 
 -spec authorize(cb_context:context()) -> boolean().
 authorize(Context) ->
-    _ = cb_context:put_reqid(Context),
     authorize_nouns(Context, cb_context:req_nouns(Context)).
 
 -spec authorize(cb_context:context(), path_token()) -> boolean().
 authorize(Context, _) ->
-    _ = cb_context:put_reqid(Context),
     authorize_nouns(Context, cb_context:req_nouns(Context)).
 
 authorize_nouns(Context, [{<<"ips">>, _}]) ->
@@ -108,7 +106,6 @@ resource_exists(_) -> 'true'.
 
 -spec validate(cb_context:context()) -> cb_context:context().
 validate(Context) ->
-    _ = cb_context:put_reqid(Context),
     validate_ips(Context, cb_context:req_verb(Context)).
 
 -spec validate_ips(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
@@ -123,7 +120,6 @@ validate_ips(Context, ?HTTP_DELETE) ->
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, PathToken) ->
-    _ = cb_context:put_reqid(Context),
     validate_ips(Context, PathToken, cb_context:req_verb(Context)).
 
 -spec validate_ips(cb_context:context(), path_token(), kz_term:ne_binary()) -> cb_context:context().

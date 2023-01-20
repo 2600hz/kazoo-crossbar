@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2022, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc User auth module
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -214,10 +214,9 @@ authenticate_nouns(_Nouns) -> 'false'.
 
 -spec validate(cb_context:context()) -> cb_context:context().
 validate(Context) ->
-    Context1 = consume_tokens(Context),
-    case cb_context:resp_status(Context1) of
-        'success' -> validate_action(Context, cb_context:req_value(Context, <<"action">>));
-        _Status -> Context1
+    case consume_tokens(Context) of
+        {'ok', Context1} -> validate_action(Context1, cb_context:req_value(Context1, <<"action">>));
+        {'error', Context1} -> Context1
     end.
 
 -spec validate_action(cb_context:context(), kz_term:api_ne_binary()) -> cb_context:context().
@@ -270,17 +269,14 @@ validate(Context, AuthToken) ->
 
 -spec put(cb_context:context()) -> cb_context:context().
 put(Context) ->
-    _ = cb_context:put_reqid(Context),
     crossbar_auth:create_auth_token(maybe_include_claims(Context), ?MODULE).
 
 -spec put(cb_context:context(), path_token()) -> cb_context:context().
 put(Context, ?RECOVERY) ->
-    _ = cb_context:put_reqid(Context),
     save_reset_id_then_send_email(Context).
 
 -spec post(cb_context:context(), path_token()) -> cb_context:context().
 post(Context, ?RECOVERY) ->
-    _ = cb_context:put_reqid(Context),
     UserDoc = crossbar_doc:update_pvt_parameters(cb_context:doc(Context), Context),
     case kz_datamgr:save_doc(cb_context:account_id(Context), UserDoc) of
         {'ok', NewDoc} ->
@@ -794,13 +790,13 @@ error_no_account_name(Context, AccountName) ->
     lager:debug("failed to find account by name: '~s'", [AccountName]),
     cb_context:add_validation_error(<<"account_name">>, <<"not_found">>, Msg, Context).
 
--spec consume_tokens(cb_context:context()) -> cb_context:context().
+-spec consume_tokens(cb_context:context()) ->
+          kz_either:either(cb_context:context(), cb_context:context()).
 consume_tokens(Context) ->
-    BucketName = cb_modules_util:bucket_name(Context),
     TokenCost = cb_modules_util:token_cost(Context, ?USER_AUTH_TOKENS),
-    case kz_buckets:consume_tokens_until(?APP_NAME, BucketName, TokenCost) of
-        'true' -> cb_context:set_resp_status(Context, 'success');
-        'false' -> cb_context:add_system_error('too_many_requests', Context)
+    case cb_modules_util:consume_tokens_until(Context, TokenCost) of
+        {'true', Context1} -> {'ok', Context1};
+        {'false', Context1} -> {'error', cb_context:add_system_error('too_many_requests', Context1)}
     end.
 
 -spec reset_id_size() -> integer().
