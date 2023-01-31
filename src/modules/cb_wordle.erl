@@ -177,7 +177,7 @@ validate_wordle(Context, WordId, ?HTTP_POST) ->
 post(Context, _WordId) ->
     cb_context:set_resp_status(Context, 'success').
 
--spec wordle(kz_term:ne_binary(), kz_term:binary()) -> {boolean(), kz_term:proplist()}.
+-spec wordle(kz_term:ne_binary(), kz_term:ne_binary()) -> {boolean(), kz_term:proplist()}.
 wordle(Wordle, Guess) ->
     Pos = lists:seq(1, byte_size(Wordle)),
     Ws = lists:zip(binary_to_list(Wordle), Pos),
@@ -271,7 +271,7 @@ black(G) ->
               ,word_size :: pos_integer() | '_'
               }).
 
--type guess() :: {kz_term:ne_binary(), kz_time:now_s(), {boolean(), kz_term:proplist()}}.
+-type guess() :: {kz_term:ne_binary(), kz_time:gregorian_seconds(), {boolean(), kz_term:proplist()}}.
 -type guesses() :: [guess()].
 
 -record(attempt, {id :: {kz_term:ne_binary(), kz_term:ne_binary()} % {word_id, auth_user_id}
@@ -310,7 +310,7 @@ make_attempt(UserId, WordId, Guess) ->
     end.
 
 -spec get_word_by_id(kz_term:ne_binary()) ->
-          {'ok', erlang:date(), kz_term:ne_binary()} |
+          {'ok', kz_time:date(), kz_term:ne_binary()} |
           {'error', 'not_found'}.
 get_word_by_id(WordId) ->
     case ets:match(?ETS_WORDS, #word{id=WordId, date='$1', word='$2', _='_'}) of
