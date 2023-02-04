@@ -177,7 +177,7 @@ validate_website(Context, WebsiteId, ?HTTP_POST) ->
                                       )
     of
         'false' ->
-            validate_request(Context, WebsiteId);
+            validate_request(WebsiteId, Context);
         'true' ->
             validate_attachment(Context, WebsiteId, ?HTTP_POST)
     end;
@@ -218,10 +218,10 @@ validate_upload(Context, WebsiteId, FileJObj) ->
             Props = [{<<"content_type">>, content_type(FileJObj)}
                     ,{<<"content_length">>, file_size(FileJObj)}
                     ],
-            validate_request(cb_context:set_req_data(Context1
+            validate_request(WebsiteId
+                            ,cb_context:set_req_data(Context1
                                                     ,kz_json:set_values(Props, cb_context:doc(Context))
                                                     )
-                            ,WebsiteId
                             );
         _Status -> Context1
     end.
@@ -348,9 +348,9 @@ on_successful_validation(Id, Context) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec validate_request(cb_context:context(), kz_term:ne_binary()) ->
+-spec validate_request(kz_term:ne_binary(), cb_context:context()) ->
           cb_context:context().
-validate_request(Context, WebsiteId) ->
+validate_request(WebsiteId, Context) ->
     OnSuccess = fun(C) -> on_successful_validation(WebsiteId, C) end,
     cb_context:validate_request_data(kzd_websites:schema(), Context, OnSuccess).
 
