@@ -199,7 +199,7 @@ maybe_get_default_secret(_Context) ->
 maybe_get_default_api_key(_Context) ->
     kapps_config:get_ne_binary(<<(?CONFIG_CAT)/binary, ".getstream">>, <<"api_key">>).
 
--spec create_or_update_user_on_getstream(cb_context:context()) -> kz_either:either(any(), kz_json:object()).
+-spec create_or_update_user_on_getstream(cb_context:context()) -> boolean().
 create_or_update_user_on_getstream(Context) ->
     case get_getstream_user(Context) of
         {'ok', GetStreamUsers} ->
