@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2013-2022, 2600Hz
+%%% @copyright (C) 2013-2023, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -380,7 +380,8 @@ publish_presence_reset(Context, PresenceId) ->
           ],
     kz_amqp_worker:cast(API, fun kapi_presence:publish_reset/1).
 
--spec publish_presence_update(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) -> 'ok'.
+-spec publish_presence_update(cb_context:context(), kz_term:api_ne_binary(), kz_term:ne_binary()) -> 'ok'.
+publish_presence_update(_Context, 'undefined', _PresenceState) -> 'ok';
 publish_presence_update(Context, PresenceId, PresenceState) ->
     Realm = cb_context:account_realm(Context),
     AccountDb = cb_context:db_name(Context),
