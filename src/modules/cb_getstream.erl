@@ -14,11 +14,17 @@
         ,put/2
         ]).
 
+-export([chat_getstream_enabled/1, chat_getstream_enabled/2, set_chat_getstream_enabled/2]).
+
 -include_lib("crossbar/src/crossbar.hrl").
 
 -define(CONNECT_PATH, <<"connect">>).
 -define(ALG, <<"HS256">>).
 -define(ISSUER, <<"kazoo">>).
+
+-type doc() :: kz_json:object().
+-type docs() :: [doc()].
+-export_type([doc/0, docs/0]).
 
 %%%=============================================================================
 %%% API
@@ -69,15 +75,25 @@ content_types_provided(Context, _) ->
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, ?CONNECT_PATH) ->
     [UserId] = props:get_value(<<"users">>, cb_context:req_nouns(Context)),
-    validate_request(Context, ?CONNECT_PATH, UserId, cb_context:req_verb(Context)).
+    validate_user_feature(Context, ?CONNECT_PATH, UserId, cb_context:req_verb(Context)).
 
--spec validate_request(cb_context:context(), path_token(), list(), req_verb()) -> cb_context:context().
-validate_request(Context, ?CONNECT_PATH, UserId, ?HTTP_PUT) ->
+-spec validate_user_feature(cb_context:context(), path_token(), list(), req_verb()) -> cb_context:context().
+validate_user_feature(Context, ?CONNECT_PATH, UserId, ?HTTP_PUT) ->
     Context1 = crossbar_doc:load(UserId, Context),
-    case cb_context:resp_status(Context1) of
-        'success' -> Context2 = validate_secret(Context1),
-                     validate_api_key(Context2);
-        _Else -> Context1
+    Enabled = chat_getstream_enabled(cb_context:doc(Context1), 'false'),
+    case Enabled of
+        'true' -> validate_request(Context1, ?CONNECT_PATH, ?HTTP_PUT);
+        _Else ->
+            lager:debug("feature is not available for the user: ~p", [UserId]),
+            cb_context:add_system_error(400, 'disabled', <<"Feature disabled">>, Context1)
+    end.
+
+-spec validate_request(cb_context:context(), path_token(), req_verb()) -> cb_context:context().
+validate_request(Context, ?CONNECT_PATH, ?HTTP_PUT) ->
+    case cb_context:resp_status(Context) of
+        'success' -> Context1 = validate_secret(Context),
+                     validate_api_key(Context1);
+        _Else -> Context
     end.
 
 -spec validate_secret(cb_context:context()) -> cb_context:context().
@@ -381,3 +397,19 @@ build_url(Context, QS) ->
       ,kz_http_util:props_to_querystring(NewQS)
       ]
      ).
+
+%%------------------------------------------------------------------------------
+%% @doc Accessor functions for the getstream
+%% @end
+%%------------------------------------------------------------------------------
+-spec chat_getstream_enabled(doc()) -> boolean().
+chat_getstream_enabled(Doc) ->
+    chat_getstream_enabled(Doc, 'false').
+
+-spec chat_getstream_enabled(doc(), Default) -> boolean() | Default.
+chat_getstream_enabled(Doc, Default) ->
+    kz_json:get_boolean_value([<<"pvt_chat">>, <<"getstream">>, <<"enabled">>], Doc, Default).
+
+-spec set_chat_getstream_enabled(doc(), boolean()) -> doc().
+set_chat_getstream_enabled(Doc, ChatGetstreamEnabled) ->
+    kz_json:set_value([<<"pvt_chat">>, <<"getstream">>, <<"enabled">>], ChatGetstreamEnabled, Doc).
