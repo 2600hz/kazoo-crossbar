@@ -41,6 +41,21 @@
             "$ref": "caller_id_options",
             "description": "custom properties for configuring caller_id"
         },
+        "chat": {
+            "properties": {
+                "getstream": {
+                    "properties": {
+                        "enabled": {
+                            "default": false,
+                            "description": "Determines if the user enabled for getstream chat workspace",
+                            "type": "boolean"
+                        }
+                    },
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        },
         "contact_list": {
             "default": {},
             "description": "Contact List Parameters",

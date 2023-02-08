@@ -69,15 +69,26 @@ content_types_provided(Context, _) ->
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, ?CONNECT_PATH) ->
     [UserId] = props:get_value(<<"users">>, cb_context:req_nouns(Context)),
-    validate_request(Context, ?CONNECT_PATH, UserId, cb_context:req_verb(Context)).
+    validate_user_feature(Context, ?CONNECT_PATH, UserId, cb_context:req_verb(Context)).
 
--spec validate_request(cb_context:context(), path_token(), list(), req_verb()) -> cb_context:context().
-validate_request(Context, ?CONNECT_PATH, UserId, ?HTTP_PUT) ->
+-spec validate_user_feature(cb_context:context(), path_token(), list(), req_verb()) -> cb_context:context().
+validate_user_feature(Context, ?CONNECT_PATH, UserId, ?HTTP_PUT) ->
     Context1 = crossbar_doc:load(UserId, Context),
-    case cb_context:resp_status(Context1) of
-        'success' -> Context2 = validate_secret(Context1),
-                     validate_api_key(Context2);
-        _Else -> Context1
+    lager:warning("#### user object: ~p", [cb_context:doc(Context1)]),
+    Enabled = kz_json:get_value([<<"chat">>, <<"getstream">>, <<"enabled">>], cb_context:doc(Context1), 'false'),
+    case Enabled of
+        'true' -> validate_request(Context1, ?CONNECT_PATH, ?HTTP_PUT);
+        _Else ->
+            lager:debug("feature is not available for the user: ~p", [UserId]),
+            cb_context:add_system_error(400, 'disabled', <<"Feature disabled">>, Context1)
+    end.
+
+-spec validate_request(cb_context:context(), path_token(), req_verb()) -> cb_context:context().
+validate_request(Context, ?CONNECT_PATH, ?HTTP_PUT) ->
+    case cb_context:resp_status(Context) of
+        'success' -> Context1 = validate_secret(Context),
+                     validate_api_key(Context1);
+        _Else -> Context
     end.
 
 -spec validate_secret(cb_context:context()) -> cb_context:context().
