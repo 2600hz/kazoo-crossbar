@@ -74,7 +74,6 @@ validate(Context, ?CONNECT_PATH) ->
 -spec validate_user_feature(cb_context:context(), path_token(), list(), req_verb()) -> cb_context:context().
 validate_user_feature(Context, ?CONNECT_PATH, UserId, ?HTTP_PUT) ->
     Context1 = crossbar_doc:load(UserId, Context),
-    lager:warning("#### user object: ~p", [cb_context:doc(Context1)]),
     Enabled = kz_json:get_value([<<"chat">>, <<"getstream">>, <<"enabled">>], cb_context:doc(Context1), 'false'),
     case Enabled of
         'true' -> validate_request(Context1, ?CONNECT_PATH, ?HTTP_PUT);
