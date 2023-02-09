@@ -17,6 +17,9 @@ Key | Description | Type | Default | Required | Support Level
 `call_waiting` | Parameters for server-side call waiting | [#/definitions/call_waiting](#call_waiting) |   | `false` |  
 `caller_id` | The device caller ID parameters | [#/definitions/caller_id](#caller_id) |   | `false` |  
 `caller_id_options` | custom properties for configuring caller_id | [#/definitions/caller_id_options](#caller_id_options) |   | `false` |  
+`chat.getstream.enabled` | Determines if the user enabled for getstream chat workspace | `boolean()` | `false` | `false` |  
+`chat.getstream` | Getstream Parameters | `object()` |   | `false` |  
+`chat` | Chat Parameters | `object()` |   | `false` |  
 `contact_list.exclude` | If set to true the device is excluded from the contact list | `boolean()` |   | `false` | `supported`
 `contact_list` | Contact List Parameters | `object()` | `{}` | `false` |  
 `dial_plan` | A list of rules used to modify dialed numbers | [#/definitions/dialplans](#dialplans) |   | `false` |  

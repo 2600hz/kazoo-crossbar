@@ -16280,6 +16280,18 @@
     'caller_id_options':
       '$ref': '#/caller_id_options'
       'description': custom properties for configuring caller_id
+    'chat':
+      'description': Chat Parameters
+      'properties':
+        'getstream':
+          'description': Getstream Parameters
+          'properties':
+            'enabled':
+              'default': false
+              'description': Determines if the user enabled for getstream chat workspace
+              'type': boolean
+          'type': object
+      'type': object
     'contact_list':
       'default': {}
       'description': Contact List Parameters

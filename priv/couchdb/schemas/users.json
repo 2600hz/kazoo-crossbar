@@ -42,8 +42,10 @@
             "description": "custom properties for configuring caller_id"
         },
         "chat": {
+            "description": "Chat Parameters",
             "properties": {
                 "getstream": {
+                    "description": "Getstream Parameters",
                     "properties": {
                         "enabled": {
                             "default": false,
