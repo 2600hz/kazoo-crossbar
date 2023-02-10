@@ -160,6 +160,38 @@ curl -v -X PUT \
 }
 ```
 
+## Add/update a website logo
+
+Website logo can be added/updated in MIME types image/jpg, image/jpeg, image/png, image/gif and can add/update a logo using application/base64 content-type also
+
+> POST /v2/accounts/{ACCOUNT_ID}/websites/{WEBSITE_ID}
+```shell
+curl -v -X POST \
+    -H "X-Auth-Token: {AUTH_TOKEN} \
+    --data-binary "@/local/path/to/logo.png" \
+    --header 'Content-Type: image/png' \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/websites/{WEBSITE_ID}
+```
+**Response**
+```json
+{
+    "data": {
+        "web_url": "http://www.instagram.com.au",
+        "name": "Instagram",
+        "account_wide": true,
+        "users": [],
+        "id": "7b5670335c21409ba33d78bbbc708ff1"
+    },
+    "revision": "4-60b578b6dc2c051d1c06ca6efb62b772",
+    "metadata": {
+        "id": "7b5670335c21409ba33d78bbbc708ff1",
+        "created": 63837101837,
+        "modified": 63837580528
+    },
+    "status": "success"
+}
+```
+
 ## Update a website
 
 > POST /v2/accounts/{ACCOUNT_ID}/websites/{WEBSITE_ID}
@@ -256,47 +288,4 @@ curl -v -X DELETE \
     },
     "status": "success"
 }
-```
-
-## Add a website logo
-
-> POST /v2/accounts/{ACCOUNT_ID}/websites/{WEBSITE_ID}/logo
-
-```shell
-curl -v -X POST \
-    -H "X-Auth-Token: {AUTH_TOKEN} \
-    --data-binary "@/local/path/to/logo.png" \
-    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/websites/{WEBSITE_ID}/logo
-```
-
-**Response**
-
-```json
-{
-    "data": {
-        "web_url": "http://www.instagram.com.au",
-        "name": "Instagram",
-        "account_wide": true,
-        "logo": "",
-        "users": [],
-        "id": "7b5670335c21409ba33d78bbbc708ff1"
-    },
-    "revision": "4-60b578b6dc2c051d1c06ca6efb62b772",
-    "metadata": {
-        "id": "7b5670335c21409ba33d78bbbc708ff1",
-        "created": 63837101837,
-        "modified": 63837580528
-    },
-    "status": "success"
-}
-```
-
-## GET a website logo
-
-> GET /v2/accounts/{ACCOUNT_ID}/websites/{WEBSITE_ID}/logo
-
-```shell
-curl -v -X GET \
-    -H "X-Auth-Token: {AUTH_TOKEN} \
-    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/websites/{WEBSITE_ID}/logo
 ```
