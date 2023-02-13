@@ -1,0 +1,32 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "_id": "match_lists.rule",
+    "description": "Match list rule - express the logic of a match",
+    "properties": {
+        "name": {
+            "description": "Friendly name of the rule",
+            "maxLength": 255,
+            "minLength": 3,
+            "type": "string"
+        },
+        "regex": {
+            "description": "Regular expression to match with when type=regex",
+            "type": "string"
+        },
+        "target": {
+            "description": "The target field to match against - context-dependent",
+            "type": "string"
+        },
+        "type": {
+            "enum": [
+                "regex"
+            ],
+            "type": "string"
+        }
+    },
+    "required": [
+        "name",
+        "type"
+    ],
+    "type": "object"
+}

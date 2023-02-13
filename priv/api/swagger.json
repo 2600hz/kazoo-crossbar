@@ -8426,6 +8426,57 @@
             ],
             "type": "object"
         },
+        "match_lists": {
+            "description": "Match lists - define a set of rules for matching against call properties, callflows, etc",
+            "properties": {
+                "name": {
+                    "description": "Friendly name for the match list",
+                    "type": "string"
+                },
+                "rules": {
+                    "description": "Evaluated rules to determine if the match list has matched",
+                    "items": {
+                        "$ref": "#/definitions/match_lists.rule",
+                        "type": "object"
+                    },
+                    "type": "array"
+                }
+            },
+            "required": [
+                "rules"
+            ],
+            "type": "object"
+        },
+        "match_lists.rule": {
+            "description": "Match list rule - express the logic of a match",
+            "properties": {
+                "name": {
+                    "description": "Friendly name of the rule",
+                    "maxLength": 255,
+                    "minLength": 3,
+                    "type": "string"
+                },
+                "regex": {
+                    "description": "Regular expression to match with when type=regex",
+                    "type": "string"
+                },
+                "target": {
+                    "description": "The target field to match against - context-dependent",
+                    "type": "string"
+                },
+                "type": {
+                    "enum": [
+                        "regex"
+                    ],
+                    "type": "string"
+                }
+            },
+            "required": [
+                "name",
+                "type"
+            ],
+            "type": "object"
+        },
         "media": {
             "description": "Schema for media",
             "properties": {
@@ -22326,6 +22377,16 @@
             "required": true,
             "type": "string"
         },
+        "MATCH_LIST_ID": {
+            "description": "request MATCH_LIST_ID parameter",
+            "in": "path",
+            "maxLength": 32,
+            "minLength": 32,
+            "name": "MATCH_LIST_ID",
+            "pattern": "^[0-9a-f]+$",
+            "required": true,
+            "type": "string"
+        },
         "MEDIA_ID": {
             "description": "request MEDIA_ID parameter",
             "in": "path",
@@ -26889,6 +26950,128 @@
                     },
                     {
                         "$ref": "#/parameters/LIST_ENTRY_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/match_lists": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "put": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "match_lists",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/match_lists"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/match_lists/{MATCH_LIST_ID}": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/MATCH_LIST_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/MATCH_LIST_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "patch": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/MATCH_LIST_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "match_lists",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/match_lists"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/MATCH_LIST_ID"
                     }
                 ],
                 "responses": {
