@@ -26,6 +26,19 @@
             "support_level": "supported",
             "type": "boolean"
         },
+        "match_list": {
+            "properties": {
+                "enabled": {
+                    "description": "True to always forward the call, false to never forward the call, undefined means use the match list at {ID}",
+                    "type": "boolean"
+                },
+                "id": {
+                    "description": "The Match List ID to use",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "number": {
             "description": "The number to forward calls to",
             "maxLength": 35,

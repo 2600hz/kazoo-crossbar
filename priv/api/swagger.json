@@ -675,7 +675,11 @@
                     "$ref": "#/definitions/call_failover"
                 },
                 "call_forward": {
-                    "$ref": "#/definitions/call_forward"
+                    "items": {
+                        "$ref": "#/definitions/call_forward",
+                        "type": "object"
+                    },
+                    "type": "array"
                 },
                 "call_limits": {
                     "$ref": "#/definitions/call_limits"
@@ -1360,6 +1364,19 @@
                     "default": true,
                     "description": "Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used",
                     "type": "boolean"
+                },
+                "match_list": {
+                    "properties": {
+                        "enabled": {
+                            "description": "True to always forward the call, false to never forward the call, undefined means use the match list at {ID}",
+                            "type": "boolean"
+                        },
+                        "id": {
+                            "description": "The Match List ID to use",
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
                 },
                 "number": {
                     "description": "The number to forward calls to",
@@ -6482,7 +6499,11 @@
                     "$ref": "#/definitions/call_failover"
                 },
                 "call_forward": {
-                    "$ref": "#/definitions/call_forward"
+                    "items": {
+                        "$ref": "#/definitions/call_forward",
+                        "type": "object"
+                    },
+                    "type": "array"
                 },
                 "call_limits": {
                     "$ref": "#/definitions/call_limits"
@@ -21030,7 +21051,11 @@
                     "$ref": "#/definitions/call_failover"
                 },
                 "call_forward": {
-                    "$ref": "#/definitions/call_forward"
+                    "items": {
+                        "$ref": "#/definitions/call_forward",
+                        "type": "object"
+                    },
+                    "type": "array"
                 },
                 "call_limits": {
                     "$ref": "#/definitions/call_limits"
