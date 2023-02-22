@@ -21336,34 +21336,35 @@
             "description": "Schema for a user",
             "properties": {
                 "addresses": {
-                    "$ref": "#/definitions/addresses",
-                    "additionalProperties": {
-                        "properties": {
-                            "vcard": {
-                                "description": "Addresses list to build user's vcard",
-                                "items": {
-                                    "properties": {
-                                        "address": {
+                    "allOf": [
+                        {
+                            "$ref": "addresses"
+                        }
+                    ],
+                    "description": "User addresses",
+                    "properties": {
+                        "vcard": {
+                            "description": "Addresses list to build user's vcard",
+                            "items": {
+                                "properties": {
+                                    "address": {
+                                        "type": "string"
+                                    },
+                                    "types": {
+                                        "items": {
                                             "type": "string"
                                         },
-                                        "types": {
-                                            "items": {
-                                                "type": "string"
-                                            },
-                                            "type": "array"
-                                        }
-                                    },
-                                    "required": [
-                                        "address"
-                                    ],
-                                    "type": "object"
+                                        "type": "array"
+                                    }
                                 },
-                                "type": "array"
-                            }
-                        },
-                        "type": "object"
+                                "required": [
+                                    "address"
+                                ],
+                                "type": "object"
+                            },
+                            "type": "array"
+                        }
                     },
-                    "description": "User addresses",
                     "type": "object"
                 },
                 "call_failover": {

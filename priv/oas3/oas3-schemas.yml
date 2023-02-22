@@ -16981,25 +16981,24 @@
   'description': Schema for a user
   'properties':
     'addresses':
-      '$ref': '#/addresses'
-      'additionalProperties':
-        'properties':
-          'vcard':
-            'description': Addresses list to build user's vcard
-            'items':
-              'properties':
-                'address':
-                  'type': string
-                'types':
-                  'items':
-                    'type': string
-                  'type': array
-              'required':
-                - address
-              'type': object
-            'type': array
-        'type': object
+      'allOf':
+        - '$ref': '#/addresses'
       'description': User addresses
+      'properties':
+        'vcard':
+          'description': Addresses list to build user's vcard
+          'items':
+            'properties':
+              'address':
+                'type': string
+              'types':
+                'items':
+                  'type': string
+                'type': array
+            'required':
+              - address
+            'type': object
+          'type': array
       'type': object
     'call_failover':
       '$ref': '#/call_failover'

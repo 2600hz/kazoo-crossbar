@@ -10,6 +10,10 @@ Schema for a user
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
+`addresses.vcard.[].address` |   | `string()` |   | `true` |  
+`addresses.vcard.[].types.[]` |   | `string()` |   | `false` |  
+`addresses.vcard.[].types` |   | `array(string())` |   | `false` |  
+`addresses.vcard` | Addresses list to build user's vcard | `array(object())` |   | `false` |  
 `addresses` | User addresses | `object()` |   | `false` |  
 `call_failover` | The device call failover parameters, to replace the device with an extension/phone number when device is offline. | [#/definitions/call_failover](#call_failover) |   | `false` |  
 `call_forward` | Call forward settings | [#/definitions/call_forward](#call_forward) |   | `false` |  
@@ -65,30 +69,6 @@ Key | Description | Type | Default | Required | Support Level
 `voicemail.notify.callback` | Schema for a callback options | [#/definitions/notify.callback](#notifycallback) |   | `false` |  
 `voicemail.notify` |   | `object()` |   | `false` |  
 `voicemail` |   | `object()` |   | `false` |  
-
-### addresses
-
-Account, user or device addresses
-
-
-Key | Description | Type | Default | Required | Support Level
---- | ----------- | ---- | ------- | -------- | -------------
-`emergency.additional_information` | Additional location information. Example: Room 543 | `string()` |   | `false` |  
-`emergency.country` | The country is identified by the two-letter ISO 3166 code. Example: US | `string()` |   | `true` |  
-`emergency.county` | County, parish, gun (JP), district (IN). Example: King's County | `string()` |   | `false` |  
-`emergency.floor` | Floor. Example: 5 | `integer()` |   | `false` |  
-`emergency.house_number` | House number, numeric part only. Example: 123 | `integer()` |   | `true` |  
-`emergency.house_number_suffix` | House number suffix. Example: A, 1/2 | `string()` |   | `false` |  
-`emergency.locality` | City, township, shi (JP). Example: New York | `string()` |   | `true` |  
-`emergency.location_identifier` | United States unique 10-digit number known as an E911 location identifier (ELIN) | `integer()` |   | `false` |  
-`emergency.name` | Name (residence, business or office occupant). Example: Joe's Barbershop | `string()` |   | `true` |  
-`emergency.postal_code` | Postal code. Example: 10027-0401 | `string()` |   | `true` |  
-`emergency.region` | National subdivisions (state, region, province, prefecture). Example: New York | `string()` |   | `true` |  
-`emergency.street` | Primary road or street. Example: Broadway | `string()` |   | `true` |  
-`emergency.street_direction` | Leading street direction. Example: N, W | `string()` |   | `false` |  
-`emergency.street_suffix` | Trailing street suffix. Example: SW | `string()` |   | `false` |  
-`emergency.street_type` | Street type. Example: Avenue, Platz, Street | `string()` |   | `false` |  
-`emergency` | Emergency address | `object()` |   | `false` |  
 
 ### call_failover
 
