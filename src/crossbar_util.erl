@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2021, 2600Hz
+%%% @copyright (C) 2010-2023, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
 %%% @author Karl Anderson
@@ -830,7 +830,7 @@ apply_response_map_item({Key, ExistingKey}, J, JObj) ->
     kz_json:set_value(Key, kz_json:get_value(ExistingKey, JObj), J).
 
 -spec get_path(cowboy_req:req() | kz_term:ne_binary(), kz_term:ne_binary()) -> kz_term:ne_binary().
-get_path(<<_/binary>> = RawPath, Relative) ->
+get_path(<<RawPath/binary>>, Relative) ->
     kz_http_util:resolve_uri(RawPath, Relative);
 get_path(Req, Relative) ->
     get_path(cowboy_req:path(Req), Relative).

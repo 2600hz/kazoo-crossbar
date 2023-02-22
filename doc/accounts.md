@@ -529,7 +529,9 @@ curl -v -X GET \
 
 ## Re-create the account's API key
 
-If you think that your account's API key might be exposed you can create a new one with `api_key` endpoint. Issuing a `PUT` request to this endpoint will generates a new API key for the account and will returned it in response.
+If you think that your account's API key might be exposed you can create a new one with the `api_key` endpoint. Issuing a `PUT` request to this endpoint will generate a new API key for the account and will return the new key in response.
+
+!!! note The auth token included in the request must be for an admin of the account *or* the superduper dmin. Otherwise expect a 403 Forbidden error to the request.
 
 > PUT /v2/accounts/{ACCOUNT_ID}/api_key
 
@@ -538,6 +540,8 @@ curl -v -X PUT \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
      http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/api_key
 ```
+
+And the 201 Created response:
 
 ```json
 {
