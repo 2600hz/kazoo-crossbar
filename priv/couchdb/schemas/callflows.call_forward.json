@@ -14,6 +14,11 @@
             ],
             "type": "string"
         },
+        "menu_retries": {
+            "default": 3,
+            "description": "If the action is menu, how many retries to get a correct menu selection",
+            "type": "integer"
+        },
         "skip_module": {
             "description": "When set to true this callflow action is skipped, advancing to the wildcard branch (if any)",
             "type": "boolean"
