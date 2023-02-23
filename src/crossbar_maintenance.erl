@@ -145,10 +145,12 @@ migrate_call_forward_legacy(Doc) ->
 
 migrate_call_forward_legacy(Doc, LegacyJObj) ->
     Enabled = kz_json:is_true(<<"enabled">>, LegacyJObj),
-    ForwardJObj = kzd_call_forward:set_match_list_enabled(LegacyJObj, Enabled),
+    ForwardJObj = kz_json:set_value(<<"enabled">>, 'null'
+                                   ,kzd_call_forward:set_match_list_enabled(LegacyJObj, Enabled)
+                                   ),
 
     case kz_datamgr:save_doc(kz_doc:account_id(Doc)
-                            ,kz_json:set_value(<<"call_forward">>, [ForwardJObj], Doc)
+                            ,kzd_endpoint:set_call_forward(Doc, [ForwardJObj])
                             )
     of
         {'ok', _Saved} ->

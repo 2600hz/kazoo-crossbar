@@ -74,6 +74,7 @@ Key | Description | Type | Default | Required | Support Level
 `keep_caller_id` | Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used | `boolean()` | `true` | `false` | `supported`
 `number` | The number to forward calls to | `string(0..35)` |   | `false` | `supported`
 `require_keypress` | Determines if the callee is prompted to press 1 to accept the call | `boolean()` | `true` | `false` |  
+`substitute` | Determines if the call forwarding replaces the device | `boolean()` | `true` | `false` | `supported`
 
 ### call_forward
 
