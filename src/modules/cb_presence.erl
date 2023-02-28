@@ -376,7 +376,10 @@ publish_presence_update(Context, PresenceId, PresenceState) ->
     lager:debug("updating presence for ~s@~s to state ~s", [PresenceId, Realm, PresenceState]),
     %% persist presence setting
     Update = [{[PresenceId], presence_update_state(PresenceState)}],
-    UpdateOptions = [{'update', Update}],
+    UpdateOptions = [{'update', Update}
+                    ,{'ensure_saved', 'true'}
+                    ,{'should_create', 'true'}
+                    ],
     {'ok', _} = kz_datamgr:update_doc(AccountDb, ?MANUAL_PRESENCE_DOC, UpdateOptions),
     PresenceString = <<PresenceId/binary, "@", Realm/binary>>,
     kapps_call_command:presence(PresenceState, PresenceString, kz_term:to_hex_binary(crypto:hash('md5', PresenceString))).
