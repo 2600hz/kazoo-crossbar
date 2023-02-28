@@ -43,7 +43,7 @@
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec init() -> ok.
+-spec init() -> 'ok'.
 init() ->
     Bindings = [{<<"*.allowed_methods.presence">>, 'allowed_methods'}
                ,{<<"*.authenticate.presence">>, 'authenticate'}
@@ -54,7 +54,7 @@ init() ->
                ,{<<"*.execute.post.presence">>, 'post'}
                ],
     _ = cb_modules_util:bind(?MODULE, Bindings),
-    ok.
+    'ok'.
 
 -spec authenticate(cb_context:context()) -> boolean().
 authenticate(Context) ->
@@ -376,13 +376,16 @@ publish_presence_update(Context, PresenceId, PresenceState) ->
     lager:debug("updating presence for ~s@~s to state ~s", [PresenceId, Realm, PresenceState]),
     %% persist presence setting
     Update = [{[PresenceId], presence_update_state(PresenceState)}],
-    UpdateOptions = [{'update', Update}],
+    UpdateOptions = [{'update', Update}
+                    ,{'ensure_saved', 'true'}
+                    ,{'should_create', 'true'}
+                    ],
     {'ok', _} = kz_datamgr:update_doc(AccountDb, ?MANUAL_PRESENCE_DOC, UpdateOptions),
     PresenceString = <<PresenceId/binary, "@", Realm/binary>>,
     kapps_call_command:presence(PresenceState, PresenceString, kz_term:to_hex_binary(crypto:hash('md5', PresenceString))).
 
--spec presence_update_state(kz_term:ne_binary()) -> kz_term:ne_binary() | null.
-presence_update_state(<<"terminated">>) -> null;
+-spec presence_update_state(kz_term:ne_binary()) -> kz_term:ne_binary() | 'null'.
+presence_update_state(<<"terminated">>) -> 'null';
 presence_update_state(PresenceState) -> PresenceState.
 
 -spec find_presence_id(kz_term:ne_binary() | kz_json:object()) -> kz_term:api_binary().
