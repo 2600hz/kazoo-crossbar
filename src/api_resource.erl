@@ -152,8 +152,8 @@ socket_url(Context, Req) ->
 -spec socket_scheme(cowboy_req:req()) -> kz_term:ne_binary().
 socket_scheme(Req) ->
     case cowboy_req:sock_secure(Req) of
-        true -> <<"https">>;
-        false -> <<"http">>
+        'true' -> <<"https">>;
+        'false' -> <<"http">>
     end.
 
 -spec req_nouns(cb_context:context()) -> cb_context:context().
@@ -1284,14 +1284,33 @@ generate_etag(Req0, Context0) ->
     {Req1, Context1} = crossbar_bindings:fold(Event, {Req0, Context0}),
     case cb_context:resp_etag(Context1) of
         'automatic' ->
-            {Content, _} = api_util:create_resp_content(Req1, Context1),
-            Tag = kz_term:to_hex_binary(crypto:hash('md5', Content)),
-            {list_to_binary([$", Tag, $"]), Req1, cb_context:set_resp_etag(Context1, Tag)};
+            Envelope = filter_envelope_validator_keys(
+                         api_util:create_resp_envelope(Context1)
+                        ),
+            Tag = kz_term:to_hex_binary(crypto:hash('md5', kz_json:encode(Envelope))),
+            %% `"W/"` is a weak etag, which means that the resp is not
+            %% byte-for-byte identical.
+            %% See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag#directives
+            {<<"W/\"", Tag/binary, $">>, Req1, cb_context:set_resp_etag(Context1, Tag)};
         'undefined' ->
-            {'undefined', Req1, cb_context:set_resp_etag(Context1, 'undefined')};
+            {'undefined', Req1, Context1};
         Tag ->
-            {list_to_binary([$", Tag, $"]), Req1, cb_context:set_resp_etag(Context1, Tag)}
+            {<<$", Tag/binary, $">>, Req1, Context1}
     end.
+
+%%------------------------------------------------------------------------------
+%% @doc Filter out keys that are not needed for etag generation from a response
+%% envelope.
+%% @end
+%%------------------------------------------------------------------------------
+-spec filter_envelope_validator_keys(kz_json:object()) -> kz_json:object().
+filter_envelope_validator_keys(Envelope) ->
+    kz_json:delete_keys([<<"auth_token">>
+                        ,<<"node">>
+                        ,<<"request_id">>
+                        ,<<"timestamp">>
+                        ,<<"tokens">>
+                        ], Envelope).
 
 -spec expires(cowboy_req:req(), cb_context:context()) ->
           {calendar:datetime(), cowboy_req:req(), cb_context:context()}.

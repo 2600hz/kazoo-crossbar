@@ -156,7 +156,7 @@
                     ,metadata = [] :: kz_term:proplist()
                     ,pretty_print = 'false' :: boolean()
                     ,resp_expires = {{1999,1,1},{0,0,0}} :: kz_time:datetime()
-                    ,resp_etag :: 'automatic' | string() | kz_term:api_binary()
+                    ,resp_etag :: resp_etag()
                     ,resp_status = 'error' :: crossbar_status()
                     ,resp_error_msg :: kz_term:api_ne_binary()
                     ,resp_error_code :: kz_term:api_integer()
@@ -210,12 +210,15 @@
              ,setter_fun_2/0
              ,setter_fun_3/0
              ,setters/0
+             ,resp_etag/0
              ]).
 
 -type setter_kv() :: setter_fun_1() |
                      {setter_fun_2(), any()} |
                      {setter_fun_3(), any(), any()}.
 -type setters() :: [setter_kv()].
+
+-type resp_etag() :: 'automatic' | kz_term:api_binary().
 
 -spec new() -> context().
 new() -> #cb_context{}.
@@ -481,7 +484,7 @@ resp_headers(#cb_context{resp_headers=RespHeaders}) -> RespHeaders.
 -spec api_version(context()) -> kz_term:ne_binary().
 api_version(#cb_context{api_version=ApiVersion}) -> ApiVersion.
 
--spec resp_etag(context()) -> 'automatic' | string() | kz_term:api_binary().
+-spec resp_etag(context()) -> resp_etag().
 resp_etag(#cb_context{resp_etag=ETag}) -> ETag.
 
 -spec resp_envelope(context()) -> kz_json:object().
@@ -725,7 +728,7 @@ set_resp_expires(#cb_context{}=Context, RespExpires) ->
 set_api_version(#cb_context{}=Context, ApiVersion) ->
     Context#cb_context{api_version=kz_term:to_binary(ApiVersion)}.
 
--spec set_resp_etag(context(), kz_term:api_binary()) -> context().
+-spec set_resp_etag(context(), resp_etag()) -> context().
 set_resp_etag(#cb_context{}=Context, ETag) ->
     Context#cb_context{resp_etag=ETag}.
 

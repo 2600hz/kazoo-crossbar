@@ -40,7 +40,6 @@
         ,which_cb_module/2
 
          %% Content
-        ,create_resp_content/2
         ,create_resp_body/2
         ,create_resp_file/2
         ,create_csv_resp_content/2
@@ -50,6 +49,7 @@
         ,create_pull_response/2, create_pull_response/3
 
         ,init_chunk_stream/3
+        ,create_resp_envelope/1
         ,close_chunk_json_envelope/2
         ,create_json_chunk_response/2, create_csv_chunk_response/2
 
@@ -1948,17 +1948,19 @@ do_create_resp_envelope(Context) ->
 
 -spec create_default_resp_envelope(cb_context:context()) -> kz_json:object().
 create_default_resp_envelope(Context) ->
-    BaseResp = [{<<"tokens">>, get_token_obj(Context)}
-               ,{<<"request_id">>, cb_context:req_id(Context)}
+    BaseResp = [{<<"auth_token">>, cb_context:auth_token(Context)}
+               ,{<<"metadata">>, cb_context:get_metadata(Context)}
                ,{<<"node">>, kz_nodes:node_encoded()}
+               ,{<<"request_id">>, cb_context:req_id(Context)}
                ,{<<"timestamp">>, kz_time:iso8601(kz_time:now_s())}
+               ,{<<"tokens">>, get_token_obj(Context)}
                | conditional_resp_data(Context)
                ],
     Resp = case cb_context:response(Context) of
                {'ok', RespData} ->
                    success_envelope(Context, BaseResp, RespData);
                {'error', {ErrorCode, ErrorMsg, RespData}} ->
-                   error_envelope(Context, BaseResp, RespData, ErrorCode, ErrorMsg)
+                   error_envelope(BaseResp, RespData, ErrorCode, ErrorMsg)
            end,
     maybe_delete_range_keys(kz_json:set_values(Resp, cb_context:resp_envelope(Context))
                            ,cb_context:should_paginate(Context)
@@ -1966,21 +1968,17 @@ create_default_resp_envelope(Context) ->
 
 success_envelope(Context, BaseResp, RespData) ->
     [{<<"status">>, <<"success">>}
-    ,{<<"request_id">>, cb_context:req_id(Context)}
-    ,{<<"metadata">>, cb_context:get_metadata(Context)}
     ,{<<"revision">>, kz_term:to_api_binary(cb_context:resp_etag(Context))}
     ,{<<"data">>, RespData}
     | BaseResp
     ].
 
-error_envelope(Context, BaseResp, RespData, ErrorCode, ErrorMsg) ->
+error_envelope(BaseResp, RespData, ErrorCode, ErrorMsg) ->
     lager:info("generating error ~b ~s response", [ErrorCode, ErrorMsg]),
     [{<<"status">>, <<"error">>}
     ,{<<"message">>, ErrorMsg}
     ,{<<"error">>, kz_term:to_binary(ErrorCode)}
     ,{<<"data">>, RespData}
-    ,{<<"request_id">>, cb_context:req_id(Context)}
-    ,{<<"metadata">>, cb_context:get_metadata(Context)}
     | BaseResp
     ].
 
@@ -1997,9 +1995,9 @@ maybe_add_version(Context, Acc) ->
     end.
 
 maybe_add_auth_token(Context, Acc) ->
-    case kz_term:is_true(cb_context:fetch(Context, token_created)) of
-        true -> props:set_value(<<"auth_token">>, cb_context:auth_token(Context), Acc);
-        false -> Acc
+    case kz_term:is_true(cb_context:fetch(Context, 'token_created')) of
+        'true' -> props:set_value(<<"auth_token">>, cb_context:auth_token(Context), Acc);
+        'false' -> Acc
     end.
 
 -spec close_chunk_json_envelope(cowboy_req:req(), cb_context:context()) -> 'ok'.
