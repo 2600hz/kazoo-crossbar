@@ -1357,7 +1357,7 @@
                 },
                 "enabled": {
                     "default": false,
-                    "description": "Determines if the call forwarding should be used",
+                    "description": "If no match_list_id, determines if call forwarding should be used",
                     "type": "boolean"
                 },
                 "ignore_early_media": {
@@ -1370,18 +1370,9 @@
                     "description": "Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used",
                     "type": "boolean"
                 },
-                "match_list": {
-                    "properties": {
-                        "enabled": {
-                            "description": "True to always forward the call, false to never forward the call, undefined means use the match list at {ID}",
-                            "type": "boolean"
-                        },
-                        "id": {
-                            "description": "The Match List ID to use",
-                            "type": "string"
-                        }
-                    },
-                    "type": "object"
+                "match_list_id": {
+                    "description": "ID of the match list to evaluate",
+                    "type": "string"
                 },
                 "number": {
                     "description": "The number to forward calls to",

@@ -11,7 +11,7 @@
         },
         "enabled": {
             "default": false,
-            "description": "Determines if the call forwarding should be used",
+            "description": "If no match_list_id, determines if call forwarding should be used",
             "support_level": "supported",
             "type": "boolean"
         },
@@ -26,18 +26,9 @@
             "support_level": "supported",
             "type": "boolean"
         },
-        "match_list": {
-            "properties": {
-                "enabled": {
-                    "description": "True to always forward the call, false to never forward the call, undefined means use the match list at {ID}",
-                    "type": "boolean"
-                },
-                "id": {
-                    "description": "The Match List ID to use",
-                    "type": "string"
-                }
-            },
-            "type": "object"
+        "match_list_id": {
+            "description": "ID of the match list to evaluate",
+            "type": "string"
         },
         "number": {
             "description": "The number to forward calls to",

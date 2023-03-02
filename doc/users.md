@@ -90,12 +90,10 @@ The device call forward parameters
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `direct_calls_only` | Determines if the calls that are not directly sent to the device should be forwarded | `boolean()` | `false` | `false` | `supported`
-`enabled` | Determines if the call forwarding should be used | `boolean()` | `false` | `false` | `supported`
+`enabled` | If no match_list_id, determines if call forwarding should be used | `boolean()` | `false` | `false` | `supported`
 `ignore_early_media` | The option to determine if early media from the call forwarded number should ignored | `boolean()` | `true` | `false` |  
 `keep_caller_id` | Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used | `boolean()` | `true` | `false` | `supported`
-`match_list.enabled` | True to always forward the call, false to never forward the call, undefined means use the match list at {ID} | `boolean()` |   | `false` |  
-`match_list.id` | The Match List ID to use | `string()` |   | `false` |  
-`match_list` |   | `object()` |   | `false` |  
+`match_list_id` | ID of the match list to evaluate | `string()` |   | `false` |  
 `number` | The number to forward calls to | `string(0..35)` |   | `false` | `supported`
 `require_keypress` | Determines if the callee is prompted to press 1 to accept the call | `boolean()` | `true` | `false` | `supported`
 `substitute` | Determines if the call forwarding replaces the device | `boolean()` | `true` | `false` | `supported`
