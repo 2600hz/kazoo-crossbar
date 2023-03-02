@@ -1,7 +1,7 @@
 name: kazoo-application-crossbar
 custom_files: null
 exposure: private
-base_branch: '5.2'
+base_branch: origin/5.2
 base_core: kazoo-core
 template: kazoo-application.spec.tmpl
 package:
