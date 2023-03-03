@@ -1,0 +1,51 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "_id": "accounts",
+    "type": "object",
+    "description": "The various ways to specify when to call forward",
+    "properties": {
+        "unconditional": {
+            "type": "object",
+            "$ref": "call_forward",
+            "description": "Pre-bridge, call forwarding settings are always used when enabled"
+        },
+        "busy": {
+            "type": "object",
+            "$ref": "call_forward",
+            "description": "Post-dial attempt, call forwarding settings used if the SIP attempt returns busy (sip:486)"
+        },
+        "no_answer": {
+            "type": "object",
+            "$ref": "call_forward",
+            "description": "Post-dial attempt, call forwarding settings used if the SIP attempt returns unanswered (sip:480)"
+        },
+        "selective": {
+            "description": "Conditionally check match lists to determine if call forwarding should be used",
+            "type": "object",
+            "properties": {
+                "rules": {
+                    "type": "array",
+                    "description": "Match list rules to check for call forwarding",
+                    "items": {
+                        "allOf": [
+                            {
+                                "type": "object",
+                                "$ref": "call_forward",
+                                "description": "Pre-bridge, check match lists for whether to forward the caller"
+                            },
+                            {
+                                "type": "object",
+                                "properties": {
+                                    "match_list_id": {
+                                        "type": "string",
+                                        "description": "Match List ID to check"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}
