@@ -135,17 +135,17 @@ migrate_call_forward_account(AccountDoc) ->
     migrate_call_forward_devices(AccountId).
 
 migrate_call_forward_legacy(Doc) ->
-    case kz_json:get_value(<<"call_forward">>, Doc) of
+    case kz_json:get_value([<<"call_forward">>, <<"enabled">>], Doc) of
         'undefined' -> 'ok';
         %% new format already
-        Forwards when is_list(Forwards) -> 'ok';
         ForwardJObj ->
             migrate_call_forward_legacy(Doc, ForwardJObj)
     end.
 
 migrate_call_forward_legacy(Doc, LegacyJObj) ->
+    CFwd = kzd_call_forward_types:set_unconditional(kz_json:new(), LegacyJObj),
     case kz_datamgr:save_doc(kz_doc:account_id(Doc)
-                            ,kzd_endpoint:set_call_forward(Doc, [LegacyJObj])
+                            ,kzd_endpoint:set_call_forward(Doc, CFwd)
                             )
     of
         {'ok', _Saved} ->
