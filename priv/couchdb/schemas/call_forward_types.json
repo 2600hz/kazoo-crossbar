@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "_id": "accounts",
+    "_id": "call_forward_types",
     "description": "The various ways to specify when to call forward",
     "properties": {
         "busy": {

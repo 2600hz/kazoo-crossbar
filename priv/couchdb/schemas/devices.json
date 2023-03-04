@@ -45,8 +45,7 @@
             "$ref": "call_failover"
         },
         "call_forward": {
-            "$ref": "call_forward_types",
-            "type": "object"
+            "$ref": "call_forward_types"
         },
         "call_limits": {
             "$ref": "call_limits"

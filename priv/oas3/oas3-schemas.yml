@@ -505,10 +505,7 @@
     'call_failover':
       '$ref': '#/call_failover'
     'call_forward':
-      'items':
-        '$ref': '#/call_forward'
-        'type': object
-      'type': array
+      '$ref': '#/call_forward_types'
     'call_limits':
       '$ref': '#/call_limits'
     'call_recording':
@@ -1154,6 +1151,43 @@
       'description': Determines if the call forwarding replaces the device
       'type': boolean
       'x-support_level': supported
+  'type': object
+'call_forward_types':
+  'description': The various ways to specify when to call forward
+  'properties':
+    'busy':
+      '$ref': '#/call_forward'
+      'description': |-
+        Post-dial attempt, call forwarding settings used if the SIP attempt returns busy (sip:486)
+      'type': object
+    'no_answer':
+      '$ref': '#/call_forward'
+      'description': |-
+        Post-dial attempt, call forwarding settings used if the SIP attempt returns unanswered (sip:480)
+      'type': object
+    'selective':
+      'description': |-
+        Conditionally check match lists to determine if call forwarding should be used
+      'properties':
+        'rules':
+          'description': Match list rules to check for call forwarding
+          'items':
+            'allOf':
+              - '$ref': '#/call_forward'
+                'description': |-
+                  Pre-bridge, check match lists for whether to forward the caller
+                'type': object
+              - 'properties':
+                  'match_list_id':
+                    'description': Match List ID to check
+                    'type': string
+                'type': object
+          'type': array
+      'type': object
+    'unconditional':
+      '$ref': '#/call_forward'
+      'description': 'Pre-bridge, call forwarding settings are always used when enabled'
+      'type': object
   'type': object
 'call_limits':
   'description': Schema for call limits
@@ -5220,10 +5254,7 @@
     'call_failover':
       '$ref': '#/call_failover'
     'call_forward':
-      'items':
-        '$ref': '#/call_forward'
-        'type': object
-      'type': array
+      '$ref': '#/call_forward_types'
     'call_limits':
       '$ref': '#/call_limits'
     'call_recording':
@@ -16749,10 +16780,7 @@
     'call_failover':
       '$ref': '#/call_failover'
     'call_forward':
-      'items':
-        '$ref': '#/call_forward'
-        'type': object
-      'type': array
+      '$ref': '#/call_forward_types'
     'call_limits':
       '$ref': '#/call_limits'
     'call_recording':
