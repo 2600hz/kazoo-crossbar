@@ -13,7 +13,7 @@ Key | Description | Type | Default | Required | Support Level
 `blacklists.[]` |   | `string()` |   | `false` |  
 `blacklists` | A list blacklist ids that apply to the account | `array(string())` |   | `false` |  
 `call_failover` | The device call failover parameters, to replace the device with an extension/phone number when device is offline. | [#/definitions/call_failover](#call_failover) |   | `false` |  
-`call_forward` |   | `array([#/definitions/call_forward](#call_forward))` |   | `false` |  
+`call_forward` | The various ways to specify when to call forward | [#/definitions/call_forward_types](#call_forward_types) |   | `false` |  
 `call_limits` | Schema for call limits | [#/definitions/call_limits](#call_limits) |   | `false` |  
 `call_recording.account` | endpoint recording settings | [#/definitions/call_recording](#call_recording) |   | `false` |  
 `call_recording.endpoint` | endpoint recording settings | [#/definitions/call_recording](#call_recording) |   | `false` |  
@@ -91,6 +91,19 @@ Key | Description | Type | Default | Required | Support Level
 `number` | The number to forward calls to | `string(0..35)` |   | `false` | `supported`
 `require_keypress` | Determines if the callee is prompted to press 1 to accept the call | `boolean()` | `true` | `false` | `supported`
 `substitute` | Determines if the call forwarding replaces the device | `boolean()` | `true` | `false` | `supported`
+
+### call_forward_types
+
+The various ways to specify when to call forward
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`busy` | Post-dial attempt, call forwarding settings used if the SIP attempt returns busy (sip:486) | `object()` |   | `false` |  
+`no_answer` | Post-dial attempt, call forwarding settings used if the SIP attempt returns unanswered (sip:480) | `object()` |   | `false` |  
+`selective.rules` | Match list rules to check for call forwarding | `array()` |   | `false` |  
+`selective` | Conditionally check match lists to determine if call forwarding should be used | `object()` |   | `false` |  
+`unconditional` | Pre-bridge, call forwarding settings are always used when enabled | `object()` |   | `false` |  
 
 ### call_limits
 
