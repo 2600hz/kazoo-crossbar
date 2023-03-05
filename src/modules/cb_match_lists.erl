@@ -119,7 +119,7 @@ validate_match_lists(Context, ?HTTP_PUT) ->
 validate_match_list(Context, MatchListId, ?HTTP_GET) ->
     read(Context, MatchListId);
 validate_match_list(Context, MatchListId, ?HTTP_POST) ->
-    update(Context, MatchListId);
+    update(MatchListId, Context);
 validate_match_list(Context, MatchListId, ?HTTP_PATCH) ->
     validate_patch(Context, MatchListId);
 validate_match_list(Context, MatchListId, ?HTTP_DELETE) ->
@@ -181,8 +181,8 @@ read(Context, MatchListId) ->
 %% valid
 %% @end
 %%------------------------------------------------------------------------------
--spec update(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
-update(Context, MatchListId) ->
+-spec update(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
+update(MatchListId, Context) ->
     OnSuccess = fun(Ctx) -> on_successful_validation(Ctx, MatchListId) end,
     cb_context:validate_request_data(kzd_match_lists:schema(), Context, OnSuccess).
 
