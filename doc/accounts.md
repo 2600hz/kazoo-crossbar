@@ -21,7 +21,7 @@ Key | Description | Type | Default | Required | Support Level
 `blacklists.[]` |   | `string()` |   | `false` |  
 `blacklists` | A list blacklist ids that apply to the account | `array(string())` |   | `false` |  
 `call_failover` | The device call failover parameters, to replace the device with an extension/phone number when device is offline. | [#/definitions/call_failover](#call_failover) |   | `false` |  
-`call_forward` |   | `array([#/definitions/call_forward](#call_forward))` |   | `false` |  
+`call_forward` | The device call forward parameters | [#/definitions/call_forward](#call_forward) |   | `false` |  
 `call_limits` | Schema for call limits | [#/definitions/call_limits](#call_limits) |   | `false` |  
 `call_recording.account` | endpoint recording settings | [#/definitions/call_recording](#call_recording) |   | `false` |  
 `call_recording.endpoint` | endpoint recording settings | [#/definitions/call_recording](#call_recording) |   | `false` |  
@@ -94,9 +94,6 @@ Key | Description | Type | Default | Required | Support Level
 `enabled` | Determines if the call forwarding should be used | `boolean()` | `false` | `false` | `supported`
 `ignore_early_media` | The option to determine if early media from the call forwarded number should ignored | `boolean()` | `true` | `false` |  
 `keep_caller_id` | Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used | `boolean()` | `true` | `false` | `supported`
-`match_list.enabled` | True to always forward the call, false to never forward the call, undefined means use the match list at {ID} | `boolean()` |   | `false` |  
-`match_list.id` | The Match List ID to use | `string()` |   | `false` |  
-`match_list` |   | `object()` |   | `false` |  
 `number` | The number to forward calls to | `string(0..35)` |   | `false` | `supported`
 `require_keypress` | Determines if the callee is prompted to press 1 to accept the call | `boolean()` | `true` | `false` | `supported`
 `substitute` | Determines if the call forwarding replaces the device | `boolean()` | `true` | `false` | `supported`

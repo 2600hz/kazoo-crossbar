@@ -505,10 +505,7 @@
     'call_failover':
       '$ref': '#/call_failover'
     'call_forward':
-      'items':
-        '$ref': '#/call_forward'
-        'type': object
-      'type': array
+      '$ref': '#/call_forward'
     'call_limits':
       '$ref': '#/call_limits'
     'call_recording':
@@ -1131,16 +1128,6 @@
         Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used
       'type': boolean
       'x-support_level': supported
-    'match_list':
-      'properties':
-        'enabled':
-          'description': |-
-            True to always forward the call, false to never forward the call, undefined means use the match list at {ID}
-          'type': boolean
-        'id':
-          'description': The Match List ID to use
-          'type': string
-      'type': object
     'number':
       'description': The number to forward calls to
       'maxLength': 35
@@ -5218,10 +5205,7 @@
     'call_failover':
       '$ref': '#/call_failover'
     'call_forward':
-      'items':
-        '$ref': '#/call_forward'
-        'type': object
-      'type': array
+      '$ref': '#/call_forward'
     'call_limits':
       '$ref': '#/call_limits'
     'call_recording':
@@ -16743,10 +16727,7 @@
     'call_failover':
       '$ref': '#/call_failover'
     'call_forward':
-      'items':
-        '$ref': '#/call_forward'
-        'type': object
-      'type': array
+      '$ref': '#/call_forward'
     'call_limits':
       '$ref': '#/call_limits'
     'call_recording':
