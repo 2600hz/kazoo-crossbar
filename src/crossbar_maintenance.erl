@@ -136,10 +136,11 @@ migrate_call_forward_account(AccountDoc) ->
 
 migrate_call_forward_legacy(Doc) ->
     case kz_json:get_value([<<"call_forward">>, <<"enabled">>], Doc) of
+        %% new format already or undefined from before
         'undefined' -> 'ok';
-        %% new format already
-        ForwardJObj ->
-            migrate_call_forward_legacy(Doc, ForwardJObj)
+        %% legascy
+        _IsEnabled ->
+            migrate_call_forward_legacy(Doc, kz_json:get_value(<<"call_forward">>, Doc))
     end.
 
 migrate_call_forward_legacy(Doc, LegacyJObj) ->
