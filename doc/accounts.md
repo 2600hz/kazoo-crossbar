@@ -108,7 +108,7 @@ Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `busy` | Post-dial attempt, call forwarding settings used if the SIP attempt returns busy (sip:486) | `object()` |   | `false` |  
 `no_answer` | Post-dial attempt, call forwarding settings used if the SIP attempt returns unanswered (sip:480) | `object()` |   | `false` |  
-`selective.rules` | Match list rules to check for call forwarding | `array()` |   | `false` |  
+`selective.rules` | Match list rules to check for call forwarding | `array(object())` |   | `false` |  
 `selective` | Conditionally check match lists to determine if call forwarding should be used | `object()` |   | `false` |  
 `unconditional` | Pre-bridge, call forwarding settings are always used when enabled | `object()` |   | `false` |  
 

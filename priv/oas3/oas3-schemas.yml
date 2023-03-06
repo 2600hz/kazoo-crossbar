@@ -1188,6 +1188,7 @@
                     'description': Match List ID to check
                     'type': string
                 'type': object
+            'type': object
           'type': array
       'type': object
     'unconditional':
