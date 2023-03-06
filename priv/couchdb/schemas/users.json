@@ -7,7 +7,15 @@
             "$ref": "call_failover"
         },
         "call_forward": {
-            "$ref": "call_forward_types"
+            "oneOf": [
+                {
+                    "$ref": "call_forward",
+                    "description": "Deprecated but supported for now, set call forwarding on the root call_forward key"
+                },
+                {
+                    "$ref": "call_forward_types"
+                }
+            ]
         },
         "call_limits": {
             "$ref": "call_limits"
