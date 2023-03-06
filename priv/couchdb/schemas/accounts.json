@@ -15,6 +15,7 @@
             "$ref": "call_failover"
         },
         "call_forward": {
+            "description": "Call forward settings",
             "oneOf": [
                 {
                     "$ref": "call_forward",

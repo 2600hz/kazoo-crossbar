@@ -1,7 +1,9 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "_id": "call_forward_types",
+    "additionalProperties": false,
     "description": "The various ways to specify when to call forward",
+    "minProperties": 1,
     "properties": {
         "busy": {
             "$ref": "call_forward",
@@ -46,7 +48,5 @@
             "type": "object"
         }
     },
-    "minProperties": 1,
-    "additionalProperties": false,
     "type": "object"
 }

@@ -45,9 +45,9 @@
             "type": "boolean"
         }
     },
-    "type": "object",
     "required": [
         "enabled",
         "number"
-    ]
+    ],
+    "type": "object"
 }
