@@ -539,10 +539,7 @@ extra_validation(Context) ->
     Extra = [fun maybe_import_enabled/1
             ,fun disallow_direct_clients/1
             ],
-    lists:foldl(fun(F, C) -> F(C) end
-               ,Context
-               ,Extra
-               ).
+    cb_context:setters(Extra, Context).
 
 -spec disallow_direct_clients(cb_context:context()) -> cb_context:context().
 disallow_direct_clients(Context) ->
