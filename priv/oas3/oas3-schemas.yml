@@ -505,7 +505,12 @@
     'call_failover':
       '$ref': '#/call_failover'
     'call_forward':
-      '$ref': '#/call_forward_types'
+      'description': Call forward settings
+      'oneOf':
+        - '$ref': '#/call_forward'
+          'description': |-
+            Deprecated but supported for now, set call forwarding on the root call_forward key
+        - '$ref': '#/call_forward_types'
     'call_limits':
       '$ref': '#/call_limits'
     'call_recording':
@@ -1119,7 +1124,7 @@
       'x-support_level': supported
     'enabled':
       'default': false
-      'description': 'If no match_list_id, determines if call forwarding should be used'
+      'description': Determines if call forwarding should be used
       'type': boolean
       'x-support_level': supported
     'ignore_early_media':
@@ -1133,9 +1138,6 @@
         Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used
       'type': boolean
       'x-support_level': supported
-    'match_list_id':
-      'description': ID of the match list to evaluate
-      'type': string
     'number':
       'description': The number to forward calls to
       'maxLength': 35
@@ -1151,9 +1153,14 @@
       'description': Determines if the call forwarding replaces the device
       'type': boolean
       'x-support_level': supported
+  'required':
+    - enabled
+    - number
   'type': object
 'call_forward_types':
+  'additionalProperties': false
   'description': The various ways to specify when to call forward
+  'minProperties': 1
   'properties':
     'busy':
       '$ref': '#/call_forward'
@@ -1176,7 +1183,6 @@
               - '$ref': '#/call_forward'
                 'description': |-
                   Pre-bridge, check match lists for whether to forward the caller
-                'type': object
               - 'properties':
                   'match_list_id':
                     'description': Match List ID to check
@@ -5254,7 +5260,12 @@
     'call_failover':
       '$ref': '#/call_failover'
     'call_forward':
-      '$ref': '#/call_forward_types'
+      'description': Call forward settings
+      'oneOf':
+        - '$ref': '#/call_forward'
+          'description': |-
+            Deprecated but supported for now, set call forwarding on the root call_forward key
+        - '$ref': '#/call_forward_types'
     'call_limits':
       '$ref': '#/call_limits'
     'call_recording':
@@ -16780,7 +16791,12 @@
     'call_failover':
       '$ref': '#/call_failover'
     'call_forward':
-      '$ref': '#/call_forward_types'
+      'description': Call forward settings
+      'oneOf':
+        - '$ref': '#/call_forward'
+          'description': |-
+            Deprecated but supported for now, set call forwarding on the root call_forward key
+        - '$ref': '#/call_forward_types'
     'call_limits':
       '$ref': '#/call_limits'
     'call_recording':
