@@ -35,7 +35,8 @@
                                 },
                                 "type": "object"
                             }
-                        ]
+                        ],
+                        "type": "object"
                     },
                     "type": "array"
                 }
