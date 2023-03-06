@@ -675,7 +675,16 @@
                     "$ref": "#/definitions/call_failover"
                 },
                 "call_forward": {
-                    "$ref": "#/definitions/call_forward_types"
+                    "description": "Call forward settings",
+                    "oneOf": [
+                        {
+                            "$ref": "call_forward",
+                            "description": "Deprecated but supported for now, set call forwarding on the root call_forward key"
+                        },
+                        {
+                            "$ref": "call_forward_types"
+                        }
+                    ]
                 },
                 "call_limits": {
                     "$ref": "#/definitions/call_limits"
@@ -1353,7 +1362,7 @@
                 },
                 "enabled": {
                     "default": false,
-                    "description": "If no match_list_id, determines if call forwarding should be used",
+                    "description": "Determines if call forwarding should be used",
                     "type": "boolean"
                 },
                 "ignore_early_media": {
@@ -1365,10 +1374,6 @@
                     "default": true,
                     "description": "Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used",
                     "type": "boolean"
-                },
-                "match_list_id": {
-                    "description": "ID of the match list to evaluate",
-                    "type": "string"
                 },
                 "number": {
                     "description": "The number to forward calls to",
@@ -1386,10 +1391,15 @@
                     "type": "boolean"
                 }
             },
+            "required": [
+                "enabled",
+                "number"
+            ],
             "type": "object"
         },
         "call_forward_types": {
             "description": "The various ways to specify when to call forward",
+            "minProperties": 1,
             "properties": {
                 "busy": {
                     "$ref": "#/definitions/call_forward",
@@ -1410,8 +1420,7 @@
                                 "allOf": [
                                     {
                                         "$ref": "call_forward",
-                                        "description": "Pre-bridge, check match lists for whether to forward the caller",
-                                        "type": "object"
+                                        "description": "Pre-bridge, check match lists for whether to forward the caller"
                                     },
                                     {
                                         "properties": {
@@ -6576,7 +6585,16 @@
                     "$ref": "#/definitions/call_failover"
                 },
                 "call_forward": {
-                    "$ref": "#/definitions/call_forward_types"
+                    "description": "Call forward settings",
+                    "oneOf": [
+                        {
+                            "$ref": "call_forward",
+                            "description": "Deprecated but supported for now, set call forwarding on the root call_forward key"
+                        },
+                        {
+                            "$ref": "call_forward_types"
+                        }
+                    ]
                 },
                 "call_limits": {
                     "$ref": "#/definitions/call_limits"
@@ -21134,7 +21152,16 @@
                     "$ref": "#/definitions/call_failover"
                 },
                 "call_forward": {
-                    "$ref": "#/definitions/call_forward_types"
+                    "description": "Call forward settings",
+                    "oneOf": [
+                        {
+                            "$ref": "call_forward",
+                            "description": "Deprecated but supported for now, set call forwarding on the root call_forward key"
+                        },
+                        {
+                            "$ref": "call_forward_types"
+                        }
+                    ]
                 },
                 "call_limits": {
                     "$ref": "#/definitions/call_limits"
