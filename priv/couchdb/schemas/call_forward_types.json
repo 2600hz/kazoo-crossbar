@@ -22,8 +22,7 @@
                         "allOf": [
                             {
                                 "$ref": "call_forward",
-                                "description": "Pre-bridge, check match lists for whether to forward the caller",
-                                "type": "object"
+                                "description": "Pre-bridge, check match lists for whether to forward the caller"
                             },
                             {
                                 "properties": {
@@ -47,5 +46,7 @@
             "type": "object"
         }
     },
+    "minProperties": 1,
+    "additionalProperties": false,
     "type": "object"
 }
