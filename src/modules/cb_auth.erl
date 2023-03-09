@@ -187,6 +187,7 @@ authorize_nouns(C, _, _, _, _) -> {'stop', cb_context:add_system_error('forbidde
 -spec authorize_action(cb_context:context(), kz_json:api_json_term()) -> boolean().
 authorize_action(C, <<"reset_signature_secret">>) -> cb_context:is_superduper_admin(C);
 authorize_action(_, <<"refresh_token">>) -> 'true';
+authorize_action(_, <<"renew">>) -> 'true';
 authorize_action(_, _) -> 'false'.
 
 %%------------------------------------------------------------------------------
@@ -243,11 +244,7 @@ validate_action(Context, <<"reset_signature_secret">>, ?HTTP_PUT) ->
         _ -> reset_identity_secret(Context)
     end;
 validate_action(Context, <<"refresh_token">>, ?HTTP_PUT) ->
-    Doc = kz_json:from_list([{<<"account_id">>, cb_context:auth_account_id(Context)}
-                            ,{<<"owner_id">>, cb_context:auth_user_id(Context)}
-                            ]),
-    Context1 = cb_context:set_doc(Context, Doc),
-    crossbar_auth:create_auth_token(Context1, ?MODULE);
+    crossbar_auth:validate_refresh_token(Context);
 validate_action(Context, _Action, _Method) ->
     lager:debug("unknown action ~s on ~s", [_Action, _Method]),
     cb_context:add_system_error(<<"action required">>, Context).
@@ -387,6 +384,11 @@ send_token_info(Context, Token, Claims) ->
 
 -spec put(cb_context:context()) -> cb_context:context().
 put(Context) ->
+    put_action(Context, cb_context:req_value(Context, <<"action">>)).
+
+put_action(Context, <<"refresh_token">>) ->
+    crossbar_auth:refresh_token(Context);
+put_action(Context, _Other) ->
     cb_context:set_resp_status(Context, 'success').
 
 -spec put(cb_context:context(), path_token()) -> cb_context:context().
