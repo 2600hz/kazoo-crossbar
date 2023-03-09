@@ -60,6 +60,8 @@
 
 -export([does_schema_exist/1]).
 
+-export([wait_for_prechecks/0]).
+
 -include("crossbar.hrl").
 
 -type input_term() :: atom() | string() | kz_term:ne_binary().
@@ -616,6 +618,29 @@ prechecks(Context) ->
     'true' = lists:all(fun(F) -> F() end, Funs),
     ?SUP_LOG_INFO("prechecks passed"),
     {'ok', Context}.
+
+-spec wait_for_prechecks() -> 'ok'.
+wait_for_prechecks() ->
+    Funs = [fun is_crossbar_running/0
+           ,fun db_accounts_exists/0
+           ,fun db_system_config_exists/0
+           ,fun db_system_schemas_exists/0
+           ,fun do_schemas_exist/0
+           ],
+    try lists:all(fun(F) -> F() end, Funs) of
+        true ->
+            ?SUP_LOG_INFO("prechecks passed"),
+            'ok';
+        false ->
+            ?SUP_LOG_INFO("prechecks failed, waiting 5 seconds for retry"),
+            timer:sleep(?MILLISECONDS_IN_SECOND * 5),
+            wait_for_prechecks()
+    catch
+        _:_ ->
+            ?SUP_LOG_INFO("prechecks failed with exception, waiting 5 seconds for retry"),
+            timer:sleep(?MILLISECONDS_IN_SECOND * 5),
+            wait_for_prechecks()
+    end.
 
 -spec is_crossbar_running() -> boolean().
 is_crossbar_running() ->
