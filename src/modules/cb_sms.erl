@@ -216,6 +216,7 @@ create_request(Context) ->
           ,{<<"Custom-Vars">>, kz_json:from_list(CCVs)}
           ,{<<"Route-Type">>, Type}
           ,{<<"Event-Category">>, <<"sms">>}
+          ,{<<"Msg-ID">>, cb_context:req_id(Context)}
           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
     cb_context:set_doc(Context, kz_json:from_list(KVs)).
