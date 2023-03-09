@@ -17444,6 +17444,10 @@
       'maxLength': 128
       'minLength': 1
       'type': string
+    'open_in_browser':
+      'default': false
+      'description': Whether a website should be opened in browser
+      'type': boolean
     'users':
       'default': []
       'description': A list users who are assigned the website

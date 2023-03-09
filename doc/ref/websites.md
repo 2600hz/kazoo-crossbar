@@ -12,6 +12,7 @@ Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `account_wide` | Whether an website is visible to all accounts in the parent account | `boolean()` | `true` | `false` |  
 `name` | A name for the website to be displayed | `string(1..128)` |   | `true` |  
+`open_in_browser` | Whether a website should be opened in browser | `boolean()` | `false` | `false` |  
 `users.[]` |   | `string()` |   | `false` |  
 `users` | A list users who are assigned the website | `array(string())` | `[]` | `false` |  
 `web_url` | Application api url | `string(7..)` |   | `true` |  
