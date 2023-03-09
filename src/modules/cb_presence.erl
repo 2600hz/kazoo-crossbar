@@ -478,6 +478,6 @@ save_report(Context) ->
            ],
     Path = io_lib:format("/~s/accounts/~s/presence/~s", Args),
     MagicPath = kapps_util:to_magic_hash(Path),
-    HostURL = cb_context:host_url(Context),
+    HostURL = cb_context:socket_url(Context),
     URL = <<HostURL/binary, "/", MagicPath/binary>>,
     {Report, URL}.
