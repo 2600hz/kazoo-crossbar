@@ -571,11 +571,18 @@ setters(#cb_context{}=Context, []) -> Context;
 setters(#cb_context{}=Context, [_|_]=Setters) ->
     lists:foldl(fun setters_fold/2, Context, Setters).
 
--spec setters_fold(setter_kv(), context()) ->
-          context().
-setters_fold({F, V}, #cb_context{}=C) -> #cb_context{} = F(C, V);
-setters_fold({F, K, V}, #cb_context{}=C) -> #cb_context{} = F(C, K, V);
-setters_fold(F, #cb_context{}=C) when is_function(F, 1) -> #cb_context{} = F(C).
+-spec setters_fold(setter_kv(), context()) -> context().
+setters_fold(Setter, Context) ->
+    case setter(Setter, Context) of
+        'ok' -> Context;
+        #cb_context{}=C -> C
+    end.
+
+-spec setter(setter_kv(), context()) -> 'ok' | context().
+setter({F, V}, #cb_context{}=C) when is_function(V, 1) -> F(C, V(C));
+setter({F, V}, #cb_context{}=C) -> #cb_context{} = F(C, V);
+setter({F, K, V}, #cb_context{}=C) -> #cb_context{} = F(C, K, V);
+setter(F, #cb_context{}=C) when is_function(F, 1) -> #cb_context{} = F(C).
 
 %%------------------------------------------------------------------------------
 %% @doc Loop over a list of functions and values to validate `cb_context()'.
