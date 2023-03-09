@@ -55,3 +55,4 @@
 | `stop_module/1` | `(Module)` | |
 | `update_schema/1` | `(Schema)` | |
 | `update_schemas/0` |  | |
+| `wait_for_prechecks/0` |  | |
