@@ -93,6 +93,7 @@ rest_init(Req, Opts) ->
     Setters = [{fun cb_context:set_req_id/2, get_request_id(Req)}
               ,{fun cb_context:set_req_headers/2, cowboy_req:headers(Req)}
               ,{fun host_url/2, Req}
+              ,{fun socket_url/2, Req}
               ,{fun cb_context:set_port/2, kz_term:to_integer(cowboy_req:port(Req))}
               ,{fun cb_context:set_raw_path/2, kz_term:to_binary(Path)}
               ,{fun cb_context:set_raw_qs/2, kz_term:to_binary(cowboy_req:qs(Req))}
@@ -141,6 +142,19 @@ host_url(Context, Req) ->
     {Scheme, Location, _Path, _Query, _Frag} = kz_http_util:urlsplit(URI),
     Value = list_to_binary([Scheme, "://", kz_http_util:location_host(Location)]),
     cb_context:set_host_url(Context, Value).
+
+-spec socket_url(cb_context:context(), cowboy_req:req()) -> cb_context:context().
+socket_url(Context, Req) ->
+    {IP, Port} = cowboy_req:sock(Req),
+    Value = list_to_binary([socket_scheme(Req), "://", kz_term:to_binary(inet:ntoa(IP)), ":", kz_term:to_binary(Port)]),
+    cb_context:set_socket_url(Context, Value).
+
+-spec socket_scheme(cowboy_req:req()) -> kz_term:ne_binary().
+socket_scheme(Req) ->
+    case cowboy_req:sock_secure(Req) of
+        true -> <<"https">>;
+        false -> <<"http">>
+    end.
 
 -spec req_nouns(cb_context:context()) -> cb_context:context().
 req_nouns(Context) ->

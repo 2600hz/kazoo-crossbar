@@ -107,6 +107,7 @@
         ,validation_errors/1, set_validation_errors/2
 
         ,host_url/1, set_host_url/2
+        ,socket_url/1, set_socket_url/2
         ,set_pretty_print/2
         ,set_port/2
         ,raw_path/1, set_raw_path/2
@@ -181,6 +182,7 @@
                     ,is_superduper_admin = 'undefined' :: kz_term:api_boolean()
                     ,is_account_admin = 'undefined' :: kz_term:api_boolean()
                     ,master_account_id = 'undefined' :: kz_term:api_ne_binary()
+                    ,socket_url = 'undefined' :: kz_term:api_ne_binary()
                     }).
 
 -define(KEY_ACCEPT_CHARGES, <<"accept_charges">>).
@@ -822,6 +824,13 @@ set_host_url(#cb_context{}=Context, Value) ->
 
 -spec host_url(context()) -> binary().
 host_url(#cb_context{host_url = Value}) -> Value.
+
+-spec set_socket_url(context(), binary()) -> context().
+set_socket_url(#cb_context{}=Context, Value) ->
+    Context#cb_context{socket_url = Value}.
+
+-spec socket_url(context()) -> binary().
+socket_url(#cb_context{socket_url = Value}) -> Value.
 
 -spec set_pretty_print(context(), boolean()) -> context().
 set_pretty_print(#cb_context{}=Context, Value) ->
