@@ -88,6 +88,5 @@
 
         }
     ],
-    "type": "object",
-    "required":["busy","no_answer","selective","unconditional"]
+    "type": "object"
 }
