@@ -626,10 +626,10 @@ wait_for_prechecks() ->
            ,fun do_schemas_exist/0
            ],
     try lists:all(fun(F) -> F() end, Funs) of
-        true ->
+        'true' ->
             ?SUP_LOG_INFO("prechecks passed"),
             'ok';
-        false ->
+        'false' ->
             ?SUP_LOG_INFO("prechecks failed, waiting 5 seconds for retry"),
             timer:sleep(?MILLISECONDS_IN_SECOND * 5),
             wait_for_prechecks()
