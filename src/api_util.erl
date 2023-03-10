@@ -1948,8 +1948,7 @@ do_create_resp_envelope(Context) ->
 
 -spec create_default_resp_envelope(cb_context:context()) -> kz_json:object().
 create_default_resp_envelope(Context) ->
-    BaseResp = [{<<"auth_token">>, cb_context:auth_token(Context)}
-               ,{<<"metadata">>, cb_context:get_metadata(Context)}
+    BaseResp = [{<<"metadata">>, cb_context:get_metadata(Context)}
                ,{<<"node">>, kz_nodes:node_encoded()}
                ,{<<"request_id">>, cb_context:req_id(Context)}
                ,{<<"timestamp">>, kz_time:iso8601(kz_time:now_s())}
@@ -1995,10 +1994,19 @@ maybe_add_version(Context, Acc) ->
     end.
 
 maybe_add_auth_token(Context, Acc) ->
+    maybe_add_auth_token(Context, Acc
+                        ,kapps_account_config:get(cb_context:auth_account_id(Context), ?CONFIG_CAT, <<"include_auth_token">>, 'false')
+                        ).
+
+maybe_add_auth_token(Context, Acc, 'true') ->
+    props:set_value(<<"auth_token">>, cb_context:auth_token(Context), Acc);
+maybe_add_auth_token(Context, Acc, 'false') ->
     case kz_term:is_true(cb_context:fetch(Context, 'token_created')) of
         'true' -> props:set_value(<<"auth_token">>, cb_context:auth_token(Context), Acc);
         'false' -> Acc
-    end.
+    end;
+maybe_add_auth_token(Context, Acc, Bool) ->
+    maybe_add_auth_token(Context, Acc, kz_term:is_true(Bool)).
 
 -spec close_chunk_json_envelope(cowboy_req:req(), cb_context:context()) -> 'ok'.
 close_chunk_json_envelope(Req, Context) ->
@@ -2014,9 +2022,8 @@ close_chunk_json_envelope(Req, Context) ->
         ,{<<"version">>, kapps_util:kazoo_version()}
         ,{<<"timestamp">>, kz_time:iso8601(kz_time:now_s())}
         ,{<<"revision">>, kz_term:to_api_binary(cb_context:resp_etag(Context))}
-        ,{<<"auth_token">>, cb_context:auth_token(Context)}
         ],
-    Encoded = encode_trailer(Trailer),
+    Encoded = encode_trailer(maybe_add_auth_token(Context, Trailer)),
     'ok' = cowboy_req:stream_body(<<"], ", (kz_binary:join(Encoded))/binary, "}">>, 'fin', Req).
 
 -spec maybe_delete_range_keys(kz_json:object(), boolean()) -> kz_json:object().
