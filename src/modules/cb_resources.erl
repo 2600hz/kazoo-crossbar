@@ -211,14 +211,8 @@ validate_resource(Context, Id, ?HTTP_PATCH) ->
 validate_resource(Context, Id, ?HTTP_DELETE) ->
     read(Id, Context).
 
-validate_patch(Context, Id) ->
-    case cb_context:resp_status(Context) of
-        'success' ->
-            PatchJObj = kz_doc:public_fields(cb_context:req_data(Context)),
-            JObj = kz_json:merge_jobjs(PatchJObj, cb_context:doc(Context)),
-            validate_resource(cb_context:set_req_data(Context, JObj), Id, ?HTTP_POST);
-        _Status -> Context
-    end.
+validate_patch(Context, ResourceId) ->
+    crossbar_doc:patch_and_validate(ResourceId, Context, fun update/2).
 
 validate_collection(Context) ->
     lists:foldl(fun validate_collection_fold/2
