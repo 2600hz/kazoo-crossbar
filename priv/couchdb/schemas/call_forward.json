@@ -37,12 +37,6 @@
             "description": "Determines if the callee is prompted to press 1 to accept the call",
             "support_level": "supported",
             "type": "boolean"
-        },
-        "substitute": {
-            "default": true,
-            "description": "Determines if the call forwarding replaces the device",
-            "support_level": "supported",
-            "type": "boolean"
         }
     },
     "required": [
