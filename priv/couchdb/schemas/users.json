@@ -10,7 +10,20 @@
             "description": "Call forward settings",
             "oneOf": [
                 {
-                    "$ref": "call_forward",
+                    "allOf": [
+                        {"$ref": "call_forward"},
+                        {
+                            "properties": {
+                                "substitute": {
+                                    "default": true,
+                                    "description": "Determines if the call forwarding replaces the device",
+                                    "support_level": "supported",
+                                    "type": "boolean"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    ],
                     "description": "Deprecated but supported for now, set call forwarding on the root call_forward key"
                 },
                 {

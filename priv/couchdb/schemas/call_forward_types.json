@@ -3,51 +3,91 @@
     "_id": "call_forward_types",
     "additionalProperties": false,
     "description": "The various ways to specify when to call forward",
-    "minProperties": 1,
-    "properties": {
-        "busy": {
-            "$ref": "call_forward",
-            "description": "Post-dial attempt, call forwarding settings used if the SIP attempt returns busy (sip:486)",
-            "type": "object"
-        },
-        "no_answer": {
-            "$ref": "call_forward",
-            "description": "Post-dial attempt, call forwarding settings used if the SIP attempt returns unanswered (sip:480)",
-            "type": "object"
-        },
-        "selective": {
-            "description": "Conditionally check match lists to determine if call forwarding should be used",
+    "allOf":[
+        {"$ref" : "call_forward"},
+        {
             "properties": {
-                "rules": {
-                    "description": "Match list rules to check for call forwarding",
-                    "items": {
-                        "allOf": [
-                            {
-                                "$ref": "call_forward",
-                                "description": "Pre-bridge, check match lists for whether to forward the caller"
-                            },
-                            {
-                                "properties": {
-                                    "match_list_id": {
-                                        "description": "Match List ID to check",
-                                        "type": "string"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        ],
-                        "type": "object"
+                "busy": {
+                    "default":{
+                        "enabled": false
                     },
-                    "type": "array"
+                    "$ref": "call_forward",
+                    "description": "Post-dial attempt, call forwarding settings used if the SIP attempt returns busy (sip:486)",
+                    "type": "object"
+                },
+                "no_answer": {
+                    "default":{
+                        "enabled": false
+                    },
+                    "$ref": "call_forward",
+                    "description": "Post-dial attempt, call forwarding settings used if the SIP attempt returns unanswered (sip:480)",
+                    "type": "object"
+                },
+                "selective": {
+                    "description": "Conditionally check match lists to determine if call forwarding should be used",
+                    "default":{
+                        "enabled": false
+                    },
+                    "properties": {
+                        "enabled": {
+                            "default": false,
+                            "description": "Determines if call forwarding selective is enabled",
+                            "type": "boolean"
+                        },
+                        "rules": {
+                            "description": "Match list rules to check for call forwarding",
+                            "items": {
+                                "allOf": [
+                                    {
+                                        "$ref": "call_forward",
+                                        "description": "Pre-bridge, check match lists for whether to forward the caller"
+                                    },
+                                    {
+                                        "properties": {
+                                            "match_list_id": {
+                                                "description": "Match List ID to check",
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                ],
+                                "type": "object"
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "type": "object"
+                },
+                "unconditional": {
+                    "default":{
+                        "enabled": false
+                    },
+                    "allOf" : [
+                        {
+                            "$ref": "call_forward"
+                        },
+                        {
+                            "properties": {
+                                "substitute": {
+                                    "default": true,
+                                    "description": "Determines if the call forwarding replaces the device",
+                                    "support_level": "supported",
+                                    "type": "boolean"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    ],
+                    "description": "Pre-bridge, call forwarding settings are always used when enabled",
+                    "type": "object"
                 }
             },
-            "type": "object"
-        },
-        "unconditional": {
-            "$ref": "call_forward",
-            "description": "Pre-bridge, call forwarding settings are always used when enabled",
-            "type": "object"
+            "type": "object",
+            "required":["busy","no_answer","selective","unconditional"]
+
         }
-    },
-    "type": "object"
+    ],
+    "type": "object",
+    "required":["busy","no_answer","selective","unconditional"]
 }
