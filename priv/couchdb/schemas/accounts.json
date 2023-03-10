@@ -37,7 +37,8 @@
                 {
                     "$ref": "call_forward_types"
                 }
-            ]
+            ],
+            "type":"object"
         },
         "call_limits": {
             "$ref": "call_limits"
