@@ -15,30 +15,9 @@
             "$ref": "call_failover"
         },
         "call_forward": {
+            "$ref": "call_forward",
             "description": "Call forward settings",
-            "oneOf": [
-                {
-                    "allOf": [
-                        {"$ref": "call_forward"},
-                        {
-                            "properties": {
-                                "substitute": {
-                                    "default": true,
-                                    "description": "Determines if the call forwarding replaces the device",
-                                    "support_level": "supported",
-                                    "type": "boolean"
-                                }
-                            },
-                            "type": "object"
-                        }
-                    ],
-                    "description": "Deprecated but supported for now, set call forwarding on the root call_forward key"
-                },
-                {
-                    "$ref": "call_forward_types"
-                }
-            ],
-            "type":"object"
+            "type": "object"
         },
         "call_limits": {
             "$ref": "call_limits"
