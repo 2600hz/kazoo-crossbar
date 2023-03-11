@@ -901,23 +901,16 @@ validate_call_failover(_DeviceId, Context) ->
 %%------------------------------------------------------------------------------
 -spec validate_call_forward(kz_term:api_ne_binary(), cb_context:context()) -> cb_context:context().
 validate_call_forward(_DeviceId, Context) ->
-    ReqData = cb_context:req_data(Context),
-    Callforward = kzd_devices:call_forward(ReqData, kz_json:new()),
-    CallForwardNumber = kzd_call_forward:number(Callforward),
-    case kzd_call_forward:enabled(Callforward)
-        andalso not kz_term:is_ne_binary(CallForwardNumber)
-    of
-        'true' ->
-            Msg = kz_json:from_list(
-                    [{<<"message">>, <<"Call forward number cannot be empty when call forward is enabled">>}
-                    ,{<<"cause">>, CallForwardNumber}
-                    ]),
-            cb_context:add_validation_error([<<"call_forward.number">>]
-                                           ,<<"required">>
-                                           ,Msg
-                                           ,Context
-                                           );
-        'false' -> Context
+    case kzd_devices:call_forward(cb_context:req_data(Context)) of
+        undefined -> Context;
+    CallForward -> validate_call_forward(_DeviceId, CallForward, Context)
+    end.
+
+-spec validate_call_forward(kz_term:api_ne_binary(), kz_json:object(), cb_context:context()) -> cb_context:context().
+validate_call_forward(_DeviceId, CallForward, Context) ->
+    case kzd_call_forward:validate(CallForward) of
+        'ok' -> Context;
+        Errors -> cb_context:add_doc_validation_errors(Context, Errors)
     end.
 
 %%------------------------------------------------------------------------------
