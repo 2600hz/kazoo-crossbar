@@ -1,6 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "_id": "call_forward_type",
+    "description": "Call Forward Properties",
     "properties": {
         "direct_calls_only": {
             "default": false,
@@ -27,7 +28,6 @@
             "type": "boolean"
         }
     },
-    "description": "Call Forward Properties",
     "required": [
         "enabled"
     ],
