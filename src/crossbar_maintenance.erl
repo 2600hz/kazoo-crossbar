@@ -452,7 +452,7 @@ create_account(AccountName, Realm, Username, Password, AccountId, UserId)
         {'ok', _Context} -> 'ok'
     catch
         Type:Reason:ST ->
-        log_error(Type, Reason, ST, AccountName)
+            log_error(Type, Reason, ST, AccountName)
     end;
 create_account(AccountName, Realm, Username, Password, AccountId, UserId) ->
     create_account(kz_term:to_binary(AccountName)
