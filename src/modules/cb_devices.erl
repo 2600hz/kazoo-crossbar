@@ -908,9 +908,9 @@ validate_call_forward(_DeviceId, Context) ->
 
 -spec validate_call_forward(kz_term:api_ne_binary(), kz_json:object(), cb_context:context()) -> cb_context:context().
 validate_call_forward(_DeviceId, CallForward, Context) ->
-    case kzd_call_forward:validate(CallForward) of
-        'ok' -> Context;
-        Errors -> cb_context:add_doc_validation_errors(Context, Errors)
+    case kzd_call_forward:validate({CallForward, []}) of
+        {_, []} -> Context;
+        {_, Errors} -> cb_context:add_doc_validation_errors(Context, Errors)
     end.
 
 %%------------------------------------------------------------------------------
