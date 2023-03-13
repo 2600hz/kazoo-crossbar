@@ -902,8 +902,8 @@ validate_call_failover(_DeviceId, Context) ->
 -spec validate_call_forward(kz_term:api_ne_binary(), cb_context:context()) -> cb_context:context().
 validate_call_forward(_DeviceId, Context) ->
     case kzd_devices:call_forward(cb_context:req_data(Context)) of
-        undefined -> Context;
-    CallForward -> validate_call_forward(_DeviceId, CallForward, Context)
+        'undefined' -> Context;
+        CallForward -> validate_call_forward(_DeviceId, CallForward, Context)
     end.
 
 -spec validate_call_forward(kz_term:api_ne_binary(), kz_json:object(), cb_context:context()) -> cb_context:context().
