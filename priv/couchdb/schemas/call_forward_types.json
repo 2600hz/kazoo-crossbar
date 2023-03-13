@@ -5,22 +5,28 @@
     "properties": {
         "busy": {
             "$ref": "call_forward_type",
-            "description": "Post-dial attempt, call forwarding settings used if the SIP attempt returns busy (sip:486)",
-            "type": "object"
+            "description": "Post-dial attempt, call forwarding settings used if the SIP attempt returns busy (sip:486)"
         },
         "no_answer": {
             "$ref": "call_forward_type",
-            "description": "Post-dial attempt, call forwarding settings used if the SIP attempt returns unanswered (sip:480)",
-            "type": "object"
+            "description": "Post-dial attempt, call forwarding settings used if the SIP attempt returns unanswered (sip:480)"
         },
         "selective": {
+            "allOf": [
+                {
+                    "$ref": "call_forward_type"
+                }
+            ],
             "description": "Conditionally check match lists to determine if call forwarding should be used",
-            "allOf": [{"$ref": "call_forward_type"}],
             "properties": {
                 "rules": {
                     "description": "Match list rules to check for call forwarding",
                     "items": {
-                        "allOf": [{"$ref": "call_forward_type"}],
+                        "allOf": [
+                            {
+                                "$ref": "call_forward_type"
+                            }
+                        ],
                         "properties": {
                             "match_list_id": {
                                 "description": "Match List ID to check",
@@ -35,7 +41,11 @@
             "type": "object"
         },
         "unconditional": {
-            "allOf": [{"$ref": "call_forward_type"}],
+            "allOf": [
+                {
+                    "$ref": "call_forward_type"
+                }
+            ],
             "description": "Pre-bridge, call forwarding settings are always used when enabled",
             "properties": {
                 "substitute": {

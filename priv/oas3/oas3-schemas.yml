@@ -505,12 +505,9 @@
     'call_failover':
       '$ref': '#/call_failover'
     'call_forward':
+      '$ref': '#/call_forward'
       'description': Call forward settings
-      'oneOf':
-        - '$ref': '#/call_forward'
-          'description': |-
-            Deprecated but supported for now, set call forwarding on the root call_forward key
-        - '$ref': '#/call_forward_types'
+      'kz:skip_subproperty_builder': true
     'call_limits':
       '$ref': '#/call_limits'
     'call_recording':
@@ -1107,72 +1104,56 @@
       'default': true
       'description': Determines if the callee is prompted to press 1 to accept the call
       'type': boolean
-    'substitute':
-      'default': true
-      'description': Determines if the call forwarding replaces the device
-      'type': boolean
-      'x-support_level': supported
   'type': object
 'call_forward':
-  'description': The device call forward parameters
+  'allOf':
+    - '$ref': '#/call_forward_type'
+    - '$ref': '#/call_forward_types'
+  'description': Call Forward
+  'properties':
+    'substitute':
+      'type': boolean
+  'required':
+    - enabled
+  'type': object
+'call_forward_type':
+  'description': Call Forward Properties
   'properties':
     'direct_calls_only':
       'default': false
-      'description': |-
-        Determines if the calls that are not directly sent to the device should be forwarded
       'type': boolean
-      'x-support_level': supported
     'enabled':
       'default': false
-      'description': Determines if call forwarding should be used
       'type': boolean
-      'x-support_level': supported
     'ignore_early_media':
       'default': true
-      'description': |-
-        The option to determine if early media from the call forwarded number should ignored
       'type': boolean
     'keep_caller_id':
       'default': true
-      'description': |-
-        Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used
       'type': boolean
-      'x-support_level': supported
     'number':
-      'description': The number to forward calls to
       'maxLength': 35
       'type': string
-      'x-support_level': supported
     'require_keypress':
       'default': true
-      'description': Determines if the callee is prompted to press 1 to accept the call
       'type': boolean
-      'x-support_level': supported
-    'substitute':
-      'default': true
-      'description': Determines if the call forwarding replaces the device
-      'type': boolean
-      'x-support_level': supported
   'required':
     - enabled
-    - number
   'type': object
 'call_forward_types':
-  'additionalProperties': false
   'description': The various ways to specify when to call forward
-  'minProperties': 1
   'properties':
     'busy':
-      '$ref': '#/call_forward'
+      '$ref': '#/call_forward_type'
       'description': |-
         Post-dial attempt, call forwarding settings used if the SIP attempt returns busy (sip:486)
-      'type': object
     'no_answer':
-      '$ref': '#/call_forward'
+      '$ref': '#/call_forward_type'
       'description': |-
         Post-dial attempt, call forwarding settings used if the SIP attempt returns unanswered (sip:480)
-      'type': object
     'selective':
+      'allOf':
+        - '$ref': '#/call_forward_type'
       'description': |-
         Conditionally check match lists to determine if call forwarding should be used
       'properties':
@@ -1180,20 +1161,24 @@
           'description': Match list rules to check for call forwarding
           'items':
             'allOf':
-              - '$ref': '#/call_forward'
-                'description': |-
-                  Pre-bridge, check match lists for whether to forward the caller
-              - 'properties':
-                  'match_list_id':
-                    'description': Match List ID to check
-                    'type': string
-                'type': object
+              - '$ref': '#/call_forward_type'
+            'properties':
+              'match_list_id':
+                'description': Match List ID to check
+                'type': string
             'type': object
           'type': array
       'type': object
     'unconditional':
-      '$ref': '#/call_forward'
+      'allOf':
+        - '$ref': '#/call_forward_type'
       'description': 'Pre-bridge, call forwarding settings are always used when enabled'
+      'properties':
+        'substitute':
+          'default': true
+          'description': Determines if the call forwarding replaces the device
+          'type': boolean
+          'x-support_level': supported
       'type': object
   'type': object
 'call_limits':
@@ -5261,12 +5246,9 @@
     'call_failover':
       '$ref': '#/call_failover'
     'call_forward':
+      '$ref': '#/call_forward'
       'description': Call forward settings
-      'oneOf':
-        - '$ref': '#/call_forward'
-          'description': |-
-            Deprecated but supported for now, set call forwarding on the root call_forward key
-        - '$ref': '#/call_forward_types'
+      'kz:skip_subproperty_builder': true
     'call_limits':
       '$ref': '#/call_limits'
     'call_recording':
@@ -16792,12 +16774,9 @@
     'call_failover':
       '$ref': '#/call_failover'
     'call_forward':
+      '$ref': '#/call_forward'
       'description': Call forward settings
-      'oneOf':
-        - '$ref': '#/call_forward'
-          'description': |-
-            Deprecated but supported for now, set call forwarding on the root call_forward key
-        - '$ref': '#/call_forward_types'
+      'kz:skip_subproperty_builder': true
     'call_limits':
       '$ref': '#/call_limits'
     'call_recording':
