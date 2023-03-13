@@ -12,7 +12,6 @@
 -module(crossbar_maintenance).
 
 -export([migrate/0, migrate/1
-        ,migrate_call_forward/1
         ,refresh/0, refresh/1
         ,register_views/0
         ,flush/0
@@ -66,20 +65,6 @@
 
 -type input_term() :: atom() | string() | kz_term:ne_binary().
 
--define(DEFAULT_REFRESH_APP_KEYS, [<<"name">>
-                                  ,<<"i18n">>
-                                  ,<<"tags">>
-                                  ,<<"author">>
-                                  ,<<"version">>
-                                  ,<<"license">>
-                                  ,<<"price">>
-                                  ,<<"icon">>
-                                  ,<<"screenshots">>
-                                  ,<<"api_url">>
-                                  ,<<"phase">>
-                                  ]
-       ).
-
 -define(DEPRECATED_MODULES, ['cb_bulk'
                             ,'cb_freeswitch'
                             ,'cb_global_provisioner_templates'
@@ -113,84 +98,8 @@ migrate() ->
                         ]).
 
 -spec migrate(kz_term:ne_binaries()) -> 'ok'.
-migrate(AccountDbs) ->
-    _ = [Fun(AccountDb) || AccountDb <- AccountDbs,
-                           Fun <- [fun migrate_call_forward/1]
-        ],
+migrate(_AccountDbs) ->
     lager:info("finished account migrations").
-
--spec migrate_call_forward(kz_term:ne_binary()) -> 'ok'.
-migrate_call_forward(AccountDb) ->
-    case kzd_accounts:fetch(AccountDb) of
-        {'error', _E} -> lager:info("failed to load account ~s: ~p", [AccountDb, _E]);
-        {'ok', AccountDoc} ->
-            migrate_call_forward_account(AccountDoc)
-    end.
-
-migrate_call_forward_account(AccountDoc) ->
-    AccountId = kz_doc:account_id(AccountDoc),
-
-    migrate_call_forward_legacy(AccountDoc),
-    migrate_call_forward_users(AccountId),
-    migrate_call_forward_devices(AccountId).
-
-migrate_call_forward_legacy(Doc) ->
-    case kz_json:get_value([<<"call_forward">>, <<"enabled">>], Doc) of
-        %% new format already or undefined from before
-        'undefined' -> 'ok';
-        %% legascy
-        _IsEnabled ->
-            migrate_call_forward_legacy(Doc, kz_json:get_value(<<"call_forward">>, Doc))
-    end.
-
-migrate_call_forward_legacy(Doc, LegacyJObj) ->
-    CFwd = kzd_call_forward_types:set_unconditional(kz_json:new(), LegacyJObj),
-    case kz_datamgr:save_doc(kz_doc:account_id(Doc)
-                            ,kzd_endpoint:set_call_forward(Doc, CFwd)
-                            )
-    of
-        {'ok', _Saved} ->
-            lager:info("updated doc ~s in ~s with new call forward"
-                      ,[kz_doc:id(Doc), kz_doc:account_id(Doc)]
-                      );
-        {'error', _E} ->
-            lager:info("failed to update doc ~s in ~s: ~p"
-                      ,[kz_doc:id(Doc), kz_doc:account_id(Doc), _E]
-                      )
-    end,
-    timer:sleep(250).
-
-migrate_call_forward_users(AccountId) ->
-    migrate_call_forward_docs(AccountId, kzd_users:type()).
-
-migrate_call_forward_devices(AccountId) ->
-    migrate_call_forward_docs(AccountId, kzd_devices:type()).
-
-migrate_call_forward_docs(AccountId, Type) ->
-    migrate_call_forward_docs(AccountId, Type, [Type]).
-
-migrate_call_forward_docs(_AccountId, _Type, 'undefined') ->
-    lager:info("done migrating ~s docs in ~s", [_Type, _AccountId]);
-migrate_call_forward_docs(AccountId, Type, StartKey) ->
-    case fetch_docs(AccountId, Type, StartKey) of
-        {'ok', [], _} -> 'ok';
-        {'error', _E} ->
-            lager:info("failed to load docs in ~s of type ~s: ~p", [AccountId, Type, _E]);
-        {'ok', ViewResults, NextStartKey} ->
-            _ = [migrate_call_forward_legacy(kz_json:get_json_value(<<"doc">>, ViewResult))
-                 || ViewResult <- ViewResults
-                ],
-            migrate_call_forward_docs(AccountId, Type, NextStartKey)
-    end.
-
-fetch_docs(<<AccountId/binary>>, <<Type/binary>>, NextStartKey) ->
-    kz_datamgr:paginate_results(AccountId
-                               ,<<"crossbar_listings/by_type_id">>
-                               ,[{'startkey', NextStartKey}
-                                ,{'endkey', [Type, kz_json:new()]}
-                                ,'include_docs'
-                                ]
-                               ).
 
 -spec remove_deprecated_modules(kz_term:atoms(), kz_term:atoms()) -> kz_term:atoms().
 remove_deprecated_modules(Modules, Deprecated) ->
@@ -539,13 +448,12 @@ create_account(AccountName, Realm, Username, Password, AccountId, UserId)
                               ]
                              ,kzd_users:new()
                              ),
-
     try create_account_and_user(Account, User) of
         {'ok', _Context} -> 'ok'
     catch
-        ?STACKTRACE(Type, Reason, ST)
+        Type:Reason:ST ->
         log_error(Type, Reason, ST, AccountName)
-        end;
+    end;
 create_account(AccountName, Realm, Username, Password, AccountId, UserId) ->
     create_account(kz_term:to_binary(AccountName)
                   ,kz_term:to_binary(Realm)
