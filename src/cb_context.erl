@@ -1345,12 +1345,17 @@ add_doc_validation_errors(Context, ValidationErrors) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec update_successfully_validated_request(context(), kz_doc:doc()) -> context().
-update_successfully_validated_request(Context, Doc) ->
+update_successfully_validated_request(#cb_context{resp_status='error'}=Context, _Doc) ->
+    lager:info("context already contains an error, not updating to success"),
+    Context;
+update_successfully_validated_request(#cb_context{}=Context, Doc) ->
     Updates = [{fun set_req_data/2, Doc}
               ,{fun set_doc/2, Doc}
               ,{fun set_resp_status/2, 'success'}
               ],
     passed(setters(Context, Updates)).
+
+
 
 -spec get_metadata(context()) -> kz_json:object().
 get_metadata(Context) ->
