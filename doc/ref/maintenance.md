@@ -30,8 +30,7 @@
 | `init_apps/1` | `(AppsPath)` | |
 | `init_apps/2` | `(AppsPath,AppUrl)` | |
 | `migrate/0` |  | |
-| `migrate/1` | `(AccountDbs)` | |
-| `migrate_call_forward/1` | `(AccountDb)` | |
+| `migrate/1` | `(_AccountDbs)` | |
 | `move_account/2` | `(Account,ToAccount)` | |
 | `promote_account/1` | `(AccountId)` | |
 | `refresh/0` |  | |

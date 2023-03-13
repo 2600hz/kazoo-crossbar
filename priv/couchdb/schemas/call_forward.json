@@ -1,10 +1,15 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "_id": "call_forward",
+    "allOf": [
+        {
+            "$ref": "call_forward_type"
+        },
+        {
+            "$ref": "call_forward_types"
+        }
+    ],
     "description": "Call Forward",
-    "allOf" : [{"$ref": "call_forward_type"}
-              ,{"$ref": "call_forward_types"}
-              ],
     "properties": {
         "substitute": {
             "type": "boolean"
