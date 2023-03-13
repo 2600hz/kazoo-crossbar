@@ -1,55 +1,32 @@
 {
-    "$ref": "call_forward",
     "$schema": "http://json-schema.org/draft-04/schema#",
     "_id": "call_forward_types",
-    "additionalProperties": false,
     "description": "The various ways to specify when to call forward",
     "properties": {
         "busy": {
-            "$ref": "call_forward",
-            "default": {
-                "enabled": false
-            },
+            "$ref": "call_forward_type",
             "description": "Post-dial attempt, call forwarding settings used if the SIP attempt returns busy (sip:486)",
             "type": "object"
         },
         "no_answer": {
-            "$ref": "call_forward",
-            "default": {
-                "enabled": false
-            },
+            "$ref": "call_forward_type",
             "description": "Post-dial attempt, call forwarding settings used if the SIP attempt returns unanswered (sip:480)",
             "type": "object"
         },
         "selective": {
-            "default": {
-                "enabled": false
-            },
             "description": "Conditionally check match lists to determine if call forwarding should be used",
+            "allOf": [{"$ref": "call_forward_type"}],
             "properties": {
-                "enabled": {
-                    "default": false,
-                    "description": "Determines if call forwarding selective is enabled",
-                    "type": "boolean"
-                },
                 "rules": {
                     "description": "Match list rules to check for call forwarding",
                     "items": {
-                        "allOf": [
-                            {
-                                "$ref": "call_forward",
-                                "description": "Pre-bridge, check match lists for whether to forward the caller"
-                            },
-                            {
-                                "properties": {
-                                    "match_list_id": {
-                                        "description": "Match List ID to check",
-                                        "type": "string"
-                                    }
-                                },
-                                "type": "object"
+                        "allOf": [{"$ref": "call_forward_type"}],
+                        "properties": {
+                            "match_list_id": {
+                                "description": "Match List ID to check",
+                                "type": "string"
                             }
-                        ],
+                        },
                         "type": "object"
                     },
                     "type": "array"
@@ -58,10 +35,7 @@
             "type": "object"
         },
         "unconditional": {
-            "$ref": "call_forward",
-            "default": {
-                "enabled": false
-            },
+            "allOf": [{"$ref": "call_forward_type"}],
             "description": "Pre-bridge, call forwarding settings are always used when enabled",
             "properties": {
                 "substitute": {
@@ -74,11 +48,5 @@
             "type": "object"
         }
     },
-    "required": [
-        "busy",
-        "no_answer",
-        "selective",
-        "unconditional"
-    ],
     "type": "object"
 }

@@ -47,6 +47,7 @@
         "call_forward": {
             "$ref": "call_forward",
             "description": "Call forward settings",
+            "kz:skip_subproperty_builder": true,
             "type": "object"
         },
         "call_limits": {
