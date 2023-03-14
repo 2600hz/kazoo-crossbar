@@ -15,8 +15,5 @@
         }
     ],
     "description": "Call Forward",
-    "required": [
-        "enabled"
-    ],
     "type": "object"
 }
