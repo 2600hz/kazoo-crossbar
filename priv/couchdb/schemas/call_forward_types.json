@@ -4,11 +4,11 @@
     "additionalProperties": false,
     "properties": {
       "busy": {
-        "$ref": "#/definitions/call_forward_type",
+        "$ref": "call_forward_type",
         "type": "object"
       },
       "no_answer": {
-        "$ref": "#/definitions/call_forward_type",
+        "$ref": "call_forward_type",
         "unevaluatedProperties": false,
         "type": "object"
       },
@@ -84,7 +84,7 @@
         "type": "object"
       },
       "unconditional": {
-        "$ref": "#/definitions/call_forward_type",
+        "$ref": "call_forward_type",
         "type": "object"
       }
     },
