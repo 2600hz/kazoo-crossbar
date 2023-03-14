@@ -88,7 +88,31 @@ Call Forward
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`substitute` |   | `boolean()` |   | `false` |  
+`busy` | Call Forward Properties | `object()` |   | `false` |  
+`direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`enabled` |   | `boolean()` | `false` | `true` |  
+`ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`no_answer` | Call Forward Properties | `object()` |   | `false` |  
+`number` |   | `string(0..35)` |   | `false` |  
+`require_keypress` |   | `boolean()` | `true` | `false` |  
+`selective.direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`selective.enabled` |   | `boolean()` | `false` | `false` |  
+`selective.ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`selective.keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`selective.number` |   | `string(0..35)` |   | `false` |  
+`selective.require_keypress` |   | `boolean()` | `true` | `false` |  
+`selective.rules.[].direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`selective.rules.[].enabled` |   | `boolean()` | `false` | `false` |  
+`selective.rules.[].ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`selective.rules.[].keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`selective.rules.[].match_id_list` |   | `string()` |   | `false` |  
+`selective.rules.[].number` |   | `string(0..35)` |   | `false` |  
+`selective.rules.[].require_keypress` |   | `boolean()` | `true` | `false` |  
+`selective.rules` | Match list rules to check for call forwarding | `array(object())` |   | `false` |  
+`selective` | Conditionally check match lists to determine if call forwarding should be used | `object()` | `{"enabled":false}` | `false` |  
+`substitute` |   | `boolean()` | `false` | `false` |  
+`unconditional` | Call Forward Properties | `object()` |   | `false` |  
 
 ### call_forward_type
 
@@ -103,21 +127,7 @@ Key | Description | Type | Default | Required | Support Level
 `keep_caller_id` |   | `boolean()` | `true` | `false` |  
 `number` |   | `string(0..35)` |   | `false` |  
 `require_keypress` |   | `boolean()` | `true` | `false` |  
-
-### call_forward_types
-
-The various ways to specify when to call forward
-
-
-Key | Description | Type | Default | Required | Support Level
---- | ----------- | ---- | ------- | -------- | -------------
-`busy` | Post-dial attempt, call forwarding settings used if the SIP attempt returns busy (sip:486) | [#/definitions/call_forward_type](#call_forward_type) |   | `false` |  
-`no_answer` | Post-dial attempt, call forwarding settings used if the SIP attempt returns unanswered (sip:480) | [#/definitions/call_forward_type](#call_forward_type) |   | `false` |  
-`selective.rules.[].match_list_id` | Match List ID to check | `string()` |   | `false` |  
-`selective.rules` | Match list rules to check for call forwarding | `array(object())` |   | `false` |  
-`selective` | Conditionally check match lists to determine if call forwarding should be used | `object()` |   | `false` |  
-`unconditional.substitute` | Determines if the call forwarding replaces the device | `boolean()` | `true` | `false` | `supported`
-`unconditional` | Pre-bridge, call forwarding settings are always used when enabled | `object()` |   | `false` |  
+`substitute` |   | `boolean()` |   | `false` |  
 
 ### call_limits
 
