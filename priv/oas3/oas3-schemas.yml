@@ -13343,6 +13343,14 @@
       'default': false
       'description': media use ssl proxy
       'type': boolean
+    'wiretap_should_store':
+      'default': local
+      'description': media wiretap_should_store
+      'type': string
+    'wiretap_storage_retry_times':
+      'default': 5
+      'description': media wiretap_storage_retry_times
+      'type': integer
   'type': object
 'system_config.metaflows':
   'description': Schema for metaflows system_config
