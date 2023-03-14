@@ -12396,23 +12396,6 @@
                 },
                 "types": {
                     "description": "The document types to store with this plan",
-                    "properties": {
-                        "call_recording": {
-                            "$ref": "#/definitions/storage.plan.database.document"
-                        },
-                        "fax": {
-                            "$ref": "#/definitions/storage.plan.database.document"
-                        },
-                        "function": {
-                            "$ref": "#/definitions/storage.plan.database.document"
-                        },
-                        "mailbox_message": {
-                            "$ref": "#/definitions/storage.plan.database.document"
-                        },
-                        "media": {
-                            "$ref": "#/definitions/storage.plan.database.document"
-                        }
-                    },
                     "type": "object"
                 }
             },
