@@ -3,18 +3,18 @@
     "_id": "call_forward",
     "allOf": [
         {
-            "$ref": "call_forward_type"
+            "$ref": "call_forward_type",
+            "properties": {
+                "substitute": {
+                    "type": "boolean"
+                }
+            }
         },
         {
             "$ref": "call_forward_types"
         }
     ],
     "description": "Call Forward",
-    "properties": {
-        "substitute": {
-            "type": "boolean"
-        }
-    },
     "required": [
         "enabled"
     ],
