@@ -6,7 +6,8 @@
         "controls": {
             "patternProperties": {
                 ".+": {
-                    "description": "conferences controls  +"
+                    "description": "conferences controls  +",
+                    "type": "object"
                 }
             },
             "properties": {
@@ -113,7 +114,8 @@
         "profiles": {
             "patternProperties": {
                 ".+": {
-                    "description": "conferences profiles  +"
+                    "description": "conferences profiles  +",
+                    "type": "object"
                 }
             },
             "properties": {

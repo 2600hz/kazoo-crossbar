@@ -15,8 +15,5 @@
             "type": "boolean"
         }
     },
-    "required": [
-        "enabled"
-    ],
     "type": "object"
 }
