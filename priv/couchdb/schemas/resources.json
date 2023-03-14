@@ -30,6 +30,11 @@
                             "description": "Determines if the classifier is currently enabled",
                             "type": "boolean"
                         },
+                        "include_pidflo": {
+                            "default": false,
+                            "description": "Whether or not to include PIDF+LO payload when calling device's address is available",
+                            "type": "boolean"
+                        },
                         "prefix": {
                             "description": "A string to prepend to the dialed number or capture group of the matching rule",
                             "maxLength": 64,
@@ -493,7 +498,7 @@
         },
         "supports_pidflo": {
             "default": false,
-            "description": "Whether or not the resource supports multi-part PIDF+LO INVITEs for emergency calls",
+            "description": "Whether or not the resource supports multi-part PIDF+LO INVITEs for calls",
             "type": "boolean"
         },
         "weight_cost": {

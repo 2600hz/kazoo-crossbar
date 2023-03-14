@@ -98,7 +98,7 @@ Key | Description | Type | Default | Required | Support Level
 `emergency.additional_information` | Additional location information. Example: Room 543 | `string()` |   | `false` |  
 `emergency.country` | The country is identified by the two-letter ISO 3166 code. Example: US | `string()` |   | `true` |  
 `emergency.county` | County, parish, gun (JP), district (IN). Example: King's County | `string()` |   | `false` |  
-`emergency.floor` | Floor. Example: 5 | `integer()` |   | `false` |  
+`emergency.floor` | Floor. Example: 4 | `integer()` |   | `false` |  
 `emergency.house_number` | House number, numeric part only. Example: 123 | `integer()` |   | `true` |  
 `emergency.house_number_suffix` | House number suffix. Example: A, 1/2 | `string()` |   | `false` |  
 `emergency.locality` | City, township, shi (JP). Example: New York | `string()` |   | `true` |  

@@ -3,6 +3,15 @@
     "_id": "callflows.resources",
     "description": "Validator for the resources callflow data object",
     "properties": {
+        "addresses": {
+            "properties": {
+                "emergency": {
+                    "description": "",
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        },
         "bypass_e164": {
             "description": "Use the original requested number instead of normalizing to E164",
             "type": "boolean"

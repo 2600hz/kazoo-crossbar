@@ -19,7 +19,7 @@
                     "type": "string"
                 },
                 "floor": {
-                    "description": "Floor. Example: 5",
+                    "description": "Floor. Example: 4",
                     "type": "integer"
                 },
                 "house_number": {

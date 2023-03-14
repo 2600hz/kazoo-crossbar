@@ -746,7 +746,7 @@
           'description': 'County, parish, gun (JP), district (IN). Example: King''s County'
           'type': string
         'floor':
-          'description': 'Floor. Example: 5'
+          'description': 'Floor. Example: 4'
           'type': integer
         'house_number':
           'description': 'House number, numeric part only. Example: 123'
@@ -3703,6 +3703,12 @@
 'callflows.resources':
   'description': Validator for the resources callflow data object
   'properties':
+    'addresses':
+      'properties':
+        'emergency':
+          'description': ''
+          'type': object
+      'type': object
     'bypass_e164':
       'description': Use the original requested number instead of normalizing to E164
       'type': boolean
@@ -8744,6 +8750,11 @@
               'default': true
               'description': Determines if the classifier is currently enabled
               'type': boolean
+            'include_pidflo':
+              'default': false
+              'description': |-
+                Whether or not to include PIDF+LO payload when calling device's address is available
+              'type': boolean
             'prefix':
               'description': |-
                 A string to prepend to the dialed number or capture group of the matching rule
@@ -9091,7 +9102,7 @@
     'supports_pidflo':
       'default': false
       'description': |-
-        Whether or not the resource supports multi-part PIDF+LO INVITEs for emergency calls
+        Whether or not the resource supports multi-part PIDF+LO INVITEs for calls
       'type': boolean
     'weight_cost':
       'default': 50
