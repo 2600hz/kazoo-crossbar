@@ -9,7 +9,6 @@
       },
       "no_answer": {
         "$ref": "call_forward_type",
-        "unevaluatedProperties": false,
         "type": "object"
       },
       "selective": {
