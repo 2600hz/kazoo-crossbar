@@ -9568,20 +9568,32 @@
             'type': string
           'type': array
       'type': object
+    'range':
+      'x-patternProperties':
+        '[0-9]{6}-[0-9]{6}':
+          'properties':
+            'attachments':
+              '$ref': '#/storage.plan.database.attachment'
+            'connection':
+              'type': string
+              'x-kazoo-validation': true
+          'type': object
+    'regex':
+      'x-patternProperties':
+        '.+':
+          'properties':
+            'attachments':
+              '$ref': '#/storage.plan.database.attachment'
+            'connection':
+              'type': string
+              'x-kazoo-validation': true
+          'type': object
     'types':
       'description': The document types to store with this plan
-      'properties':
-        'call_recording':
-          '$ref': '#/storage.plan.database.document'
-        'fax':
-          '$ref': '#/storage.plan.database.document'
-        'function':
-          '$ref': '#/storage.plan.database.document'
-        'mailbox_message':
-          '$ref': '#/storage.plan.database.document'
-        'media':
-          '$ref': '#/storage.plan.database.document'
       'type': object
+      'x-patternProperties':
+        '[a-z_]+':
+          '$ref': '#/storage.plan.database.document'
   'type': object
 'storage.plan.database.attachment':
   'description': schema for attachment ref type storage plan
@@ -9606,6 +9618,26 @@
     'connection':
       'type': string
       'x-kazoo-validation': true
+    'range':
+      'x-patternProperties':
+        '[0-9]{6}-[0-9]{6}':
+          'properties':
+            'attachments':
+              '$ref': '#/storage.plan.database.attachment'
+            'connection':
+              'type': string
+              'x-kazoo-validation': true
+          'type': object
+    'regex':
+      'x-patternProperties':
+        '.+':
+          'properties':
+            'attachments':
+              '$ref': '#/storage.plan.database.attachment'
+            'connection':
+              'type': string
+              'x-kazoo-validation': true
+          'type': object
   'type': object
 'system_config.accounts':
   'description': Schema for accounts system_config

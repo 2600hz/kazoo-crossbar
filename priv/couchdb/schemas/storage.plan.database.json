@@ -28,22 +28,42 @@
             },
             "type": "object"
         },
+        "range": {
+            "patternProperties": {
+                "[0-9]{6}-[0-9]{6}": {
+                    "properties": {
+                        "attachments": {
+                            "$ref": "storage.plan.database.attachment"
+                        },
+                        "connection": {
+                            "kazoo-validation": true,
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                }
+            }
+        },
+        "regex": {
+            "patternProperties": {
+                ".+": {
+                    "properties": {
+                        "attachments": {
+                            "$ref": "storage.plan.database.attachment"
+                        },
+                        "connection": {
+                            "kazoo-validation": true,
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                }
+            }
+        },
         "types": {
             "description": "The document types to store with this plan",
-            "properties": {
-                "call_recording": {
-                    "$ref": "storage.plan.database.document"
-                },
-                "fax": {
-                    "$ref": "storage.plan.database.document"
-                },
-                "function": {
-                    "$ref": "storage.plan.database.document"
-                },
-                "mailbox_message": {
-                    "$ref": "storage.plan.database.document"
-                },
-                "media": {
+            "patternProperties": {
+                "[a-z_]+": {
                     "$ref": "storage.plan.database.document"
                 }
             },

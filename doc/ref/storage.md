@@ -186,11 +186,9 @@ Key | Description | Type | Default | Required | Support Level
 `database.names.[]` |   | `string()` |   | `false` |  
 `database.names` | List of database names to match (non-matching names won't use this plan) | `array(string())` |   | `false` |  
 `database` |   | `object()` |   | `false` |  
-`types.call_recording` | schema for document type storage plan | [#/definitions/storage.plan.database.document](#storageplan.database.document) |   | `false` |  
-`types.fax` | schema for document type storage plan | [#/definitions/storage.plan.database.document](#storageplan.database.document) |   | `false` |  
-`types.function` | schema for document type storage plan | [#/definitions/storage.plan.database.document](#storageplan.database.document) |   | `false` |  
-`types.mailbox_message` | schema for document type storage plan | [#/definitions/storage.plan.database.document](#storageplan.database.document) |   | `false` |  
-`types.media` | schema for document type storage plan | [#/definitions/storage.plan.database.document](#storageplan.database.document) |   | `false` |  
+`range` |   |   |   | `false` |  
+`regex` |   |   |   | `false` |  
+`types./[a-z_]+/` | schema for document type storage plan | [#/definitions/storage.plan.database.document](#storageplan.database.document) |   | `false` |  
 `types` | The document types to store with this plan | `object()` |   | `false` |  
 
 ### storage.plan.database.attachment
@@ -214,6 +212,8 @@ Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `attachments` | schema for attachment ref type storage plan | [#/definitions/storage.plan.database.attachment](#storageplan.database.attachment) |   | `false` |  
 `connection` |   | `string()` |   | `false` |  
+`range` |   |   |   | `false` |  
+`regex` |   |   |   | `false` |  
 
 
 
