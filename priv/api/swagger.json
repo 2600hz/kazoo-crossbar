@@ -675,11 +675,9 @@
                     "$ref": "#/definitions/call_failover"
                 },
                 "call_forward": {
-                    "items": {
-                        "$ref": "#/definitions/call_forward",
-                        "type": "object"
-                    },
-                    "type": "array"
+                    "$ref": "#/definitions/call_forward",
+                    "description": "Call forward settings",
+                    "kz:skip_subproperty_builder": true
                 },
                 "call_limits": {
                     "$ref": "#/definitions/call_limits"
@@ -1343,57 +1341,244 @@
             "type": "object"
         },
         "call_forward": {
-            "description": "The device call forward parameters",
+            "description": "Call Forward",
             "properties": {
+                "busy": {
+                    "$ref": "#/definitions/call_forward_type",
+                    "type": "object"
+                },
                 "direct_calls_only": {
                     "default": false,
-                    "description": "Determines if the calls that are not directly sent to the device should be forwarded",
                     "type": "boolean"
                 },
                 "enabled": {
                     "default": false,
-                    "description": "Determines if the call forwarding should be used",
                     "type": "boolean"
                 },
                 "ignore_early_media": {
                     "default": true,
-                    "description": "The option to determine if early media from the call forwarded number should ignored",
                     "type": "boolean"
                 },
                 "keep_caller_id": {
                     "default": true,
-                    "description": "Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used",
                     "type": "boolean"
                 },
-                "match_list": {
-                    "properties": {
-                        "enabled": {
-                            "description": "True to always forward the call, false to never forward the call, undefined means use the match list at {ID}",
-                            "type": "boolean"
-                        },
-                        "id": {
-                            "description": "The Match List ID to use",
-                            "type": "string"
-                        }
-                    },
+                "no_answer": {
+                    "$ref": "#/definitions/call_forward_type",
                     "type": "object"
                 },
                 "number": {
-                    "description": "The number to forward calls to",
                     "maxLength": 35,
                     "type": "string"
                 },
                 "require_keypress": {
                     "default": true,
-                    "description": "Determines if the callee is prompted to press 1 to accept the call",
+                    "type": "boolean"
+                },
+                "selective": {
+                    "additionalProperties": false,
+                    "description": "Conditionally check match lists to determine if call forwarding should be used",
+                    "properties": {
+                        "direct_calls_only": {
+                            "default": false,
+                            "type": "boolean"
+                        },
+                        "enabled": {
+                            "default": false,
+                            "type": "boolean"
+                        },
+                        "ignore_early_media": {
+                            "default": true,
+                            "type": "boolean"
+                        },
+                        "keep_caller_id": {
+                            "default": true,
+                            "type": "boolean"
+                        },
+                        "number": {
+                            "maxLength": 35,
+                            "type": "string"
+                        },
+                        "require_keypress": {
+                            "default": true,
+                            "type": "boolean"
+                        },
+                        "rules": {
+                            "description": "Match list rules to check for call forwarding",
+                            "items": {
+                                "additionalProperties": false,
+                                "properties": {
+                                    "direct_calls_only": {
+                                        "default": false,
+                                        "type": "boolean"
+                                    },
+                                    "enabled": {
+                                        "default": false,
+                                        "type": "boolean"
+                                    },
+                                    "ignore_early_media": {
+                                        "default": true,
+                                        "type": "boolean"
+                                    },
+                                    "keep_caller_id": {
+                                        "default": true,
+                                        "type": "boolean"
+                                    },
+                                    "match_id_list": {
+                                        "type": "string"
+                                    },
+                                    "number": {
+                                        "maxLength": 35,
+                                        "type": "string"
+                                    },
+                                    "require_keypress": {
+                                        "default": true,
+                                        "type": "boolean"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "type": "object"
+                },
+                "substitute": {
+                    "default": false,
+                    "type": "boolean"
+                },
+                "unconditional": {
+                    "$ref": "#/definitions/call_forward_type",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "enabled"
+            ],
+            "type": "object"
+        },
+        "call_forward_type": {
+            "description": "Call Forward Properties",
+            "properties": {
+                "direct_calls_only": {
+                    "default": false,
+                    "type": "boolean"
+                },
+                "enabled": {
+                    "default": false,
+                    "type": "boolean"
+                },
+                "ignore_early_media": {
+                    "default": true,
+                    "type": "boolean"
+                },
+                "keep_caller_id": {
+                    "default": true,
+                    "type": "boolean"
+                },
+                "number": {
+                    "maxLength": 35,
+                    "type": "string"
+                },
+                "require_keypress": {
+                    "default": true,
                     "type": "boolean"
                 },
                 "substitute": {
-                    "default": true,
-                    "description": "Determines if the call forwarding replaces the device",
                     "type": "boolean"
                 }
             },
+            "required": [
+                "enabled"
+            ],
+            "type": "object"
+        },
+        "call_forward_types": {
+            "properties": {
+                "busy": {
+                    "$ref": "#/definitions/call_forward_type",
+                    "type": "object"
+                },
+                "no_answer": {
+                    "$ref": "#/definitions/call_forward_type",
+                    "type": "object"
+                },
+                "selective": {
+                    "additionalProperties": false,
+                    "description": "Conditionally check match lists to determine if call forwarding should be used",
+                    "properties": {
+                        "direct_calls_only": {
+                            "default": false,
+                            "type": "boolean"
+                        },
+                        "enabled": {
+                            "default": false,
+                            "type": "boolean"
+                        },
+                        "ignore_early_media": {
+                            "default": true,
+                            "type": "boolean"
+                        },
+                        "keep_caller_id": {
+                            "default": true,
+                            "type": "boolean"
+                        },
+                        "number": {
+                            "maxLength": 35,
+                            "type": "string"
+                        },
+                        "require_keypress": {
+                            "default": true,
+                            "type": "boolean"
+                        },
+                        "rules": {
+                            "description": "Match list rules to check for call forwarding",
+                            "items": {
+                                "additionalProperties": false,
+                                "properties": {
+                                    "direct_calls_only": {
+                                        "default": false,
+                                        "type": "boolean"
+                                    },
+                                    "enabled": {
+                                        "default": false,
+                                        "type": "boolean"
+                                    },
+                                    "ignore_early_media": {
+                                        "default": true,
+                                        "type": "boolean"
+                                    },
+                                    "keep_caller_id": {
+                                        "default": true,
+                                        "type": "boolean"
+                                    },
+                                    "match_id_list": {
+                                        "type": "string"
+                                    },
+                                    "number": {
+                                        "maxLength": 35,
+                                        "type": "string"
+                                    },
+                                    "require_keypress": {
+                                        "default": true,
+                                        "type": "boolean"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "type": "object"
+                },
+                "unconditional": {
+                    "$ref": "#/definitions/call_forward_type",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "enabled"
+            ],
             "type": "object"
         },
         "call_limits": {
@@ -2404,6 +2589,11 @@
                     ],
                     "type": "string"
                 },
+                "menu_retries": {
+                    "default": 3,
+                    "description": "If the action is menu, how many retries to get a correct menu selection",
+                    "type": "integer"
+                },
                 "skip_module": {
                     "description": "When set to true this callflow action is skipped, advancing to the wildcard branch (if any)",
                     "type": "boolean"
@@ -2973,7 +3163,8 @@
                 },
                 "origin": {
                     "default": "callflow : cf_doorman",
-                    "description": "Read-only setting if the call is recorded"
+                    "description": "Read-only setting if the call is recorded",
+                    "type": "string"
                 },
                 "recording_limit": {
                     "default": 8,
@@ -6530,11 +6721,9 @@
                     "$ref": "#/definitions/call_failover"
                 },
                 "call_forward": {
-                    "items": {
-                        "$ref": "#/definitions/call_forward",
-                        "type": "object"
-                    },
-                    "type": "array"
+                    "$ref": "#/definitions/call_forward",
+                    "description": "Call forward settings",
+                    "kz:skip_subproperty_builder": true
                 },
                 "call_limits": {
                     "$ref": "#/definitions/call_limits"
@@ -11224,13 +11413,16 @@
                                         "type": "string"
                                     },
                                     {
-                                        "format": "ipv4"
+                                        "format": "ipv4",
+                                        "type": "string"
                                     },
                                     {
-                                        "format": "ipv6"
+                                        "format": "ipv6",
+                                        "type": "string"
                                     }
                                 ],
-                                "description": "This resource gateway authentication realm"
+                                "description": "This resource gateway authentication realm",
+                                "type": "string"
                             },
                             "route": {
                                 "description": "A statically configured SIP URI to route all call to",
@@ -11244,13 +11436,16 @@
                                         "type": "string"
                                     },
                                     {
-                                        "format": "ipv4"
+                                        "format": "ipv4",
+                                        "type": "string"
                                     },
                                     {
-                                        "format": "ipv6"
+                                        "format": "ipv6",
+                                        "type": "string"
                                     }
                                 ],
-                                "description": "This resource gateway server"
+                                "description": "This resource gateway server",
+                                "type": "string"
                             },
                             "skype_interface": {
                                 "description": "The name of the Skype interface to route the call over",
@@ -21092,11 +21287,9 @@
                     "$ref": "#/definitions/call_failover"
                 },
                 "call_forward": {
-                    "items": {
-                        "$ref": "#/definitions/call_forward",
-                        "type": "object"
-                    },
-                    "type": "array"
+                    "$ref": "#/definitions/call_forward",
+                    "description": "Call forward settings",
+                    "kz:skip_subproperty_builder": true
                 },
                 "call_limits": {
                     "$ref": "#/definitions/call_limits"
