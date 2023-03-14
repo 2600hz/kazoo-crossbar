@@ -190,6 +190,7 @@
       'x-patternProperties':
         '.+':
           'description': conferences controls  +
+          'type': object
     'entry_tone':
       'default': |-
         tone_stream://v=-7;>=2;+=.1;%(300,0,523,659);v=-7;>=3;+=.1;%(800,0,659,783)
@@ -229,6 +230,7 @@
       'x-patternProperties':
         '.+':
           'description': conferences profiles  +
+          'type': object
     'support_name_announcement':
       'default': true
       'description': conferences support name announcement
@@ -1113,8 +1115,6 @@
   'properties':
     'substitute':
       'type': boolean
-  'required':
-    - enabled
   'type': object
 'call_forward_type':
   'description': Call Forward Properties
@@ -2425,6 +2425,7 @@
     'origin':
       'default': 'callflow : cf_doorman'
       'description': Read-only setting if the call is recorded
+      'type': string
     'recording_limit':
       'default': 8
       'description': The caller's recording limit for name and reason for calling
@@ -8849,8 +8850,11 @@
                 'minLength': 1
                 'type': string
               - 'format': ipv4
+                'type': string
               - 'format': ipv6
+                'type': string
             'description': This resource gateway authentication realm
+            'type': string
             'x-kazoo-validation': true
           'route':
             'description': A statically configured SIP URI to route all call to
@@ -8861,8 +8865,11 @@
                 'minLength': 1
                 'type': string
               - 'format': ipv4
+                'type': string
               - 'format': ipv6
+                'type': string
             'description': This resource gateway server
+            'type': string
             'x-kazoo-validation': true
           'skype_interface':
             'description': The name of the Skype interface to route the call over
@@ -10703,6 +10710,7 @@
       'x-patternProperties':
         '.+':
           'description': conferences controls  +
+          'type': object
     'entry_tone':
       'default': |-
         tone_stream://v=-7;>=2;+=.1;%(300,0,523,659);v=-7;>=3;+=.1;%(800,0,659,783)
@@ -10784,6 +10792,7 @@
       'x-patternProperties':
         '.+':
           'description': conferences profiles  +
+          'type': object
     'review_name':
       'default': false
       'description': conferences review name
