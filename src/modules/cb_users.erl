@@ -726,7 +726,7 @@ load_users_summary(Context) ->
 load_user(UserId, Context) ->
     Context1 = crossbar_doc:load(UserId, Context, ?TYPE_CHECK_OPTION(kzd_users:type())),
     case cb_context:resp_status(Context1) of
-        'success' -> add_has_avatar(maybe_migrate_user_addresses(Context1));
+        'success' -> add_has_avatar(Context1);
         _ -> Context1
     end.
 
@@ -798,21 +798,12 @@ load_user_objects_options(UserId, ObjectTypes) ->
     ].
 
 %%------------------------------------------------------------------------------
-%% @doc Validate an update request.
+%% @doc Validate PATCH request.
 %% @end
 %%------------------------------------------------------------------------------
 -spec validate_patch(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
 validate_patch(UserId, Context) ->
-    %% Maybe migrating user addresses here instead of validate_request/2 function, because the old
-    %% schema may only be accepted for existing users, not for new users, and validate_request/2
-    %% function is also being used for validation when creating new users.
-    Fun = fun(SameUserId, NewContext) ->
-                  %% Maybe migrate user addresses within context's doc and resp_data fields values.
-                  validate_request(SameUserId, maybe_migrate_user_addresses(NewContext))
-          end,
-    %% Maybe migrate user addresses (req_data) before patching to avoid overriding existing
-    %% addresses value when existing user has old addresses schema.
-    crossbar_doc:patch_and_validate(UserId, maybe_migrate_user_addresses(Context, 'req_data'), Fun).
+    crossbar_doc:patch_and_validate(UserId, Context, fun validate_request/2).
 
 %%------------------------------------------------------------------------------
 %% @doc Validate the request JObj passes all validation checks and add / alter
@@ -900,36 +891,3 @@ add_has_avatar(Context) ->
     RespData = cb_context:resp_data(Context),
     RespData1 = kzd_users:set_has_avatar(RespData, kzd_users:has_avatar(cb_context:doc(Context))),
     cb_context:set_resp_data(Context, RespData1).
-
--spec maybe_migrate_user_addresses(cb_context:context()) -> cb_context:context().
-maybe_migrate_user_addresses(Context) ->
-    maybe_migrate_user_addresses(Context, 'doc').
-
--spec maybe_migrate_user_addresses(cb_context:context(), 'doc' | 'req_data') -> cb_context:context().
-maybe_migrate_user_addresses(Context, 'doc') ->
-    UserJObj = cb_context:doc(Context),
-    NewUserJObj = kzd_users:maybe_migrate_user_addresses(UserJObj),
-    case kz_json:are_equal(UserJObj, NewUserJObj) of
-        'true' ->
-            lager:critical_unsafe("Not migration occurred"), %% TODO: Remove this debug line
-            Context;
-        'false' ->
-            lager:critical_unsafe("updating user doc addresses in context"), %% TODO: decrease log level to debug
-            cb_context:setters(Context
-                              ,[{fun cb_context:set_doc/2, NewUserJObj}
-                               ,{fun cb_context:set_resp_data/2, kz_doc:public_fields(NewUserJObj)}
-                               ])
-    end;
-maybe_migrate_user_addresses(Context, 'req_data') ->
-    ReqJObj = cb_context:req_data(Context),
-    NewReqJObj = kzd_users:maybe_migrate_user_addresses(ReqJObj),
-    case kz_json:are_equal(ReqJObj, NewReqJObj) of
-        'true' ->
-            lager:critical_unsafe("Not migration occurred"), %% TODO: Remove this debug line
-            lager:critical_unsafe("ReqJObj: ~p", [ReqJObj]), %% TODO: Remove this debug line
-            lager:critical_unsafe("NewReqJObj: ~p", [NewReqJObj]), %% TODO: Remove this debug line
-            Context;
-        'false' ->
-            lager:critical_unsafe("updating user req_data addresses in context"), %% TODO: decrease log level to debug
-            cb_context:set_req_data(Context, NewReqJObj)
-    end.
