@@ -251,6 +251,7 @@ originate_quickcall(Endpoints, Call, Context) ->
           [{<<"Application-Name">>, <<"transfer">>}
           ,{<<"Application-Data">>, get_application_data(Context)}
           ,{<<"Continue-On-Fail">>, 'false'}
+          ,{<<"Start-Control-Process">>, 'false'}
           ,{<<"Custom-Application-Vars">>, kz_json:from_list(CAVs)}
           ,{<<"Custom-Channel-Vars">>, kz_json:from_list(CCVs)}
           ,{<<"Dial-Endpoint-Method">>, <<"simultaneous">>}
