@@ -1989,24 +1989,24 @@ conditional_resp_data(Context) ->
 
 maybe_add_version(Context, Acc) ->
     case cb_context:is_authenticated(Context) of
-        'true' -> [{<<"version">>, kapps_util:kazoo_version()} | Acc];
+        'true' -> props:set_value(<<"version">>, kapps_util:kazoo_version(), Acc);
         'false' -> Acc
     end.
 
+-spec should_include_auth_token(cb_context:context()) -> boolean().
+should_include_auth_token(Context) ->
+    kz_app_config:is_true({?APP, cb_context:auth_account_id(Context)}, <<"include_auth_token">>, false).
+
 maybe_add_auth_token(Context, Acc) ->
-    maybe_add_auth_token(Context, Acc
-                        ,kapps_account_config:get(cb_context:auth_account_id(Context), ?CONFIG_CAT, <<"include_auth_token">>, 'false')
-                        ).
+    maybe_add_auth_token(Context, Acc, should_include_auth_token(Context)).
 
 maybe_add_auth_token(Context, Acc, 'true') ->
     props:set_value(<<"auth_token">>, cb_context:auth_token(Context), Acc);
 maybe_add_auth_token(Context, Acc, 'false') ->
-    case kz_term:is_true(cb_context:fetch(Context, 'token_created')) of
+    case kz_term:is_true(cb_context:fetch(Context, 'include_token')) of
         'true' -> props:set_value(<<"auth_token">>, cb_context:auth_token(Context), Acc);
         'false' -> Acc
-    end;
-maybe_add_auth_token(Context, Acc, Bool) ->
-    maybe_add_auth_token(Context, Acc, kz_term:is_true(Bool)).
+    end.
 
 -spec close_chunk_json_envelope(cowboy_req:req(), cb_context:context()) -> 'ok'.
 close_chunk_json_envelope(Req, Context) ->
