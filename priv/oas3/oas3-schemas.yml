@@ -10824,6 +10824,11 @@
       'default': 35
       'description': crossbar desktop_auth_tokens
       'type': integer
+    'display_dependency_list':
+      'default': true
+      'description': |-
+        When toggled to false, the Erlang dependency list will not be displayed when accessing the root API URL
+      'type': boolean
     'ensure_valid_schema':
       'default': true
       'description': crossbar ensure valid schema
