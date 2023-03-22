@@ -503,16 +503,18 @@ malformed_request(Req, Context, _ReqVerb) ->
             Context1 = validate_account_resource(Context, AccountArgs),
             case api_util:succeeded(Context1) of
                 'true' -> {'false', Req, Context1};
-                'false' -> api_util:stop(Req, Context1)
+                'false' ->
+                    return_invalid_credentials(Req, Context1)
             end;
         [<<>> | _] ->
-            Error = kz_json:from_list([{<<"message">>, <<"missing account_id">>}]),
-            api_util:stop(Req, cb_context:add_system_error(404, <<"bad identifier">>, Error, Context));
+            return_invalid_credentials(Req, Context);
         [_Other | _] ->
-            Msg = kz_term:to_binary(io_lib:format("invalid account_id '~s'", [_Other])),
-            Error = kz_json:from_list([{<<"message">>, Msg}]),
-            api_util:stop(Req, cb_context:add_system_error(404, <<"bad identifier">>, Error, Context))
+            return_invalid_credentials(Req, Context)
     end.
+
+return_invalid_credentials(Req, Context) ->
+    Error = kz_json:from_list([{<<"message">>, <<"invalid credentials">>}]),
+    api_util:stop(Req, cb_context:add_system_error(401, <<"invalid credentials">>, Error, Context)).
 
 -spec validate_account_resource(cb_context:context(), path_tokens()) ->
           cb_context:context().
