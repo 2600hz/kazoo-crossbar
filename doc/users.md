@@ -106,7 +106,7 @@ Key | Description | Type | Default | Required | Support Level
 `selective.rules.[].enabled` |   | `boolean()` | `false` | `false` |  
 `selective.rules.[].ignore_early_media` |   | `boolean()` | `true` | `false` |  
 `selective.rules.[].keep_caller_id` |   | `boolean()` | `true` | `false` |  
-`selective.rules.[].match_id_list` |   | `string()` |   | `false` |  
+`selective.rules.[].match_list_id` |   | `string()` |   | `false` |  
 `selective.rules.[].number` |   | `string(0..35)` |   | `false` |  
 `selective.rules.[].require_keypress` |   | `boolean()` | `true` | `false` |  
 `selective.rules` | Match list rules to check for call forwarding | `array(object())` |   | `false` |  
