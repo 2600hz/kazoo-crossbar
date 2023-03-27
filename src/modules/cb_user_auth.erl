@@ -256,10 +256,9 @@ validate_action(Context, _Action) ->
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, ?RECOVERY) ->
-    Context1 = consume_tokens(Context),
-    case cb_context:resp_status(Context1) of
-        'success' -> validate(Context1, <<"user_auth_recovery">>);
-        'error' -> Context1
+    case consume_tokens(Context) of
+        {'ok', Context1} -> validate(Context1, <<"user_auth_recovery">>);
+        {'error', Context1} -> cb_context:add_system_error('too_many_requests', Context1)
     end;
 validate(Context, <<"user_auth_recovery">>) ->
     case cb_context:req_verb(Context) of
@@ -599,7 +598,7 @@ maybe_load_user_doc_by_username(Account, Context) ->
             cb_context:add_validation_error(<<"username">>, <<"not_found">>, Msg, Context)
     end.
 
--spec save_reset_id_then_send_email(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+-spec save_reset_id_then_send_email(cb_context:context(), kz_term:ne_binary() | 'undefined') -> cb_context:context().
 save_reset_id_then_send_email(Context, 'undefined') ->
     lager:debug("it failed but we must validate it to avoid leaking information"),
     Cntxt = cb_context:set_validation_errors(Context, kz_json:new()),
