@@ -1179,7 +1179,7 @@
               'keep_caller_id':
                 'default': true
                 'type': boolean
-              'match_id_list':
+              'match_list_id':
                 'type': string
               'number':
                 'maxLength': 35
@@ -1275,7 +1275,7 @@
               'keep_caller_id':
                 'default': true
                 'type': boolean
-              'match_id_list':
+              'match_list_id':
                 'type': string
               'number':
                 'maxLength': 35
