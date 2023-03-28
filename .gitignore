@@ -48,3 +48,5 @@ erlang.mk
 .erlang.mk
 
 ## app specific gitignore
+
+erlang_ls.config
