@@ -30,6 +30,10 @@
             ],
             "type": "string"
         },
+        "fail_on_single_reject": {
+            "description": "",
+            "type": "boolean"
+        },
         "id": {
             "description": "Device ID",
             "type": "string"
