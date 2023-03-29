@@ -85,7 +85,7 @@
                                 "default": true,
                                 "type": "boolean"
                             },
-                            "match_id_list": {
+                            "match_list_id": {
                                 "type": "string"
                             },
                             "number": {

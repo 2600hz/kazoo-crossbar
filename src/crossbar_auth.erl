@@ -111,7 +111,7 @@ create_auth_token(Context, Method, TokenOptions, JObj, AccountId, AuthConfig) ->
         {'ok', Token} ->
             Setters = [{fun cb_context:set_auth_token/2, Token}
                       ,{fun cb_context:set_auth_doc/2, kz_json:from_list(Claims)}
-                      ,{fun cb_context:store/3, token_created, true}
+                      ,{fun cb_context:store/3, 'include_token', true}
                       ],
             Props = props:filter_undefined(
                       [{<<"account_id">>, AccountId}

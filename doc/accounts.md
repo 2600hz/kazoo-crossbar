@@ -18,6 +18,7 @@ Accounts represent tenants or customers on the system. Each account represents a
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
+`announcement` | The announcement will be pop up when use log in to this account | `string()` |   | `false` |  
 `blacklists.[]` |   | `string()` |   | `false` |  
 `blacklists` | A list blacklist ids that apply to the account | `array(string())` |   | `false` |  
 `call_failover` | The device call failover parameters, to replace the device with an extension/phone number when device is offline. | [#/definitions/call_failover](#call_failover) |   | `false` |  
@@ -108,7 +109,7 @@ Key | Description | Type | Default | Required | Support Level
 `selective.rules.[].enabled` |   | `boolean()` | `false` | `false` |  
 `selective.rules.[].ignore_early_media` |   | `boolean()` | `true` | `false` |  
 `selective.rules.[].keep_caller_id` |   | `boolean()` | `true` | `false` |  
-`selective.rules.[].match_id_list` |   | `string()` |   | `false` |  
+`selective.rules.[].match_list_id` |   | `string()` |   | `false` |  
 `selective.rules.[].number` |   | `string(0..35)` |   | `false` |  
 `selective.rules.[].require_keypress` |   | `boolean()` | `true` | `false` |  
 `selective.rules` | Match list rules to check for call forwarding | `array(object())` |   | `false` |  

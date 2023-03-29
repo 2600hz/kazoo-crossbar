@@ -663,6 +663,10 @@
         "accounts": {
             "description": "Accounts represent tenants or customers on the system. Each account represents an individual dataset or sandbox that only one tenant can access. The data set is architecturally independent from other tenants.",
             "properties": {
+                "announcement": {
+                    "description": "The announcement will be pop up when use log in to this account",
+                    "type": "string"
+                },
                 "blacklists": {
                     "description": "A list blacklist ids that apply to the account",
                     "items": {
@@ -1424,7 +1428,7 @@
                                         "default": true,
                                         "type": "boolean"
                                     },
-                                    "match_id_list": {
+                                    "match_list_id": {
                                         "type": "string"
                                     },
                                     "number": {
@@ -1552,7 +1556,7 @@
                                         "default": true,
                                         "type": "boolean"
                                     },
-                                    "match_id_list": {
+                                    "match_list_id": {
                                         "type": "string"
                                     },
                                     "number": {
@@ -3030,6 +3034,10 @@
                         "single"
                     ],
                     "type": "string"
+                },
+                "fail_on_single_reject": {
+                    "description": "If any leg rejects the call, cancel all other legs",
+                    "type": "boolean"
                 },
                 "id": {
                     "description": "Device ID",
@@ -13891,6 +13899,11 @@
                     "default": 35,
                     "description": "crossbar desktop_auth_tokens",
                     "type": "integer"
+                },
+                "display_dependency_list": {
+                    "default": true,
+                    "description": "When toggled to false, the Erlang dependency list will not be displayed when accessing the root API URL",
+                    "type": "boolean"
                 },
                 "ensure_valid_schema": {
                     "default": true,
