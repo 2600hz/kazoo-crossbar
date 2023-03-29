@@ -264,7 +264,7 @@ validate(Context, <<"user_auth_recovery">>) ->
     case cb_context:req_verb(Context) of
         ?HTTP_PUT ->
             Schema = <<"user_auth_recovery">>,
-            OnSuccess = fun maybe_load_user_doc_via_creds/1;
+            OnSuccess = fun find_user_for_password_recovery/1;
         ?HTTP_POST ->
             Schema = <<"user_auth_recovery_reset">>,
             OnSuccess = fun maybe_load_user_doc_via_reset_id/1
@@ -534,23 +534,18 @@ base_claims(JObj) ->
     Keys = [<<"account_id">>, <<"owner_id">>],
     kz_json:filter(fun({K, _V}) -> lists:member(K, Keys) end, JObj).
 
--spec maybe_load_user_doc_via_creds(cb_context:context()) -> cb_context:context().
-maybe_load_user_doc_via_creds(Context) ->
+-spec find_user_for_password_recovery(cb_context:context()) -> cb_context:context().
+find_user_for_password_recovery(Context) ->
     JObj = cb_context:doc(Context),
-    AccountName = kzd_accounts:normalize_name(kz_json:get_value(<<"account_name">>, JObj)),
-    PhoneNumber = kzd_user_auth:phone_number(JObj),
-    AccountRealm = kz_json:get_first_defined([<<"account_realm">>, <<"realm">>], JObj),
-    AccountId = kz_json:get_ne_binary_value(<<"account_id">>, JObj),
-
-    case find_account([{'phone_number', PhoneNumber}
-                      ,{'realm', AccountRealm}
-                      ,{'name', AccountName}
-                      ,{'id', AccountId}
-                      ]
-                     ,Context
-                     )
-    of
-        {'error', C} -> C;
+    Options = [{'phone_number', kzd_user_auth:phone_number(JObj)}
+              ,{'realm', kz_json:get_first_defined([<<"account_realm">>, <<"realm">>], JObj)}
+              ,{'name', kzd_accounts:normalize_name(kz_json:get_value(<<"account_name">>, JObj))}
+              ,{'id',  kz_json:get_ne_binary_value(<<"account_id">>, JObj)}
+              ],
+    case find_account(Options ,Context) of
+        {'error', _Context1} ->
+            lager:debug("failed to find account, responding empty result for password recovery"),
+            crossbar_doc:handle_json_success(kz_json:new(), Context);
         {'ok', [Account|_]} -> maybe_load_user_doc_by_username(Account, Context);
         {'ok', Account} ->     maybe_load_user_doc_by_username(Account, Context)
     end.
@@ -588,14 +583,9 @@ maybe_load_user_doc_by_username(Account, Context) ->
                     cb_context:add_validation_error(<<"username">>, <<"forbidden">>, Msg, Context)
             end;
         _ ->
-            Msg =
-                kz_json:from_list(
-                  [{<<"message">>, <<"The provided user name was not found">>}
-                  ,{<<"cause">>, Username}
-                  ]),
             Reason = kz_term:to_binary(io_lib:format("The provided user name ~s was not found", [Username])),
             crossbar_auth:log_failed_auth(?MODULE, AuthType, Reason, Context, Account),
-            cb_context:add_validation_error(<<"username">>, <<"not_found">>, Msg, Context)
+            crossbar_doc:handle_json_success(kz_json:new(), Context)
     end.
 
 -spec save_reset_id_then_send_email(cb_context:context(), kz_term:ne_binary() | 'undefined') -> cb_context:context().
@@ -626,7 +616,7 @@ save_reset_id_then_send_email(Context, MoDb) ->
                      | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
                      ],
             kapps_notify_publisher:cast(Notify, fun kapi_notifications:publish_password_recovery/1),
-            Msg = <<"Request for password reset handled, email sent to: ", Email/binary>>,
+            Msg = <<"Password resend email was sent, please check your email to learn how to reset your password.">>,
             crossbar_util:response(Msg, Context);
         {'error', Reason} ->
             crossbar_doc:handle_datamgr_errors(Reason, 'undefined', Context)
@@ -733,8 +723,7 @@ find_account([{'name', AccountName} | Types], Context) ->
             lager:debug("the account name returned multiple results"),
             {'ok', AccountDbs};
         {'error', _} ->
-            Paths = cb_context:path_tokens(Context),
-            find_account(Types, error_no_account_name(Context, lists:last(Paths), AccountName))
+            find_account(Types, error_no_account_name(Context, AccountName))
     end;
 find_account([{'realm', AccountRealm} | Types], Context) ->
     case kapps_util:get_account_by_realm(AccountRealm) of
@@ -745,8 +734,7 @@ find_account([{'realm', AccountRealm} | Types], Context) ->
             lager:debug("the account realm returned multiple results"),
             {'ok', AccountDbs};
         {'error', _} ->
-            Paths = cb_context:path_tokens(Context),
-            find_account(Types, error_no_account_realm(Context, lists:last(Paths), AccountRealm))
+            find_account(Types, error_no_account_realm(Context, AccountRealm))
     end;
 find_account([{'phone_number', PhoneNumber} | Types], Context) ->
     case knm_numbers:lookup_account(PhoneNumber) of
@@ -755,23 +743,18 @@ find_account([{'phone_number', PhoneNumber} | Types], Context) ->
             lager:debug("found account by phone number '~s': ~s", [PhoneNumber, AccountDb]),
             {'ok', AccountDb};
         {'error', _} ->
-            Paths = cb_context:path_tokens(Context),
-            find_account(Types, error_no_account_phone_number(Context, lists:last(Paths), PhoneNumber))
+            find_account(Types, error_no_account_phone_number(Context, PhoneNumber))
     end;
 find_account([{'id', AccountId} | Types], Context) ->
     case kzd_accounts:fetch(AccountId) of
         {'ok', AccountJObj} ->
             {'ok', kz_doc:account_db(AccountJObj)};
         {'error', 'not_found'} ->
-            Paths = cb_context:path_tokens(Context),
-            find_account(Types, error_no_account_id(Context, lists:last(Paths), AccountId))
+            find_account(Types, error_no_account_id(Context, AccountId))
     end.
 
--spec error_no_account_phone_number(cb_context:context(), path_token(), kz_term:ne_binary()) -> cb_context:context().
-error_no_account_phone_number(Context, ?RECOVERY, PhoneNumber) ->
-    lager:debug("failed to find phone number: '~s'", [PhoneNumber]),
-    Context;
-error_no_account_phone_number(Context, _, PhoneNumber) ->
+-spec error_no_account_phone_number(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+error_no_account_phone_number(Context, PhoneNumber) ->
     Msg =
         kz_json:from_list(
           [{<<"message">>, <<"The provided phone number could not be found">>}
@@ -779,11 +762,8 @@ error_no_account_phone_number(Context, _, PhoneNumber) ->
           ]),
     cb_context:add_validation_error(<<"phone_number">>, <<"not_found">>, Msg, Context).
 
--spec error_no_account_id(cb_context:context(), path_token(), kz_term:ne_binary()) -> cb_context:context().
-error_no_account_id(Context, ?RECOVERY, AccountId) ->
-    lager:debug("failed to find account ID: '~s'", [AccountId]),
-    Context;
-error_no_account_id(Context, _, AccountId) ->
+-spec error_no_account_id(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+error_no_account_id(Context, AccountId) ->
     Msg =
         kz_json:from_list(
           [{<<"message">>, <<"The provided account ID could not be found">>}
@@ -791,11 +771,8 @@ error_no_account_id(Context, _, AccountId) ->
           ]),
     cb_context:add_validation_error(<<"account_id">>, <<"not_found">>, Msg, Context).
 
--spec error_no_account_realm(cb_context:context(), path_token(), kz_term:ne_binary()) -> cb_context:context().
-error_no_account_realm(Context, ?RECOVERY, AccountRealm) ->
-    lager:debug("failed to find account realm: '~s'", [AccountRealm]),
-    Context;
-error_no_account_realm(Context, _, AccountRealm) ->
+-spec error_no_account_realm(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+error_no_account_realm(Context, AccountRealm) ->
     Msg =
         kz_json:from_list(
           [{<<"message">>, <<"The provided account realm could not be found">>}
@@ -803,11 +780,8 @@ error_no_account_realm(Context, _, AccountRealm) ->
           ]),
     cb_context:add_validation_error(<<"account_realm">>, <<"not_found">>, Msg, Context).
 
--spec error_no_account_name(cb_context:context(), path_token(), kz_term:ne_binary()) -> cb_context:context().
-error_no_account_name(Context, ?RECOVERY, AccountName) ->
-    lager:debug("failed to find account by name: '~s'", [AccountName]),
-    Context;
-error_no_account_name(Context, _, AccountName) ->
+-spec error_no_account_name(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+error_no_account_name(Context, AccountName) ->
     Msg =
         kz_json:from_list(
           [{<<"message">>, <<"The provided account name could not be found">>}
