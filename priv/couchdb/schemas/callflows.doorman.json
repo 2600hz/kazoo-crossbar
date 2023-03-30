@@ -19,7 +19,8 @@
         },
         "origin": {
             "default": "callflow : cf_doorman",
-            "description": "Read-only setting if the call is recorded"
+            "description": "Read-only setting if the call is recorded",
+            "type": "string"
         },
         "recording_limit": {
             "default": 8,

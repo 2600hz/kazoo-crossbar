@@ -190,6 +190,7 @@
       'x-patternProperties':
         '.+':
           'description': conferences controls  +
+          'type': object
     'entry_tone':
       'default': |-
         tone_stream://v=-7;>=2;+=.1;%(300,0,523,659);v=-7;>=3;+=.1;%(800,0,659,783)
@@ -229,6 +230,7 @@
       'x-patternProperties':
         '.+':
           'description': conferences profiles  +
+          'type': object
     'support_name_announcement':
       'default': true
       'description': conferences support name announcement
@@ -496,6 +498,10 @@
   'description': |-
     Accounts represent tenants or customers on the system. Each account represents an individual dataset or sandbox that only one tenant can access. The data set is architecturally independent from other tenants.
   'properties':
+    'announcement':
+      'description': The announcement will be pop up when use log in to this account
+      'type': string
+      'x-kazoo-validation': true
     'blacklists':
       'description': A list blacklist ids that apply to the account
       'items':
@@ -506,6 +512,8 @@
       '$ref': '#/call_failover'
     'call_forward':
       '$ref': '#/call_forward'
+      'description': Call forward settings
+      'kz:skip_subproperty_builder': true
     'call_limits':
       '$ref': '#/call_limits'
     'call_recording':
@@ -1104,45 +1112,185 @@
       'type': boolean
   'type': object
 'call_forward':
-  'description': The device call forward parameters
+  'additionalProperties': false
+  'description': Call Forward
   'properties':
+    'busy':
+      '$ref': '#/call_forward_type'
+      'type': object
     'direct_calls_only':
       'default': false
-      'description': |-
-        Determines if the calls that are not directly sent to the device should be forwarded
       'type': boolean
-      'x-support_level': supported
     'enabled':
       'default': false
-      'description': Determines if the call forwarding should be used
       'type': boolean
-      'x-support_level': supported
     'ignore_early_media':
       'default': true
-      'description': |-
-        The option to determine if early media from the call forwarded number should ignored
       'type': boolean
     'keep_caller_id':
       'default': true
-      'description': |-
-        Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used
       'type': boolean
-      'x-support_level': supported
+    'no_answer':
+      '$ref': '#/call_forward_type'
+      'type': object
     'number':
-      'description': The number to forward calls to
       'maxLength': 35
       'type': string
-      'x-support_level': supported
     'require_keypress':
       'default': true
-      'description': Determines if the callee is prompted to press 1 to accept the call
       'type': boolean
-      'x-support_level': supported
+    'selective':
+      'additionalProperties': false
+      'description': |-
+        Conditionally check match lists to determine if call forwarding should be used
+      'properties':
+        'direct_calls_only':
+          'default': false
+          'type': boolean
+        'enabled':
+          'default': false
+          'type': boolean
+        'ignore_early_media':
+          'default': true
+          'type': boolean
+        'keep_caller_id':
+          'default': true
+          'type': boolean
+        'number':
+          'maxLength': 35
+          'type': string
+        'require_keypress':
+          'default': true
+          'type': boolean
+        'rules':
+          'description': Match list rules to check for call forwarding
+          'items':
+            'additionalProperties': false
+            'properties':
+              'direct_calls_only':
+                'default': false
+                'type': boolean
+              'enabled':
+                'default': false
+                'type': boolean
+              'ignore_early_media':
+                'default': true
+                'type': boolean
+              'keep_caller_id':
+                'default': true
+                'type': boolean
+              'match_list_id':
+                'type': string
+              'number':
+                'maxLength': 35
+                'type': string
+              'require_keypress':
+                'default': true
+                'type': boolean
+            'type': object
+          'type': array
+      'type': object
     'substitute':
-      'default': true
-      'description': Determines if the call forwarding replaces the device
+      'default': false
       'type': boolean
-      'x-support_level': supported
+    'unconditional':
+      '$ref': '#/call_forward_type'
+      'type': object
+  'required':
+    - enabled
+  'type': object
+'call_forward_type':
+  'additionalProperties': false
+  'description': Call Forward Properties
+  'properties':
+    'direct_calls_only':
+      'default': false
+      'type': boolean
+    'enabled':
+      'default': false
+      'type': boolean
+    'ignore_early_media':
+      'default': true
+      'type': boolean
+    'keep_caller_id':
+      'default': true
+      'type': boolean
+    'number':
+      'maxLength': 35
+      'type': string
+    'require_keypress':
+      'default': true
+      'type': boolean
+    'substitute':
+      'type': boolean
+  'required':
+    - enabled
+  'type': object
+'call_forward_types':
+  'additionalProperties': false
+  'properties':
+    'busy':
+      '$ref': '#/call_forward_type'
+      'type': object
+    'no_answer':
+      '$ref': '#/call_forward_type'
+      'type': object
+    'selective':
+      'additionalProperties': false
+      'description': |-
+        Conditionally check match lists to determine if call forwarding should be used
+      'properties':
+        'direct_calls_only':
+          'default': false
+          'type': boolean
+        'enabled':
+          'default': false
+          'type': boolean
+        'ignore_early_media':
+          'default': true
+          'type': boolean
+        'keep_caller_id':
+          'default': true
+          'type': boolean
+        'number':
+          'maxLength': 35
+          'type': string
+        'require_keypress':
+          'default': true
+          'type': boolean
+        'rules':
+          'description': Match list rules to check for call forwarding
+          'items':
+            'additionalProperties': false
+            'properties':
+              'direct_calls_only':
+                'default': false
+                'type': boolean
+              'enabled':
+                'default': false
+                'type': boolean
+              'ignore_early_media':
+                'default': true
+                'type': boolean
+              'keep_caller_id':
+                'default': true
+                'type': boolean
+              'match_list_id':
+                'type': string
+              'number':
+                'maxLength': 35
+                'type': string
+              'require_keypress':
+                'default': true
+                'type': boolean
+            'type': object
+          'type': array
+      'type': object
+    'unconditional':
+      '$ref': '#/call_forward_type'
+      'type': object
+  'required':
+    - enabled
   'type': object
 'call_limits':
   'description': Schema for call limits
@@ -1952,6 +2100,10 @@
         - toggle
         - menu
       'type': string
+    'menu_retries':
+      'default': 3
+      'description': 'If the action is menu, how many retries to get a correct menu selection'
+      'type': integer
     'skip_module':
       'description': |-
         When set to true this callflow action is skipped, advancing to the wildcard branch (if any)
@@ -2277,6 +2429,9 @@
         - simultaneous
         - single
       'type': string
+    'fail_on_single_reject':
+      'description': 'If any leg rejects the call, cancel all other legs'
+      'type': boolean
     'id':
       'description': Device ID
       'type': string
@@ -2384,6 +2539,7 @@
     'origin':
       'default': 'callflow : cf_doorman'
       'description': Read-only setting if the call is recorded
+      'type': string
     'recording_limit':
       'default': 8
       'description': The caller's recording limit for name and reason for calling
@@ -5206,6 +5362,8 @@
       '$ref': '#/call_failover'
     'call_forward':
       '$ref': '#/call_forward'
+      'description': Call forward settings
+      'kz:skip_subproperty_builder': true
     'call_limits':
       '$ref': '#/call_limits'
     'call_recording':
@@ -8806,8 +8964,11 @@
                 'minLength': 1
                 'type': string
               - 'format': ipv4
+                'type': string
               - 'format': ipv6
+                'type': string
             'description': This resource gateway authentication realm
+            'type': string
             'x-kazoo-validation': true
           'route':
             'description': A statically configured SIP URI to route all call to
@@ -8818,8 +8979,11 @@
                 'minLength': 1
                 'type': string
               - 'format': ipv4
+                'type': string
               - 'format': ipv6
+                'type': string
             'description': This resource gateway server
+            'type': string
             'x-kazoo-validation': true
           'skype_interface':
             'description': The name of the Skype interface to route the call over
@@ -9628,20 +9792,32 @@
             'type': string
           'type': array
       'type': object
+    'range':
+      'x-patternProperties':
+        '[0-9]{6}-[0-9]{6}':
+          'properties':
+            'attachments':
+              '$ref': '#/storage.plan.database.attachment'
+            'connection':
+              'type': string
+              'x-kazoo-validation': true
+          'type': object
+    'regex':
+      'x-patternProperties':
+        '.+':
+          'properties':
+            'attachments':
+              '$ref': '#/storage.plan.database.attachment'
+            'connection':
+              'type': string
+              'x-kazoo-validation': true
+          'type': object
     'types':
       'description': The document types to store with this plan
-      'properties':
-        'call_recording':
-          '$ref': '#/storage.plan.database.document'
-        'fax':
-          '$ref': '#/storage.plan.database.document'
-        'function':
-          '$ref': '#/storage.plan.database.document'
-        'mailbox_message':
-          '$ref': '#/storage.plan.database.document'
-        'media':
-          '$ref': '#/storage.plan.database.document'
       'type': object
+      'x-patternProperties':
+        '[a-z_]+':
+          '$ref': '#/storage.plan.database.document'
   'type': object
 'storage.plan.database.attachment':
   'description': schema for attachment ref type storage plan
@@ -9666,6 +9842,26 @@
     'connection':
       'type': string
       'x-kazoo-validation': true
+    'range':
+      'x-patternProperties':
+        '[0-9]{6}-[0-9]{6}':
+          'properties':
+            'attachments':
+              '$ref': '#/storage.plan.database.attachment'
+            'connection':
+              'type': string
+              'x-kazoo-validation': true
+          'type': object
+    'regex':
+      'x-patternProperties':
+        '.+':
+          'properties':
+            'attachments':
+              '$ref': '#/storage.plan.database.attachment'
+            'connection':
+              'type': string
+              'x-kazoo-validation': true
+          'type': object
   'type': object
 'system_config.accounts':
   'description': Schema for accounts system_config
@@ -10660,6 +10856,7 @@
       'x-patternProperties':
         '.+':
           'description': conferences controls  +
+          'type': object
     'entry_tone':
       'default': |-
         tone_stream://v=-7;>=2;+=.1;%(300,0,523,659);v=-7;>=3;+=.1;%(800,0,659,783)
@@ -10741,6 +10938,7 @@
       'x-patternProperties':
         '.+':
           'description': conferences profiles  +
+          'type': object
     'review_name':
       'default': false
       'description': conferences review name
@@ -10837,6 +11035,10 @@
       'default': 120000
       'description': timeout (in milliseconds) when no data is being sent
       'type': integer
+    'include_auth_token':
+      'default': false
+      'description': crossbar include_auth_token
+      'type': boolean
     'ip':
       'description': crossbar ip
       'type': string
@@ -16733,6 +16935,8 @@
       '$ref': '#/call_failover'
     'call_forward':
       '$ref': '#/call_forward'
+      'description': Call forward settings
+      'kz:skip_subproperty_builder': true
     'call_limits':
       '$ref': '#/call_limits'
     'call_recording':

@@ -3,6 +3,11 @@
     "_id": "accounts",
     "description": "Accounts represent tenants or customers on the system. Each account represents an individual dataset or sandbox that only one tenant can access. The data set is architecturally independent from other tenants.",
     "properties": {
+        "announcement": {
+            "description": "The announcement will be pop up when use log in to this account",
+            "kazoo-validation": true,
+            "type": "string"
+        },
         "blacklists": {
             "description": "A list blacklist ids that apply to the account",
             "items": {
@@ -15,7 +20,9 @@
             "$ref": "call_failover"
         },
         "call_forward": {
-            "$ref": "call_forward"
+            "$ref": "call_forward",
+            "description": "Call forward settings",
+            "kz:skip_subproperty_builder": true
         },
         "call_limits": {
             "$ref": "call_limits"

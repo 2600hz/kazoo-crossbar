@@ -18,10 +18,11 @@ Accounts represent tenants or customers on the system. Each account represents a
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
+`announcement` | The announcement will be pop up when use log in to this account | `string()` |   | `false` |  
 `blacklists.[]` |   | `string()` |   | `false` |  
 `blacklists` | A list blacklist ids that apply to the account | `array(string())` |   | `false` |  
 `call_failover` | The device call failover parameters, to replace the device with an extension/phone number when device is offline. | [#/definitions/call_failover](#call_failover) |   | `false` |  
-`call_forward` | The device call forward parameters | [#/definitions/call_forward](#call_forward) |   | `false` |  
+`call_forward` | Call forward settings | [#/definitions/call_forward](#call_forward) |   | `false` |  
 `call_limits` | Schema for call limits | [#/definitions/call_limits](#call_limits) |   | `false` |  
 `call_recording.account` | endpoint recording settings | [#/definitions/call_recording](#call_recording) |   | `false` |  
 `call_recording.endpoint` | endpoint recording settings | [#/definitions/call_recording](#call_recording) |   | `false` |  
@@ -85,18 +86,51 @@ Key | Description | Type | Default | Required | Support Level
 
 ### call_forward
 
-The device call forward parameters
+Call Forward
 
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`direct_calls_only` | Determines if the calls that are not directly sent to the device should be forwarded | `boolean()` | `false` | `false` | `supported`
-`enabled` | Determines if the call forwarding should be used | `boolean()` | `false` | `false` | `supported`
-`ignore_early_media` | The option to determine if early media from the call forwarded number should ignored | `boolean()` | `true` | `false` |  
-`keep_caller_id` | Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used | `boolean()` | `true` | `false` | `supported`
-`number` | The number to forward calls to | `string(0..35)` |   | `false` | `supported`
-`require_keypress` | Determines if the callee is prompted to press 1 to accept the call | `boolean()` | `true` | `false` | `supported`
-`substitute` | Determines if the call forwarding replaces the device | `boolean()` | `true` | `false` | `supported`
+`busy` | Call Forward Properties | `object()` |   | `false` |  
+`direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`enabled` |   | `boolean()` | `false` | `true` |  
+`ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`no_answer` | Call Forward Properties | `object()` |   | `false` |  
+`number` |   | `string(0..35)` |   | `false` |  
+`require_keypress` |   | `boolean()` | `true` | `false` |  
+`selective.direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`selective.enabled` |   | `boolean()` | `false` | `false` |  
+`selective.ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`selective.keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`selective.number` |   | `string(0..35)` |   | `false` |  
+`selective.require_keypress` |   | `boolean()` | `true` | `false` |  
+`selective.rules.[].direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`selective.rules.[].enabled` |   | `boolean()` | `false` | `false` |  
+`selective.rules.[].ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`selective.rules.[].keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`selective.rules.[].match_list_id` |   | `string()` |   | `false` |  
+`selective.rules.[].number` |   | `string(0..35)` |   | `false` |  
+`selective.rules.[].require_keypress` |   | `boolean()` | `true` | `false` |  
+`selective.rules` | Match list rules to check for call forwarding | `array(object())` |   | `false` |  
+`selective` | Conditionally check match lists to determine if call forwarding should be used | `object()` |   | `false` |  
+`substitute` |   | `boolean()` | `false` | `false` |  
+`unconditional` | Call Forward Properties | `object()` |   | `false` |  
+
+### call_forward_type
+
+Call Forward Properties
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`enabled` |   | `boolean()` | `false` | `true` |  
+`ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`number` |   | `string(0..35)` |   | `false` |  
+`require_keypress` |   | `boolean()` | `true` | `false` |  
+`substitute` |   | `boolean()` |   | `false` |  
 
 ### call_limits
 

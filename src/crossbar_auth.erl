@@ -18,6 +18,7 @@
         ,get_inherited_config/1
         ,available_scopes/1
         ,scopes/2
+        ,validate_refresh_token/1, refresh_token/1
         ]).
 
 -include("crossbar.hrl").
@@ -95,14 +96,14 @@ create_auth_token(Context, Method, TokenOptions, JObj, AccountId, AuthConfig) ->
 
     Expiration = token_auth_expiry(Method, TokenOptions, AuthConfig),
 
-    ReqClaims = kz_json:to_proplist(kz_json:get_json_value(<<"Claims">>, JObj, kz_json:new())),
+    ReqClaims = kz_json:get_json_value(<<"Claims">>, JObj, kz_json:new()),
     AdditionalClaims = props:filter_undefined([{<<"account_id">>, AccountId}
                                               ,{<<"owner_id">>, OwnerId}
                                               ,{<<"method">>, Method}
                                               ,{<<"exp">>, Expiration}
                                               ,{<<"mfa_resp">>, kz_json:get_ne_value(<<"multi_factor_response">>, Data)}
                                               ]),
-    Claims = props:set_values(AdditionalClaims, ReqClaims),
+    Claims = kz_json:to_proplist(kz_json:set_values(AdditionalClaims, ReqClaims)),
 
     IsMultiFactor = is_multi_factor_enabled(Context, Claims, AuthConfig),
 
@@ -110,6 +111,7 @@ create_auth_token(Context, Method, TokenOptions, JObj, AccountId, AuthConfig) ->
         {'ok', Token} ->
             Setters = [{fun cb_context:set_auth_token/2, Token}
                       ,{fun cb_context:set_auth_doc/2, kz_json:from_list(Claims)}
+                      ,{fun cb_context:store/3, 'include_token', true}
                       ],
             Props = props:filter_undefined(
                       [{<<"account_id">>, AccountId}
@@ -251,7 +253,7 @@ method_config_path(Method, Key) -> [Method, Key].
 -spec method_mfa_path(kz_term:ne_binary(), kz_term:ne_binary()) -> kz_json:path().
 method_mfa_path(Method, Key) -> [Method, <<"multi_factor">>, Key].
 
--spec token_auth_expiry(kz_term:ne_binary(), token_options(), kz_json:object()) -> non_neg_integer().
+-spec token_auth_expiry(kz_term:ne_binary(), token_options(), kz_json:object()) -> non_neg_integer() | 'null'.
 token_auth_expiry(Method, TokenOptions, AuthConfig) ->
     token_auth_expiry(Method, TokenOptions, AuthConfig, props:get_integer_value('expiration', TokenOptions)).
 
@@ -262,12 +264,12 @@ token_auth_expiry(Method, _TokenOptions, AuthConfig, 'undefined') ->
             case ?DEFAULT_AUTH_EXPIRY of
                 TokenExp when TokenExp > 0 ->
                     kz_time:current_unix_tstamp() + TokenExp;
-                _ -> 'undefined'
+                _ -> 'null'
             end;
         TokenExp when TokenExp > 0 ->
             kz_time:current_unix_tstamp() + TokenExp;
         _Else ->
-            'undefined'
+            'null'
     end;
 token_auth_expiry(_Method, _TokenOptions, _AuthConfig, Expiration) ->
     lager:info("using options-supplied exipration ~p", [Expiration]),
@@ -459,3 +461,50 @@ scopes(AccountId, ScopeRestriction) when is_binary(ScopeRestriction) ->
             kz_json:get_list_value(<<"scopes">>, Doc, []);
         _ -> 'undefined'
     end.
+
+-spec get_renew_config(cb_context:context()) -> kz_json:object().
+get_renew_config(Context) ->
+    get_account_config(cb_context:auth_account_id(Context)).
+
+-spec is_auth_module_renew_enabled(kz_term:ne_binary(), kz_json:object()) -> boolean().
+is_auth_module_renew_enabled(Method, Config) ->
+    kz_json:is_true(method_config_path(Method, <<"renew">>), Config, 'false').
+
+-spec is_auth_module_renew_enabled(cb_context:context()) -> boolean().
+is_auth_module_renew_enabled(Context) ->
+    is_auth_module_renew_enabled(auth_method(Context), get_renew_config(Context)).
+
+auth_method(Context) ->
+    kz_json:get_binary_value(<<"method">>, cb_context:auth_doc(Context)).
+
+-spec validate_refresh_token(cb_context:context()) -> cb_context:context().
+validate_refresh_token(Context) ->
+    validate_refresh_token(Context, auth_method(Context)).
+
+validate_refresh_token(Context, undefined) ->
+    lager:warning("trying to renew a token without method"),
+    crossbar_util:response('error', <<"invalid token for renew">>, 412, Context);
+validate_refresh_token(Context, Method) ->
+    case is_auth_module_renew_enabled(Context) of
+        true -> allow_refresh_token(Context);
+        false -> deny_refresh_token(Context, Method)
+    end.
+
+deny_refresh_token(Context, Method) ->
+    lager:warning("denying renew for a '~s' token", [Method]),
+    crossbar_util:response('error', <<Method/binary, " not allowed to renew">>, 405, Context).
+
+allow_refresh_token(Context) ->
+    AuthDoc = cb_context:auth_doc(Context),
+    Doc = kz_json:set_value(<<"Claims">>, AuthDoc, kz_json:new()),
+    Setters = [{fun cb_context:set_resp_status/2, 'success'}
+              ,{fun cb_context:set_doc/2, Doc}
+              ],
+    cb_context:setters(Context, Setters).
+
+-spec refresh_token(cb_context:context()) -> cb_context:context().
+refresh_token(Context) ->
+    Setters = [{fun create_auth_token/2, auth_method(Context)}
+              ,{fun cb_context:set_resp_data/2, kz_json:new()}
+              ],
+    cb_context:setters(Context, Setters).

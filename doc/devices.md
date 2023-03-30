@@ -22,7 +22,7 @@ Key | Description | Type | Default | Required | Support Level
 `addresses.emergency` | Emergency address for device | `object()` |   | `false` |  
 `addresses` | List of addresses for device | `object()` |   | `false` |  
 `call_failover` | The device call failover parameters, to replace the device with an extension/phone number when device is offline. | [#/definitions/call_failover](#call_failover) |   | `false` |  
-`call_forward` | The device call forward parameters | [#/definitions/call_forward](#call_forward) |   | `false` |  
+`call_forward` | Call forward settings | [#/definitions/call_forward](#call_forward) |   | `false` |  
 `call_limits` | Schema for call limits | [#/definitions/call_limits](#call_limits) |   | `false` |  
 `call_recording` | endpoint recording settings | [#/definitions/call_recording](#call_recording) |   | `false` |  
 `call_restriction` | Device level call restrictions for each available number classification | `object()` | `{}` | `false` |  
@@ -114,18 +114,51 @@ Key | Description | Type | Default | Required | Support Level
 
 ### call_forward
 
-The device call forward parameters
+Call Forward
 
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`direct_calls_only` | Determines if the calls that are not directly sent to the device should be forwarded | `boolean()` | `false` | `false` | `supported`
-`enabled` | Determines if the call forwarding should be used | `boolean()` | `false` | `false` | `supported`
-`ignore_early_media` | The option to determine if early media from the call forwarded number should ignored | `boolean()` | `true` | `false` |  
-`keep_caller_id` | Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used | `boolean()` | `true` | `false` | `supported`
-`number` | The number to forward calls to | `string(0..35)` |   | `false` | `supported`
-`require_keypress` | Determines if the callee is prompted to press 1 to accept the call | `boolean()` | `true` | `false` | `supported`
-`substitute` | Determines if the call forwarding replaces the device | `boolean()` | `true` | `false` | `supported`
+`busy` | Call Forward Properties | `object()` |   | `false` |  
+`direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`enabled` |   | `boolean()` | `false` | `true` |  
+`ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`no_answer` | Call Forward Properties | `object()` |   | `false` |  
+`number` |   | `string(0..35)` |   | `false` |  
+`require_keypress` |   | `boolean()` | `true` | `false` |  
+`selective.direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`selective.enabled` |   | `boolean()` | `false` | `false` |  
+`selective.ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`selective.keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`selective.number` |   | `string(0..35)` |   | `false` |  
+`selective.require_keypress` |   | `boolean()` | `true` | `false` |  
+`selective.rules.[].direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`selective.rules.[].enabled` |   | `boolean()` | `false` | `false` |  
+`selective.rules.[].ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`selective.rules.[].keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`selective.rules.[].match_list_id` |   | `string()` |   | `false` |  
+`selective.rules.[].number` |   | `string(0..35)` |   | `false` |  
+`selective.rules.[].require_keypress` |   | `boolean()` | `true` | `false` |  
+`selective.rules` | Match list rules to check for call forwarding | `array(object())` |   | `false` |  
+`selective` | Conditionally check match lists to determine if call forwarding should be used | `object()` |   | `false` |  
+`substitute` |   | `boolean()` | `false` | `false` |  
+`unconditional` | Call Forward Properties | `object()` |   | `false` |  
+
+### call_forward_type
+
+Call Forward Properties
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`enabled` |   | `boolean()` | `false` | `true` |  
+`ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`number` |   | `string(0..35)` |   | `false` |  
+`require_keypress` |   | `boolean()` | `true` | `false` |  
+`substitute` |   | `boolean()` |   | `false` |  
 
 ### call_limits
 
@@ -353,7 +386,45 @@ Key | Description | Type | Default | Required | Support Level
 
 Currently the `call_forward` object allows you to define call forwarding *or* failover but not both. If `call_forward.enabled` is `true` it will take precedence and settings will be used only for call forwarding. If `call_forward.enabled` is `false` *and* `call_forward.failover` is `true`, failover settings will be used.
 
-## Fetch
+#### 5.2 and beyond
+
+In 5.2, call forwarding is being retooled to allow more dynamic decision-making for when to use the forwarding settings, one example being only allow a list of caller IDs to be sent through to the call-forwarding settings if the device fails to be rung.
+
+As such, the `call_forward` object (if it exists) will be transformed into a set of sub-objects representing the new call forwarding options.
+
+KAZOO will automatically "fix" the legacy format to the new format when processing calls; saving of the device doc with "call_forward" in legacy mode will result in schema errors.
+
+#### Mapping legacy settings to the new format
+
+It is a straight-forward process to move to the new format.
+
+For system admins, `sup crossbar_maintenance migrate_call_forward {ACCOUNT_ID}` will migrate individual accounts. Normal `sup kapps_maintenance migrate` will also walk the account databases and migrate necessary docs.
+
+For API clients, move the legacy call forwarding settings under the `unconditional` key:
+
+Legacy JSON:
+```json
+{
+  "call_forward": {
+    "enabled": "{ENABLED}",
+    "number": "{CFWD_DID}"
+  }
+}
+```
+
+Converts to:
+```json
+{
+  "call_forward": {
+    "unconditional": {
+      "enabled": "{ENABLED}",
+      "number": "{CFWD_DID}"
+    }
+  }
+}
+```
+
+## Fetch the device summary
 
 Lists all devices in an account.
 

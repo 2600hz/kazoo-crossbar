@@ -40,7 +40,6 @@
         ,which_cb_module/2
 
          %% Content
-        ,create_resp_content/2
         ,create_resp_body/2
         ,create_resp_file/2
         ,create_csv_resp_content/2
@@ -50,6 +49,7 @@
         ,create_pull_response/2, create_pull_response/3
 
         ,init_chunk_stream/3
+        ,create_resp_envelope/1
         ,close_chunk_json_envelope/2
         ,create_json_chunk_response/2, create_csv_chunk_response/2
 
@@ -249,7 +249,7 @@ get_query_string_data([], Req) ->
     {kz_json:new(), Req};
 get_query_string_data(QS0, Req) ->
     QS = kz_json:from_list(QS0),
-    lager:debug("query string: ~s", [kz_json:encode(QS, ['pretty'])]),
+    lager:debug("query string: ~s", [kz_json:encode(QS)]),
     {QS, Req}.
 
 -spec get_content_type(cowboy_req:req()) -> kz_term:api_ne_binary().
@@ -337,13 +337,14 @@ get_req_data(Context, Req, ContentType, QS) ->
           {cb_context:context(), cowboy_req:req()} |
           stop_return().
 maybe_extract_multipart(Context, Req0, QS) ->
-    try extract_multipart(Context, Req0, QS)
+    try
+        extract_multipart(Context, Req0, QS)
     catch
-        ?STACKTRACE(_E, _R, ST)
-        lager:debug("failed to extract multipart ~s: ~p", [_E, _R]),
-        kz_log:log_stacktrace(ST),
-        handle_failed_multipart(Context, Req0, QS)
-        end.
+        _Exc:_Reason:ST ->
+            lager:debug("failed to extract multipart ~s: ~p", [_Exc, _Reason]),
+            kz_log:log_stacktrace(ST),
+            handle_failed_multipart(Context, Req0, QS)
+    end.
 
 -spec handle_failed_multipart(cb_context:context(), cowboy_req:req(), kz_json:object()) ->
           {cb_context:context(), cowboy_req:req()} |
@@ -1947,18 +1948,18 @@ do_create_resp_envelope(Context) ->
 
 -spec create_default_resp_envelope(cb_context:context()) -> kz_json:object().
 create_default_resp_envelope(Context) ->
-    BaseResp = [{<<"auth_token">>, cb_context:auth_token(Context)}
-               ,{<<"tokens">>, get_token_obj(Context)}
-               ,{<<"request_id">>, cb_context:req_id(Context)}
+    BaseResp = [{<<"metadata">>, cb_context:get_metadata(Context)}
                ,{<<"node">>, kz_nodes:node_encoded()}
+               ,{<<"request_id">>, cb_context:req_id(Context)}
                ,{<<"timestamp">>, kz_time:iso8601(kz_time:now_s())}
+               ,{<<"tokens">>, get_token_obj(Context)}
                | conditional_resp_data(Context)
                ],
     Resp = case cb_context:response(Context) of
                {'ok', RespData} ->
                    success_envelope(Context, BaseResp, RespData);
                {'error', {ErrorCode, ErrorMsg, RespData}} ->
-                   error_envelope(Context, BaseResp, RespData, ErrorCode, ErrorMsg)
+                   error_envelope(BaseResp, RespData, ErrorCode, ErrorMsg)
            end,
     maybe_delete_range_keys(kz_json:set_values(Resp, cb_context:resp_envelope(Context))
                            ,cb_context:should_paginate(Context)
@@ -1966,31 +1967,44 @@ create_default_resp_envelope(Context) ->
 
 success_envelope(Context, BaseResp, RespData) ->
     [{<<"status">>, <<"success">>}
-    ,{<<"request_id">>, cb_context:req_id(Context)}
-    ,{<<"metadata">>, cb_context:get_metadata(Context)}
     ,{<<"revision">>, kz_term:to_api_binary(cb_context:resp_etag(Context))}
     ,{<<"data">>, RespData}
     | BaseResp
     ].
 
-error_envelope(Context, BaseResp, RespData, ErrorCode, ErrorMsg) ->
+error_envelope(BaseResp, RespData, ErrorCode, ErrorMsg) ->
     lager:info("generating error ~b ~s response", [ErrorCode, ErrorMsg]),
     [{<<"status">>, <<"error">>}
     ,{<<"message">>, ErrorMsg}
     ,{<<"error">>, kz_term:to_binary(ErrorCode)}
     ,{<<"data">>, RespData}
-    ,{<<"request_id">>, cb_context:req_id(Context)}
-    ,{<<"metadata">>, cb_context:get_metadata(Context)}
     | BaseResp
     ].
 
 conditional_resp_data(Context) ->
-    Fs = [fun maybe_add_version/2],
+    Fs = [fun maybe_add_version/2
+         ,fun maybe_add_auth_token/2
+         ],
     lists:foldl(fun(F, Acc) -> F(Context, Acc) end, [], Fs).
 
 maybe_add_version(Context, Acc) ->
     case cb_context:is_authenticated(Context) of
-        'true' -> [{<<"version">>, kapps_util:kazoo_version()} | Acc];
+        'true' -> props:set_value(<<"version">>, kapps_util:kazoo_version(), Acc);
+        'false' -> Acc
+    end.
+
+-spec should_include_auth_token(cb_context:context()) -> boolean().
+should_include_auth_token(Context) ->
+    kz_app_config:is_true({?APP, cb_context:auth_account_id(Context)}, <<"include_auth_token">>, false).
+
+maybe_add_auth_token(Context, Acc) ->
+    maybe_add_auth_token(Context, Acc, should_include_auth_token(Context)).
+
+maybe_add_auth_token(Context, Acc, 'true') ->
+    props:set_value(<<"auth_token">>, cb_context:auth_token(Context), Acc);
+maybe_add_auth_token(Context, Acc, 'false') ->
+    case kz_term:is_true(cb_context:fetch(Context, 'include_token')) of
+        'true' -> props:set_value(<<"auth_token">>, cb_context:auth_token(Context), Acc);
         'false' -> Acc
     end.
 
@@ -2008,9 +2022,8 @@ close_chunk_json_envelope(Req, Context) ->
         ,{<<"version">>, kapps_util:kazoo_version()}
         ,{<<"timestamp">>, kz_time:iso8601(kz_time:now_s())}
         ,{<<"revision">>, kz_term:to_api_binary(cb_context:resp_etag(Context))}
-        ,{<<"auth_token">>, cb_context:auth_token(Context)}
         ],
-    Encoded = encode_trailer(Trailer),
+    Encoded = encode_trailer(maybe_add_auth_token(Context, Trailer)),
     'ok' = cowboy_req:stream_body(<<"], ", (kz_binary:join(Encoded))/binary, "}">>, 'fin', Req).
 
 -spec maybe_delete_range_keys(kz_json:object(), boolean()) -> kz_json:object().

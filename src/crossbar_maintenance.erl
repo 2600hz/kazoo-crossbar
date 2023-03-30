@@ -11,7 +11,7 @@
 %%%-----------------------------------------------------------------------------
 -module(crossbar_maintenance).
 
--export([migrate/0
+-export([migrate/0, migrate/1
         ,refresh/0, refresh/1
         ,register_views/0
         ,flush/0
@@ -59,23 +59,11 @@
 
 -export([does_schema_exist/1]).
 
+-export([wait_for_prechecks/0]).
+
 -include("crossbar.hrl").
 
 -type input_term() :: atom() | string() | kz_term:ne_binary().
-
--define(DEFAULT_REFRESH_APP_KEYS, [<<"name">>
-                                  ,<<"i18n">>
-                                  ,<<"tags">>
-                                  ,<<"author">>
-                                  ,<<"version">>
-                                  ,<<"license">>
-                                  ,<<"price">>
-                                  ,<<"icon">>
-                                  ,<<"screenshots">>
-                                  ,<<"api_url">>
-                                  ,<<"phase">>
-                                  ]
-       ).
 
 -define(DEPRECATED_MODULES, ['cb_bulk'
                             ,'cb_freeswitch'
@@ -108,6 +96,10 @@ migrate() ->
                          || Module <- ?DEFAULT_MODULES,
                             (not lists:member(Module, CurrentModules))
                         ]).
+
+-spec migrate(kz_term:ne_binaries()) -> 'ok'.
+migrate(_AccountDbs) ->
+    lager:info("finished account migrations").
 
 -spec remove_deprecated_modules(kz_term:atoms(), kz_term:atoms()) -> kz_term:atoms().
 remove_deprecated_modules(Modules, Deprecated) ->
@@ -456,13 +448,12 @@ create_account(AccountName, Realm, Username, Password, AccountId, UserId)
                               ]
                              ,kzd_users:new()
                              ),
-
     try create_account_and_user(Account, User) of
         {'ok', _Context} -> 'ok'
     catch
-        ?STACKTRACE(Type, Reason, ST)
-        log_error(Type, Reason, ST, AccountName)
-        end;
+        Type:Reason:ST ->
+            log_error(Type, Reason, ST, AccountName)
+    end;
 create_account(AccountName, Realm, Username, Password, AccountId, UserId) ->
     create_account(kz_term:to_binary(AccountName)
                   ,kz_term:to_binary(Realm)
@@ -533,6 +524,29 @@ prechecks(Context) ->
     'true' = lists:all(fun(F) -> F() end, Funs),
     ?SUP_LOG_INFO("prechecks passed"),
     {'ok', Context}.
+
+-spec wait_for_prechecks() -> 'ok'.
+wait_for_prechecks() ->
+    Funs = [fun is_crossbar_running/0
+           ,fun db_accounts_exists/0
+           ,fun db_system_config_exists/0
+           ,fun db_system_schemas_exists/0
+           ,fun do_schemas_exist/0
+           ],
+    try lists:all(fun(F) -> F() end, Funs) of
+        'true' ->
+            ?SUP_LOG_INFO("prechecks passed"),
+            'ok';
+        'false' ->
+            ?SUP_LOG_INFO("prechecks failed, waiting 5 seconds for retry"),
+            timer:sleep(?MILLISECONDS_IN_SECOND * 5),
+            wait_for_prechecks()
+    catch
+        _:_ ->
+            ?SUP_LOG_INFO("prechecks failed with exception, waiting 5 seconds for retry"),
+            timer:sleep(?MILLISECONDS_IN_SECOND * 5),
+            wait_for_prechecks()
+    end.
 
 -spec is_crossbar_running() -> boolean().
 is_crossbar_running() ->
