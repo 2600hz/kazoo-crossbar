@@ -13916,7 +13916,7 @@
                     "type": "integer"
                 },
                 "include_auth_token": {
-                    "default": false,
+                    "default": true,
                     "description": "crossbar include_auth_token",
                     "type": "boolean"
                 },
