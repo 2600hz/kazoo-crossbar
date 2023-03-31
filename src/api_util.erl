@@ -1995,7 +1995,7 @@ maybe_add_version(Context, Acc) ->
 
 -spec should_include_auth_token(cb_context:context()) -> boolean().
 should_include_auth_token(Context) ->
-    kz_app_config:is_true({?APP, cb_context:auth_account_id(Context)}, <<"include_auth_token">>, false).
+    kz_app_config:is_true({?APP, cb_context:auth_account_id(Context)}, <<"include_auth_token">>, true).
 
 maybe_add_auth_token(Context, Acc) ->
     maybe_add_auth_token(Context, Acc, should_include_auth_token(Context)).
