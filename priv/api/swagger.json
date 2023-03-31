@@ -4658,7 +4658,7 @@
                 "addresses": {
                     "properties": {
                         "emergency": {
-                            "description": "",
+                            "description": "Emergency address",
                             "type": "object"
                         }
                     },

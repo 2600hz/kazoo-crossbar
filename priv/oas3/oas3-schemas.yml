@@ -3706,7 +3706,7 @@
     'addresses':
       'properties':
         'emergency':
-          'description': ''
+          'description': Emergency address
           'type': object
       'type': object
     'bypass_e164':
