@@ -257,22 +257,25 @@ validate_action(Context, _Action) ->
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, ?RECOVERY) ->
     case consume_tokens(Context) of
-        {'ok', Context1} -> validate(Context1, <<"user_auth_recovery">>);
+        {'ok', Context1} -> validate_recovery(Context1);
         {'error', Context1} -> cb_context:add_system_error('too_many_requests', Context1)
     end;
-validate(Context, <<"user_auth_recovery">>) ->
-    case cb_context:req_verb(Context) of
-        ?HTTP_PUT ->
-            Schema = <<"user_auth_recovery">>,
-            OnSuccess = fun find_user_for_password_recovery/1;
-        ?HTTP_POST ->
-            Schema = <<"user_auth_recovery_reset">>,
-            OnSuccess = fun maybe_load_user_doc_via_reset_id/1
-    end,
-    cb_context:validate_request_data(Schema, Context, OnSuccess);
 validate(Context, AuthToken) ->
     Context1 = cb_context:set_db_name(Context, ?KZ_TOKEN_DB),
     maybe_get_auth_token(Context1, AuthToken).
+
+-spec validate_recovery(cb_context:context()) -> cb_context:context().
+validate_recovery(Context) ->
+    case cb_context:req_verb(Context) of
+        ?HTTP_PUT ->
+            Schema = <<"user_auth_recovery">>,
+            OnSuccess = fun find_user_for_password_recovery/1,
+            cb_context:validate_request_data(Schema, Context, OnSuccess);
+        ?HTTP_POST ->
+            Schema = <<"user_auth_recovery_reset">>,
+            OnSuccess = fun maybe_load_user_doc_via_reset_id/1,
+            cb_context:validate_request_data(Schema, Context, OnSuccess)
+    end.
 
 -spec put(cb_context:context()) -> cb_context:context().
 put(Context) ->
@@ -590,9 +593,9 @@ maybe_load_user_doc_by_username(Account, Context) ->
 
 -spec save_reset_id_then_send_email(cb_context:context(), kz_term:ne_binary() | 'undefined') -> cb_context:context().
 save_reset_id_then_send_email(Context, 'undefined') ->
-    lager:debug("it failed but we must validate it to avoid leaking information"),
-    Cntxt = cb_context:set_validation_errors(Context, kz_json:new()),
-    cb_context:set_resp_status(Cntxt, 'success');
+    lager:debug("failed to find account and/or user for password recovery, pretending success result to avoid account crawling attack"),
+    Msg = <<"Password resend email was sent, please check your email to learn how to reset your password.">>,
+    crossbar_util:response(Msg, Context);
 save_reset_id_then_send_email(Context, MoDb) ->
     ResetId = reset_id(MoDb),
     UserDoc = cb_context:doc(Context),
