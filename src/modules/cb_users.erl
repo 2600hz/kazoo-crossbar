@@ -798,7 +798,7 @@ load_user_objects_options(UserId, ObjectTypes) ->
     ].
 
 %%------------------------------------------------------------------------------
-%% @doc Validate an update request.
+%% @doc Validate PATCH request.
 %% @end
 %%------------------------------------------------------------------------------
 -spec validate_patch(kz_term:api_binary(), cb_context:context()) -> cb_context:context().

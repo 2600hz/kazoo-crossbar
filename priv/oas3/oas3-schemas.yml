@@ -498,6 +498,9 @@
   'description': |-
     Accounts represent tenants or customers on the system. Each account represents an individual dataset or sandbox that only one tenant can access. The data set is architecturally independent from other tenants.
   'properties':
+    'addresses':
+      '$ref': '#/addresses'
+      'description': Account addresses
     'announcement':
       'description': The announcement will be pop up when use log in to this account
       'type': string
@@ -725,6 +728,71 @@
     - cidr
     - network-list-name
     - type
+  'type': object
+'addresses':
+  'description': 'Account, user or device addresses'
+  'properties':
+    'emergency':
+      'description': Emergency address
+      'properties':
+        'additional_information':
+          'description': 'Additional location information. Example: Room 543'
+          'type': string
+        'country':
+          'description': |-
+            The country is identified by the two-letter ISO 3166 code. Example: US
+          'type': string
+        'county':
+          'description': 'County, parish, gun (JP), district (IN). Example: King''s County'
+          'type': string
+        'floor':
+          'description': 'Floor. Example: 4'
+          'type': integer
+        'house_number':
+          'description': 'House number, numeric part only. Example: 123'
+          'type': integer
+        'house_number_suffix':
+          'description': 'House number suffix. Example: A, 1/2'
+          'type': string
+        'locality':
+          'description': 'City, township, shi (JP). Example: New York'
+          'type': string
+        'location_identifier':
+          'description': |-
+            United States unique 10-digit number known as an E911 location identifier (ELIN)
+          'type': integer
+        'name':
+          'description': |-
+            Name (residence, business or office occupant). Example: Joe's Barbershop
+          'type': string
+        'postal_code':
+          'description': 'Postal code. Example: 10027-0401'
+          'type': string
+        'region':
+          'description': |-
+            National subdivisions (state, region, province, prefecture). Example: New York
+          'type': string
+        'street':
+          'description': 'Primary road or street. Example: Broadway'
+          'type': string
+        'street_direction':
+          'description': 'Leading street direction. Example: N, W'
+          'type': string
+        'street_suffix':
+          'description': 'Trailing street suffix. Example: SW'
+          'type': string
+        'street_type':
+          'description': 'Street type. Example: Avenue, Platz, Street'
+          'type': string
+      'required':
+        - country
+        - house_number
+        - locality
+        - name
+        - postal_code
+        - region
+        - street
+      'type': object
   'type': object
 'allotments':
   'description': Create buckets of minutes per time-period
@@ -3635,6 +3703,12 @@
 'callflows.resources':
   'description': Validator for the resources callflow data object
   'properties':
+    'addresses':
+      'properties':
+        'emergency':
+          'description': Emergency address
+          'type': object
+      'type': object
     'bypass_e164':
       'description': Use the original requested number instead of normalizing to E164
       'type': boolean
@@ -5332,31 +5406,8 @@
   'description': A device be it a SIP phone or landline number
   'properties':
     'addresses':
-      'description': List of addresses for device
-      'properties':
-        'emergency':
-          'description': Emergency address for device
-          'properties':
-            'caller_name':
-              'type': string
-            'extended_address':
-              'type': string
-            'locality':
-              'type': string
-            'postal_code':
-              'type': string
-            'region':
-              'type': string
-            'street_address':
-              'type': string
-          'required':
-            - caller_name
-            - extended_address
-            - locality
-            - postal_code
-            - region
-            - street_address
-          'type': object
+      '$ref': '#/addresses'
+      'description': Device addresses
       'type': object
     'call_failover':
       '$ref': '#/call_failover'
@@ -8698,7 +8749,11 @@
               'type': boolean
             'enabled':
               'default': true
-              'description': Determines if the resource is currently enabled
+              'description': Determines if the classifier is currently enabled
+              'type': boolean
+            'include_pidflo':
+              'description': |-
+                Whether or not to include PIDF+LO payload when calling device's address is available
               'type': boolean
             'prefix':
               'description': |-
@@ -8733,7 +8788,7 @@
               '$ref': '#/custom_channel_vars'
               'description': |-
                 Custom Channel Vars to be applied to calls outbound from Kazoo to the endpoint
-      'description': A property list of C hannel Vars
+      'description': A property list of Channel Vars
       'type': object
     'custom_sip_headers':
       'anyOf':
@@ -9044,6 +9099,10 @@
       'items':
         'type': string
       'type': array
+    'supports_pidflo':
+      'description': |-
+        Whether or not the resource supports multi-part PIDF+LO INVITEs for calls
+      'type': boolean
     'weight_cost':
       'default': 50
       'description': |-
@@ -16931,6 +16990,26 @@
 'users':
   'description': Schema for a user
   'properties':
+    'addresses':
+      'allOf':
+        - '$ref': '#/addresses'
+      'description': User addresses
+      'properties':
+        'vcard':
+          'description': Addresses list to build user's vcard
+          'items':
+            'properties':
+              'address':
+                'type': string
+              'types':
+                'items':
+                  'type': string
+                'type': array
+            'required':
+              - address
+            'type': object
+          'type': array
+      'type': object
     'call_failover':
       '$ref': '#/call_failover'
     'call_forward':
