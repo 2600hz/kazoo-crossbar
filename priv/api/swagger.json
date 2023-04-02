@@ -11589,7 +11589,6 @@
                     "type": "array"
                 },
                 "supports_pidflo": {
-                    "default": false,
                     "description": "Whether or not the resource supports multi-part PIDF+LO INVITEs for calls",
                     "type": "boolean"
                 },

@@ -15,7 +15,7 @@ Key | Description | Type | Default | Required | Support Level
 `cid_rules` | Regexps to match against caller ID | `array(string())` |   | `false` |  
 `classifiers./.+/.emergency` | Determines if the resource represents emergency services | `boolean()` | `false` | `false` |  
 `classifiers./.+/.enabled` | Determines if the classifier is currently enabled | `boolean()` | `true` | `false` |  
-`classifiers./.+/.include_pidflo` | Whether or not to include PIDF+LO payload when calling device's address is available | `boolean()` | `false` | `false` |  
+`classifiers./.+/.include_pidflo` | Whether or not to include PIDF+LO payload when calling device's address is available | `boolean()` |   | `false` |  
 `classifiers./.+/.prefix` | A string to prepend to the dialed number or capture group of the matching rule | `string(0..64)` |   | `false` |  
 `classifiers./.+/.regex` | regexp to match against dialed number | `string()` |   | `false` |  
 `classifiers./.+/.suffix` | A string to append to the dialed number or capture group of the matching rule | `string(0..64)` |   | `false` |  
@@ -91,7 +91,7 @@ Key | Description | Type | Default | Required | Support Level
 `rules` | A list of regular expressions of which one must match for the rule to be eligible, they can optionally contain capture groups | `array(string())` | `[]` | `false` |  
 `rules_test.[]` |   | `string()` |   | `false` |  
 `rules_test` | A list of regular expressions of which if matched denotes a test rule | `array(string())` | `[]` | `false` |  
-`supports_pidflo` | Whether or not the resource supports multi-part PIDF+LO INVITEs for calls | `boolean()` | `false` | `false` |  
+`supports_pidflo` | Whether or not the resource supports multi-part PIDF+LO INVITEs for calls | `boolean()` |   | `false` |  
 `weight_cost` | A value between 0 and 100 that determines the order of resources when multiple can be used | `integer()` | `50` | `false` |  
 
 ### caller_id_options
