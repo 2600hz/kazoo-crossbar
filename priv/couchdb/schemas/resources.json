@@ -27,7 +27,12 @@
                         },
                         "enabled": {
                             "default": true,
-                            "description": "Determines if the resource is currently enabled",
+                            "description": "Determines if the classifier is currently enabled",
+                            "type": "boolean"
+                        },
+                        "include_pidflo": {
+                            "default": false,
+                            "description": "Whether or not to include PIDF+LO payload when calling device's address is available",
                             "type": "boolean"
                         },
                         "prefix": {
@@ -75,7 +80,7 @@
                     }
                 }
             ],
-            "description": "A property list of C hannel Vars",
+            "description": "A property list of Channel Vars",
             "type": "object"
         },
         "custom_sip_headers": {
@@ -490,6 +495,11 @@
                 "type": "string"
             },
             "type": "array"
+        },
+        "supports_pidflo": {
+            "default": false,
+            "description": "Whether or not the resource supports multi-part PIDF+LO INVITEs for calls",
+            "type": "boolean"
         },
         "weight_cost": {
             "default": 50,

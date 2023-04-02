@@ -14,7 +14,8 @@ Key | Description | Type | Default | Required | Support Level
 `cid_rules.[]` |   | `string()` |   | `false` |  
 `cid_rules` | Regexps to match against caller ID | `array(string())` |   | `false` |  
 `classifiers./.+/.emergency` | Determines if the resource represents emergency services | `boolean()` | `false` | `false` |  
-`classifiers./.+/.enabled` | Determines if the resource is currently enabled | `boolean()` | `true` | `false` |  
+`classifiers./.+/.enabled` | Determines if the classifier is currently enabled | `boolean()` | `true` | `false` |  
+`classifiers./.+/.include_pidflo` | Whether or not to include PIDF+LO payload when calling device's address is available | `boolean()` | `false` | `false` |  
 `classifiers./.+/.prefix` | A string to prepend to the dialed number or capture group of the matching rule | `string(0..64)` |   | `false` |  
 `classifiers./.+/.regex` | regexp to match against dialed number | `string()` |   | `false` |  
 `classifiers./.+/.suffix` | A string to append to the dialed number or capture group of the matching rule | `string(0..64)` |   | `false` |  
@@ -24,7 +25,7 @@ Key | Description | Type | Default | Required | Support Level
 `custom_channel_vars.in` | Custom Channel Vars to be applied to calls inbound to Kazoo from the endpoint | [#/definitions/custom_channel_vars](#custom_channel_vars) |   | `false` |  
 `custom_channel_vars.out` | Custom Channel Vars to be applied to calls outbound from Kazoo to the endpoint | [#/definitions/custom_channel_vars](#custom_channel_vars) |   | `false` |  
 `custom_channel_vars.^[a-zA-z0-9_\-]+$` | The Custom Channel Var to add | `string() | boolean() | integer() | object()` |   | `false` |  
-`custom_channel_vars` | A property list of C hannel Vars | `object()` |   | `false` |  
+`custom_channel_vars` | A property list of Channel Vars | `object()` |   | `false` |  
 `custom_sip_headers.in` | Custom SIP Headers to be applied to calls inbound to Kazoo from the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
 `custom_sip_headers.out` | Custom SIP Headers to be applied to calls outbound from Kazoo to the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
 `custom_sip_headers.^[a-zA-z0-9_\-]+$` | The SIP header to add | `string() | boolean() | integer()` |   | `false` |  
@@ -90,6 +91,7 @@ Key | Description | Type | Default | Required | Support Level
 `rules` | A list of regular expressions of which one must match for the rule to be eligible, they can optionally contain capture groups | `array(string())` | `[]` | `false` |  
 `rules_test.[]` |   | `string()` |   | `false` |  
 `rules_test` | A list of regular expressions of which if matched denotes a test rule | `array(string())` | `[]` | `false` |  
+`supports_pidflo` | Whether or not the resource supports multi-part PIDF+LO INVITEs for calls | `boolean()` | `false` | `false` |  
 `weight_cost` | A value between 0 and 100 that determines the order of resources when multiple can be used | `integer()` | `50` | `false` |  
 
 ### caller_id_options
