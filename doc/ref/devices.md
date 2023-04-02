@@ -10,7 +10,7 @@ A device be it a SIP phone or landline number
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`addresses` | Device addresses | [#/definitions/addresses](#addresses) |   | `false` |  
+`addresses` | Device addresses | `object()` |   | `false` |  
 `call_failover` | The device call failover parameters, to replace the device with an extension/phone number when device is offline. | [#/definitions/call_failover](#call_failover) |   | `false` |  
 `call_forward` | Call forward settings | [#/definitions/call_forward](#call_forward) |   | `false` |  
 `call_limits` | Schema for call limits | [#/definitions/call_limits](#call_limits) |   | `false` |  

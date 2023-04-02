@@ -5408,6 +5408,7 @@
     'addresses':
       '$ref': '#/addresses'
       'description': Device addresses
+      'type': object
     'call_failover':
       '$ref': '#/call_failover'
     'call_forward':

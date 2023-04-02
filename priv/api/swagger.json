@@ -6783,7 +6783,8 @@
             "properties": {
                 "addresses": {
                     "$ref": "#/definitions/addresses",
-                    "description": "Device addresses"
+                    "description": "Device addresses",
+                    "type": "object"
                 },
                 "call_failover": {
                     "$ref": "#/definitions/call_failover"
