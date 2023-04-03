@@ -391,6 +391,7 @@ build_cursor_options(Context, Options, NoDesignModule, IsTimeQuery) ->
                           ,{'no_design_module', props:is_true('no_design_module', Options, NoDesignModule)}
                           ,{'page_size', get_page_size(Context, Options)}
                           ,{'verbose_log', 'true'}
+                          ,{'mapper', mapper_fun(Options)}
                           ]),
         add_user_params(Context, CursorOptions, NewOptions)
     catch
@@ -401,6 +402,21 @@ build_cursor_options(Context, Options, NoDesignModule, IsTimeQuery) ->
             {'error', cb_context:add_system_error('unspecified_fault', Context)}
     end.
 
+-spec mapper_fun(options()) -> user_mapper_fun().
+mapper_fun(Options) ->
+    case props:get_value('mapper', Options) of
+        undefined -> get_value_fun();
+        Fun -> verify_mapper_fun(Fun)
+    end.
+
+-spec verify_mapper_fun(term()) -> user_mapper_fun().
+verify_mapper_fun(Fun)
+  when is_function(Fun, 1)
+       orelse is_function(Fun, 2)
+       orelse is_function(Fun, 3) ->
+    Fun;
+verify_mapper_fun(Fun) ->
+    crash = lager:error("invalid mapper fun passed to crossbar => ~p", [Fun]).
 
 -spec add_user_params(cb_context:context(), kz_view:options(), options()) -> maybe_load_params().
 add_user_params(Context, CursorOptions0, Options) ->
