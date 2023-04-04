@@ -238,38 +238,8 @@ handle_successful_load(Context, JObj, 'false', _) ->
     lager:debug("loaded doc ~s(~s) from ~s"
                ,[kz_doc:id(JObj), kz_doc:revision(JObj), cb_context:db_name(Context)]
                ),
-    JObj1 = maybe_migrate_user_addresses(JObj),
-    cb_context:store(handle_datamgr_success(JObj1, Context), 'db_doc', JObj1).
+    cb_context:store(handle_datamgr_success(JObj, Context), 'db_doc', JObj).
 
-
-%%------------------------------------------------------------------------------
-%% @doc Users used to have a kz_json:objects() optional (non-documented)
-%% `addresses' field, that was being used to build user's vcard. KZOO-310
-%% implemented a new addresses format for devices, users, and accounts.
-%%
-%% This functionality is being triggered by handle_successful_load/4, for
-%% non-deleted user documents only.
-%%
-%% This is being done at "load" step, to make sure the returned document has the
-%% new addresses format, in case that document is used later in a POST request.
-%% Also, it allows the patch_and_validate/4 function to avoid overriding the
-%% existing addresses value in case the user already has an old format addresses
-%% value, and the request is to PATCH the user with an emergency address. In
-%% this scenario, the user should end up with 2 addresses: emergency and vcard.
-%% @end
-%%------------------------------------------------------------------------------
--spec maybe_migrate_user_addresses(kz_json:object()) -> kz_json:object().
-maybe_migrate_user_addresses(JObj) ->
-    maybe_migrate_user_addresses(JObj, kz_json:is_json_object(JObj)).
-
--spec maybe_migrate_user_addresses(kz_json:object(), boolean()) -> kz_json:object().
-maybe_migrate_user_addresses(Thing, 'false') ->
-    Thing;
-maybe_migrate_user_addresses(JObj, 'true') ->
-    case kzd_users:type() =:= kz_doc:type(JObj) of
-        'true' -> kzd_users:maybe_migrate_user_addresses(JObj);
-        'false' -> JObj
-    end.
 
 %% @equiv load_merge(DocId, cb_context:doc(Context), Context, [])
 
