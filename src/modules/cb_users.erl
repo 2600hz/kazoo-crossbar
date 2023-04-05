@@ -251,7 +251,9 @@ validate_users(Context, ?HTTP_PUT) ->
 validate_user(Context, UserId, ?HTTP_GET) ->
     load_user(UserId, Context);
 validate_user(Context, UserId, ?HTTP_POST) ->
-    validate_request(UserId, Context);
+    UserJObj = kzd_users:maybe_migrate_user_addresses(cb_context:req_data(Context)),
+    Context1 = load_user(UserId, cb_context:set_req_data(Context, UserJObj)),
+    validate_request(UserId, Context1);
 validate_user(Context, UserId, ?HTTP_DELETE) ->
     validate_delete(Context, UserId);
 validate_user(Context, UserId, ?HTTP_PATCH) ->
@@ -822,7 +824,7 @@ validate_patch(UserId, Context) ->
 %%------------------------------------------------------------------------------
 -spec validate_request(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
 validate_request(UserId, Context0) ->
-    ReqUser = kzd_users:maybe_migrate_user_addresses(cb_context:req_data(Context0)),
+    ReqUser = cb_context:req_data(Context0),
     AccountId = cb_context:account_id(Context0),
 
     Context = cb_context:store(Context0
