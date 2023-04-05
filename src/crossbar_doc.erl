@@ -15,6 +15,7 @@
 -export([load/2, load/3
         ,load_merge/2, load_merge/3, load_merge/4
         ,patch_and_validate/3, patch_and_validate/4
+        ,patch_and_validate_doc/3
         ,load_attachment/4, load_docs/2
         ,save/1, save/2, save/3
         ,update/3, update/4, update/5
@@ -238,38 +239,8 @@ handle_successful_load(Context, JObj, 'false', _) ->
     lager:debug("loaded doc ~s(~s) from ~s"
                ,[kz_doc:id(JObj), kz_doc:revision(JObj), cb_context:db_name(Context)]
                ),
-    JObj1 = maybe_migrate_user_addresses(JObj),
-    cb_context:store(handle_datamgr_success(JObj1, Context), 'db_doc', JObj1).
+    cb_context:store(handle_datamgr_success(JObj, Context), 'db_doc', JObj).
 
-
-%%------------------------------------------------------------------------------
-%% @doc Users used to have a kz_json:objects() optional (non-documented)
-%% `addresses' field, that was being used to build user's vcard. KZOO-310
-%% implemented a new addresses format for devices, users, and accounts.
-%%
-%% This functionality is being triggered by handle_successful_load/4, for
-%% non-deleted user documents only.
-%%
-%% This is being done at "load" step, to make sure the returned document has the
-%% new addresses format, in case that document is used later in a POST request.
-%% Also, it allows the patch_and_validate/4 function to avoid overriding the
-%% existing addresses value in case the user already has an old format addresses
-%% value, and the request is to PATCH the user with an emergency address. In
-%% this scenario, the user should end up with 2 addresses: emergency and vcard.
-%% @end
-%%------------------------------------------------------------------------------
--spec maybe_migrate_user_addresses(kz_json:object()) -> kz_json:object().
-maybe_migrate_user_addresses(JObj) ->
-    maybe_migrate_user_addresses(JObj, kz_json:is_json_object(JObj)).
-
--spec maybe_migrate_user_addresses(kz_json:object(), boolean()) -> kz_json:object().
-maybe_migrate_user_addresses(Thing, 'false') ->
-    Thing;
-maybe_migrate_user_addresses(JObj, 'true') ->
-    case kzd_users:type() =:= kz_doc:type(JObj) of
-        'true' -> kzd_users:maybe_migrate_user_addresses(JObj);
-        'false' -> JObj
-    end.
 
 %% @equiv load_merge(DocId, cb_context:doc(Context), Context, [])
 
@@ -324,6 +295,11 @@ patch_and_validate(Id, Context, ValidateFun) ->
 patch_and_validate(Id, Context, ValidateFun, LoadOptions) ->
     Context1 = load(Id, Context, LoadOptions),
     patch_and_validate_doc(Id, Context1, ValidateFun, cb_context:resp_status(Context1)).
+
+-spec patch_and_validate_doc(kz_term:ne_binary(), cb_context:context(), validate_fun()) ->
+          cb_context:context().
+patch_and_validate_doc(Id, Context, ValidateFun) ->
+    patch_and_validate_doc(Id, Context, ValidateFun, cb_context:resp_status(Context)).
 
 -spec patch_and_validate_doc(kz_term:ne_binary(), cb_context:context(), validate_fun(), crossbar_status()) ->
           cb_context:context().
