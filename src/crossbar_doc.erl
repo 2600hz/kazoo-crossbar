@@ -294,7 +294,7 @@ patch_and_validate(Id, Context, ValidateFun) ->
           cb_context:context().
 patch_and_validate(Id, Context, ValidateFun, LoadOptions) ->
     Context1 = load(Id, Context, LoadOptions),
-    patch_and_validate_doc(Id, Context1, ValidateFun, load(Id, Context, LoadOptions)).
+    patch_and_validate_doc(Id, Context1, ValidateFun, cb_context:resp_status(Context1)).
 
 -spec patch_and_validate_doc(kz_term:ne_binary(), cb_context:context(), validate_fun()) ->
           cb_context:context().
