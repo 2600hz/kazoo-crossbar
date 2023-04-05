@@ -811,9 +811,9 @@ load_user_objects_options(UserId, ObjectTypes) ->
 %%------------------------------------------------------------------------------
 -spec validate_patch(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
 validate_patch(UserId, Context) ->
-  UserJObj = kzd_users:maybe_migrate_user_addresses(cb_context:req_data(Context)),
-  Context1 = load_user(UserId, cb_context:set_req_data(Context, UserJObj)),
-  crossbar_doc:patch_and_validate_doc(UserId, Context1, fun validate_request/2).
+    UserJObj = kzd_users:maybe_migrate_user_addresses(cb_context:req_data(Context)),
+    Context1 = load_user(UserId, cb_context:set_req_data(Context, UserJObj)),
+    crossbar_doc:patch_and_validate_doc(UserId, Context1, fun validate_request/2).
 
 %%------------------------------------------------------------------------------
 %% @doc Validate the request JObj passes all validation checks and add / alter
