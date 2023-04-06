@@ -10123,7 +10123,6 @@
             "properties": {
                 "body": {
                     "description": "mime encoded mms message",
-                    "minLength": 1,
                     "type": "string"
                 },
                 "from": {

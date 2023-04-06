@@ -7932,7 +7932,6 @@
   'properties':
     'body':
       'description': mime encoded mms message
-      'minLength': 1
       'type': string
     'from':
       'description': 'caller-id-number, taken from user if absent'
