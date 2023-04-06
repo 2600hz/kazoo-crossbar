@@ -207,7 +207,7 @@ Key | Description | Type | Default | Required | Support Level
 `record_sample_rate` | What sampling rate to use on the recording | `integer()` |   | `false` |  
 `should_announce_when_recording` | Whether or not a prompt should be played (after bridge) when the call is being recorded | `boolean()` |   | `false` |  
 `should_record_feature_calls` | Toggles whether to start a recording for calls to feature codes | `boolean()` | `true` | `false` |  
-`time_limit` | Time limit, in seconds, for the recording | `integer()` |   | `false` |  
+`time_limit` | Time limit, in seconds, for the recording | `integer(5..10800)` |   | `false` |  
 `url` | The URL to use when sending the recording for storage | `string(6..)` |   | `false` |  
 
 ### call_recording.source
@@ -379,7 +379,7 @@ Actions applied to a call outside of the normal callflow, initiated by the calle
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `binding_digit` | What DTMF will trigger the collection and analysis of the subsequent DTMF sequence | `string('1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' | '*' | '#')` | `*` | `false` |  
-`digit_timeout` | How long to wait between DTMF presses before processing the collected sequence (milliseconds) | `integer()` |   | `false` |  
+`digit_timeout` | How long to wait between DTMF presses before processing the collected sequence (milliseconds) | `integer(0..)` |   | `false` |  
 `listen_on` | Which leg(s) of the call to listen for DTMF | `string('both' | 'self' | 'peer')` |   | `false` |  
 `numbers./^[0-9]+$/` | A metaflow node defines a module to execute, data to provide to that module, and one or more children to branch to | [#/definitions/metaflow](#metaflow) |   | `false` |  
 `numbers` | A list of static numbers with their flows | `object()` |   | `false` |  

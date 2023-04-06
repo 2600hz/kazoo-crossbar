@@ -16,7 +16,7 @@ Key | Description | Type | Default | Required | Support Level
 `account.emergency_caller_id.cid_name` |   | `string(0..35)` |   | `false` |  
 `account.emergency_caller_id.cid_number` |   | `string(0..35)` |   | `false` |  
 `account.emergency_caller_id` |   | `object()` |   | `false` |  
-`account.trunks` | The number of two-way trunks this account has purchased | `integer()` |   | `false` |  
+`account.trunks` | The number of two-way trunks this account has purchased | `integer(0..)` |   | `false` |  
 `account` | Information that applies to the account as a whole | `object()` |   | `false` |  
 `name` | Human-friendly name of the trunkstore account | `string()` |   | `false` |  
 `servers.[].DIDs./^\+?\d*$/.caller_id.cid_name` |   | `string(1..35)` |   | `false` |  
@@ -60,7 +60,7 @@ Key | Description | Type | Default | Required | Support Level
 `servers.[].options.ip` | IP (sip) address for this device | `string()` |   | `false` |  
 `servers.[].options.media_handling` | Determine whether the switch should be in the media path or not | `string('process' | 'bypass')` | `bypass` | `false` |  
 `servers.[].options.port` | Port to send SIP traffic for the remote device | `integer()` |   | `false` |  
-`servers.[].options.progress_timeout` | The time, in seconds, to wait for the server to progress in the call, before trying an optionally defined failover route or terminating the call | `integer()` |   | `false` |  
+`servers.[].options.progress_timeout` | The time, in seconds, to wait for the server to progress in the call, before trying an optionally defined failover route or terminating the call | `integer(1..)` |   | `false` |  
 `servers.[].options.sip_headers` | List of arbitrary SIP headers to add to the INVITE | `array(object())` |   | `false` |  
 `servers.[].options.timeout` | The time, in seconds, to wait for an answer from the server | `integer()` |   | `false` |  
 `servers.[].options` |   | `object()` |   | `false` |  

@@ -17,9 +17,13 @@
             "description": "The target field to match against - context-dependent",
             "type": "string"
         },
+        "temporal_route_id": {
+            "description": "When type=temporal_route, set this to the ID of the temporal route (or route set) to use"
+        },
         "type": {
             "enum": [
-                "regex"
+                "regex",
+                "temporal_route"
             ],
             "type": "string"
         }

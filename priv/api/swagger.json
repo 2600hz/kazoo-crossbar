@@ -4036,8 +4036,17 @@
             "type": "object"
         },
         "callflows.offnet": {
-            "description": "Validator for the offnet callflow data object",
+            "description": "Validator for the deprecated offnet callflow data object",
             "properties": {
+                "addresses": {
+                    "properties": {
+                        "emergency": {
+                            "description": "Emergency address to use for PIDF+LO if the carrier supports it",
+                            "type": "object"
+                        }
+                    },
+                    "type": "object"
+                },
                 "bypass_e164": {
                     "description": "Use the original requested number instead of normalizing to E164",
                     "type": "boolean"
@@ -4518,6 +4527,10 @@
                     "description": "Label to include in the origin of call recording",
                     "type": "string"
                 },
+                "media_id": {
+                    "description": "Doc ID of the created recording - if unspecified, KAZOO will generate one",
+                    "type": "string"
+                },
                 "media_name": {
                     "description": "the name of media",
                     "type": "string"
@@ -4590,6 +4603,10 @@
                         "mp3",
                         "wav"
                     ],
+                    "type": "string"
+                },
+                "media_id": {
+                    "description": "Doc ID of the created recording - if unspecified, KAZOO will generate one",
                     "type": "string"
                 },
                 "media_name": {
@@ -5193,7 +5210,6 @@
                     "type": "boolean"
                 },
                 "timezone": {
-                    "$ref": "#/definitions/timezone",
                     "description": "Timezone to use when processing temporal rules",
                     "type": "string"
                 }
@@ -8774,9 +8790,13 @@
                     "description": "The target field to match against - context-dependent",
                     "type": "string"
                 },
+                "temporal_route_id": {
+                    "description": "When type=temporal_route, set this to the ID of the temporal route (or route set) to use"
+                },
                 "type": {
                     "enum": [
-                        "regex"
+                        "regex",
+                        "temporal_route"
                     ],
                     "type": "string"
                 }
@@ -20226,7 +20246,7 @@
                     "type": "string"
                 },
                 "days": {
-                    "description": "The recurrence days for this rule",
+                    "description": "The occurance day(s) of the month (1-31) for this rule",
                     "items": {
                         "maximum": 31,
                         "minimum": 1,
@@ -20345,7 +20365,7 @@
                     "type": "string"
                 },
                 "temporal_rules": {
-                    "description": "Temporal Rules",
+                    "description": "Temporal rule IDs",
                     "items": {
                         "type": "string"
                     },
