@@ -35,7 +35,6 @@
             "type": "boolean"
         },
         "timezone": {
-            "$ref": "timezone",
             "description": "Timezone to use when processing temporal rules",
             "type": "string"
         }
