@@ -40,7 +40,6 @@
         ,which_cb_module/2
 
          %% Content
-        ,create_resp_content/2
         ,create_resp_body/2
         ,create_resp_file/2
         ,create_csv_resp_content/2
@@ -50,6 +49,7 @@
         ,create_pull_response/2, create_pull_response/3
 
         ,init_chunk_stream/3
+        ,create_resp_envelope/1
         ,close_chunk_json_envelope/2
         ,create_json_chunk_response/2, create_csv_chunk_response/2
 
@@ -1922,10 +1922,10 @@ do_create_resp_envelope(Context) ->
 -spec create_default_resp_envelope(cb_context:context()) -> kz_json:object().
 create_default_resp_envelope(Context) ->
     BaseResp = [{<<"auth_token">>, cb_context:auth_token(Context)}
-               ,{<<"tokens">>, get_token_obj(Context)}
-               ,{<<"request_id">>, cb_context:req_id(Context)}
                ,{<<"node">>, kz_nodes:node_encoded()}
+               ,{<<"request_id">>, cb_context:req_id(Context)}
                ,{<<"timestamp">>, kz_time:iso8601(kz_time:now_s())}
+               ,{<<"tokens">>, get_token_obj(Context)}
                | conditional_resp_data(Context)
                ],
     Resp = case cb_context:response(Context) of
