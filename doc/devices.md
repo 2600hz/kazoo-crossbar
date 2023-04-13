@@ -443,6 +443,75 @@ Converts to:
 }
 ```
 
+#### Example `call_forward` settings
+
+As noted above, to always forward the device/user to a PSTN number:
+
+```json
+{
+  "call_forward": {
+    "unconditional": {
+      "enabled": true,
+      "number": "{PSTN_NUMBER}"
+    }
+  }
+}
+```
+
+For forwarding only when the device/user doesn't answer, replace `unconditional` with `no_answer`. For when a device/user is "busy", use `busy`. The settings under those keys are identical.
+
+##### Selective call forwarding
+
+Selective call forwarding allows the device/user's call forwarding settings to only apply in certain cases. For instance, you may want calls from your family to route to your cell phone instead of your SIP devices.
+
+To do so, the `selective` settings for call forwarding include a list of `rules` that map to [matchlists](./match_lists.md "match lists") where you can configure the logic around when to call forward.
+
+For example, a simple match list based on the caller ID number could be created thusly:
+
+```shell
+curl -X PUT \
+    -X "X-Auth-Token: {AUTH_TOKEN}" \
+    -d '{"data":{"name":"My Call Forwarding Rules","rules":[{"name":"Match CID","regex":"41588679\\d{2}","target":"caller_id_number","type":"regex"}]}} \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/match_lists
+```
+The match list JSON:
+```json
+{
+  "name": "My Call Forwarding Rules",
+  "rules": [
+    {
+      "name": "Match CID",
+      "regex": "41588679\\d{2}",
+      "target": "caller_id_number",
+      "type": "regex"
+    }
+  ]
+}
+```
+
+Capture the match list ID from the response, then create the `call_forward` settings:
+
+```json
+{
+  "call_forward": {
+    "enabled": true,
+    "selective": {
+      "enabled": true,
+      "number": "+14158867900",
+      "rules": [
+        {
+          "enabled": true,
+          "match_list_id": "{MATCH_LIST_ID}"
+        }
+      ]
+    }
+  }
+}
+
+```
+
+PUT/POST/PATCH that to the device/user and only calls with caller ID matching 41588679 plus any two digits will be forwarded to the `number` configured.
+
 ## Fetch the device summary
 
 Lists all devices in an account.
