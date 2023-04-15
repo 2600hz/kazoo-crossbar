@@ -707,15 +707,10 @@ delete_attachment(DocId, AName, Context) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec rev_to_etag(kz_json:object() | kz_json:objects() | kz_term:ne_binary()) ->
-          'automatic' | kz_term:api_string().
-rev_to_etag([_|_])-> 'automatic';
-rev_to_etag([]) -> 'undefined';
-rev_to_etag(Rev) when is_binary(Rev) -> kz_term:to_list(Rev);
-rev_to_etag(JObj) ->
-    case kz_doc:revision(JObj) of
-        'undefined' -> 'undefined';
-        Rev -> kz_term:to_list(Rev)
-    end.
+          cb_context:resp_etag().
+rev_to_etag(JObjs) when is_list(JObjs) -> 'automatic';
+rev_to_etag(Rev) when is_binary(Rev) -> Rev;
+rev_to_etag(JObj) -> kz_doc:revision(JObj).
 
 -spec handle_datamgr_success(kz_json:json_term(), cb_context:context()) -> cb_context:context().
 handle_datamgr_success([], Context) ->
@@ -738,7 +733,7 @@ handle_thing_success(Thing, Context) ->
                       ,[{fun cb_context:set_doc/2, Thing}
                        ,{fun cb_context:set_resp_status/2, 'success'}
                        ,{fun cb_context:set_resp_data/2, Thing}
-                       ,{fun cb_context:set_resp_etag/2, 'undefined'}
+                       ,{fun cb_context:set_resp_etag/2, 'automatic'}
                        ]).
 
 -spec handle_json_success(kz_json:object() | kz_json:objects(), cb_context:context()) ->
