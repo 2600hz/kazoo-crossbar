@@ -182,7 +182,7 @@ validate_account(Context, AccountId, ?HTTP_POST) ->
 validate_account(Context, AccountId, ?HTTP_PATCH) ->
     validate_patch_request(AccountId, prepare_context(AccountId, Context));
 validate_account(Context, AccountId, ?HTTP_DELETE) ->
-    validate_delete_request(AccountId, prepare_context(AccountId, Context)).
+    validate_delete_request(AccountId, cb_context:auth_account_id(Context), prepare_context(AccountId, Context)).
 
 -spec validate(cb_context:context(), path_token(), kz_term:ne_binary()) ->
           cb_context:context().
@@ -400,6 +400,11 @@ delete(Context, Account) ->
                        ,Context
                        ,Errors
                        );
+        {'error', 'unauthorized'} ->
+            Msg = kz_json:from_list([{<<"message">>, <<"deleting account is forbidden">>}
+                                    ,{<<"cause">>, AccountId}
+                                    ]),
+            cb_context:add_system_error(403, 'forbidden', Msg, Context);
         {'error', Error} ->
             lager:info("error deleting account: ~p", [Error]),
             crossbar_doc:handle_datamgr_errors(Error, Account, Context)
@@ -595,8 +600,14 @@ maybe_import_enabled(Context, Doc, 'false') ->
 %% @doc Load an account document from the database
 %% @end
 %%------------------------------------------------------------------------------
--spec validate_delete_request(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
-validate_delete_request(AccountId, Context) ->
+-spec validate_delete_request(kz_term:ne_binary(), kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
+validate_delete_request(AuthAccountId, AuthAccountId, Context) ->
+    lager:debug("preventing auth account_id ~s to delete its own account", [AuthAccountId]),
+    Msg = kz_json:from_list([{<<"message">>, <<"deleting your own account is forbidden">>}
+                            ,{<<"cause">>, AuthAccountId}
+                            ]),
+    cb_context:add_system_error(403, 'forbidden', Msg, Context);
+validate_delete_request(AccountId, _AuthAccountId, Context) ->
     case kapps_util:account_has_descendants(AccountId) of
         'true' ->  cb_context:add_system_error('account_has_descendants', Context);
         'false' ->
