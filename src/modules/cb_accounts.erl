@@ -144,7 +144,7 @@ resource_exists(_, Path) ->
 
 -spec validate_resource(cb_context:context()) -> cb_context:context().
 validate_resource(Context) ->
-    Context.
+    validate_resource(Context, cb_context:auth_account_id(Context)).
 
 -spec validate_resource(cb_context:context(), path_token()) -> cb_context:context().
 validate_resource(Context, AccountId) ->
@@ -165,11 +165,7 @@ validate_resource(Context, AccountId, _Path) ->
 -spec validate(cb_context:context()) ->
           cb_context:context().
 validate(Context) ->
-    validate_accounts(Context, cb_context:req_verb(Context)).
-
--spec validate_accounts(cb_context:context(), http_method()) -> cb_context:context().
-validate_accounts(Context, ?HTTP_PUT) ->
-    validate_request('undefined', prepare_context('undefined', Context)).
+    validate(Context, cb_context:auth_account_id(Context)).
 
 -spec validate(cb_context:context(), path_token()) ->
           cb_context:context().
@@ -186,7 +182,7 @@ validate_account(Context, AccountId, ?HTTP_POST) ->
 validate_account(Context, AccountId, ?HTTP_PATCH) ->
     validate_patch_request(AccountId, prepare_context(AccountId, Context));
 validate_account(Context, AccountId, ?HTTP_DELETE) ->
-    validate_delete_request(AccountId, prepare_context(AccountId, Context)).
+    validate_delete_request(AccountId, cb_context:auth_account_id(Context), prepare_context(AccountId, Context)).
 
 -spec validate(cb_context:context(), path_token(), kz_term:ne_binary()) ->
           cb_context:context().
@@ -404,6 +400,11 @@ delete(Context, Account) ->
                        ,Context
                        ,Errors
                        );
+        {'error', 'unauthorized'} ->
+            Msg = kz_json:from_list([{<<"message">>, <<"deleting account is forbidden">>}
+                                    ,{<<"cause">>, AccountId}
+                                    ]),
+            cb_context:add_system_error(403, 'forbidden', Msg, Context);
         {'error', Error} ->
             lager:info("error deleting account: ~p", [Error]),
             crossbar_doc:handle_datamgr_errors(Error, Account, Context)
@@ -527,11 +528,7 @@ maybe_add_pvt_fields(AccountId, AccountJObj) -> %% Existing account (update)
 get_parent_id_from_req(Context) ->
     case props:get_value(<<"accounts">>, cb_context:req_nouns(Context)) of
         [ParentId] -> ParentId;
-        _Nouns ->
-            case cb_context:auth_doc(Context) of
-                'undefined' -> 'undefined';
-                AuthDoc -> kz_json:get_ne_binary_value(<<"account_id">>, AuthDoc)
-            end
+        _Params -> cb_context:auth_account_id(Context)
     end.
 
 -spec extra_validation(cb_context:context()) -> cb_context:context().
@@ -603,8 +600,14 @@ maybe_import_enabled(Context, Doc, 'false') ->
 %% @doc Load an account document from the database
 %% @end
 %%------------------------------------------------------------------------------
--spec validate_delete_request(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
-validate_delete_request(AccountId, Context) ->
+-spec validate_delete_request(kz_term:ne_binary(), kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
+validate_delete_request(AuthAccountId, AuthAccountId, Context) ->
+    lager:debug("preventing auth account_id ~s to delete its own account", [AuthAccountId]),
+    Msg = kz_json:from_list([{<<"message">>, <<"deleting your own account is forbidden">>}
+                            ,{<<"cause">>, AuthAccountId}
+                            ]),
+    cb_context:add_system_error(403, 'forbidden', Msg, Context);
+validate_delete_request(AccountId, _AuthAccountId, Context) ->
     case kapps_util:account_has_descendants(AccountId) of
         'true' ->  cb_context:add_system_error('account_has_descendants', Context);
         'false' ->
@@ -894,11 +897,11 @@ format_account_tree_results(Context, JObjs) ->
 %% for this account
 %% @end
 %%------------------------------------------------------------------------------
--spec load_account_db(cb_context:context(), kz_term:ne_binary() | kz_term:ne_binaries()) ->
+-spec load_account_db(cb_context:context(), kz_term:api_ne_binary() | kz_term:ne_binaries()) ->
           cb_context:context().
 load_account_db(Context, [AccountId|_]) ->
     load_account_db(Context, AccountId);
-load_account_db(Context, AccountId) when is_binary(AccountId) ->
+load_account_db(Context, <<AccountId/binary>>) ->
     case kzd_accounts:fetch(AccountId) of
         {'ok', JObj} ->
             lager:debug("account ~s db exists", [AccountId]),
@@ -914,7 +917,11 @@ load_account_db(Context, AccountId) when is_binary(AccountId) ->
             cb_context:add_system_error('bad_identifier', Msg, Context);
         {'error', _R} ->
             crossbar_util:response_db_fatal(Context)
-    end.
+    end;
+load_account_db(Context, 'undefined') ->
+    lager:info("no account id to load"),
+    cb_context:add_system_error('faulty_request', Context).
+
 
 %%------------------------------------------------------------------------------
 %% @doc This function will create a new account and corresponding database
