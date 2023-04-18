@@ -137,6 +137,8 @@
   '/accounts/{ACCOUNT_ID}/conferences/{CONFERENCE_ID}/participants/{PARTICIPANT_ID}':
     '$ref': >-
       paths/conferences.yml#/paths/~1accounts~1{ACCOUNT_ID}~1conferences~1{CONFERENCE_ID}~1participants~1{PARTICIPANT_ID}
+  '/accounts/{ACCOUNT_ID}/configs':
+    '$ref': 'paths/configs.yml#/paths/~1accounts~1{ACCOUNT_ID}~1configs'
   '/accounts/{ACCOUNT_ID}/configs/{CONFIG_ID}':
     '$ref': 'paths/configs.yml#/paths/~1accounts~1{ACCOUNT_ID}~1configs~1{CONFIG_ID}'
   '/accounts/{ACCOUNT_ID}/connectivity':

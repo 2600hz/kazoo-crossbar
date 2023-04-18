@@ -130,4 +130,6 @@
 -define(TYPE_CHECK_OPTION_ANY, ?TYPE_CHECK_OPTION(<<"any">>)).
 
 -define(CROSSBAR_HRL, 'true').
+
+-define(DEFAULT_CONFIG_ID, <<"default">>).
 -endif.
