@@ -36,17 +36,17 @@ Key | Description | Type | Default | Required | Support Level
 `options` | List of options this rate is good for, to be matched against a customer's options | `array(string())` |   | `false` |  
 `prefix` | E.164 prefix (ignoring the +) | `integer()` |   | `true` |  
 `rate_cost` | The per-min rate charged to the downstream customer | `number()` |   | `true` |  
-`rate_increment` | The time slice, in seconds, to bill in. | `integer()` |   | `false` |  
-`rate_minimum` | The minimum time slice, in seconds to bill a call | `integer()` |   | `false` |  
+`rate_increment` | The time slice, in seconds, to bill in. | `integer(1..)` |   | `false` |  
+`rate_minimum` | The minimum time slice, in seconds to bill a call | `integer(1..)` |   | `false` |  
 `rate_name` | Friendly name of the rate | `string()` |   | `false` |  
-`rate_nocharge_time` | If the call duration is shorter than this threshold (seconds), the call is not billed | `integer()` |   | `false` |  
+`rate_nocharge_time` | If the call duration is shorter than this threshold (seconds), the call is not billed | `integer(0..)` |   | `false` |  
 `rate_suffix` | Suffix applied to rate name | `string()` |   | `false` |  
 `rate_surcharge` | The upfront cost of connecting the call | `number()` |   | `false` |  
 `rate_version` | Rate version | `string()` |   | `false` |  
 `ratedeck_id` | ID of the ratedeck this rate belongs to | `string()` |   | `false` |  
 `routes.[]` |   | `string()` |   | `false` |  
 `routes` | List of regexps that match valid DIDs for this rate | `array(string())` |   | `false` |  
-`weight` | Ordering against other rates, 1 being most preferred, 100 being least preferred | `integer()` |   | `false` |  
+`weight` | Ordering against other rates, 1 being most preferred, 100 being least preferred | `integer(1..100)` |   | `false` |  
 
 
 
