@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2023, 2600Hz
+%%% @copyright (C) 2010-2024, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
 %%% @author Karl Anderson
@@ -411,29 +411,34 @@ maybe_flush_registration_on_deleted(Realm, _OldDevice, NewDevice) ->
 move_account(?MATCH_ACCOUNT_RAW(AccountId), ToAccount=?NE_BINARY) ->
     case validate_move(AccountId, ToAccount) of
         {'error', _E}=Error -> Error;
-        {'ok', JObj, ToTree} ->
-            move_account(AccountId, JObj, ToAccount, ToTree)
+        {'ok', AccountJObj, NewTree} ->
+            move_account(AccountId, AccountJObj, ToAccount, NewTree)
     end.
 
 -spec move_account(kz_term:ne_binary(), kzd_accounts:doc(), kz_term:ne_binary(), kz_term:ne_binaries()) ->
-          {'ok', kzd_services:doc()} |
+          {'ok', kzd_accounts:doc()} |
           {'error', any()}.
-move_account(AccountId, JObj, ToAccount, ToTree) ->
-    PreviousTree = kzd_accounts:tree(JObj),
-    Updates = [{[?SERVICES_PVT_TREE], ToTree}
+move_account(AccountId, AccountJObj, ToAccount, NewTree) ->
+    PreviousTree = kzd_accounts:tree(AccountJObj),
+    Updates = [{[?SERVICES_PVT_TREE], NewTree}
               ,{[?SERVICES_PVT_TREE_PREVIOUSLY], PreviousTree}
               ,{[?SERVICES_PVT_MODIFIED], kz_time:now_s()}
               ],
 
     %%FIXME: do something about setting pvt_auth_*_id
     case kzd_accounts:update(AccountId, Updates) of
-        {'error', _E}=Error -> Error;
-        {'ok', _AccountDoc} ->
-            lager:info("moved account ~s (~s)", [AccountId, kz_doc:revision(_AccountDoc)]),
+        {'error', _E}=Error ->
+            lager:info("failed to update account ~s tree: ~p", [AccountId, _E]),
+            Error;
+        {'ok', AccountDoc} ->
+            lager:info("moved account ~s (~s)", [AccountId, kz_doc:revision(AccountDoc)]),
             NewResellerId = kz_services_reseller:get_id(ToAccount),
-            {'ok', _} = move_descendants(AccountId, ToTree, NewResellerId),
-            Services = kazoo_services_maintenance:update_tree(AccountId, ToTree, NewResellerId),
-            {'ok', kz_services:services_jobj(Services)}
+            lager:info("account ~s has new reseller ~s", [AccountId, NewResellerId]),
+            {'ok', _} = move_descendants(AccountId, NewTree, NewResellerId),
+            lager:info("moved descendants of ~s", [AccountId]),
+            _Services = kazoo_services_maintenance:update_tree(AccountId, NewTree, NewResellerId),
+            lager:info("updating sevices tree for ~s", [AccountId]),
+            {'ok', AccountDoc}
     end.
 
 %%------------------------------------------------------------------------------
@@ -444,13 +449,25 @@ move_account(AccountId, JObj, ToAccount, ToTree) ->
           {'error', kz_datamgr:data_error() | 'forbidden'} |
           {'ok', kzd_accounts:doc(), kz_term:ne_binaries()}.
 validate_move(AccountId, ToAccount) ->
-    case kzd_accounts:fetch(AccountId) of
-        {'error', _E}=Error -> Error;
-        {'ok', JObj} ->
-            ToTree = get_tree(ToAccount) ++ [ToAccount],
-            case lists:member(AccountId, ToTree) of
-                'true' -> {'error', 'forbidden'};
-                'false' -> {'ok', JObj, ToTree}
+    case {kzd_accounts:fetch(AccountId), kzd_accounts:fetch(ToAccount)} of
+        {{'error', _E}=Error, _} ->
+            lager:info("failed to fetch account ~s: ~p", [AccountId, _E]),
+            Error;
+        {{'ok', _AccountJObj}, {'error', 'not_found'}} ->
+            lager:info("to account ~s not found", [ToAccount]),
+            {'error', 'not_found'};
+        {{'ok', _AccountJObj}, {'error', _E}} ->
+            lager:info("failed to load to account ~s: ~p", [ToAccount, _E]),
+            {'error', 'forbidden'};
+        {{'ok', AccountJObj}, {'ok', ToAccountJObj}} ->
+            NewTree = kzd_accounts:tree(ToAccountJObj) ++ [ToAccount],
+            case lists:member(AccountId, NewTree) of
+                'true' ->
+                    lager:info("account ~s is already under account ~s tree: ~p", [AccountId, ToAccount, NewTree]),
+                    {'error', 'forbidden'};
+                'false' ->
+                    lager:info("updating account ~s tree to be under account ~s", [AccountId, ToAccount]),
+                    {'ok', AccountJObj, NewTree}
             end
     end.
 
@@ -1124,11 +1141,11 @@ maybe_update_descendants_count(AccountId, NewCount) ->
 
 -spec maybe_update_descendants_count(kz_term:ne_binary(), integer(), integer()) -> 'ok'.
 maybe_update_descendants_count(AccountId, _, Try) when Try =< 0 ->
-    io:format("too many attempts to update descendants count for ~s~n", [AccountId]);
+    lager:warning("too many attempts to update descendants count for ~s~n", [AccountId]);
 maybe_update_descendants_count(AccountId, NewCount, Try) ->
     case kzd_accounts:fetch(AccountId) of
         {'error', _E} ->
-            io:format("could not load account ~s: ~p~n", [AccountId, _E]);
+            lager:info("could not load account ~s: ~p~n", [AccountId, _E]);
         {'ok', AccountJObj} ->
             maybe_update_descendants_count(AccountId, AccountJObj, NewCount, Try)
     end.
