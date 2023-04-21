@@ -249,15 +249,7 @@ validate_account_path(Context, AccountId, ?MOVE, ?HTTP_POST) ->
                                            ,Context
                                            );
         ToAccount ->
-            case validate_move(kapps_config:get_ne_binary(?ACCOUNTS_CONFIG_CAT, <<"allow_move">>, <<"superduper_admin">>)
-                              ,Context
-                              ,AccountId
-                              ,ToAccount
-                              )
-            of
-                'true' -> cb_context:set_resp_status(Context, 'success');
-                'false' -> cb_context:add_system_error('forbidden', Context)
-            end
+            maybe_move_account(Context, AccountId, ToAccount)
     end;
 validate_account_path(Context, AccountId, ?TREE, ?HTTP_GET) ->
     load_account_tree(Context, AccountId).
@@ -266,6 +258,17 @@ validate_account_path(Context, AccountId, ?TREE, ?HTTP_GET) ->
 add_pvt_api_key(Context) ->
     JObj = cb_context:doc(Context),
     cb_context:set_doc(Context, kzd_accounts:add_pvt_api_key(JObj)).
+
+maybe_move_account(Context, AccountId, ToAccountId) ->
+    MoveType = kapps_config:get_ne_binary(?ACCOUNTS_CONFIG_CAT, <<"allow_move">>, <<"superduper_admin">>),
+    case validate_move(Context, AccountId, ToAccountId, MoveType) of
+        'true' ->
+            lager:debug("request for move type ~s is valid", [MoveType]),
+            cb_context:set_resp_status(Context, 'success');
+        'false' ->
+            lager:info("invalid request for move type ~s", [MoveType]),
+            cb_context:add_system_error('forbidden', Context)
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -298,10 +301,7 @@ update_provisioner_account(Context) ->
 
 -spec post(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 post(Context, AccountId, ?MOVE) ->
-    case cb_context:resp_status(Context) of
-        'success' -> move_account(Context, AccountId);
-        _Status -> Context
-    end.
+    move_account(Context, AccountId).
 
 -spec patch(cb_context:context(), path_token()) -> cb_context:context().
 patch(Context, AccountId) ->
@@ -440,12 +440,11 @@ create_apps_store_doc(AccountId) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec validate_move(kz_term:ne_binary(), cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) -> boolean().
-validate_move(<<"superduper_admin">>, Context, _, _) ->
+-spec validate_move(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) -> boolean().
+validate_move(Context, _AccountId, _ToAccountId, <<"superduper_admin">>) ->
     lager:debug("using superduper_admin flag to allow move account"),
-    AuthId = kz_json:get_value(<<"account_id">>, cb_context:auth_doc(Context)),
-    kzd_accounts:is_superduper_admin(AuthId);
-validate_move(<<"tree">>, Context, MoveAccount, ToAccount) ->
+    cb_context:is_superduper_admin(Context);
+validate_move(Context, MoveAccount, ToAccount, <<"tree">>) ->
     lager:debug("using tree to allow move account"),
     AuthId = kz_doc:account_id(cb_context:auth_doc(Context)),
     MoveTree = crossbar_util:get_tree(MoveAccount),
@@ -460,7 +459,7 @@ validate_move(<<"tree">>, Context, MoveAccount, ToAccount) ->
                    ,MoveTree
                    ),
     lists:member(AuthId, L);
-validate_move(_Type, _, _, _) ->
+validate_move(_, _, _, _Type) ->
     lager:error("unknown move type ~p", [_Type]),
     'false'.
 
@@ -471,12 +470,18 @@ validate_move(_Type, _, _, _) ->
 -spec move_account(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 move_account(Context, AccountId) ->
     Data = cb_context:req_data(Context),
-    ToAccount = kz_json:get_binary_value(<<"to">>, Data),
-    case crossbar_util:move_account(AccountId, ToAccount) of
-        {'error', 'forbidden'} -> cb_context:add_system_error('forbidden', Context);
-        {'error', _E} -> cb_context:add_system_error('datastore_fault', Context);
-        {'ok', _} ->
-            load_account(AccountId, prepare_context(AccountId, Context))
+    ToAccountId = kz_json:get_binary_value(<<"to">>, Data),
+
+    case crossbar_util:move_account(AccountId, ToAccountId) of
+        {'error', 'forbidden'} ->
+            lager:info("forbidden from moving ~s under ~s", [AccountId, ToAccountId]),
+            cb_context:add_system_error('forbidden', Context);
+        {'error', E} ->
+            lager:info("error moving ~s under ~s: ~p", [AccountId, ToAccountId, E]),
+            crossbar_doc:handle_datamgr_errors(E, AccountId, Context);
+        {'ok', AccountDoc} ->
+            lager:info("moved account ~s under ~s", [AccountId, ToAccountId]),
+            crossbar_doc:handle_datamgr_success(AccountDoc, Context)
     end.
 
 %%------------------------------------------------------------------------------
