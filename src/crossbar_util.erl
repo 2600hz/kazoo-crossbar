@@ -630,6 +630,7 @@ populate_resp(JObj, 'undefined', _UserId) -> JObj;
 populate_resp(JObj, AccountId, UserId) ->
     Language = get_language(AccountId, UserId),
     UserInfo = get_user_info(AccountId, UserId),
+
     Props = props:filter_undefined(
               [{<<"apps">>, load_apps(AccountId, UserId, Language)}
               ,{<<"language">>, Language}
