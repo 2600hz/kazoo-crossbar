@@ -365,19 +365,23 @@ validate_token_info(Context, Token) ->
             lager:debug("validate token info error ~p", [Error]),
             crossbar_util:response('error', Error, 401, Context);
         {'ok', Claims} ->
-            lager:debug("token is valid, sending info"),
+            lager:debug("token is valid, sending info: ~p", [Claims]),
             send_token_info(Context, Token, Claims)
     end.
 
 -spec send_token_info(cb_context:context(), binary(), kz_json:object()) -> cb_context:context().
 send_token_info(Context, Token, Claims) ->
+    StripKeys = [<<"exp">>, <<"identity_sig">>, <<"iss">>, <<"method">>, <<"token">>],
+    RespClaims = kz_json:delete_keys(StripKeys, Claims),
+
     AccountId = kz_json:get_value(<<"account_id">>, Claims),
     OwnerId = kz_json:get_value(<<"owner_id">>, Claims),
+
     Props = [{<<"account_id">>, AccountId}
             ,{<<"account_realm">>, kzd_accounts:fetch_value(AccountId, fun kzd_accounts:realm/1)}
             ,{<<"owner_id">>, OwnerId}
             ],
-    Resp = crossbar_util:response_auth(kz_json:from_list(Props), AccountId, OwnerId),
+    Resp = crossbar_util:response_auth(kz_json:set_values(Props, RespClaims), AccountId, OwnerId),
     Setters = [{fun cb_context:set_auth_token/2, Token}],
     crossbar_util:response(Resp, cb_context:setters(Context, Setters)).
 
