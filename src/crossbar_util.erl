@@ -631,9 +631,6 @@ populate_resp(JObj, AccountId, UserId) ->
     Language = get_language(AccountId, UserId),
     UserInfo = get_user_info(AccountId, UserId),
 
-    KAZOOCapabilities = get_capabilities(),
-    Capabilities = maybe_merge_capabilities(JObj, KAZOOCapabilities),
-
     Props = props:filter_undefined(
               [{<<"apps">>, load_apps(AccountId, UserId, Language)}
               ,{<<"language">>, Language}
@@ -642,27 +639,11 @@ populate_resp(JObj, AccountId, UserId) ->
               ,{<<"reseller_id">>, kz_services_reseller:get_id(AccountId)}
               ,{<<"is_reseller">>, kz_services_reseller:is_reseller(AccountId)}
               ,{<<"is_master_account">>, is_master_account(AccountId)}
-              ,{<<"capabilities">>, Capabilities}
+              ,{<<"capabilities">>, get_capabilities()}
               ,{<<"ui_config">>, get_ui_config()}
               ,{<<"user_info">>, UserInfo}
               ]),
     kz_json:set_values(Props, JObj).
-
-maybe_merge_capabilities(JObj, KAZOOCapabilities) ->
-    case kz_json:get_value(<<"capabilities">>, JObj) of
-        'undefined' -> KAZOOCapabilities;
-        Cs when is_list(Cs) ->
-            lager:info("merging kazoo capabilities into existing list"),
-            kz_json:foldl(fun(K, V, Acc) ->
-                                  [kz_json:from_list([{K, V}]) | Acc]
-                          end
-                         ,Cs
-                         ,KAZOOCapabilities
-                         );
-        Cs ->
-            lager:info("merging kazoo capabilities into existing object"),
-            kz_json:merge(Cs, KAZOOCapabilities)
-    end.
 
 -spec get_user_info(kz_term:ne_binary(), kz_term:api_ne_binary()) -> kz_term:api_object().
 get_user_info(AccountId, UserId) ->
