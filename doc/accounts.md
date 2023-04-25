@@ -18,6 +18,7 @@ Accounts represent tenants or customers on the system. Each account represents a
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
+`announcement` | The announcement will be pop up when use log in to this account | `string()` |   | `false` |  
 `blacklists.[]` |   | `string()` |   | `false` |  
 `blacklists` | A list blacklist ids that apply to the account | `array(string())` |   | `false` |  
 `call_failover` | The device call failover parameters, to replace the device with an extension/phone number when device is offline. | [#/definitions/call_failover](#call_failover) |   | `false` |  
