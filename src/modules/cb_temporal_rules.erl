@@ -138,7 +138,48 @@ create(Context) ->
 %%------------------------------------------------------------------------------
 -spec read(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
 read(Id, Context) ->
-    crossbar_doc:load(Id, Context, ?TYPE_CHECK_OPTION(kzd_temporal_rules:type())).
+    Loaded = crossbar_doc:load(Id, Context, ?TYPE_CHECK_OPTION(kzd_temporal_rules:type())),
+    maybe_eval_rule(Loaded).
+
+maybe_eval_rule(Context) ->
+    maybe_eval_rule(Context, cb_context:req_value(Context, <<"timestamp">>)).
+
+maybe_eval_rule(Context, 'undefined') ->
+    Context;
+maybe_eval_rule(Context, Timestamp) when is_integer(Timestamp), Timestamp > ?UNIX_EPOCH_IN_GREGORIAN ->
+    eval_rule(Context, Timestamp, cb_context:req_value(Context, <<"timezone">>));
+maybe_eval_rule(Context, Timestamp) when is_integer(Timestamp) ->
+    lager:info("timestamp ~p does not appear to be in Gregorian seconds"),
+    cb_context:add_metadata_value(Context, <<"timestamp">>, <<"malformed">>);
+maybe_eval_rule(Context, TS) ->
+    Timestamp = kz_term:safe_cast(TS, 'undefined', fun kz_term:to_integer/1),
+    maybe_eval_rule(Context, Timestamp).
+
+eval_rule(Context, Timestamp, 'undefined') ->
+    Timezone = kzd_accounts:timezone(cb_context:account_id(Context)),
+    lager:info("using account timezone ~s", [Timezone]),
+    eval_rule(Context, Timestamp, Timezone);
+eval_rule(Context, Timestamp, Timezone) ->
+    lager:info("eval rule at ~p in ~s", [Timestamp, Timezone]),
+    RuleDoc = cb_context:doc(Context),
+
+    StartDate = kz_date:from_gregorian_seconds(kzd_temporal_rules:start_date(RuleDoc, Timestamp), Timezone),
+    EndDate = maybe_date_from_gregorian_seconds(kzd_temporal_rules:end_date(RuleDoc), Timezone),
+
+    Rule = ktr_rule:new(kz_doc:id(RuleDoc), RuleDoc, StartDate, EndDate),
+    case ktr_routes:process(Timestamp, [Rule]) of
+        'undefined' ->
+            lager:info("rule does not match for this timestamp"),
+            cb_context:add_metadata_value(Context, <<"rule_matches">>, 'false');
+        _Id ->
+            lager:info("rule matches for this timestamp"),
+            cb_context:add_metadata_value(Context, <<"rule_matches">>, 'true')
+    end.
+
+-spec maybe_date_from_gregorian_seconds(kz_time:gregorian_seconds(), kz_term:ne_binary()) ->
+          kz_time:date().
+maybe_date_from_gregorian_seconds('undefined', _TZ) -> 'undefined';
+maybe_date_from_gregorian_seconds(EndDate, TZ) -> kz_date:from_gregorian_seconds(EndDate, TZ).
 
 %%------------------------------------------------------------------------------
 %% @doc Update an existing menu document with the data provided, if it is
