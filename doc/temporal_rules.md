@@ -103,7 +103,7 @@ curl -v -X PUT \
 }
 ```
 
-## Fetch
+## Get a summary of created temporal rules
 
 > GET /v2/accounts/{ACCOUNT_ID}/temporal_rules
 
@@ -131,7 +131,7 @@ curl -v -X GET \
 }
 ```
 
-## Create
+## Create a new temporal rule
 
 > PUT /v2/accounts/{ACCOUNT_ID}/temporal_rules
 
@@ -161,7 +161,7 @@ curl -v -X PUT \
 }
 ```
 
-## Fetch
+## Fetch a temporal rule
 
 > GET /v2/accounts/{ACCOUNT_ID}/temporal_rules/{TEMPORAL_RULE_ID}
 
@@ -169,6 +169,45 @@ curl -v -X PUT \
 curl -v -X GET \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/temporal_rules/{TEMPORAL_RULE_ID}
+```
+
+### Evaluate a temporal rule
+
+It can be helpful to test an existing rule and whether it will match, given a timestamp.
+
+A querystring parameter, `timestamp`, can be included on the URL to to specify a time to evaluate the rule against. The API response will include a `metadata.rule_matches` boolean to indicate whether the rule matched the timestamp. The timestamp must be in Gregorian seconds in the timezone of the account.
+
+For instance, fetching a rule that matches on [Tau Day](https://tauday.com/) with a timestamp for Pi day:
+
+```shell
+  curl -v -X GET \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/temporal_rules/{TEMPORAL_RULE_ID}?timestamp=63846025766
+```
+```json
+{
+  "data": {
+    "custom": "value",
+    "cycle": "yearly",
+    "days": [
+      28
+    ],
+    "id": "{TEMPORAL_RULE_ID}",
+    "interval": 1,
+    "month": 6,
+    "name": "Tau Day",
+    "ordinal": "every",
+    "start_date": 62586115200
+  },
+  "metadata": {
+    "created": 63849751700,
+    "id": "{TEMPORAL_RULE_ID}",
+    "modified": 63849751700,
+    "rule_matches": false
+  },
+  "revision": "{REVISION}",
+  "status": "success"
+}
 ```
 
 ## Change
