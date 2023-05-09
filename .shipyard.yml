@@ -22,3 +22,4 @@ metapackage:
     branch: '5.2'
     package: kazoo-application-crossbar
 dependencies: null
+
