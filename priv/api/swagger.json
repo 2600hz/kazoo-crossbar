@@ -16682,6 +16682,11 @@
                             }
                         }
                     }
+                },
+                "should_validate_dns": {
+                    "default": true,
+                    "description": "kazoo_web should_validate_dns",
+                    "type": "boolean"
                 }
             },
             "type": "object"
