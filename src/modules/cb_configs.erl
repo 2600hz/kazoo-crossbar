@@ -13,9 +13,9 @@
 -module(cb_configs).
 
 -export([init/0
-        ,allowed_methods/1
+        ,allowed_methods/0, allowed_methods/1
         ,resource_exists/0, resource_exists/1
-        ,validate/2
+        ,validate/1, validate/2
         ,put/2
         ,post/2
         ,patch/2
@@ -33,25 +33,33 @@
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec init() -> ok.
+-spec init() -> 'ok'.
 init() ->
-    _ = crossbar_bindings:bind(<<"*.allowed_methods.configs">>, ?MODULE, allowed_methods),
-    _ = crossbar_bindings:bind(<<"*.resource_exists.configs">>, ?MODULE, resource_exists),
-    _ = crossbar_bindings:bind(<<"*.validate.configs">>, ?MODULE, validate),
-    _ = crossbar_bindings:bind(<<"*.execute.post.configs">>, ?MODULE, post),
-    _ = crossbar_bindings:bind(<<"*.execute.put.configs">>, ?MODULE, put),
-    _ = crossbar_bindings:bind(<<"*.execute.patch.configs">>, ?MODULE, patch),
-    _ = crossbar_bindings:bind(<<"*.execute.delete.configs">>, ?MODULE, delete).
+    _ = crossbar_bindings:bind(<<"*.allowed_methods.configs">>, ?MODULE, 'allowed_methods'),
+    _ = crossbar_bindings:bind(<<"*.resource_exists.configs">>, ?MODULE, 'resource_exists'),
+    _ = crossbar_bindings:bind(<<"*.validate.configs">>, ?MODULE, 'validate'),
+    _ = crossbar_bindings:bind(<<"*.execute.post.configs">>, ?MODULE, 'post'),
+    _ = crossbar_bindings:bind(<<"*.execute.put.configs">>, ?MODULE, 'put'),
+    _ = crossbar_bindings:bind(<<"*.execute.patch.configs">>, ?MODULE, 'patch'),
+    _ = crossbar_bindings:bind(<<"*.execute.delete.configs">>, ?MODULE, 'delete').
+
+-spec allowed_methods() -> http_methods().
+allowed_methods() ->
+    [?HTTP_GET].
 
 -spec allowed_methods(path_token()) -> http_methods().
 allowed_methods(_ConfigId) ->
     [?HTTP_GET, ?HTTP_POST, ?HTTP_PUT, ?HTTP_PATCH, ?HTTP_DELETE].
 
--spec resource_exists() -> false.
-resource_exists() -> false.
+-spec resource_exists() -> 'true'.
+resource_exists() -> 'true'.
 
--spec resource_exists(path_tokens()) -> true.
-resource_exists(_) -> true.
+-spec resource_exists(path_tokens()) -> 'true'.
+resource_exists(_) -> 'true'.
+
+-spec validate(cb_context:context()) -> cb_context:context().
+validate(Context) ->
+    validate(Context, cb_context:req_verb(Context), ?DEFAULT_CONFIG_ID).
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, ConfigId) ->
@@ -62,12 +70,12 @@ validate(Context, ?HTTP_GET, ConfigId) -> set_config_to_context(ConfigId, Contex
 
 validate(Context, ?HTTP_DELETE, ConfigId) ->
     Doc = case kapps_config_util:load_config_from_account(cb_context:account_id(Context), ConfigId) of
-              {ok, Document} -> Document;
+              {'ok', Document} -> Document;
               _ -> set_id(ConfigId, kz_json:new())
           end,
     cb_context:setters(Context,[
                                 {fun cb_context:set_doc/2, Doc}
-                               ,{fun cb_context:set_resp_status/2, success}
+                               ,{fun cb_context:set_resp_status/2, 'success'}
                                ]);
 
 validate(Context, ?HTTP_PUT, ConfigId) ->

@@ -1,4 +1,16 @@
 paths:
+  /accounts/{ACCOUNT_ID}/configs:
+    get:
+      operationId: GetAccountsAccountIdConfigs
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Get all configs
+      tags:
+        - configs
   /accounts/{ACCOUNT_ID}/configs/{CONFIG_ID}:
     delete:
       operationId: DeleteAccountsAccountIdConfigsConfigId
