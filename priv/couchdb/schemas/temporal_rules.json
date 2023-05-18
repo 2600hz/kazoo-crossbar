@@ -84,6 +84,10 @@
             "support_level": "supported",
             "type": "string"
         },
+        "owner_id": {
+            "description": "KAZOO User ID of the owner of this temporal rule",
+            "type": "string"
+        },
         "start_date": {
             "default": 62586115200,
             "description": "The date that any recurrence should be calculated as starting on",

@@ -6823,6 +6823,9 @@
     'name':
       'description': Friendly name for the match list
       'type': string
+    'owner_id':
+      'description': KAZOO User ID of the owner of this match list
+      'type': string
     'rules':
       'description': Evaluated rules to determine if the match list has matched
       'items':
@@ -16007,6 +16010,9 @@
         - last
       'type': string
       'x-support_level': supported
+    'owner_id':
+      'description': KAZOO User ID of the owner of this temporal rule
+      'type': string
     'start_date':
       'default': 62586115200
       'description': The date that any recurrence should be calculated as starting on

@@ -22,6 +22,7 @@ Key | Description | Type | Default | Required | Support Level
 `month` | The recurrence month for this rule | `integer(1..12)` |   | `false` | `supported`
 `name` | A friendly name for the temporal rule | `string(1..128)` |   | `true` | `supported`
 `ordinal` | The recurrence ordinal for this rule | `string('every' | 'first' | 'second' | 'third' | 'fourth' | 'fifth' | 'last')` |   | `false` | `supported`
+`owner_id` | KAZOO User ID of the owner of this temporal rule | `string()` |   | `false` |  
 `start_date` | The date that any recurrence should be calculated as starting on | `integer()` | `62586115200` | `false` | `supported`
 `time_window_start` | Seconds from the start of a day to consider this rule valid | `integer(0..86400)` |   | `false` | `supported`
 `time_window_stop` | Seconds from the start of a day to stop considering this rule valid | `integer(0..86400)` |   | `false` | `supported`

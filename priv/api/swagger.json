@@ -8775,6 +8775,10 @@
                     "description": "Friendly name for the match list",
                     "type": "string"
                 },
+                "owner_id": {
+                    "description": "KAZOO User ID of the owner of this match list",
+                    "type": "string"
+                },
                 "rules": {
                     "description": "Evaluated rules to determine if the match list has matched",
                     "items": {
@@ -20342,6 +20346,10 @@
                         "fifth",
                         "last"
                     ],
+                    "type": "string"
+                },
+                "owner_id": {
+                    "description": "KAZOO User ID of the owner of this temporal rule",
                     "type": "string"
                 },
                 "start_date": {

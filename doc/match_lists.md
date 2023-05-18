@@ -18,6 +18,7 @@ Match lists - define a set of rules for matching against call properties, callfl
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `name` | Friendly name for the match list | `string()` |   | `false` |  
+`owner_id` | KAZOO User ID of the owner of this match list | `string()` |   | `false` |  
 `rules` | Evaluated rules to determine if the match list has matched | `array([#/definitions/match_lists.rule](#match_listsrule))` |   | `true` |  
 
 ### match_lists.rule
