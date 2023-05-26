@@ -742,7 +742,7 @@ direction(Context, Options) ->
     case props:get_value('direction', Options) =:= 'descending'
         orelse props:is_true('descending', Options, 'false')
         orelse kz_json:is_true(<<"descending">>, cb_context:query_string(Context))
-        orelse kz_json:is_false(<<"ascending">>, cb_context:query_string(Context), 'true')
+        orelse kz_json:is_false(<<"ascending">>, cb_context:query_string(Context), 'false')
     of
         'true' -> 'descending';
         'false' -> 'ascending'
