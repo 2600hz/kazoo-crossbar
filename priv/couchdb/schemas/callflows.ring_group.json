@@ -75,6 +75,10 @@
             "description": "should hard stop on successful bridge",
             "type": "boolean"
         },
+        "ignore_early_media": {
+            "description": "ignore early media",
+            "type": "boolean"
+        },
         "ignore_forward": {
             "default": true,
             "description": "If true, will ignore SIP redirect requests for call-forwarded devices",
