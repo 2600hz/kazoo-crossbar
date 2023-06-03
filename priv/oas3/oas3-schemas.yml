@@ -2821,6 +2821,9 @@
     'group_id':
       'description': ID of the group
       'type': string
+    'group_name':
+      'description': group name
+      'type': string
     'hard_stop_after_successful_group':
       'description': should hard stop on successful bridge
       'type': boolean
@@ -2849,6 +2852,12 @@
         'internal':
           'description': Ring tone for calls from external sources
           'type': string
+      'type': object
+    'sca':
+      'properties':
+        'enabled':
+          'description': is sca enabled
+          'type': boolean
       'type': object
     'skip_module':
       'description': |-
@@ -3888,6 +3897,9 @@
       'maxLength': 128
       'minLength': 1
       'type': string
+    'group_name':
+      'description': group name
+      'type': string
     'hard_stop_after_successful_group':
       'description': should hard stop on successful bridge
       'type': boolean
@@ -3914,6 +3926,12 @@
         'internal':
           'description': Ring tone for calls from external sources
           'type': string
+      'type': object
+    'sca':
+      'properties':
+        'enabled':
+          'description': is sca enabled
+          'type': boolean
       'type': object
     'skip_module':
       'description': |-
