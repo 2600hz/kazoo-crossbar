@@ -3187,6 +3187,10 @@
                     "description": "Group ID",
                     "type": "string"
                 },
+                "ignore_early_media": {
+                    "description": "ignore early media",
+                    "type": "boolean"
+                },
                 "ignore_forward": {
                     "default": true,
                     "description": "Whether to ignore forwarded phones",
@@ -4474,6 +4478,10 @@
                 },
                 "hard_stop_after_successful_group": {
                     "description": "should hard stop on successful bridge",
+                    "type": "boolean"
+                },
+                "ignore_early_media": {
+                    "description": "ignore early media",
                     "type": "boolean"
                 },
                 "ignore_forward": {
