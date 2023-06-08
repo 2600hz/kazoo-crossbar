@@ -137,10 +137,8 @@ rest_init(Req, Opts) ->
     end.
 
 -spec host_url(cb_context:context(), cowboy_req:req()) -> cb_context:context().
-host_url(Context, Req) ->
-    URI = kz_term:to_binary(cowboy_req:uri(Req)),
-    {Scheme, Location, _Path, _Query, _Frag} = kz_http_util:urlsplit(URI),
-    Value = list_to_binary([Scheme, "://", kz_http_util:location_host(Location)]),
+host_url(Context, #{scheme := Scheme, host := Host}) ->
+    Value = list_to_binary([Scheme, "://", kz_http_util:location_host(Host)]),
     cb_context:set_host_url(Context, Value).
 
 -spec socket_url(cb_context:context(), cowboy_req:req()) -> cb_context:context().
