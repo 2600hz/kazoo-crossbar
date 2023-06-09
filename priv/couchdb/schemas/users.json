@@ -90,6 +90,11 @@
             },
             "type": "object"
         },
+        "crm_credentials": {
+            "default": {},
+            "description": "CRM credentials",
+            "type": "object"
+        },
         "dial_plan": {
             "$ref": "dialplans",
             "description": "A list of rules used to modify dialed numbers"
