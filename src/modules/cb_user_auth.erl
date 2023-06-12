@@ -256,18 +256,26 @@ validate_action(Context, _Action) ->
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, ?RECOVERY) ->
-    case cb_context:req_verb(Context) of
-        ?HTTP_PUT ->
-            Schema = <<"user_auth_recovery">>,
-            OnSuccess = fun maybe_load_user_doc_via_creds/1;
-        ?HTTP_POST ->
-            Schema = <<"user_auth_recovery_reset">>,
-            OnSuccess = fun maybe_load_user_doc_via_reset_id/1
-    end,
-    cb_context:validate_request_data(Schema, Context, OnSuccess);
+    case consume_tokens(Context) of
+        {'ok', Context1} -> validate_recovery(Context1);
+        {'error', Context1} -> cb_context:add_system_error('too_many_requests', Context1)
+    end;
 validate(Context, AuthToken) ->
     Context1 = cb_context:set_db_name(Context, ?KZ_TOKEN_DB),
     maybe_get_auth_token(Context1, AuthToken).
+
+-spec validate_recovery(cb_context:context()) -> cb_context:context().
+validate_recovery(Context) ->
+    case cb_context:req_verb(Context) of
+        ?HTTP_PUT ->
+            Schema = <<"user_auth_recovery">>,
+            OnSuccess = fun find_user_for_password_recovery/1,
+            cb_context:validate_request_data(Schema, Context, OnSuccess);
+        ?HTTP_POST ->
+            Schema = <<"user_auth_recovery_reset">>,
+            OnSuccess = fun maybe_load_user_doc_via_reset_id/1,
+            cb_context:validate_request_data(Schema, Context, OnSuccess)
+    end.
 
 -spec put(cb_context:context()) -> cb_context:context().
 put(Context) ->
@@ -275,7 +283,9 @@ put(Context) ->
 
 -spec put(cb_context:context(), path_token()) -> cb_context:context().
 put(Context, ?RECOVERY) ->
-    save_reset_id_then_send_email(Context).
+    _ = cb_context:put_reqid(Context),
+    MoDb = kazoo_modb:get_modb(cb_context:db_name(Context)),
+    save_reset_id_then_send_email(Context, MoDb).
 
 -spec post(cb_context:context(), path_token()) -> cb_context:context().
 post(Context, ?RECOVERY) ->
@@ -527,23 +537,18 @@ base_claims(JObj) ->
     Keys = [<<"account_id">>, <<"owner_id">>],
     kz_json:filter(fun({K, _V}) -> lists:member(K, Keys) end, JObj).
 
--spec maybe_load_user_doc_via_creds(cb_context:context()) -> cb_context:context().
-maybe_load_user_doc_via_creds(Context) ->
+-spec find_user_for_password_recovery(cb_context:context()) -> cb_context:context().
+find_user_for_password_recovery(Context) ->
     JObj = cb_context:doc(Context),
-    AccountName = kzd_accounts:normalize_name(kz_json:get_value(<<"account_name">>, JObj)),
-    PhoneNumber = kzd_user_auth:phone_number(JObj),
-    AccountRealm = kz_json:get_first_defined([<<"account_realm">>, <<"realm">>], JObj),
-    AccountId = kz_json:get_ne_binary_value(<<"account_id">>, JObj),
-
-    case find_account([{'phone_number', PhoneNumber}
-                      ,{'realm', AccountRealm}
-                      ,{'name', AccountName}
-                      ,{'id', AccountId}
-                      ]
-                     ,Context
-                     )
-    of
-        {'error', C} -> C;
+    Options = [{'phone_number', kzd_user_auth:phone_number(JObj)}
+              ,{'realm', kz_json:get_first_defined([<<"account_realm">>, <<"realm">>], JObj)}
+              ,{'name', kzd_accounts:normalize_name(kz_json:get_value(<<"account_name">>, JObj))}
+              ,{'id',  kz_json:get_ne_binary_value(<<"account_id">>, JObj)}
+              ],
+    case find_account(Options ,Context) of
+        {'error', _Context1} ->
+            lager:debug("failed to find account, responding empty result for password recovery"),
+            crossbar_doc:handle_json_success(kz_json:new(), Context);
         {'ok', [Account|_]} -> maybe_load_user_doc_by_username(Account, Context);
         {'ok', Account} ->     maybe_load_user_doc_by_username(Account, Context)
     end.
@@ -581,19 +586,17 @@ maybe_load_user_doc_by_username(Account, Context) ->
                     cb_context:add_validation_error(<<"username">>, <<"forbidden">>, Msg, Context)
             end;
         _ ->
-            Msg =
-                kz_json:from_list(
-                  [{<<"message">>, <<"The provided user name was not found">>}
-                  ,{<<"cause">>, Username}
-                  ]),
             Reason = kz_term:to_binary(io_lib:format("The provided user name ~s was not found", [Username])),
             crossbar_auth:log_failed_auth(?MODULE, AuthType, Reason, Context, Account),
-            cb_context:add_validation_error(<<"username">>, <<"not_found">>, Msg, Context)
+            crossbar_doc:handle_json_success(kz_json:new(), Context)
     end.
 
--spec save_reset_id_then_send_email(cb_context:context()) -> cb_context:context().
-save_reset_id_then_send_email(Context) ->
-    MoDb = kazoo_modb:get_modb(cb_context:db_name(Context)),
+-spec save_reset_id_then_send_email(cb_context:context(), kz_term:ne_binary() | 'undefined') -> cb_context:context().
+save_reset_id_then_send_email(Context, 'undefined') ->
+    lager:debug("failed to find account and/or user for password recovery, pretending success result to avoid account crawling attack"),
+    Msg = <<"Password resend email was sent, please check your email to learn how to reset your password.">>,
+    crossbar_util:response(Msg, Context);
+save_reset_id_then_send_email(Context, MoDb) ->
     ResetId = reset_id(MoDb),
     UserDoc = cb_context:doc(Context),
     UserId = kz_doc:id(UserDoc),
@@ -616,12 +619,11 @@ save_reset_id_then_send_email(Context) ->
                      | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
                      ],
             kapps_notify_publisher:cast(Notify, fun kapi_notifications:publish_password_recovery/1),
-            Msg = <<"Request for password reset handled, email sent to: ", Email/binary>>,
+            Msg = <<"Password resend email was sent, please check your email to learn how to reset your password.">>,
             crossbar_util:response(Msg, Context);
         {'error', Reason} ->
             crossbar_doc:handle_datamgr_errors(Reason, 'undefined', Context)
     end.
-
 
 -spec maybe_load_user_doc_via_reset_id(cb_context:context()) -> cb_context:context().
 maybe_load_user_doc_via_reset_id(Context) ->
@@ -668,8 +670,7 @@ maybe_load_user_doc_via_reset_id(Context, _, ResetId, _) ->
 reset_id(?MATCH_MODB_SUFFIX_ENCODED(A, B, Rest, YYYY, MM)) ->
     <<Y1:1/binary, Y2:1/binary, Y3:1/binary, Y4:1/binary>> = YYYY,
     <<M1:1/binary, M2:1/binary>> = MM,
-    SomeNoise = kz_binary:rand_hex((reset_id_size() - (32 + 4 + 2 + 3 + 1)) div 2),
-    <<N1:1/binary, N2:1/binary, N3:1/binary, Noise/binary>> = SomeNoise,
+    <<N1:1/binary, N2:1/binary, N3:1/binary, Noise/binary>> = kz_binary:rand_hex((reset_id_size() - (32 + 4 + 2 + 3 + 1)) div 2),
     <<(?MATCH_ACCOUNT_RAW(A, B, Rest))/binary,
       N1/binary, Y1/binary, Y4/binary,
       N2/binary, M2/binary, Y2/binary,
@@ -772,7 +773,6 @@ error_no_account_id(Context, AccountId) ->
           ]),
     cb_context:add_validation_error(<<"account_id">>, <<"not_found">>, Msg, Context).
 
-
 -spec error_no_account_realm(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 error_no_account_realm(Context, AccountRealm) ->
     Msg =
@@ -789,7 +789,6 @@ error_no_account_name(Context, AccountName) ->
           [{<<"message">>, <<"The provided account name could not be found">>}
           ,{<<"cause">>, AccountName}
           ]),
-    lager:debug("failed to find account by name: '~s'", [AccountName]),
     cb_context:add_validation_error(<<"account_name">>, <<"not_found">>, Msg, Context).
 
 -spec consume_tokens(cb_context:context()) ->
@@ -803,8 +802,5 @@ consume_tokens(Context) ->
 
 -spec reset_id_size() -> integer().
 reset_id_size() ->
-    case kapps_config:get_integer(?CONFIG_CAT, <<"reset_id_size">>, ?RESET_ID_SIZE_DEFAULT) of
-        _TooBig when _TooBig >= 180 -> ?RESET_ID_SIZE_DEFAULT;
-        _TooSmall when _TooSmall < 42 -> ?RESET_ID_SIZE_DEFAULT;
-        Ok -> Ok
-    end.
+    Size = kapps_config:get_integer(?CONFIG_CAT, <<"reset_id_size">>, ?RESET_ID_SIZE_DEFAULT),
+    kz_math:clamp(180, 42, Size).
