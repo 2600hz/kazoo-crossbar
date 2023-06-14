@@ -175,7 +175,6 @@ Key | Description | Type | Default | Required | Support Level
 `keep_caller_id` |   | `boolean()` | `true` | `false` |  
 `number` |   | `string(0..35)` |   | `false` |  
 `require_keypress` |   | `boolean()` | `true` | `false` |  
-`substitute` | Determines if the call forwarding replaces the device | `boolean()` | `true` | `false` |  
 
 ### call_limits
 
