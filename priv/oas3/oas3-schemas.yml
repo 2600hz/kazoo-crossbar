@@ -11394,7 +11394,6 @@
   'description': Schema for crossbar.auth system_config
   'properties':
     'auth_modules':
-      'additionalProperties': false
       'default':
         'cb_api_auth':
           'enabled': true
