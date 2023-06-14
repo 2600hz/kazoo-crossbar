@@ -1271,7 +1271,8 @@
           'type': array
       'type': object
     'substitute':
-      'default': false
+      'default': true
+      'description': Determines if the call forwarding replaces the device
       'type': boolean
     'unconditional':
       '$ref': '#/call_forward_type'
@@ -1300,8 +1301,6 @@
       'type': string
     'require_keypress':
       'default': true
-      'type': boolean
-    'substitute':
       'type': boolean
   'required':
     - enabled
