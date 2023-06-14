@@ -105,7 +105,8 @@
             "type": "object"
         },
         "substitute": {
-            "default": false,
+            "default": true,
+            "description": "Determines if the call forwarding replaces the device",
             "type": "boolean"
         },
         "unconditional": {
