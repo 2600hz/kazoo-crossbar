@@ -1054,44 +1054,51 @@ curl -v -X GET \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "caribbean": {
-            "friendly_name": "Caribbean",
-            "pretty_print": "SS(###) ###-####",
-            "regex": "^\\+?1((?:684|264|268|242|246|441|284|345|767|809|829|849|473|671|876|664|670|787|939|869|758|784|721|868|649|340)\\d{7})$"
-        },
-        "did_us": {
-            "friendly_name": "US DID",
-            "pretty_print": "SS(###) ###-####",
-            "regex": "^\\+?1?([2-9][0-9]{2}[2-9][0-9]{6})$"
-        },
-        "emergency": {
-            "friendly_name": "Emergency Dispatcher",
-            "regex": "^(911)$"
-        },
-        "international": {
-            "friendly_name": "International",
-            "regex": "^(011\\d*)$|^(00\\d*)$"
-        },
-        "toll_us": {
-            "friendly_name": "US Toll",
-            "pretty_print": "SS(###) ###-####",
-            "regex": "^\\+1(900\\d{7})$"
-        },
-        "tollfree_us": {
-            "friendly_name": "US TollFree",
-            "pretty_print": "SS(###) ###-####",
-            "regex": "^\\+1((?:800|888|877|866|855)\\d{7})$"
-        },
-        "unknown": {
-            "friendly_name": "Unknown",
-            "regex": "^(.*)$"
-        }
+  "auth_token": "{AUTH_TOKEN}",
+  "data": [
+    {
+      "name": "caribbean",
+      "friendly_name": "Caribbean",
+      "pretty_print": "SS(###) ###-####",
+      "regex": "^\\+?1((?:684|264|268|242|246|441|284|345|767|809|829|849|473|671|876|664|670|787|939|869|758|784|721|868|649|340)\\d{7})$"
     },
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REVISION}",
-    "status": "success"
+    {
+      "name": "did_us",
+      "friendly_name": "US DID",
+      "pretty_print": "SS(###) ###-####",
+      "regex": "^\\+?1?([2-9][0-9]{2}[2-9][0-9]{6})$"
+    },
+    {
+      "name": "emergency",
+      "friendly_name": "Emergency Dispatcher",
+      "regex": "^(911)$"
+    },
+    {
+      "name": "international",
+      "friendly_name": "International",
+      "regex": "^(011\\d*)$|^(00\\d*)$"
+    },
+    {
+      "name": "toll_us",
+      "friendly_name": "US Toll",
+      "pretty_print": "SS(###) ###-####",
+      "regex": "^\\+1(900\\d{7})$"
+    },
+    {
+      "name": "tollfree_us",
+      "friendly_name": "US TollFree",
+      "pretty_print": "SS(###) ###-####",
+      "regex": "^\\+1((?:800|888|877|866|855)\\d{7})$"
+    },
+    {
+      "name": "unknown",
+      "friendly_name": "Unknown",
+      "regex": "^(.*)$"
+    }
+  ],
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 

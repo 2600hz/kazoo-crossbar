@@ -17903,43 +17903,79 @@
                     "type": "array"
                 },
                 "classifiers": {
-                    "default": {
-                        "caribbean": {
+                    "default": [
+                        {
                             "friendly_name": "Caribbean",
+                            "name": "caribbean",
                             "pretty_print": "SS(###) ###-####",
                             "regex": "^\\+?1((?:684|264|268|242|246|441|284|345|767|809|829|849|473|671|876|664|670|787|939|869|758|784|721|868|649|340)\\d{7})$"
                         },
-                        "did_us": {
+                        {
                             "friendly_name": "US DID",
+                            "name": "did_us",
                             "pretty_print": "SS(###) ###-####",
                             "regex": "^(\\+?1)?([2-9][0-9]{2}[2-9][0-9]{6})$"
                         },
-                        "emergency": {
+                        {
                             "emergency": true,
                             "friendly_name": "Emergency Dispatcher",
+                            "name": "emergency",
                             "regex": "^(911|922|933|988|833|811|711|999)$"
                         },
-                        "international": {
+                        {
                             "friendly_name": "International",
+                            "name": "international",
                             "regex": "^\\+([2-9]\\d{7,})$"
                         },
-                        "toll_us": {
+                        {
                             "friendly_name": "US Toll",
+                            "name": "toll_us",
                             "pretty_print": "SS(###) ###-####",
                             "regex": "^\\+1(900\\d{7})$"
                         },
-                        "tollfree_us": {
+                        {
                             "friendly_name": "US Tollfree",
+                            "name": "tollfree_us",
                             "pretty_print": "SS(###) ###-####",
                             "regex": "^\\+1((?:800|88\\d|877|866|855|844|833|822)\\d{7})$"
                         },
-                        "unknown": {
+                        {
                             "friendly_name": "Unknown",
+                            "name": "unknown",
                             "regex": "^(.*)$"
                         }
-                    },
+                    ],
                     "description": "regular expressions & billing names for numbers",
-                    "type": "object"
+                    "items": {
+                        "properties": {
+                            "emergency": {
+                                "description": "Does this classifier match emergency numbers",
+                                "type": "boolean"
+                            },
+                            "friendly_name": {
+                                "description": "Friendly name for the classifier",
+                                "type": "string"
+                            },
+                            "name": {
+                                "description": "name of classifier for use as a reference elsewhere in KAZOO to this configured classifier",
+                                "type": "string"
+                            },
+                            "pretty_print": {
+                                "description": "Formatting string for pretty-printing numbers matching the classifier",
+                                "type": "string"
+                            },
+                            "regex": {
+                                "description": "Regular expression to match a number to this classifier",
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "name",
+                            "regex"
+                        ],
+                        "type": "object"
+                    },
+                    "type": "array"
                 },
                 "converters": {
                     "default": [
