@@ -3469,7 +3469,7 @@
                     "type": "integer"
                 },
                 "caller_greeting": {
-                    "default": "",
+                    "default": "Hi. Please state your name after the tone.",
                     "description": "Greeting played to caller to inform her/him about name/purpose recording",
                     "type": "string"
                 },
@@ -3478,9 +3478,23 @@
                     "description": "Custom Caller ID Name to denote the doorman is calling",
                     "type": "string"
                 },
+                "failover_strategy": {
+                    "default": "hangup",
+                    "description": "The failover strategy to use if the callee does not answer or hangs up without choosing an option",
+                    "enum": [
+                        "hangup",
+                        "voicemail"
+                    ],
+                    "type": "string"
+                },
                 "id": {
                     "description": "The KAZOO device or user ID",
                     "type": "string"
+                },
+                "max_menu_attempts": {
+                    "default": 3,
+                    "description": "The max number of doorman menu repetitions in case of callee's wrong choice",
+                    "type": "integer"
                 },
                 "origin": {
                     "default": "callflow : cf_doorman",
@@ -3488,7 +3502,7 @@
                     "type": "string"
                 },
                 "recording_limit": {
-                    "default": 4,
+                    "default": 3,
                     "description": "The caller's recording limit for name and reason for calling",
                     "type": "integer"
                 },
@@ -3509,6 +3523,9 @@
                     "type": "string"
                 }
             },
+            "required": [
+                "id"
+            ],
             "type": "object"
         },
         "callflows.dynamic_cid": {
