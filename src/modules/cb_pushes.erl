@@ -108,7 +108,7 @@ validate(Context) ->
 
 -spec validate(cb_context:context(), req_nouns()) -> cb_context:context().
 validate(Context, ?PUSH_NOUNS(_API, _EndpointId)) when ?IS_VALID_API(_API) ->
-    cb_context:validate_request_data(<<"endpoint.push">>, Context).
+    cb_context:validate_request_data(<<"pushes">>, Context).
 
 %%------------------------------------------------------------------------------
 %% @doc Take the payload of the request and publish AMQP message(s) and if resulting
