@@ -739,13 +739,39 @@ direction(Context) ->
 %%------------------------------------------------------------------------------
 -spec direction(cb_context:context(), kz_view:options() | options()) -> kz_view:direction().
 direction(Context, Options) ->
-    case props:get_value('direction', Options) =:= 'descending'
-        orelse props:is_true('descending', Options, 'false')
-        orelse kz_json:is_true(<<"descending">>, cb_context:query_string(Context))
-        orelse kz_json:is_false(<<"ascending">>, cb_context:query_string(Context), 'true')
-    of
+    direction1(Context, Options).
+
+direction1(Context, Options) ->
+    case props:get_value('direction', Options) of
+        'descending' -> 'descending';
+        'ascending' -> 'ascending';
+        'undefined' -> direction2(Context, Options)
+    end.
+
+direction2(Context, Options) ->
+    case props:is_true('descending', Options, 'undefined') of
         'true' -> 'descending';
-        'false' -> 'ascending'
+        'false' -> 'ascending';
+        'undefined' -> direction3(Context, Options)
+    end.
+direction3(Context, Options) ->
+    case props:is_true('ascending', Options, 'undefined') of
+        'true' -> 'ascending';
+        'false' -> 'descending';
+        'undefined' -> direction4(Context)
+    end.
+
+direction4(Context) ->
+    case kz_json:is_true(<<"descending">>, cb_context:query_string(Context), 'undefined') of
+        'true' -> 'descending';
+        'false' -> 'ascending';
+        'undefined' -> direction5(Context)
+    end.
+direction5(Context) ->
+    case kz_json:is_true(<<"ascending">>, cb_context:query_string(Context), 'undefined') of
+        'true' -> 'ascending';
+        'false' -> 'descending';
+        'undefined' -> 'descending'
     end.
 
 -spec get_batch_size(cb_context:context(), options()) -> kz_term:api_pos_integer().
