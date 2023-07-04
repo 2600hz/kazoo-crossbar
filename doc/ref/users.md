@@ -114,7 +114,7 @@ Key | Description | Type | Default | Required | Support Level
 `selective.rules.[].require_keypress` |   | `boolean()` | `true` | `false` |  
 `selective.rules` | Match list rules to check for call forwarding | `array(object())` |   | `false` |  
 `selective` | Conditionally check match lists to determine if call forwarding should be used | `object()` |   | `false` |  
-`substitute` |   | `boolean()` | `false` | `false` |  
+`substitute` | Determines if the call forwarding replaces the device | `boolean()` | `true` | `false` |  
 `unconditional` | Call Forward Properties | `object()` |   | `false` |  
 
 ### call_forward_type
@@ -130,7 +130,6 @@ Key | Description | Type | Default | Required | Support Level
 `keep_caller_id` |   | `boolean()` | `true` | `false` |  
 `number` |   | `string(0..35)` |   | `false` |  
 `require_keypress` |   | `boolean()` | `true` | `false` |  
-`substitute` |   | `boolean()` |   | `false` |  
 
 ### call_limits
 

@@ -1271,7 +1271,8 @@
           'type': array
       'type': object
     'substitute':
-      'default': false
+      'default': true
+      'description': Determines if the call forwarding replaces the device
       'type': boolean
     'unconditional':
       '$ref': '#/call_forward_type'
@@ -1300,8 +1301,6 @@
       'type': string
     'require_keypress':
       'default': true
-      'type': boolean
-    'substitute':
       'type': boolean
   'required':
     - enabled
@@ -2821,12 +2820,18 @@
     'group_id':
       'description': ID of the group
       'type': string
+    'group_name':
+      'description': group name
+      'type': string
     'hard_stop_after_successful_group':
       'description': should hard stop on successful bridge
       'type': boolean
     'id':
       'description': Group ID
       'type': string
+    'ignore_early_media':
+      'description': ignore early media
+      'type': boolean
     'ignore_forward':
       'default': true
       'description': Whether to ignore forwarded phones
@@ -2846,6 +2851,12 @@
         'internal':
           'description': Ring tone for calls from external sources
           'type': string
+      'type': object
+    'sca':
+      'properties':
+        'enabled':
+          'description': is sca enabled
+          'type': boolean
       'type': object
     'skip_module':
       'description': |-
@@ -3885,8 +3896,14 @@
       'maxLength': 128
       'minLength': 1
       'type': string
+    'group_name':
+      'description': group name
+      'type': string
     'hard_stop_after_successful_group':
       'description': should hard stop on successful bridge
+      'type': boolean
+    'ignore_early_media':
+      'description': ignore early media
       'type': boolean
     'ignore_forward':
       'default': true
@@ -3908,6 +3925,12 @@
         'internal':
           'description': Ring tone for calls from external sources
           'type': string
+      'type': object
+    'sca':
+      'properties':
+        'enabled':
+          'description': is sca enabled
+          'type': boolean
       'type': object
     'skip_module':
       'description': |-
