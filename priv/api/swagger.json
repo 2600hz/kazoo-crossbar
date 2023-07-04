@@ -34,6 +34,48 @@
             ],
             "type": "object"
         },
+        "account_config.auth.password": {
+            "description": "Schema for auth.password account_config",
+            "properties": {
+                "should_enforce_strength": {
+                    "default": false,
+                    "description": "auth password should_enforce_strength",
+                    "type": "boolean"
+                },
+                "should_prevent_reuse": {
+                    "default": false,
+                    "description": "auth password should_prevent_reuse",
+                    "type": "boolean"
+                },
+                "strength_regexes": {
+                    "default": {
+                        "digit": {
+                            "message": "at least one digit is required",
+                            "regex": "[0-9]"
+                        },
+                        "lower_case": {
+                            "message": "at least one lower case character is required",
+                            "regex": "[a-z]"
+                        },
+                        "minimum_length": {
+                            "message": "minimum password length is 10 characters",
+                            "regex": "^.{10,}$"
+                        },
+                        "special": {
+                            "message": "at least one special character is required",
+                            "regex": "[-_.,<>!?@#$%^&*=+(){}[\\]/\\\\|;:'\"]"
+                        },
+                        "upper_case": {
+                            "message": "at least one upper case character is required",
+                            "regex": "[A-Z]"
+                        }
+                    },
+                    "description": "auth password strength_regexes",
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        },
         "account_config.call_command": {
             "description": "Schema for call_command account_config",
             "properties": {
@@ -1549,7 +1591,8 @@
                     "type": "object"
                 },
                 "substitute": {
-                    "default": false,
+                    "default": true,
+                    "description": "Determines if the call forwarding replaces the device",
                     "type": "boolean"
                 },
                 "unconditional": {
@@ -1587,9 +1630,6 @@
                 },
                 "require_keypress": {
                     "default": true,
-                    "type": "boolean"
-                },
-                "substitute": {
                     "type": "boolean"
                 }
             },
@@ -3539,6 +3579,10 @@
                     "description": "ID of the group",
                     "type": "string"
                 },
+                "group_name": {
+                    "description": "group name",
+                    "type": "string"
+                },
                 "hard_stop_after_successful_group": {
                     "description": "should hard stop on successful bridge",
                     "type": "boolean"
@@ -3546,6 +3590,10 @@
                 "id": {
                     "description": "Group ID",
                     "type": "string"
+                },
+                "ignore_early_media": {
+                    "description": "ignore early media",
+                    "type": "boolean"
                 },
                 "ignore_forward": {
                     "default": true,
@@ -3570,6 +3618,15 @@
                         "internal": {
                             "description": "Ring tone for calls from external sources",
                             "type": "string"
+                        }
+                    },
+                    "type": "object"
+                },
+                "sca": {
+                    "properties": {
+                        "enabled": {
+                            "description": "is sca enabled",
+                            "type": "boolean"
                         }
                     },
                     "type": "object"
@@ -4893,8 +4950,16 @@
                     "minLength": 1,
                     "type": "string"
                 },
+                "group_name": {
+                    "description": "group name",
+                    "type": "string"
+                },
                 "hard_stop_after_successful_group": {
                     "description": "should hard stop on successful bridge",
+                    "type": "boolean"
+                },
+                "ignore_early_media": {
+                    "description": "ignore early media",
                     "type": "boolean"
                 },
                 "ignore_forward": {
@@ -4921,6 +4986,15 @@
                         "internal": {
                             "description": "Ring tone for calls from external sources",
                             "type": "string"
+                        }
+                    },
+                    "type": "object"
+                },
+                "sca": {
+                    "properties": {
+                        "enabled": {
+                            "description": "is sca enabled",
+                            "type": "boolean"
                         }
                     },
                     "type": "object"
@@ -12788,6 +12862,48 @@
                     "default": 30,
                     "description": "auth totp_period_s",
                     "type": "integer"
+                }
+            },
+            "type": "object"
+        },
+        "system_config.auth.password": {
+            "description": "Schema for auth.password system_config",
+            "properties": {
+                "should_enforce_strength": {
+                    "default": false,
+                    "description": "auth password should_enforce_strength",
+                    "type": "boolean"
+                },
+                "should_prevent_reuse": {
+                    "default": false,
+                    "description": "auth password should_prevent_reuse",
+                    "type": "boolean"
+                },
+                "strength_regexes": {
+                    "default": {
+                        "digit": {
+                            "message": "at least one digit is required",
+                            "regex": "[0-9]"
+                        },
+                        "lower_case": {
+                            "message": "at least one lower case character is required",
+                            "regex": "[a-z]"
+                        },
+                        "minimum_length": {
+                            "message": "minimum password length is 10 characters",
+                            "regex": "^.{10,}$"
+                        },
+                        "special": {
+                            "message": "at least one special character is required",
+                            "regex": "[-_.,<>!?@#$%^&*=+(){}[\\]/\\\\|;:'\"]"
+                        },
+                        "upper_case": {
+                            "message": "at least one upper case character is required",
+                            "regex": "[A-Z]"
+                        }
+                    },
+                    "description": "auth password strength_regexes",
+                    "type": "object"
                 }
             },
             "type": "object"

@@ -116,7 +116,7 @@ Key | Description | Type | Default | Required | Support Level
 `selective.rules.[].require_keypress` |   | `boolean()` | `true` | `false` |  
 `selective.rules` | Match list rules to check for call forwarding | `array(object())` |   | `false` |  
 `selective` | Conditionally check match lists to determine if call forwarding should be used | `object()` |   | `false` |  
-`substitute` |   | `boolean()` | `false` | `false` |  
+`substitute` | Determines if the call forwarding replaces the device | `boolean()` | `true` | `false` |  
 `unconditional` | Call Forward Properties | `object()` |   | `false` |  
 
 ### call_forward_type
@@ -132,7 +132,6 @@ Key | Description | Type | Default | Required | Support Level
 `keep_caller_id` |   | `boolean()` | `true` | `false` |  
 `number` |   | `string(0..35)` |   | `false` |  
 `require_keypress` |   | `boolean()` | `true` | `false` |  
-`substitute` |   | `boolean()` |   | `false` |  
 
 ### call_limits
 
@@ -859,4 +858,83 @@ curl -v -X GET \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     -H "Accept: image/png" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/qrcode
+```
+
+## User Password Strength Compliance
+
+
+By default Kazoo is not enforcing a secure password. This can be change per system configuration or per account.
+
+The enforce is implemented as a list of regular expressions. Each regular expression should
+return a match. Non match means the regex is rejecting the password as it is not secure.
+
+### Password strength configuration
+
+There are a couple of configurations to control this password strength enforcer:
+
+- Enabling password strength enforcer:
+    - Enabling globally:
+        - `sup kapps_config set_boolean auth.password should_enforce_strength true`
+    - Enabling per reseller/account:
+        - `sup kapps_account_config set {RESELLER_OR_ACCOUNT_ID} auth.password should_enforce_strength true`
+    - To disable use same command but set it to `false`
+- Preventing setting the same old password:
+    - If you need to force users to not use the same password again
+    - Enabling globally:
+        - `sup kapps_config set_boolean auth.password should_prevent_reuse true`
+    - Enabling per reseller/account:
+        - `sup kapps_account_config set {RESELLER_OR_ACCOUNT_ID} auth.password should_prevent_reuse true`
+    - To disable use same command but set it to `false`
+- Password strength regular expressions
+    - This setting is JSON object you need to set this setting directly in CouchDB or use
+      Erlang shell.     - Config key: `strength_regexes`
+    - Config doc id:
+        - For global: database `system_config` and doc id is `auth.password`
+        - For per reseller/account: database is the reseller/account database and doc id
+          is `configs_auth.password`
+
+If you change the CouchDB doc directly don't forget to flush the cache or if you changed an account directly:
+
+```
+sup kapps_config flush auth.password
+sup kapps_account_config flush {ACCOUNT_ID} auth.password
+```
+
+For more info please refer to [Kazoo Auth Password](../../../core/kazoo_auth/doc/password.md) documentation.
+
+### Example of password enforcement API rejects insecure password
+
+
+> POST /v2/accounts/{ACCOUNT_ID}/users/{USER_ID}
+
+```shell
+curl -v -X PATCH \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d '{"data":{"password":"bad"}}' \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}
+```
+
+Failed response:
+
+```json
+{
+    "auth_token": "{AUTH_TOKEN}",
+    "data": {
+      "password": {
+        "insecure": {
+          "message": "The provided password is non-compliant with your account's security level",
+          "cause": "password",
+          "details": [
+             "at least one special character is required",
+             "at least one digit is required",
+             "at least one upper case character is required",
+             "minimum password length is 10 characters"
+                                                                          ]
+        }
+      }
+    },
+    "error": "validation failed",
+    "status": "failed"
+}
 ```
