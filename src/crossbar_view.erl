@@ -739,13 +739,48 @@ direction(Context) ->
 %%------------------------------------------------------------------------------
 -spec direction(cb_context:context(), kz_view:options() | options()) -> kz_view:direction().
 direction(Context, Options) ->
-    case props:get_value('direction', Options) =:= 'descending'
-        orelse props:is_true('descending', Options, 'false')
-        orelse kz_json:is_true(<<"descending">>, cb_context:query_string(Context))
-        orelse kz_json:is_false(<<"ascending">>, cb_context:query_string(Context), 'true')
-    of
+    %% In Crossbar default direction is: `descending'. Either cb modules can set it or the
+    %% user can request it using query string. Options set by cb modules ALWAYS have priority over QS.
+    %%
+    %% `direction' is the new preferred option, check it first:
+    case props:get_value('direction', Options) of
+        'descending' -> 'descending';
+        'ascending' -> 'ascending';
+        _ -> check_des_asc_options(Context, Options)
+    end.
+
+-spec check_des_asc_options(cb_context:context(), kz_view:options() | options()) -> kz_view:direction().
+check_des_asc_options(Context, Options) ->
+    %% `descending' and `ascending' are old options. Both keys still have priority
+    %% over query string options.
+    %%
+    %% descending has priority over ascending, check it first:
+    case props:is_true('descending', Options, 'undefined') of
         'true' -> 'descending';
-        'false' -> 'ascending'
+        'false' -> 'ascending';
+        'undefined' ->
+            case props:is_true('ascending', Options, 'undefined') of
+                'true' -> 'ascending';
+                'false' -> 'descending';
+                'undefined' -> check_des_asc_qs(Context)
+            end
+    end.
+
+-spec check_des_asc_qs(cb_context:context()) -> kz_view:direction().
+check_des_asc_qs(Context) ->
+    %% descending has priority over ascending, check it first.
+    QS = cb_context:query_string(Context),
+    case kz_json:is_true(<<"descending">>, QS, 'undefined') of
+        'true' -> 'descending';
+        'false' -> 'ascending';
+        'undefined' ->
+            case kz_json:is_true(<<"ascending">>, QS, 'undefined') of
+                'true' -> 'ascending';
+                'false' -> 'descending';
+                'undefined' ->
+                    %% neither cb module or qs has direction, using default value:
+                    'descending'
+            end
     end.
 
 -spec get_batch_size(cb_context:context(), options()) -> kz_term:api_pos_integer().
