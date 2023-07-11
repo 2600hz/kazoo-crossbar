@@ -15,18 +15,22 @@
 -module(cb_lists).
 
 -export([init/0
+        ,authorize/1, authorize/2, authorize/3, authorize/4
         ,allowed_methods/0, allowed_methods/1, allowed_methods/2, allowed_methods/3, allowed_methods/4
         ,resource_exists/0, resource_exists/1, resource_exists/2, resource_exists/3, resource_exists/4
         ,content_types_provided/1, content_types_provided/2, content_types_provided/3, content_types_provided/4, content_types_provided/5
         ,validate/1, validate/2, validate/3, validate/4, validate/5
+        ,put/1, put/3
+        ,post/2, post/4
+        ,patch/2, patch/4
         ,delete/2, delete/3, delete/4
-        ,save/1, save/2, save/3, save/4, save/5
         ]).
 
 -include("crossbar.hrl").
 
 -define(CB_LIST, <<"lists/crossbar_listing">>).
 -define(ENTRIES_VIEW, <<"lists/entries">>).
+-define(CROSSBAR_LISTING_BY_OWNER_ID_TYPE, <<"crossbar_listings/by_ownerid_type">>).
 -define(ENTRIES, <<"entries">>).
 -define(VCARD, <<"vcard">>).
 -define(PHOTO, <<"photo">>).
@@ -37,22 +41,23 @@
 %%%=============================================================================
 
 %%------------------------------------------------------------------------------
-%% @doc
+%% @doc Initializes the bindings this module will respond to.
 %% @end
 %%------------------------------------------------------------------------------
--spec init() -> any().
+-spec init() -> 'ok'.
 init() ->
-    [crossbar_bindings:bind(Binding, ?MODULE, F)
-     || {Binding, F} <- [{<<"*.allowed_methods.lists">>, 'allowed_methods'}
-                        ,{<<"*.resource_exists.lists">>, 'resource_exists'}
-                        ,{<<"*.content_types_provided.lists">>, 'content_types_provided'}
-                        ,{<<"*.validate.lists">>, 'validate'}
-                        ,{<<"*.execute.put.lists">>, 'save'}
-                        ,{<<"*.execute.post.lists">>, 'save'}
-                        ,{<<"*.execute.patch.lists">>, 'save'}
-                        ,{<<"*.execute.delete.lists">>, 'delete'}
-                        ]
-    ].
+    Bindings = [{<<"*.allowed_methods.lists">>, 'allowed_methods'}
+               ,{<<"*.resource_exists.lists">>, 'resource_exists'}
+               ,{<<"*.content_types_provided.lists">>, 'content_types_provided'}
+               ,{<<"*.validate.lists">>, 'validate'}
+               ,{<<"*.execute.put.lists">>, 'put'}
+               ,{<<"*.execute.post.lists">>, 'post'}
+               ,{<<"*.execute.patch.lists">>, 'patch'}
+               ,{<<"*.execute.delete.lists">>, 'delete'}
+               ,{<<"*.authorize.lists">>, 'authorize'}
+               ],
+    cb_modules_util:bind(?MODULE, Bindings),
+    'ok'.
 
 -spec allowed_methods() -> http_methods().
 allowed_methods() ->
@@ -90,6 +95,61 @@ resource_exists(_ListId, ?ENTRIES, _EntryId) -> 'true'.
 
 -spec resource_exists(path_token(), path_token(), path_token(), path_token()) -> 'true'.
 resource_exists(_ListId, ?ENTRIES, _EntryId, ?VCARD) -> 'true'.
+
+%%------------------------------------------------------------------------------
+%% @doc Authorizes the incoming request, returning true if the requestor is
+%% allowed to access the resource, or false if not.
+%% @end
+%%------------------------------------------------------------------------------
+-spec authorize(cb_context:context()) ->
+          'true' | {'stop', cb_context:context()}.
+authorize(_Context) -> 'true'.
+
+-spec authorize(cb_context:context(), path_token()) ->
+          'true' | {'stop', cb_context:context()}.
+authorize(Context, ListId) ->
+    authorize_based_req_verb(Context, cb_context:req_verb(Context), ListId).
+
+-spec authorize(cb_context:context(), path_token(), path_token()) ->
+          'true' | {'stop', cb_context:context()}.
+authorize(Context, ListId, ?ENTRIES) ->
+    authorize_based_req_verb(Context, ?HTTP_GET, ListId).
+
+-spec authorize(cb_context:context(), path_token(), path_token(), path_token()) ->
+          'true' | {'stop', cb_context:context()}.
+authorize(Context, ListId, ?ENTRIES, _EntryId) ->
+    authorize_based_req_verb(Context, ?HTTP_GET, ListId).
+
+-spec authorize_based_req_verb(cb_context:context(), http_method(), path_token()) ->
+          'true' | {'stop', cb_context:context()}.
+authorize_based_req_verb(Context, ?HTTP_GET, ListId) ->
+    ContextResp = crossbar_doc:load(ListId, Context, ?TYPE_CHECK_OPTION(?TYPE_LIST)),
+    Doc = cb_context:doc(ContextResp),
+    OwnerId = kzd_lists:owner_id(Doc),
+    case {maybe_admin(Context)
+         ,auth_token_user_matches(Context, OwnerId)}
+    of
+        {'true', _} ->
+            'true';
+        {'false', 'true'} ->
+            'true';
+        {'false', 'false'} ->
+            {'stop', cb_context:add_system_error('forbidden', Context)}
+    end;
+authorize_based_req_verb(Context, _ReqVerb, _ListId) ->
+    case {cb_context:user_id(Context)
+         ,maybe_admin(Context)}
+    of
+        {_UserId, 'true'} ->
+            'true';
+        {'undefined', 'false'} ->
+            {'stop', cb_context:add_system_error('forbidden', Context)};
+        {UserId, 'false'} ->
+            case auth_token_user_matches(Context, UserId) of
+                'true' -> 'true';
+                'false' -> {'stop', cb_context:add_system_error('forbidden', Context)}
+            end
+    end.
 
 -spec content_types_provided(cb_context:context()) ->
           cb_context:context().
@@ -143,11 +203,46 @@ validate(Context, ListId, ?ENTRIES, EntryId) ->
 validate(Context, ListId, ?ENTRIES, EntryId, ?VCARD) ->
     validate_req(cb_context:req_verb(Context), Context, [ListId, ?ENTRIES, EntryId, ?VCARD]).
 
+-spec get_lists_unowned(cb_context:context())-> cb_context:context().
+get_lists_unowned(Context) ->
+    Options = [{'mapper', fun normalize_lists_unowned/2}
+              ,'include_docs'
+              ],
+    crossbar_view:load(Context, ?CB_LIST, Options).
+
+-spec normalize_lists_unowned(kz_json:object(), kz_json:objects()) -> kz_json:objects().
+normalize_lists_unowned(JObj, Acc) ->
+    case kz_json:is_defined([<<"doc">>, <<"owner_id">>], JObj) of
+        'true' ->
+            Acc;
+        'false' ->
+            [kz_json:get_value(<<"value">>, JObj)| Acc]
+    end.
+
+-spec get_lists_owned(cb_context:context(), kz_term:api_ne_binary())-> cb_context:context().
+get_lists_owned(Context, UserId) ->
+    Options = [{'key', [UserId, ?TYPE_LIST]}
+              ,{'mapper', crossbar_view:get_doc_fun()}
+              ,'include_docs'
+              ],
+    crossbar_view:load(Context, ?CROSSBAR_LISTING_BY_OWNER_ID_TYPE, Options).
+
 -spec validate_req(http_method(), cb_context:context(), path_tokens()) -> cb_context:context().
 validate_req(?HTTP_GET, Context, []) ->
-    crossbar_view:load(Context, ?CB_LIST, [{'mapper', crossbar_view:get_value_fun()}]);
+    case cb_context:user_id(Context) of
+        'undefined' ->
+            get_lists_unowned(Context);
+        UserId ->
+            get_lists_owned(Context, UserId)
+    end;
 validate_req(?HTTP_PUT, Context, []) ->
-    validate_doc('undefined', ?TYPE_LIST, Context);
+    case cb_context:user_id(Context) of
+        'undefined' ->
+            validate_doc('undefined', ?TYPE_LIST, Context);
+        UserId ->
+            NewDoc = kzd_lists:set_owner_id(cb_context:req_data(Context), UserId),
+            validate_doc('undefined', ?TYPE_LIST, cb_context:set_req_data(Context, NewDoc))
+    end;
 
 validate_req(?HTTP_GET, Context, [ListId]) ->
     crossbar_doc:load(ListId, Context, ?TYPE_CHECK_OPTION(?TYPE_LIST));
@@ -155,6 +250,7 @@ validate_req(?HTTP_DELETE, Context, [ListId]) ->
     Options = [{'key', ListId}
               ,{'should_paginate', 'false'}
               ,{'unchunkable', 'true'}
+              ,{'mapper', crossbar_view:get_id_fun()}
               ],
     crossbar_view:load(Context, ?ENTRIES_VIEW, Options);
 validate_req(?HTTP_POST, Context, [ListId]) ->
@@ -164,13 +260,14 @@ validate_req(?HTTP_PATCH, Context, [ListId] = Path) ->
 
 validate_req(?HTTP_GET, Context, [ListId, ?ENTRIES]) ->
     %% FIXME: why this doesn't normalize the db result??
+    %% It is a list of objects, in which both the id and the value of each object are needed.
     Options = [{'key', ListId}
               ,{'should_paginate', 'false'}
               ,{'unchunkable', 'true'}
               ],
     crossbar_view:load(Context, ?ENTRIES_VIEW, Options);
 validate_req(?HTTP_PUT, Context, [ListId, ?ENTRIES]) ->
-    ReqData = kz_json:set_values([{<<"list_id">>, ListId}], cb_context:req_data(Context)),
+    ReqData = kzd_list_entries:set_list_id(cb_context:req_data(Context), ListId),
     validate_doc('undefined', ?TYPE_LIST_ENTRY, cb_context:set_req_data(Context, ReqData));
 validate_req(?HTTP_DELETE, Context, [ListId, ?ENTRIES]) ->
     Options = [{'key', ListId}
@@ -207,8 +304,17 @@ validate_req(?HTTP_GET, Context, [_ListId, ?ENTRIES, EntryId, ?VCARD]) ->
 
 -spec validate_doc(kz_term:api_binary(), kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
 validate_doc(Id, Type, Context) ->
-    OnSuccess = fun(C) -> on_successfull_validation(Id, Type, C) end,
+    OnSuccess = fun(C) -> on_successful_validation(Id, Type, C) end,
     cb_context:validate_request_data(type_schema_name(Type), Context, OnSuccess).
+
+-spec maybe_admin(cb_context:context()) -> boolean().
+maybe_admin(Context) ->
+    cb_context:is_account_admin(Context)
+        orelse cb_context:is_superduper_admin(Context).
+
+-spec auth_token_user_matches(cb_context:context(), kz_term:api_ne_binary())-> boolean().
+auth_token_user_matches(Context, UserId)->
+    cb_context:auth_user_id(Context) =:= UserId.
 
 -spec delete(cb_context:context(), path_token()) -> cb_context:context().
 delete(Context, ListId) ->
@@ -233,36 +339,39 @@ delete(Context, _ListId, ?ENTRIES) ->
 delete(Context, _ListId, ?ENTRIES, _EntryId) ->
     crossbar_doc:delete(Context).
 
--spec save(cb_context:context()) -> cb_context:context().
-save(Context) ->
+-spec put(cb_context:context()) -> cb_context:context().
+put(Context) ->
     crossbar_doc:save(Context).
 
--spec save(cb_context:context(), path_token()) -> cb_context:context().
-save(Context, _) ->
-    save(Context).
+-spec put(cb_context:context(), path_token(), path_token()) -> cb_context:context().
+put(Context, _ListId, ?ENTRIES) ->
+    crossbar_doc:save(Context).
 
--spec save(cb_context:context(), path_token(), path_token()) -> cb_context:context().
-save(Context, _, ?ENTRIES) ->
-    save(Context).
+-spec post(cb_context:context(), path_token()) -> cb_context:context().
+post(Context, _ListId) ->
+    crossbar_doc:save(Context).
 
--spec save(cb_context:context(), path_token(), path_token(), path_token()) -> cb_context:context().
-save(Context, _, ?ENTRIES, _) ->
-    save(Context).
+-spec post(cb_context:context(), path_token(), path_token(), path_token()) -> cb_context:context().
+post(Context, _ListId, ?ENTRIES, _EntryId) ->
+    crossbar_doc:save(Context).
 
--spec save(cb_context:context(), path_token(), path_token(), path_token(), path_token()) -> cb_context:context().
-save(Context, _, ?ENTRIES, EntryId, ?PHOTO) ->
-    %% May be move code from cb_users to crossbar_doc?
-    cb_users:post(Context, EntryId, ?PHOTO).
+-spec patch(cb_context:context(), path_token()) -> cb_context:context().
+patch(Context, _ListId) ->
+    crossbar_doc:save(Context).
+
+-spec patch(cb_context:context(), path_token(), path_token(), path_token()) -> cb_context:context().
+patch(Context, _ListId, ?ENTRIES, _EntryId) ->
+    crossbar_doc:save(Context).
 
 -spec type_schema_name(kz_term:ne_binary()) -> kz_term:ne_binary().
 type_schema_name(?TYPE_LIST) -> <<"lists">>;
 type_schema_name(?TYPE_LIST_ENTRY) -> <<"list_entries">>.
 
--spec on_successfull_validation(kz_term:api_binary(), kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
-on_successfull_validation('undefined', Type, Context) ->
-    Doc = kz_json:set_values([{<<"pvt_type">>, Type}], cb_context:doc(Context)),
+-spec on_successful_validation(kz_term:api_binary(), kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
+on_successful_validation('undefined', Type, Context) ->
+    Doc = kz_doc:set_type(cb_context:doc(Context), Type),
     cb_context:set_doc(Context, Doc);
-on_successfull_validation(Id, Type, Context) ->
+on_successful_validation(Id, Type, Context) ->
     crossbar_doc:load_merge(Id, Context, ?TYPE_CHECK_OPTION(Type)).
 
 -spec set_org(kz_json:object(), cb_context:context()) -> kz_json:object().
