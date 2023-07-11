@@ -8838,57 +8838,93 @@
         "list_entries": {
             "description": "Schema for a match list entries",
             "properties": {
-                "capture_group_key": {
-                    "description": "The number which is used to select this entry, length should be same as `capture_group_length`",
+                "contacts": {
+                    "default": [],
+                    "items": {
+                        "description": "Contacts to save",
+                        "properties": {
+                            "contact": {
+                                "description": "The phone number or email associated with the contact",
+                                "type": "string"
+                            },
+                            "contact_type": {
+                                "description": "The type of contact this is",
+                                "enum": [
+                                    "phone_number",
+                                    "email",
+                                    "sms"
+                                ],
+                                "type": "string"
+                            },
+                            "created": {
+                                "description": "The Gregorian timestamp this element was added to the contact array",
+                                "type": "integer"
+                            },
+                            "default": {
+                                "description": "If this is the default for this contact type",
+                                "type": "boolean"
+                            },
+                            "description": {
+                                "description": "The description of the contact",
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "description": {
+                    "description": "A description of the list entity",
                     "type": "string"
                 },
-                "capture_group_length": {
-                    "description": "Length of the numbers in the list entries for which it used to select desire Caller ID",
-                    "type": "integer"
-                },
-                "displayname": {
-                    "description": "Display name",
-                    "maxLength": 128,
-                    "minLength": 1,
-                    "type": "string"
-                },
-                "firstname": {
-                    "description": "A friendly firstname",
-                    "maxLength": 128,
-                    "minLength": 1,
-                    "type": "string"
-                },
-                "lastname": {
-                    "description": "A friendly lastname",
-                    "maxLength": 128,
-                    "minLength": 1,
-                    "type": "string"
+                "history": {
+                    "default": [],
+                    "items": {
+                        "description": "The contacts Schema",
+                        "properties": {
+                            "contact": {
+                                "title": "The contact that was used",
+                                "type": "object"
+                            },
+                            "notes": {
+                                "description": "Notes from the communication",
+                                "type": "string"
+                            },
+                            "timestamp": {
+                                "title": "The gregorian timestamp",
+                                "type": "integer"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "type": "array"
                 },
                 "list_id": {
-                    "description": "List id",
+                    "description": "The document id of the list document this list entry belongs to",
                     "type": "string"
                 },
-                "number": {
-                    "description": "Phone number",
+                "name": {
+                    "description": "The name of the list entity",
                     "type": "string"
                 },
-                "pattern": {
-                    "description": "Match pattern",
-                    "type": "string"
-                },
-                "profile": {
-                    "$ref": "#/definitions/profile",
+                "organization": {
                     "default": {},
-                    "description": "Profile data",
+                    "description": "The organization this entity belongs to",
+                    "properties": {
+                        "name": {
+                            "description": "The name of the organization",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "name"
+                    ],
                     "type": "object"
-                },
-                "type": {
-                    "maxLength": 128,
-                    "minLength": 1,
-                    "type": "string"
                 }
             },
             "required": [
+                "name",
+                "contacts",
                 "list_id"
             ],
             "type": "object"
@@ -8910,6 +8946,10 @@
                 },
                 "org": {
                     "description": "Full legal name of the organization",
+                    "type": "string"
+                },
+                "owner_id": {
+                    "description": "UserId owner of the list",
                     "type": "string"
                 }
             },

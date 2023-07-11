@@ -18,6 +18,10 @@
         "org": {
             "description": "Full legal name of the organization",
             "type": "string"
+        },
+        "owner_id": {
+            "description": "UserId owner of the list",
+            "type": "string"
         }
     },
     "required": [
