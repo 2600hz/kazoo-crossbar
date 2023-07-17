@@ -1,0 +1,41 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "_id": "system_config.teammate",
+    "description": "Schema for teammate system_config",
+    "properties": {
+        "admin_reseller_id": {
+            "description": "teammate admin_reseller_id",
+            "type": "string"
+        },
+        "client_id": {
+            "description": "teammate client_id",
+            "type": "string"
+        },
+        "client_secret": {
+            "description": "teammate client_secret",
+            "type": "string"
+        },
+        "password": {
+            "description": "teammate password",
+            "type": "string"
+        },
+        "teammate_environment": {
+            "default": "dev",
+            "description": "teammate teammate_environment",
+            "type": "string"
+        },
+        "teammate_servers": {
+            "default": {
+                "dev": "https://api.connecttoteams.com",
+                "production": "https://api.connecttoteams.com"
+            },
+            "description": "teammate teammate_servers",
+            "type": "object"
+        },
+        "username": {
+            "description": "teammate username",
+            "type": "string"
+        }
+    },
+    "type": "object"
+}
