@@ -7,11 +7,12 @@
 -module(cb_getstream).
 
 -export([init/0
-        ,allowed_methods/1
-        ,resource_exists/1
-        ,validate/2
+        ,allowed_methods/0, allowed_methods/1
+        ,resource_exists/0, resource_exists/1 
+        ,validate/1, validate/2
         ,content_types_provided/2
-        ,put/2
+        ,put/1, put/2
+        ,delete/1
         ]).
 
 -export([chat_getstream_enabled/1, chat_getstream_enabled/2, set_chat_getstream_enabled/2]).
@@ -39,13 +40,18 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.allowed_methods.getstream">>, ?MODULE, 'allowed_methods'),
     _ = crossbar_bindings:bind(<<"*.resource_exists.getstream">>, ?MODULE, 'resource_exists'),
     _ = crossbar_bindings:bind(<<"*.validate.getstream">>, ?MODULE, 'validate'),
-    _ = crossbar_bindings:bind(<<"*.execute.put.getstream">>, ?MODULE, 'put').
+    _ = crossbar_bindings:bind(<<"*.execute.put.getstream">>, ?MODULE, 'put'),
+    _ = crossbar_bindings:bind(<<"*.execute.delete.getstream">>, ?MODULE, 'delete').
 
 %%------------------------------------------------------------------------------
 %% @doc Given the path tokens related to this module, what HTTP methods are
 %% going to be responded to.
 %% @end
 %%------------------------------------------------------------------------------
+-spec allowed_methods() -> http_methods().
+allowed_methods() ->
+    [?HTTP_PUT, ?HTTP_DELETE].
+
 -spec allowed_methods(path_token()) -> http_methods().
 allowed_methods(?CONNECT_PATH) ->
     [?HTTP_PUT].
@@ -54,6 +60,9 @@ allowed_methods(?CONNECT_PATH) ->
 %% @doc Does the path point to a valid resource
 %% @end
 %%------------------------------------------------------------------------------
+-spec resource_exists() -> 'true'.
+resource_exists() -> 'true'.
+
 -spec resource_exists(path_token()) -> 'true'.
 resource_exists(?CONNECT_PATH) -> 'true'.
 
@@ -72,10 +81,20 @@ content_types_provided(Context, _) ->
 %% Failure here returns 400.
 %% @end
 %%------------------------------------------------------------------------------
+-spec validate(cb_context:context()) -> cb_context:context().
+validate(Context) ->
+    validate_getstream(Context, cb_context:req_verb(Context)).
+
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, ?CONNECT_PATH) ->
     [UserId] = props:get_value(<<"users">>, cb_context:req_nouns(Context)),
     validate_user_feature(Context, ?CONNECT_PATH, UserId, cb_context:req_verb(Context)).
+
+-spec validate_getstream(cb_context:context(), http_method()) -> cb_context:context().
+validate_getstream(Context, ?HTTP_PUT) ->
+    enable_getstream(Context);
+validate_getstream(Context, ?HTTP_DELETE) ->
+    disable_getstream(Context).
 
 -spec validate_user_feature(cb_context:context(), path_token(), list(), req_verb()) -> cb_context:context().
 validate_user_feature(Context, ?CONNECT_PATH, UserId, ?HTTP_PUT) ->
@@ -114,6 +133,10 @@ validate_api_key(Context) ->
             cb_context:set_resp_status(cb_context:store(Context, 'getstream_api_key', ApiKey), 'success')
     end.
 
+-spec put(cb_context:context()) -> cb_context:context().
+put(Context) ->
+    crossbar_doc:save(Context).
+
 -spec put(cb_context:context(), path_token()) -> cb_context:context().
 put(Context, ?CONNECT_PATH) ->
     ApiKey = cb_context:fetch(Context, 'getstream_api_key'),
@@ -139,6 +162,29 @@ put(Context, ?CONNECT_PATH) ->
             cb_context:set_resp_status(cb_context:setters(Context, Setters), 'success')
 
     end.
+
+-spec delete(cb_context:context()) -> cb_context:context().
+delete(Context) ->
+    Context1 = crossbar_doc:save(Context),
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            cb_context:set_resp_data(Context1, kz_json:new());
+        _Status -> Context1
+    end.
+
+-spec enable_getstream(cb_context:context()) -> cb_context:context().
+enable_getstream(Context) ->
+    [UserId] = props:get_value(<<"users">>, cb_context:req_nouns(Context)),
+    Context1 = crossbar_doc:load(UserId, Context),
+    EnabledUser = set_chat_getstream_enabled(cb_context:doc(Context1), 'true'),
+    cb_context:set_doc(Context1, EnabledUser).
+
+-spec disable_getstream(cb_context:context()) -> cb_context:context().
+disable_getstream(Context) ->
+    [UserId] = props:get_value(<<"users">>, cb_context:req_nouns(Context)),
+    Context1 = crossbar_doc:load(UserId, Context),
+    DisabledUser = set_chat_getstream_enabled(cb_context:doc(Context1), 'false'),
+    cb_context:set_doc(Context1, DisabledUser).
 
 -spec maybe_get_secret(cb_context:context()) -> kz_term:api_binary().
 maybe_get_secret(Context) ->
