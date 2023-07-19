@@ -8,7 +8,7 @@
 
 -export([init/0
         ,allowed_methods/0, allowed_methods/1
-        ,resource_exists/0, resource_exists/1 
+        ,resource_exists/0, resource_exists/1
         ,validate/1, validate/2
         ,content_types_provided/2
         ,put/1, put/2
@@ -50,7 +50,7 @@ init() ->
 %%------------------------------------------------------------------------------
 -spec allowed_methods() -> http_methods().
 allowed_methods() ->
-    [?HTTP_PUT, ?HTTP_DELETE].
+    [?HTTP_PUT, ?HTTP_DELETE, ?HTTP_GET].
 
 -spec allowed_methods(path_token()) -> http_methods().
 allowed_methods(?CONNECT_PATH) ->
@@ -94,7 +94,9 @@ validate(Context, ?CONNECT_PATH) ->
 validate_getstream(Context, ?HTTP_PUT) ->
     enable_getstream(Context);
 validate_getstream(Context, ?HTTP_DELETE) ->
-    disable_getstream(Context).
+    disable_getstream(Context);
+validate_getstream(Context, ?HTTP_GET) ->
+    load_summary(Context).
 
 -spec validate_user_feature(cb_context:context(), path_token(), list(), req_verb()) -> cb_context:context().
 validate_user_feature(Context, ?CONNECT_PATH, UserId, ?HTTP_PUT) ->
@@ -185,6 +187,37 @@ disable_getstream(Context) ->
     Context1 = crossbar_doc:load(UserId, Context),
     DisabledUser = set_chat_getstream_enabled(cb_context:doc(Context1), 'false'),
     cb_context:set_doc(Context1, DisabledUser).
+
+-spec load_summary(cb_context:context()) -> cb_context:context().
+load_summary(Context) ->
+    case cb_context:req_nouns(Context) of
+        [{<<"getstream">>, []}, {<<"users">>, []} |_] ->
+            lager:debug("getting account enabled users"),
+            account_summary(Context, cb_context:account_id(Context));          
+        [{<<"getstream">>, []}, {<<"users">>, [UserId]} |_] ->
+            lager:debug("getting user status"),
+            user_status(Context, UserId);
+        _Nouns ->
+            lager:debug("unexpected nouns: ~p", [_Nouns]),
+            crossbar_util:response_faulty_request(Context)
+    end.
+
+-spec account_summary(cb_context:context(), kz_term:api_ne_binary()) -> cb_context:context().
+account_summary(Context, 'undefined') ->
+    Message = kz_json:from_list([{<<"message">>, <<"account ID is required in url">>}]),
+    cb_context:add_validation_error(<<"account_id">>, <<"required">>, Message, Context);
+account_summary(Context, _AccountId) ->
+    Options = [{'doc_type', kzd_users:type()}
+              ,{'mapper', crossbar_view:get_value_fun()}
+              ],
+    crossbar_view:load(Context, <<"users/list_by_getstream">>, Options).
+
+-spec user_status(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+user_status(Context, UserId) ->
+    Context1 = crossbar_doc:load(UserId, Context),
+    Enabled = chat_getstream_enabled(cb_context:doc(Context1), 'false'),
+    RespJObj = kz_json:from_list([{<<"enabled">>, Enabled}]),
+    crossbar_doc:handle_json_success(RespJObj, Context). 
 
 -spec maybe_get_secret(cb_context:context()) -> kz_term:api_binary().
 maybe_get_secret(Context) ->
