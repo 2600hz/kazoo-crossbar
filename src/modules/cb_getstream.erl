@@ -207,6 +207,9 @@ load_summary(Context) ->
         [{<<"getstream">>, []}, {<<"users">>, []} |_] ->
             lager:debug("getting account enabled users"),
             account_summary(Context, cb_context:account_id(Context));
+        [{<<"getstream">>, []}, {<<"users">>, [UserId]} |_] ->
+            lager:debug("getting user status"),
+            user_status(Context, UserId);
         _Nouns ->
             lager:debug("unexpected nouns: ~p", [_Nouns]),
             crossbar_util:response_faulty_request(Context)
@@ -221,6 +224,13 @@ account_summary(Context, _AccountId) ->
               ,{'mapper', crossbar_view:get_value_fun()}
               ],
     crossbar_view:load(Context, <<"users/list_by_getstream">>, Options).
+
+-spec user_status(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+user_status(Context, UserId) ->
+    Context1 = crossbar_doc:load(UserId, Context),
+    Enabled = chat_getstream_enabled(cb_context:doc(Context1), 'false'),
+    RespJObj = kz_json:from_list([{<<"enabled">>, Enabled}]),
+    crossbar_doc:handle_json_success(RespJObj, Context).
 
 -spec maybe_get_secret(cb_context:context()) -> kz_term:api_binary().
 maybe_get_secret(Context) ->

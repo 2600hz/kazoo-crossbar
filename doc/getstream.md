@@ -79,6 +79,29 @@ curl -v -X GET \
 }
 ```
 
+## Get status of getstream feature for an user
+
+Get the getstream feature status for a specific user.
+
+> GET /v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/getstream
+
+```shell
+curl -v -X GET \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/getstream
+```
+
+**Response**
+
+```json
+{
+    "data": {
+        "enabled": true
+    },
+    "status": "success"
+}
+```
+
 ## Enable getstream feature for an user
 
 This will enable the getstream feature for a specific user.
