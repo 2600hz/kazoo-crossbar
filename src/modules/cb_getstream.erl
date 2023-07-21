@@ -135,9 +135,18 @@ validate_api_key(Context) ->
             cb_context:set_resp_status(cb_context:store(Context, 'getstream_api_key', ApiKey), 'success')
     end.
 
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
 -spec put(cb_context:context()) -> cb_context:context().
 put(Context) ->
-    crossbar_doc:save(Context).
+    Context1 = crossbar_doc:save(Context),
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            cb_context:set_resp_data(Context1, kz_json:new());
+        _Status -> Context1
+    end.
 
 -spec put(cb_context:context(), path_token()) -> cb_context:context().
 put(Context, ?CONNECT_PATH) ->
@@ -165,6 +174,10 @@ put(Context, ?CONNECT_PATH) ->
 
     end.
 
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
 -spec delete(cb_context:context()) -> cb_context:context().
 delete(Context) ->
     Context1 = crossbar_doc:save(Context),
@@ -194,9 +207,6 @@ load_summary(Context) ->
         [{<<"getstream">>, []}, {<<"users">>, []} |_] ->
             lager:debug("getting account enabled users"),
             account_summary(Context, cb_context:account_id(Context));
-        [{<<"getstream">>, []}, {<<"users">>, [UserId]} |_] ->
-            lager:debug("getting user status"),
-            user_status(Context, UserId);
         _Nouns ->
             lager:debug("unexpected nouns: ~p", [_Nouns]),
             crossbar_util:response_faulty_request(Context)
@@ -211,13 +221,6 @@ account_summary(Context, _AccountId) ->
               ,{'mapper', crossbar_view:get_value_fun()}
               ],
     crossbar_view:load(Context, <<"users/list_by_getstream">>, Options).
-
--spec user_status(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
-user_status(Context, UserId) ->
-    Context1 = crossbar_doc:load(UserId, Context),
-    Enabled = chat_getstream_enabled(cb_context:doc(Context1), 'false'),
-    RespJObj = kz_json:from_list([{<<"enabled">>, Enabled}]),
-    crossbar_doc:handle_json_success(RespJObj, Context).
 
 -spec maybe_get_secret(cb_context:context()) -> kz_term:api_binary().
 maybe_get_secret(Context) ->
