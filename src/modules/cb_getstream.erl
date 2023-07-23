@@ -145,7 +145,7 @@ put(Context) ->
     Context1 = crossbar_doc:save(Context),
     case cb_context:resp_status(Context1) of
         'success' ->
-            cb_context:set_resp_data(Context1, kz_json:new());
+            cb_context:set_resp_data(Context1, chat_getstream(cb_context:doc(Context1)));
         _Status -> Context1
     end.
 
@@ -192,7 +192,7 @@ delete(Context) ->
 enable_getstream(Context) ->
     [UserId] = props:get_value(<<"users">>, cb_context:req_nouns(Context)),
     Context1 = crossbar_doc:load(UserId, Context),
-    EnabledUser = set_chat_getstream_enabled(cb_context:doc(Context1), 'true'),
+    EnabledUser = set_chat_getstream(cb_context:doc(Context1), kz_json:set_value([<<"enabled">>], 'true', cb_context:req_data(Context))),
     cb_context:set_doc(Context1, EnabledUser).
 
 -spec disable_getstream(cb_context:context()) -> cb_context:context().
