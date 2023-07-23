@@ -16,6 +16,7 @@
         ]).
 
 -export([chat_getstream_enabled/1, chat_getstream_enabled/2, set_chat_getstream_enabled/2]).
+-export([chat_getstream/1, chat_getstream/2, set_chat_getstream/2]).
 
 -include_lib("crossbar/src/crossbar.hrl").
 
@@ -209,7 +210,7 @@ load_summary(Context) ->
             account_summary(Context, cb_context:account_id(Context));
         [{<<"getstream">>, []}, {<<"users">>, [UserId]} |_] ->
             lager:debug("getting user status"),
-            user_status(Context, UserId);
+            user_getstream(Context, UserId);
         _Nouns ->
             lager:debug("unexpected nouns: ~p", [_Nouns]),
             crossbar_util:response_faulty_request(Context)
@@ -225,12 +226,11 @@ account_summary(Context, _AccountId) ->
               ],
     crossbar_view:load(Context, <<"users/list_by_getstream">>, Options).
 
--spec user_status(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
-user_status(Context, UserId) ->
+-spec user_getstream(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+user_getstream(Context, UserId) ->
     Context1 = crossbar_doc:load(UserId, Context),
-    Enabled = chat_getstream_enabled(cb_context:doc(Context1), 'false'),
-    RespJObj = kz_json:from_list([{<<"enabled">>, Enabled}]),
-    crossbar_doc:handle_json_success(RespJObj, Context).
+    GetstreamJObj = chat_getstream(cb_context:doc(Context1), kz_json:new()),
+    crossbar_doc:handle_json_success(GetstreamJObj, Context).
 
 -spec maybe_get_secret(cb_context:context()) -> kz_term:api_binary().
 maybe_get_secret(Context) ->
@@ -505,3 +505,15 @@ chat_getstream_enabled(Doc, Default) ->
 -spec set_chat_getstream_enabled(doc(), boolean()) -> doc().
 set_chat_getstream_enabled(Doc, ChatGetstreamEnabled) ->
     kz_json:set_value([<<"pvt_chat">>, <<"getstream">>, <<"enabled">>], ChatGetstreamEnabled, Doc).
+
+-spec chat_getstream(doc()) -> kz_json:object().
+chat_getstream(Doc) ->
+    chat_getstream(Doc, kz_json:new()).
+
+-spec chat_getstream(doc(), Default) -> kz_json:object() | Default.
+chat_getstream(Doc, Default) ->
+    kz_json:get_json_value([<<"pvt_chat">>, <<"getstream">>], Doc, Default).
+
+-spec set_chat_getstream(doc(), kz_json:object()) -> doc().
+set_chat_getstream(Doc, ChatGetstreamJObj) ->
+    kz_json:set_value([<<"pvt_chat">>, <<"getstream">>], ChatGetstreamJObj, Doc).

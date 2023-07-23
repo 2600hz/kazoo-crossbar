@@ -81,7 +81,7 @@ curl -v -X GET \
 
 ## Get status of getstream feature for an user
 
-Get the getstream feature status for a specific user.
+Get the getstream object a specific user.
 
 > GET /v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/getstream
 
