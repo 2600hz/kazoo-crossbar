@@ -12,6 +12,7 @@
         ,validate/1, validate/2
         ,content_types_provided/2
         ,put/1, put/2
+        ,patch/1
         ,delete/1
         ]).
 
@@ -43,6 +44,7 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.resource_exists.getstream">>, ?MODULE, 'resource_exists'),
     _ = crossbar_bindings:bind(<<"*.validate.getstream">>, ?MODULE, 'validate'),
     _ = crossbar_bindings:bind(<<"*.execute.put.getstream">>, ?MODULE, 'put'),
+    _ = crossbar_bindings:bind(<<"*.execute.patch.getstream">>, ?MODULE, 'patch'),
     _ = crossbar_bindings:bind(<<"*.execute.delete.getstream">>, ?MODULE, 'delete').
 
 %%------------------------------------------------------------------------------
@@ -52,7 +54,7 @@ init() ->
 %%------------------------------------------------------------------------------
 -spec allowed_methods() -> http_methods().
 allowed_methods() ->
-    [?HTTP_PUT, ?HTTP_DELETE, ?HTTP_GET].
+    [?HTTP_PUT, ?HTTP_PATCH, ?HTTP_DELETE, ?HTTP_GET].
 
 -spec allowed_methods(path_token()) -> http_methods().
 allowed_methods(?CONNECT_PATH) ->
@@ -95,8 +97,10 @@ validate(Context, ?CONNECT_PATH) ->
 -spec validate_getstream(cb_context:context(), http_method()) -> cb_context:context().
 validate_getstream(Context, ?HTTP_PUT) ->
     enable_getstream(Context);
+validate_getstream(Context, ?HTTP_PATCH) ->
+    patch_getstream(Context);
 validate_getstream(Context, ?HTTP_DELETE) ->
-    disable_getstream(Context);
+    delete_getstream(Context);
 validate_getstream(Context, ?HTTP_GET) ->
     load_summary(Context).
 
@@ -180,6 +184,19 @@ put(Context, ?CONNECT_PATH) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
+-spec patch(cb_context:context()) -> cb_context:context().
+patch(Context) ->
+    Context1 = crossbar_doc:save(Context),
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            cb_context:set_resp_data(Context1, chat_getstream(cb_context:doc(Context1)));
+        _Status -> Context1
+    end.
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
 -spec delete(cb_context:context()) -> cb_context:context().
 delete(Context) ->
     Context1 = crossbar_doc:save(Context),
@@ -196,8 +213,15 @@ enable_getstream(Context) ->
     EnabledUser = set_chat_getstream(cb_context:doc(Context1), kz_json:set_value([<<"enabled">>], 'true', cb_context:req_data(Context))),
     cb_context:set_doc(Context1, EnabledUser).
 
--spec disable_getstream(cb_context:context()) -> cb_context:context().
-disable_getstream(Context) ->
+-spec patch_getstream(cb_context:context()) -> cb_context:context().
+patch_getstream(Context) ->
+    [UserId] = props:get_value(<<"users">>, cb_context:req_nouns(Context)),
+    Context1 = crossbar_doc:load(UserId, Context),
+    PatchedUser = set_chat_getstream(cb_context:doc(Context1), kz_json:merge(chat_getstream(cb_context:doc(Context1)), cb_context:req_data(Context))),
+    cb_context:set_doc(Context1, PatchedUser).
+
+-spec delete_getstream(cb_context:context()) -> cb_context:context().
+delete_getstream(Context) ->
     [UserId] = props:get_value(<<"users">>, cb_context:req_nouns(Context)),
     Context1 = crossbar_doc:load(UserId, Context),
     GetstreamObj = chat_getstream(cb_context:doc(Context1)),
