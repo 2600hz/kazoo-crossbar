@@ -13,6 +13,11 @@
             "description": "crossbar allow_onboarding_setting_id",
             "type": "boolean"
         },
+        "allow_public_downloads": {
+            "default": true,
+            "description": "crossbar allow_public_downloads",
+            "type": "boolean"
+        },
         "allow_tracing": {
             "default": false,
             "description": "crossbar allow tracing",

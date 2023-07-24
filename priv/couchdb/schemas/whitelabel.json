@@ -117,6 +117,34 @@
             "description": "The price to show for twoway trunks, this is currently only for display purposes",
             "support_level": "beta",
             "type": "string"
+        },
+        "commland": {
+            "description": "Properties related to commland",
+            "properties": {
+                "downloads": {
+                    "description": "The URLs of commland downloads related to the account",
+                    "properties": {
+                        "windows": {
+                            "description": "Commland windows download URL for the account",
+                            "type": "string"
+                        },
+                        "mac": {
+                            "description": "Commland mac download URL for the account",
+                            "type": "string"
+                        },
+                        "deb": {
+                            "description": "Commland debian download URL for the account",
+                            "type": "string"
+                        },
+                        "rpm": {
+                            "description": "Commland rpm download URL for the account",
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                }
+            },
+            "type": "object"
         }
     },
     "type": "object"
