@@ -11272,6 +11272,10 @@
       'default': false
       'description': crossbar allow_onboarding_setting_id
       'type': boolean
+    'allow_public_downloads':
+      'default': true
+      'description': crossbar allow_public_downloads
+      'type': boolean
     'allow_tracing':
       'default': false
       'description': crossbar allow tracing
@@ -18047,6 +18051,26 @@
 'whitelabel':
   'description': Whitelabel settings
   'properties':
+    'commland':
+      'description': Properties related to commland
+      'properties':
+        'downloads':
+          'description': The URLs of commland downloads related to the account
+          'properties':
+            'deb':
+              'description': Commland debian download URL for the account
+              'type': string
+            'mac':
+              'description': Commland mac download URL for the account
+              'type': string
+            'rpm':
+              'description': Commland rpm download URL for the account
+              'type': string
+            'windows':
+              'description': Commland windows download URL for the account
+              'type': string
+          'type': object
+      'type': object
     'company_name':
       'description': The company name to display to users
       'type': string
