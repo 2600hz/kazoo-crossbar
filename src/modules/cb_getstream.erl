@@ -17,6 +17,7 @@
 
 -export([chat_getstream_enabled/1, chat_getstream_enabled/2, set_chat_getstream_enabled/2]).
 -export([chat_getstream/1, chat_getstream/2, set_chat_getstream/2]).
+-export([remove_getstream/1]).
 
 -include_lib("crossbar/src/crossbar.hrl").
 
@@ -184,7 +185,7 @@ delete(Context) ->
     Context1 = crossbar_doc:save(Context),
     case cb_context:resp_status(Context1) of
         'success' ->
-            cb_context:set_resp_data(Context1, kz_json:new());
+            cb_context:set_resp_data(Context1, cb_context:fetch(Context1, <<"getstream_obj">>));
         _Status -> Context1
     end.
 
@@ -199,8 +200,9 @@ enable_getstream(Context) ->
 disable_getstream(Context) ->
     [UserId] = props:get_value(<<"users">>, cb_context:req_nouns(Context)),
     Context1 = crossbar_doc:load(UserId, Context),
-    DisabledUser = set_chat_getstream_enabled(cb_context:doc(Context1), 'false'),
-    cb_context:set_doc(Context1, DisabledUser).
+    GetstreamObj = chat_getstream(cb_context:doc(Context1)),
+    DisabledUser = remove_getstream(cb_context:doc(Context1)),
+    cb_context:set_doc(cb_context:store(Context1, <<"getstream_obj">>, GetstreamObj), DisabledUser).
 
 -spec load_summary(cb_context:context()) -> cb_context:context().
 load_summary(Context) ->
@@ -517,3 +519,7 @@ chat_getstream(Doc, Default) ->
 -spec set_chat_getstream(doc(), kz_json:object()) -> doc().
 set_chat_getstream(Doc, ChatGetstreamJObj) ->
     kz_json:set_value([<<"pvt_chat">>, <<"getstream">>], ChatGetstreamJObj, Doc).
+
+-spec remove_getstream(doc()) -> doc().
+remove_getstream(Doc) ->
+    kz_json:delete_key([<<"pvt_chat">>, <<"getstream">>], Doc).
