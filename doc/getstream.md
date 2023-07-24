@@ -111,6 +111,7 @@ This will enable the getstream feature for a specific user.
 ```shell
 curl -v -X PUT \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d {"data": {"nickname": "navoda"}} \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/getstream
 ```
 
@@ -118,7 +119,36 @@ curl -v -X PUT \
 
 ```json
 {
-    "data": {},
+    "data": {
+        "nickname": "navoda",
+        "enabled": true
+    },
+    "revision": "14-0ff6d7b0723fa8bfebd9c652cd2578f7",
+    "status": "success"
+}
+```
+
+## Update getstream for an user
+
+This will update the getstream object of a user doc. This can be used to enable/disable getstream feature.
+
+> PATCH /v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/getstream
+
+```shell
+curl -v -X PUT \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d {"data": {"nickname": "navoda2","enabled": false}} \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/getstream
+```
+
+**Response**
+
+```json
+{
+    "data": {
+        "nickname": "navoda2",
+        "enabled": false
+    },
     "revision": "14-0ff6d7b0723fa8bfebd9c652cd2578f7",
     "status": "success"
 }
@@ -126,7 +156,7 @@ curl -v -X PUT \
 
 ## Disable getstream feature for an user
 
-This will disable the getstream feature for a specific user.
+This will remove the pvt_chat.getstream object from user document disabling the getstream feature.
 
 > DELETE /v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/getstream
 
@@ -140,7 +170,10 @@ curl -v -X DELETE \
 
 ```json
 {
-    "data": {},
+    "data": {
+        "nickname": "navoda",
+        "enabled": true
+    },
     "revision": "1-fa91d3b20e63d1ef0c40dc4f19d15ff8",
     "status": "success"
 }
