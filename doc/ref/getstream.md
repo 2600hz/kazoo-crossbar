@@ -4,6 +4,8 @@
 
 ## Schema
 
+
+
 ## Fetch
 
 > GET /v2/accounts/{ACCOUNT_ID}/getstream
