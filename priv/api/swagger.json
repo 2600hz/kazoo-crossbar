@@ -27482,7 +27482,7 @@
                     }
                 }
             }
-        },        
+        },
         "/accounts/{ACCOUNT_ID}/getstream/connect": {
             "put": {
                 "parameters": [
