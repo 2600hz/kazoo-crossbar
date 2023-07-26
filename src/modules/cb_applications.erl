@@ -420,11 +420,26 @@ load_allowed_applications(Context, AppType, UserId) ->
     Apps = [kz_json:from_list([{<<"doc">>, App}])
             || App <- cb_apps_util:allowed_applications(AppType, AccountId, UserId)
            ],
-    Options = [{'mapper', crossbar_view:get_doc_fun()}
+    Options = [{'mapper', fun normalize_apps_result/3}
               ,{'run_mapper', 'true'}
               ,{'field_key', 'filtermap'}
               ],
     crossbar_view:prepare_docs(cb_context:set_doc(Context, Apps), Options).
+
+-spec normalize_apps_result(cb_context:context(), kz_json:object(), kz_json:objects()) -> kz_json:objects().
+normalize_apps_result(Context, JObj, Acc) ->
+    App = kz_json:get_json_value(<<"doc">>, JObj),
+    case kzd_applications:published(App) of
+        'false' ->
+            case should_allow_admin_app_listing(Context, App) of
+                'true' ->
+                    [kz_doc:public_fields(App) | Acc];
+                'false' ->
+                    Acc
+            end;
+        'true' ->
+            [kz_doc:public_fields(App) | Acc]
+    end.
 
 -spec load_allowed_application(cb_context:context(), path_token(), path_token()) ->
           cb_context:context().
@@ -435,7 +450,37 @@ load_allowed_application(Context, AppType, AppId) ->
         {'error', Error} ->
             crossbar_doc:handle_datamgr_errors(Error, AppId, Context);
         {'ok', JObj} ->
-            crossbar_doc:handle_json_success(JObj, Context)
+            maybe_allowed_application(Context, JObj, kzd_applications:published(JObj))
+    end.
+
+-spec maybe_allowed_application(cb_context:context(), kz_json:object(), boolean()) ->
+          cb_context:context().
+maybe_allowed_application(Context, JObj, 'true') ->
+    crossbar_doc:handle_json_success(JObj, Context);
+maybe_allowed_application(Context, JObj, 'false') ->
+    case should_allow_admin_app_listing(Context, JObj) of
+        'true' ->
+            crossbar_doc:handle_json_success(JObj, Context);
+        'false' ->
+            crossbar_doc:handle_datamgr_errors('not_found', kz_doc:id(JObj), Context)
+    end.
+
+%% only admins are allowed to list apps in app-exchange so they can enable/disable the app for their
+%% account using entitlements.
+%% The condition is to explicitly check auth user is admin and there is no user id in the url.
+%% (a user id in url means a user wants to list and open their app and not an admin managing entitlements)
+%%
+%% Also explicitly check if the app is not published because of entitlement.
+-spec should_allow_admin_app_listing(cb_context:context(), kz_json:object()) -> boolean().
+should_allow_admin_app_listing(Context, JObj) ->
+    IsEntiteAuthority = kzd_applications:pvt_authority(JObj) =:= <<"entitlement">>,
+    IsAdmin = maybe_admin(Context) =:= 'true',
+    case props:get_value(<<"users">>, cb_context:req_nouns(Context)) of
+        'undefined' when IsEntiteAuthority
+                         andalso IsAdmin ->
+            'true';
+        _ ->
+            'false'
     end.
 
 %%------------------------------------------------------------------------------

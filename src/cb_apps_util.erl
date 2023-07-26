@@ -163,7 +163,7 @@ ret_allowed_applications(_AppId, AppJObj, Acc) ->
                         ,kzd_applications:pvt_authority(AppJObj)
                         ]
                        ),
-            Acc
+            [AppJObj | Acc]
     end.
 
 -spec load_applications_from_master(kz_term:ne_binary(), kz_term:ne_binary()
@@ -385,12 +385,14 @@ apply_entitlements(AccountId, UserId, Entitlements, AppId, AppJObj) ->
           kz_json:object().
 apply_entitlement(_, _, AppJObj, 'undefined') ->
     %% no entitlement means the app is not active for this account
+    %% keep this pvt_authority in sync with `cb_applications:should_allow_admin_app_listing/2'
     Setters = [{fun kzd_applications:set_published/2, 'false'}
               ,{fun kzd_applications:set_pvt_authority/2, <<"entitlement">>}
               ],
     kz_doc:setters(AppJObj, Setters);
 apply_entitlement(AccountId, UserId, AppJObj, Entitlement) ->
     EntitleType = kzd_application_entitlement:type(Entitlement),
+    %% keep this pvt_authority in sync with `cb_applications:should_allow_admin_app_listing/2'
     Setters = [{fun kzd_applications:set_published/2, is_entitled(AccountId, UserId, Entitlement, EntitleType)}
               ,{fun kzd_applications:set_pvt_authority/2, <<"entitlement">>}
               ],
