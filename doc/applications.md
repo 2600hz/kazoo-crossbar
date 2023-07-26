@@ -20,35 +20,35 @@ Kazoo provides mechanism to control access to the UI apps. For this, all UI apps
 must be stored in Kazoo database. UI applications metadata are added to master account by system
 administrator. This can be done either through API or UI App started via 2600Hz Marketplace.
 
-Master account and reseller can control the list of apps that are available to their sub-accounts:
+#### Publish and block apps
 
-1. `published` field in app metadata: Master account can set, default value is `true`.
-2. Master or reseller can block an app by using API provided here
+Master account and reseller account can control what apps are available to their
+sub-accounts.
+
+Apps metadata can have `published` field, which allows master account and reseller control if the app
+is available to their sub-accounts. This fields does not mean the app is enabled or
+activate for the account. Only that the app is published and available so admins of
+sub-accounts can list and enabled them by creating entitlement.
+
+The publish field can be controlled by:
+
+1. `published` field in app metadata: Master account can set it, default value is `true`.
+2. Master or reseller can block an app by using [API provided here](#blocklist)
 3. Master or reseller can can set allowed and blocked apps in service plan assigned to their sub-accounts,
    by using the top  `applications` field in service plan. It is an object with key being App ID and
-   value is another object, with `publish` field as a boolean.
+   value is another object, with `publish` field as a boolean. For example, given the `published` field
+   of an app metadata is `true`, master or reseller can use service plan to block the app for their sub-accounts.
 
-For example, given the `published` status of an app is `true`, master or reseller can use
-service plan to block the app for their sub-accounts.
+If reseller is overriding the master's app metadta, they can not set `published` field if the app exists
+on master account. `published` field from master account always have priority.
 
-Reseller can not set `published` field if the app exists on master account. `published` field from
-master account always have priority.
+Master and reseller accounts can block apps in for their subaccounts using [Blocklist](#blocklist).
+
+#### Entitlement
 
 Each account admin regardless of the type account, can list the available app to their
-account. They can then entitle their account's user to access the app. Entitlement has the
-following types:
-
-- `all`: All users in the account have access to the app
-- `admins`: Only admin users have access
-- `specific`: Only specific User with matching user Ids have access to the app
-
-Reseller accounts can add new apps to their account and offer it to their sub-accounts.
-They can also override an app from master. For this they need an App ID. If there is an
-app in master account with the same App ID, its parameters gets merged with master, and if
-the App ID doesn't exists a new app is created in the reseller account.
-
-After setting entitlement, end users can now use the API to list the apps they have
-access.
+account. They can then entitle their account's user to access the app. See
+[Entitlements](#entitlements) below for more info.
 
 ### App Metadata
 
@@ -66,6 +66,11 @@ UUID format to guaranty that the ID is unique universally.
 
 All icons and screenshots also must be provided alongside the metadata and be stored in
 master/reseller account along side their metadata data.
+
+Reseller accounts can add new apps to their account and offer it to their sub-accounts.
+They can also override an app from master. For this they need an App ID. If there is an
+app in master account with the same App ID, its parameters gets merged with master, and if
+the App ID doesn't exists a new app is created in the reseller account.
 
 ### App Internationalization (i18n)
 
@@ -128,8 +133,10 @@ Key | Description | Type | Default | Required | Support Level
 
 ## Managing the application metadata
 
-This API is intended to be used only by master account users or reseller account admin
-users.
+This API is intended to be used only by master account or reseller account admin
+users. Here reseller account can use this API to add a new app to offer to their sub-accounts.
+Reseller can also use this to override an app offerring from master account for their
+sub-accounts.
 
 ### Summary
 
@@ -233,6 +240,8 @@ App metadata can have an `i18n` section. You can even set icon, screenshots in `
 After creating the metadata, you can upload its attachment like icon and screenshots. This
 API will take care of adding the new/updated icon and or screenshot to their appropriate
 section, even if your are using `/i18n/{LANG_CODE}` URL.
+
+Reseller can set [`published`](#publish-and-block-apps) field in their **new** app.
 
 > **NOTE** A reseller cannot override the `published` field if the app exists in master account
 
@@ -399,6 +408,9 @@ curl -v -X DELETE \
 A master or reseller account and restrict their sub-accounts of accessing to app by creating a block app
 document in their account.
 
+When a sub-account user (either admin or regular user) tries to list apps available in their account, if the app is blocked
+by their reseller or master they won't be able to see the app is available.
+
 
 ### Summary of applications blocklisted
 
@@ -546,20 +558,23 @@ Response:
 }
 ```
 
-## User Access Entitlements
+## Entitlements
 
-Admin user of any account can use this APIs to entitle users of their account to access
-the apps. For this means they can list the available apps to their account then create
-entitlement for the app they want access.
+Entitlement provides mechanism to admin of an account to enabled the app for their account
+and control how it can be accessed by the users in their account.
 
-Entitlement have can be one of these types:
+Admins can usually use App Exchange to [list available apps](#list-available-apps-to-the-account)
+and create a new entitlement for apps they want their user to access.
+
+Entitlement has the following types:
 
 - `all`: All users in the account have access to the app
 - `admins`: Only admin users have access
 - `specific`: Only specific User with matching user Ids have access to the app
+    - If type is `all` or `admins` you MUST remove `users` fields. If type is `specific` you
+      should include `users` with a list of user IDs.
 
-If type is `all` or `admins` you MUST remove `users` fields. If type is `specific` you
-should include `users` with a list of user IDs.
+After setting entitlement, [end users can list the apps](#list-allowed-app-for-end-user) they have access.
 
 ### Entitlement schema
 
