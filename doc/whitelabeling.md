@@ -10,6 +10,12 @@ Whitelabel settings
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
+`commland.downloads.deb` | Commland debian download URL for the account | `string()` |   | `false` |  
+`commland.downloads.mac` | Commland mac download URL for the account | `string()` |   | `false` |  
+`commland.downloads.rpm` | Commland rpm download URL for the account | `string()` |   | `false` |  
+`commland.downloads.windows` | Commland windows download URL for the account | `string()` |   | `false` |  
+`commland.downloads` | The URLs of commland downloads related to the account | `object()` |   | `false` |  
+`commland` | Properties related to commland | `object()` |   | `false` |  
 `company_name` | The company name to display to users | `string()` |   | `false` | `supported`
 `conference_public_domain` | This is the whitelabeled domain that conference participants can use to reach the conference through webphone | `string()` |   | `false` | `supported`
 `domain` | This is the whitelabeled domain that users will be entering to reach the UI | `string()` |   | `false` | `supported`
@@ -30,12 +36,7 @@ Key | Description | Type | Default | Required | Support Level
 `port.terms` | The URL to use when the terms and conditions link is clicked | `string()` |   | `false` | `supported`
 `port` | Parameters related to white-labeling port requests | `object()` |   | `false` |  
 `twoway_trunks_price` | The price to show for twoway trunks, this is currently only for display purposes | `string()` |   | `false` | `beta`
-`commland.downloads.deb` | Commland debian download URL for the account | `string()` |   | `false` |  
-`commland.downloads.mac` | Commland mac download URL for the account | `string()` |   | `false` |  
-`commland.downloads.rpm` | Commland rpm download URL for the account | `string()` |   | `false` |  
-`commland.downloads.windows` | Commland windows download URL for the account | `string()` |   | `false` |  
-`commland.downloads` | The URLs of commland downloads related to the account | `object()` |   | `false` |  
-`commland` | Properties related to commland | `object()` |   | `false` |  
+
 
 
 ## Create a Whitelabel for an Account
