@@ -118,8 +118,9 @@ validate_user_feature(Context, ?CONNECT_PATH, UserId, ?HTTP_PUT) ->
 -spec validate_request(cb_context:context(), path_token(), req_verb()) -> cb_context:context().
 validate_request(Context, ?CONNECT_PATH, ?HTTP_PUT) ->
     case cb_context:resp_status(Context) of
-        'success' -> Context1 = validate_secret(Context),
-                     validate_api_key(Context1);
+        'success' ->
+            Context1 = validate_secret(Context),
+            validate_api_key(Context1);
         _Else -> Context
     end.
 
@@ -264,11 +265,7 @@ maybe_get_secret(Context) ->
                ,fun maybe_get_reseller_secret/1
                ,fun maybe_get_default_secret/1
                ],
-    lists:foldl(fun(Routine, 'undefined') ->
-                        Routine(Context);
-                   (_Routine, Secret) ->
-                        Secret
-                end, 'undefined', Routines).
+    find_first_defined(Context, Routines).
 
 -spec maybe_get_api_key(cb_context:context()) -> kz_term:api_binary().
 maybe_get_api_key(Context) ->
@@ -276,12 +273,14 @@ maybe_get_api_key(Context) ->
                ,fun maybe_get_reseller_api_key/1
                ,fun maybe_get_default_api_key/1
                ],
-    lists:foldl(fun(Routine, 'undefined') ->
-                        Routine(Context);
-                   (_Routine, ApiKey) ->
-                        ApiKey
-                end, 'undefined', Routines).
+    find_first_defined(Context, Routines).
 
+find_first_defined(_Context, []) -> 'undefined';
+find_first_defined(Context, [Routine | Routines]) ->
+    case Routine(Context) of
+        'undefined' -> find_first_defined(Context, Routines);
+        Value -> Value
+    end.
 
 -spec maybe_get_account_secret(cb_context:context()) -> kz_term:api_binary().
 maybe_get_account_secret(Context) ->
@@ -380,7 +379,8 @@ get_getstream_user(Context) ->
     Payload = kz_json:from_list(
                 [{<<"filter_conditions">>
                  ,kz_json:from_list(
-                    [{<<"id">>, kz_json:from_list([{<<"$eq">>, UserId}])}])
+                    [{<<"id">>, kz_json:from_list([{<<"$eq">>, UserId}])}]
+                   )
                  }
                 ]
                ),
