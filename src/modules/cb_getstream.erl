@@ -266,11 +266,29 @@ load_summary(Context) ->
 account_summary(Context, 'undefined') ->
     Message = kz_json:from_list([{<<"message">>, <<"account ID is required in url">>}]),
     cb_context:add_validation_error(<<"account_id">>, <<"required">>, Message, Context);
-account_summary(Context, _AccountId) ->
-    Options = [{'doc_type', kzd_users:type()}
-              ,{'mapper', crossbar_view:get_value_fun()}
-              ],
-    crossbar_view:load(Context, <<"users/list_by_getstream">>, Options).
+account_summary(Context, AccountId) ->
+    ViewOptions = ['include_docs'
+                  ],
+    case kz_datamgr:get_results(AccountId, <<"users/crossbar_listing">>, ViewOptions) of
+        {'error', _E} ->
+            lager:info("failed to get user listing from ~s: ~p", [AccountId, _E]),
+            Msg = kz_json:from_list([{<<"message">>, <<"couldn't load users from database">>}
+                                    ,{<<"cause">>, <<"users">>}
+                                    ]),
+            cb_context:add_system_error(500, 'datastore_fault', Msg, Context);
+        {'ok', Users} ->
+            filter_getstream_enabled_users(Context, Users)
+    end.
+
+-spec filter_getstream_enabled_users(cb_context:context(), kz_json:objects()) -> cb_context:context().
+filter_getstream_enabled_users(Context, JObjs) ->
+    FilteredUsers = [kz_json:get_json_value(<<"value">>, JObj)
+                     || JObj <- JObjs,
+                        Doc <- [kz_json:get_json_value(<<"doc">>, JObj)],
+                        chat_getstream_enabled(Doc)],
+    cb_context:setters(Context, [{fun cb_context:set_resp_data/2, FilteredUsers}
+                                ,{fun cb_context:set_resp_status/2, 'success'}
+                                ]).
 
 -spec user_getstream(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 user_getstream(Context, UserId) ->
