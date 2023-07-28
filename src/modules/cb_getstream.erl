@@ -209,25 +209,40 @@ delete(Context) ->
 
 -spec enable_getstream(cb_context:context()) -> cb_context:context().
 enable_getstream(Context) ->
-    [UserId] = props:get_value(<<"users">>, cb_context:req_nouns(Context)),
-    Context1 = crossbar_doc:load(UserId, Context),
-    EnabledUser = set_chat_getstream(cb_context:doc(Context1), kz_json:set_value([<<"enabled">>], 'true', cb_context:req_data(Context))),
-    cb_context:set_doc(Context1, EnabledUser).
+    Context1 = load_user_doc(Context),
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            EnabledUser = set_chat_getstream(cb_context:doc(Context1)
+                                            ,kz_json:set_value([<<"enabled">>], 'true', cb_context:req_data(Context))
+                                            ),
+            cb_context:set_doc(Context1, EnabledUser);
+        _Status -> Context1
+    end.
 
 -spec patch_getstream(cb_context:context()) -> cb_context:context().
 patch_getstream(Context) ->
-    [UserId] = props:get_value(<<"users">>, cb_context:req_nouns(Context)),
-    Context1 = crossbar_doc:load(UserId, Context),
-    PatchedUser = set_chat_getstream(cb_context:doc(Context1), kz_json:merge(chat_getstream(cb_context:doc(Context1)), cb_context:req_data(Context))),
-    cb_context:set_doc(Context1, PatchedUser).
+    Context1 = load_user_doc(Context),
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            PatchedUser = set_chat_getstream(cb_context:doc(Context1)
+                                            ,kz_json:merge(chat_getstream(cb_context:doc(Context1))
+                                                        ,cb_context:req_data(Context)
+                                                        )
+                                            ),
+            cb_context:set_doc(Context1, PatchedUser);
+        _Status -> Context1
+    end.
 
 -spec delete_getstream(cb_context:context()) -> cb_context:context().
 delete_getstream(Context) ->
-    [UserId] = props:get_value(<<"users">>, cb_context:req_nouns(Context)),
-    Context1 = crossbar_doc:load(UserId, Context),
-    GetstreamObj = chat_getstream(cb_context:doc(Context1)),
-    DisabledUser = remove_getstream(cb_context:doc(Context1)),
-    cb_context:set_doc(cb_context:store(Context1, <<"getstream_obj">>, GetstreamObj), DisabledUser).
+    Context1 = load_user_doc(Context),
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            GetstreamObj = chat_getstream(cb_context:doc(Context1)),
+            DisabledUser = remove_getstream(cb_context:doc(Context1)),
+            cb_context:set_doc(cb_context:store(Context1, <<"getstream_obj">>, GetstreamObj), DisabledUser);
+        _Status -> Context1
+    end.
 
 -spec load_summary(cb_context:context()) -> cb_context:context().
 load_summary(Context) ->
@@ -258,6 +273,19 @@ user_getstream(Context, UserId) ->
     Context1 = crossbar_doc:load(UserId, Context),
     GetstreamJObj = chat_getstream(cb_context:doc(Context1), kz_json:new()),
     crossbar_doc:handle_json_success(GetstreamJObj, Context).
+
+-spec load_user_doc(cb_context:context()) -> cb_context:context().
+load_user_doc(Context) ->
+    case props:get_value(<<"users">>, cb_context:req_nouns(Context)) of
+        'undefined' ->
+            cb_context:add_validation_error(<<"user_id">>
+                                           ,<<"required">>
+                                           ,kz_json:from_list([{<<"message">>, <<"User id not found in the request">>}])
+                                           ,Context
+                                           );
+        [UserId | _] ->
+            crossbar_doc:load(UserId, Context)
+    end.
 
 -spec maybe_get_secret(cb_context:context()) -> kz_term:api_binary().
 maybe_get_secret(Context) ->
