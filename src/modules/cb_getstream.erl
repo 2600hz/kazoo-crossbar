@@ -255,7 +255,11 @@ load_summary(Context) ->
             user_getstream(Context, UserId);
         _Nouns ->
             lager:debug("unexpected nouns: ~p", [_Nouns]),
-            crossbar_util:response_faulty_request(Context)
+            cb_context:add_validation_error(<<"users">>
+                                           ,<<"required">>
+                                           ,kz_json:from_list([{<<"message">>, <<"users/ or users/:id not found in the url">>}])
+                                           ,Context
+                                           )
     end.
 
 -spec account_summary(cb_context:context(), kz_term:api_ne_binary()) -> cb_context:context().
