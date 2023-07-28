@@ -421,9 +421,12 @@ get_getstream_user(Context) ->
     Headers = create_headers(Context, <<"read">>),
 
     case kz_http:get(URL, Headers) of
-        {'ok', _Code, _RespHeaders, RespBody} ->
+        {'ok', 200, _RespHeaders, RespBody} ->
             RespDecoded = kz_json:decode(RespBody),
             {'ok', kz_json:get_list_value(<<"users">>, RespDecoded, [])};
+        {'ok', _StatusCode, _RespHeaders, _RespBody} ->
+            lager:info("fetching getstream user, got error http status code from getstream: ~p, resp body: ~p", [_StatusCode, _RespBody]),
+            {'error', 'error_response_from_getstream'};
         {'error', _}=Error ->
             Error
     end.
@@ -447,6 +450,9 @@ create_getstream_user(Context)->
     case kz_http:post(URL, Headers, ReqBody) of
         {'ok', 201, _RespHeaders, _RespBody} ->
             'true';
+        {'ok', _StatusCode, _RespHeaders, _RespBody} ->
+            lager:info("creating getstream user, got error http status code from getstream: ~p, resp body: ~p", [_StatusCode, _RespBody]),
+            'false';
         {'error', _E} ->
             lager:debug("failed to create getstream user: ~p", [_E]),
             'false'
@@ -472,6 +478,9 @@ update_getstream_user(Context, UpdatedValues)->
     case kz_http:patch(URL, Headers, ReqBody) of
         {'ok', 200, _RespHeaders, _RespBody} ->
             'true';
+        {'ok', _StatusCode, _RespHeaders, _RespBody} ->
+            lager:info("updating getstream user, got error http status code from getstream: ~p, resp body: ~p", [_StatusCode, _RespBody]),
+            'false';
         {'error', _E} ->
             lager:debug("failed to update getstream user: ~p", [_E]),
             'false'
