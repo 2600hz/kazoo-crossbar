@@ -226,8 +226,8 @@ patch_getstream(Context) ->
         'success' ->
             PatchedUser = set_chat_getstream(cb_context:doc(Context1)
                                             ,kz_json:merge(chat_getstream(cb_context:doc(Context1))
-                                                        ,cb_context:req_data(Context)
-                                                        )
+                                                          ,cb_context:req_data(Context)
+                                                          )
                                             ),
             cb_context:set_doc(Context1, PatchedUser);
         _Status -> Context1
