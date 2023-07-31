@@ -254,7 +254,6 @@ load_summary(Context) ->
             lager:debug("getting user status"),
             user_getstream(Context, UserId);
         _Nouns ->
-            lager:debug("unexpected nouns: ~p", [_Nouns]),
             cb_context:add_validation_error(<<"users">>
                                            ,<<"required">>
                                            ,kz_json:from_list([{<<"message">>, <<"users/ or users/:id not found in the url">>}])
