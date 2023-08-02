@@ -203,7 +203,7 @@ delete(Context) ->
     Context1 = crossbar_doc:save(Context),
     case cb_context:resp_status(Context1) of
         'success' ->
-            cb_context:set_resp_data(Context1, cb_context:fetch(Context1, <<"getstream_obj">>));
+            cb_context:set_resp_data(Context1, cb_context:fetch(Context1, <<"getstream_jobj">>));
         _Status -> Context1
     end.
 
@@ -238,9 +238,14 @@ delete_getstream(Context) ->
     Context1 = load_user_doc(Context),
     case cb_context:resp_status(Context1) of
         'success' ->
-            GetstreamObj = chat_getstream(cb_context:doc(Context1)),
+            GetstreamJObj = chat_getstream(cb_context:doc(Context1)),
             DisabledUser = remove_getstream(cb_context:doc(Context1)),
-            cb_context:set_doc(cb_context:store(Context1, <<"getstream_obj">>, GetstreamObj), DisabledUser);
+            cb_context:set_doc(cb_context:store(Context1
+                                               ,<<"getstream_jobj">>
+                                               ,GetstreamJObj
+                                               )
+                              ,DisabledUser
+                              );
         _Status -> Context1
     end.
 
@@ -266,8 +271,7 @@ account_summary(Context, 'undefined') ->
     Message = kz_json:from_list([{<<"message">>, <<"account ID is required in url">>}]),
     cb_context:add_validation_error(<<"account_id">>, <<"required">>, Message, Context);
 account_summary(Context, AccountId) ->
-    ViewOptions = ['include_docs'
-                  ],
+    ViewOptions = ['include_docs'],
     case kz_datamgr:get_results(AccountId, <<"users/crossbar_listing">>, ViewOptions) of
         {'error', _E} ->
             lager:info("failed to get user listing from ~s: ~p", [AccountId, _E]),
@@ -284,10 +288,13 @@ filter_getstream_enabled_users(Context, JObjs) ->
     FilteredUsers = [kz_json:get_json_value(<<"value">>, JObj)
                      || JObj <- JObjs,
                         Doc <- [kz_json:get_json_value(<<"doc">>, JObj)],
-                        chat_getstream_enabled(Doc)],
-    cb_context:setters(Context, [{fun cb_context:set_resp_data/2, FilteredUsers}
-                                ,{fun cb_context:set_resp_status/2, 'success'}
-                                ]).
+                        chat_getstream_enabled(Doc)
+                    ],
+    cb_context:setters(Context
+                      ,[{fun cb_context:set_resp_data/2, FilteredUsers}
+                       ,{fun cb_context:set_resp_status/2, 'success'}
+                       ]
+                      ).
 
 -spec user_getstream(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 user_getstream(Context, UserId) ->
