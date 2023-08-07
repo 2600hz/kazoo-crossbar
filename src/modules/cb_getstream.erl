@@ -213,7 +213,10 @@ enable_getstream(Context) ->
     case cb_context:resp_status(Context1) of
         'success' ->
             EnabledUser = set_chat_getstream(cb_context:doc(Context1)
-                                            ,kz_json:set_value([<<"enabled">>], 'true', cb_context:req_data(Context))
+                                            ,kz_json:set_value([<<"enabled">>]
+                                                              ,'true'
+                                                              ,cb_context:req_data(Context)
+                                                              )
                                             ),
             cb_context:set_doc(Context1, EnabledUser);
         _Status -> Context1
