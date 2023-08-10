@@ -13,11 +13,6 @@
             "description": "crossbar allow_onboarding_setting_id",
             "type": "boolean"
         },
-        "allow_public_downloads": {
-            "default": true,
-            "description": "crossbar allow_public_downloads",
-            "type": "boolean"
-        },
         "allow_tracing": {
             "default": false,
             "description": "crossbar allow tracing",
@@ -75,10 +70,6 @@
             },
             "type": "array"
         },
-        "deb_download_url": {
-            "description": "crossbar deb_download_url",
-            "type": "string"
-        },
         "default_allow_anonymous_quickcalls": {
             "default": true,
             "description": "crossbar default allow anonymous quickcalls",
@@ -123,10 +114,6 @@
             "description": "crossbar load_view_chunk_size",
             "minimum": 1,
             "type": "integer"
-        },
-        "mac_dowload_url": {
-            "description": "crossbar mac_dowload_url",
-            "type": "string"
         },
         "magic_path_patterns": {
             "default": [
@@ -222,10 +209,6 @@
             },
             "type": "array"
         },
-        "rpm_download_url": {
-            "description": "crossbar rpm_download_url",
-            "type": "string"
-        },
         "schema_strict_validation": {
             "default": false,
             "description": "crossbar schema strict validation",
@@ -291,10 +274,6 @@
             "default": 35,
             "description": "crossbar user auth tokens",
             "type": "integer"
-        },
-        "windows_dowload_url": {
-            "description": "crossbar windows_dowload_url",
-            "type": "string"
         },
         "workers": {
             "default": 100,
