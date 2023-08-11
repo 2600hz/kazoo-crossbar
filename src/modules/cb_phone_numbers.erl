@@ -781,12 +781,20 @@ fetch_locality(Context) ->
 -spec maybe_update_locality(cb_context:context()) -> cb_context:context().
 maybe_update_locality(Context) ->
     Numbers = kz_json:get_value(<<"numbers">>, cb_context:resp_data(Context)),
+    ExistedNumbers = kz_json:filter(fun check_number_in_prefix_db/1, Numbers),
+    Context1 = cb_context:set_resp_data(Context,
+                                        kz_json:set_value(<<"numbers">>
+                                                         ,ExistedNumbers
+                                                         ,cb_context:resp_data(Context)
+                                                         )
+                                       ),
+
     ToUpdate =
-        [Num || {Num,NumProps} <- kz_json:to_proplist(Numbers),
+        [Num || {Num,NumProps} <- kz_json:to_proplist(ExistedNumbers),
                 kz_json:get_value(<<"locality">>, NumProps) =:= 'undefined'
                     andalso knm_converters:is_reconcilable(Num)
         ],
-    update_locality(Context, ToUpdate).
+    update_locality(Context1, ToUpdate).
 
 -spec update_locality(cb_context:context(), kz_term:ne_binaries()) ->
           cb_context:context().
@@ -1020,3 +1028,19 @@ default_knm_options(Context) ->
     ,{'auth_by', AuthAccountId}
     ,{'dry_run', not cb_context:accepting_charges(Context)}
     ].
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% Check if the number id in account db exist in prefix number db
+%% @end
+%%------------------------------------------------------------------------------
+-spec check_number_in_prefix_db(tuple()) -> boolean().
+check_number_in_prefix_db({Number, _Attrs}) ->
+    Db = knm_converters:to_db(Number),
+    Doc = kz_datamgr:open_doc(Db, Number),
+    case Doc of
+        {'error', _Error} ->
+            'false';
+        {ok, _} ->
+            'true'
+    end.
