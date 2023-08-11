@@ -1037,7 +1037,7 @@ default_knm_options(Context) ->
 -spec check_number_in_prefix_db(tuple()) -> boolean().
 check_number_in_prefix_db({Number, _Attrs}) ->
     Db = knm_converters:to_db(Number),
-    Doc = kz_datamgr:open_doc(Db, Number),
+    Doc = kz_datamgr:open_cache_doc(Db, Number),
     case Doc of
         {'error', _Error} ->
             'false';
