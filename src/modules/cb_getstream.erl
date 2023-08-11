@@ -7,14 +7,18 @@
 -module(cb_getstream).
 
 -export([init/0
-        ,allowed_methods/1
-        ,resource_exists/1
-        ,validate/2
+        ,allowed_methods/0, allowed_methods/1
+        ,resource_exists/0, resource_exists/1
+        ,validate/1, validate/2
         ,content_types_provided/2
-        ,put/2
+        ,put/1, put/2
+        ,patch/1
+        ,delete/1
         ]).
 
 -export([chat_getstream_enabled/1, chat_getstream_enabled/2, set_chat_getstream_enabled/2]).
+-export([chat_getstream/1, chat_getstream/2, set_chat_getstream/2]).
+-export([remove_getstream/1]).
 
 -include_lib("crossbar/src/crossbar.hrl").
 
@@ -39,13 +43,19 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.allowed_methods.getstream">>, ?MODULE, 'allowed_methods'),
     _ = crossbar_bindings:bind(<<"*.resource_exists.getstream">>, ?MODULE, 'resource_exists'),
     _ = crossbar_bindings:bind(<<"*.validate.getstream">>, ?MODULE, 'validate'),
-    _ = crossbar_bindings:bind(<<"*.execute.put.getstream">>, ?MODULE, 'put').
+    _ = crossbar_bindings:bind(<<"*.execute.put.getstream">>, ?MODULE, 'put'),
+    _ = crossbar_bindings:bind(<<"*.execute.patch.getstream">>, ?MODULE, 'patch'),
+    _ = crossbar_bindings:bind(<<"*.execute.delete.getstream">>, ?MODULE, 'delete').
 
 %%------------------------------------------------------------------------------
 %% @doc Given the path tokens related to this module, what HTTP methods are
 %% going to be responded to.
 %% @end
 %%------------------------------------------------------------------------------
+-spec allowed_methods() -> http_methods().
+allowed_methods() ->
+    [?HTTP_PUT, ?HTTP_PATCH, ?HTTP_DELETE, ?HTTP_GET].
+
 -spec allowed_methods(path_token()) -> http_methods().
 allowed_methods(?CONNECT_PATH) ->
     [?HTTP_PUT].
@@ -54,6 +64,9 @@ allowed_methods(?CONNECT_PATH) ->
 %% @doc Does the path point to a valid resource
 %% @end
 %%------------------------------------------------------------------------------
+-spec resource_exists() -> 'true'.
+resource_exists() -> 'true'.
+
 -spec resource_exists(path_token()) -> 'true'.
 resource_exists(?CONNECT_PATH) -> 'true'.
 
@@ -72,10 +85,24 @@ content_types_provided(Context, _) ->
 %% Failure here returns 400.
 %% @end
 %%------------------------------------------------------------------------------
+-spec validate(cb_context:context()) -> cb_context:context().
+validate(Context) ->
+    validate_getstream(Context, cb_context:req_verb(Context)).
+
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, ?CONNECT_PATH) ->
     [UserId] = props:get_value(<<"users">>, cb_context:req_nouns(Context)),
     validate_user_feature(Context, ?CONNECT_PATH, UserId, cb_context:req_verb(Context)).
+
+-spec validate_getstream(cb_context:context(), http_method()) -> cb_context:context().
+validate_getstream(Context, ?HTTP_PUT) ->
+    enable_getstream(Context);
+validate_getstream(Context, ?HTTP_PATCH) ->
+    patch_getstream(Context);
+validate_getstream(Context, ?HTTP_DELETE) ->
+    delete_getstream(Context);
+validate_getstream(Context, ?HTTP_GET) ->
+    load_summary(Context).
 
 -spec validate_user_feature(cb_context:context(), path_token(), list(), req_verb()) -> cb_context:context().
 validate_user_feature(Context, ?CONNECT_PATH, UserId, ?HTTP_PUT) ->
@@ -91,8 +118,9 @@ validate_user_feature(Context, ?CONNECT_PATH, UserId, ?HTTP_PUT) ->
 -spec validate_request(cb_context:context(), path_token(), req_verb()) -> cb_context:context().
 validate_request(Context, ?CONNECT_PATH, ?HTTP_PUT) ->
     case cb_context:resp_status(Context) of
-        'success' -> Context1 = validate_secret(Context),
-                     validate_api_key(Context1);
+        'success' ->
+            Context1 = validate_secret(Context),
+            validate_api_key(Context1);
         _Else -> Context
     end.
 
@@ -112,6 +140,19 @@ validate_api_key(Context) ->
             cb_context:add_system_error('datastore_missing', Context);
         ApiKey ->
             cb_context:set_resp_status(cb_context:store(Context, 'getstream_api_key', ApiKey), 'success')
+    end.
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec put(cb_context:context()) -> cb_context:context().
+put(Context) ->
+    Context1 = crossbar_doc:save(Context),
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            cb_context:set_resp_data(Context1, chat_getstream(cb_context:doc(Context1)));
+        _Status -> Context1
     end.
 
 -spec put(cb_context:context(), path_token()) -> cb_context:context().
@@ -140,17 +181,150 @@ put(Context, ?CONNECT_PATH) ->
 
     end.
 
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec patch(cb_context:context()) -> cb_context:context().
+patch(Context) ->
+    Context1 = crossbar_doc:save(Context),
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            cb_context:set_resp_data(Context1, chat_getstream(cb_context:doc(Context1)));
+        _Status -> Context1
+    end.
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec delete(cb_context:context()) -> cb_context:context().
+delete(Context) ->
+    Context1 = crossbar_doc:save(Context),
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            cb_context:set_resp_data(Context1, cb_context:fetch(Context1, <<"getstream_jobj">>));
+        _Status -> Context1
+    end.
+
+-spec enable_getstream(cb_context:context()) -> cb_context:context().
+enable_getstream(Context) ->
+    Context1 = load_user_doc(Context),
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            EnabledUser = set_chat_getstream(cb_context:doc(Context1)
+                                            ,kz_json:set_value([<<"enabled">>]
+                                                              ,'true'
+                                                              ,cb_context:req_data(Context)
+                                                              )
+                                            ),
+            cb_context:set_doc(Context1, EnabledUser);
+        _Status -> Context1
+    end.
+
+-spec patch_getstream(cb_context:context()) -> cb_context:context().
+patch_getstream(Context) ->
+    Context1 = load_user_doc(Context),
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            PatchedUser = set_chat_getstream(cb_context:doc(Context1)
+                                            ,kz_json:merge(chat_getstream(cb_context:doc(Context1))
+                                                          ,cb_context:req_data(Context)
+                                                          )
+                                            ),
+            cb_context:set_doc(Context1, PatchedUser);
+        _Status -> Context1
+    end.
+
+-spec delete_getstream(cb_context:context()) -> cb_context:context().
+delete_getstream(Context) ->
+    Context1 = load_user_doc(Context),
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            GetstreamJObj = chat_getstream(cb_context:doc(Context1)),
+            DisabledUser = remove_getstream(cb_context:doc(Context1)),
+            cb_context:set_doc(cb_context:store(Context1
+                                               ,<<"getstream_jobj">>
+                                               ,GetstreamJObj
+                                               )
+                              ,DisabledUser
+                              );
+        _Status -> Context1
+    end.
+
+-spec load_summary(cb_context:context()) -> cb_context:context().
+load_summary(Context) ->
+    case cb_context:req_nouns(Context) of
+        [{<<"getstream">>, []}, {<<"users">>, []} |_] ->
+            lager:debug("getting account enabled users"),
+            account_summary(Context, cb_context:account_id(Context));
+        [{<<"getstream">>, []}, {<<"users">>, [UserId]} |_] ->
+            lager:debug("getting user status"),
+            user_getstream(Context, UserId);
+        _Nouns ->
+            cb_context:add_validation_error(<<"users">>
+                                           ,<<"required">>
+                                           ,kz_json:from_list([{<<"message">>, <<"users/ or users/:id not found in the url">>}])
+                                           ,Context
+                                           )
+    end.
+
+-spec account_summary(cb_context:context(), kz_term:api_ne_binary()) -> cb_context:context().
+account_summary(Context, 'undefined') ->
+    Message = kz_json:from_list([{<<"message">>, <<"account ID is required in url">>}]),
+    cb_context:add_validation_error(<<"account_id">>, <<"required">>, Message, Context);
+account_summary(Context, AccountId) ->
+    ViewOptions = ['include_docs'],
+    case kz_datamgr:get_results(AccountId, <<"users/crossbar_listing">>, ViewOptions) of
+        {'error', _E} ->
+            lager:info("failed to get user listing from ~s: ~p", [AccountId, _E]),
+            Msg = kz_json:from_list([{<<"message">>, <<"couldn't load users from database">>}
+                                    ,{<<"cause">>, <<"users">>}
+                                    ]),
+            cb_context:add_system_error(500, 'datastore_fault', Msg, Context);
+        {'ok', Users} ->
+            filter_getstream_enabled_users(Context, Users)
+    end.
+
+-spec filter_getstream_enabled_users(cb_context:context(), kz_json:objects()) -> cb_context:context().
+filter_getstream_enabled_users(Context, JObjs) ->
+    FilteredUsers = [kz_json:get_json_value(<<"value">>, JObj)
+                     || JObj <- JObjs,
+                        Doc <- [kz_json:get_json_value(<<"doc">>, JObj)],
+                        chat_getstream_enabled(Doc)
+                    ],
+    cb_context:setters(Context
+                      ,[{fun cb_context:set_resp_data/2, FilteredUsers}
+                       ,{fun cb_context:set_resp_status/2, 'success'}
+                       ]
+                      ).
+
+-spec user_getstream(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+user_getstream(Context, UserId) ->
+    Context1 = crossbar_doc:load(UserId, Context),
+    GetstreamJObj = chat_getstream(cb_context:doc(Context1), kz_json:new()),
+    crossbar_doc:handle_json_success(GetstreamJObj, Context).
+
+-spec load_user_doc(cb_context:context()) -> cb_context:context().
+load_user_doc(Context) ->
+    case props:get_value(<<"users">>, cb_context:req_nouns(Context)) of
+        'undefined' ->
+            cb_context:add_validation_error(<<"user_id">>
+                                           ,<<"required">>
+                                           ,kz_json:from_list([{<<"message">>, <<"User id not found in the request">>}])
+                                           ,Context
+                                           );
+        [UserId | _] ->
+            crossbar_doc:load(UserId, Context)
+    end.
+
 -spec maybe_get_secret(cb_context:context()) -> kz_term:api_binary().
 maybe_get_secret(Context) ->
     Routines = [fun maybe_get_account_secret/1
                ,fun maybe_get_reseller_secret/1
                ,fun maybe_get_default_secret/1
                ],
-    lists:foldl(fun(Routine, 'undefined') ->
-                        Routine(Context);
-                   (_Routine, Secret) ->
-                        Secret
-                end, 'undefined', Routines).
+    find_first_defined(Context, Routines).
 
 -spec maybe_get_api_key(cb_context:context()) -> kz_term:api_binary().
 maybe_get_api_key(Context) ->
@@ -158,12 +332,14 @@ maybe_get_api_key(Context) ->
                ,fun maybe_get_reseller_api_key/1
                ,fun maybe_get_default_api_key/1
                ],
-    lists:foldl(fun(Routine, 'undefined') ->
-                        Routine(Context);
-                   (_Routine, ApiKey) ->
-                        ApiKey
-                end, 'undefined', Routines).
+    find_first_defined(Context, Routines).
 
+find_first_defined(_Context, []) -> 'undefined';
+find_first_defined(Context, [Routine | Routines]) ->
+    case Routine(Context) of
+        'undefined' -> find_first_defined(Context, Routines);
+        Value -> Value
+    end.
 
 -spec maybe_get_account_secret(cb_context:context()) -> kz_term:api_binary().
 maybe_get_account_secret(Context) ->
@@ -262,7 +438,8 @@ get_getstream_user(Context) ->
     Payload = kz_json:from_list(
                 [{<<"filter_conditions">>
                  ,kz_json:from_list(
-                    [{<<"id">>, kz_json:from_list([{<<"$eq">>, UserId}])}])
+                    [{<<"id">>, kz_json:from_list([{<<"$eq">>, UserId}])}]
+                   )
                  }
                 ]
                ),
@@ -271,9 +448,12 @@ get_getstream_user(Context) ->
     Headers = create_headers(Context, <<"read">>),
 
     case kz_http:get(URL, Headers) of
-        {'ok', _Code, _RespHeaders, RespBody} ->
+        {'ok', 200, _RespHeaders, RespBody} ->
             RespDecoded = kz_json:decode(RespBody),
             {'ok', kz_json:get_list_value(<<"users">>, RespDecoded, [])};
+        {'ok', _StatusCode, _RespHeaders, _RespBody} ->
+            lager:info("fetching getstream user, got error http status code from getstream: ~p, resp body: ~p", [_StatusCode, _RespBody]),
+            {'error', 'error_response_from_getstream'};
         {'error', _}=Error ->
             Error
     end.
@@ -297,6 +477,9 @@ create_getstream_user(Context)->
     case kz_http:post(URL, Headers, ReqBody) of
         {'ok', 201, _RespHeaders, _RespBody} ->
             'true';
+        {'ok', _StatusCode, _RespHeaders, _RespBody} ->
+            lager:info("creating getstream user, got error http status code from getstream: ~p, resp body: ~p", [_StatusCode, _RespBody]),
+            'false';
         {'error', _E} ->
             lager:debug("failed to create getstream user: ~p", [_E]),
             'false'
@@ -322,6 +505,9 @@ update_getstream_user(Context, UpdatedValues)->
     case kz_http:patch(URL, Headers, ReqBody) of
         {'ok', 200, _RespHeaders, _RespBody} ->
             'true';
+        {'ok', _StatusCode, _RespHeaders, _RespBody} ->
+            lager:info("updating getstream user, got error http status code from getstream: ~p, resp body: ~p", [_StatusCode, _RespBody]),
+            'false';
         {'error', _E} ->
             lager:debug("failed to update getstream user: ~p", [_E]),
             'false'
@@ -413,3 +599,19 @@ chat_getstream_enabled(Doc, Default) ->
 -spec set_chat_getstream_enabled(doc(), boolean()) -> doc().
 set_chat_getstream_enabled(Doc, ChatGetstreamEnabled) ->
     kz_json:set_value([<<"pvt_chat">>, <<"getstream">>, <<"enabled">>], ChatGetstreamEnabled, Doc).
+
+-spec chat_getstream(doc()) -> kz_json:object().
+chat_getstream(Doc) ->
+    chat_getstream(Doc, kz_json:new()).
+
+-spec chat_getstream(doc(), Default) -> kz_json:object() | Default.
+chat_getstream(Doc, Default) ->
+    kz_json:get_json_value([<<"pvt_chat">>, <<"getstream">>], Doc, Default).
+
+-spec set_chat_getstream(doc(), kz_json:object()) -> doc().
+set_chat_getstream(Doc, ChatGetstreamJObj) ->
+    kz_json:set_value([<<"pvt_chat">>, <<"getstream">>], ChatGetstreamJObj, Doc).
+
+-spec remove_getstream(doc()) -> doc().
+remove_getstream(Doc) ->
+    kz_json:delete_key([<<"pvt_chat">>, <<"getstream">>], Doc).
