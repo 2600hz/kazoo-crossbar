@@ -30,6 +30,11 @@
             "description": "appex_client http_timeout_s",
             "type": "integer"
         },
+        "is_aio_cluster": {
+            "default": false,
+            "description": "appex_client is_aio_cluster",
+            "type": "boolean"
+        },
         "marketplace_url": {
             "description": "appex_client marketplace_url",
             "type": "string"
