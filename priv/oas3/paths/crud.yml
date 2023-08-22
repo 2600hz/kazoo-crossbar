@@ -1,0 +1,73 @@
+paths:
+  /accounts/{ACCOUNT_ID}/crud:
+    get:
+      operationId: GetAccountsAccountIdCrud
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Get all crud
+      tags:
+        - crud
+    put:
+      operationId: PutAccountsAccountIdCrud
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Add an instance of crud
+      tags:
+        - crud
+  /accounts/{ACCOUNT_ID}/crud/{THING_ID}:
+    delete:
+      operationId: DeleteAccountsAccountIdCrudThingId
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../oas3-parameters.yml#/THING_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Delete an instance of crud
+      tags:
+        - crud
+    get:
+      operationId: GetAccountsAccountIdCrudThingId
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../oas3-parameters.yml#/THING_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Get a crud by ID
+      tags:
+        - crud
+    patch:
+      operationId: PatchAccountsAccountIdCrudThingId
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../oas3-parameters.yml#/THING_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Patch specific fields of crud
+      tags:
+        - crud
+    post:
+      operationId: PostAccountsAccountIdCrudThingId
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../oas3-parameters.yml#/THING_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Update an instance of crud
+      tags:
+        - crud
