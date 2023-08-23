@@ -11312,9 +11312,6 @@
       'items':
         'type': string
       'type': array
-    'deb_download_url':
-      'description': crossbar deb_download_url
-      'type': string
     'default_allow_anonymous_quickcalls':
       'default': true
       'description': crossbar default allow anonymous quickcalls
@@ -11352,9 +11349,6 @@
       'description': crossbar load_view_chunk_size
       'minimum': 1
       'type': integer
-    'mac_dowload_url':
-      'description': crossbar mac_dowload_url
-      'type': string
     'magic_path_patterns':
       'default':
         - |-
@@ -11431,9 +11425,6 @@
       'items':
         'type': string
       'type': array
-    'rpm_download_url':
-      'description': crossbar rpm_download_url
-      'type': string
     'schema_strict_validation':
       'default': false
       'description': crossbar schema strict validation
@@ -11486,9 +11477,6 @@
       'default': 35
       'description': crossbar user auth tokens
       'type': integer
-    'windows_dowload_url':
-      'description': crossbar windows_dowload_url
-      'type': string
     'workers':
       'default': 100
       'description': crossbar workers
@@ -18020,6 +18008,26 @@
 'whitelabel':
   'description': Whitelabel settings
   'properties':
+    'commland':
+      'description': Properties related to commland
+      'properties':
+        'downloads':
+          'description': The URLs of commland downloads related to the account
+          'properties':
+            'deb':
+              'description': Commland debian download URL for the account
+              'type': string
+            'mac':
+              'description': Commland mac download URL for the account
+              'type': string
+            'rpm':
+              'description': Commland rpm download URL for the account
+              'type': string
+            'windows':
+              'description': Commland windows download URL for the account
+              'type': string
+          'type': object
+      'type': object
     'company_name':
       'description': The company name to display to users
       'type': string
