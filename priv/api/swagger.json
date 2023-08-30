@@ -17091,7 +17091,7 @@
                 },
                 "calls": {
                     "description": "A hard limit for the total number calls per account by default",
-                    "minimum": 0,
+                    "minimum": -1,
                     "type": "integer"
                 },
                 "enabled": {
@@ -17108,7 +17108,7 @@
                 "max_postpay_ammount": {
                     "default": 0,
                     "description": "A hard limit for the postpay before limiting calls per account by default",
-                    "minimum": 0,
+                    "minimum": -1,
                     "type": "integer"
                 },
                 "outbound_trunks": {
@@ -17125,7 +17125,7 @@
                 },
                 "resource_consuming_calls": {
                     "description": "A hard limit for the number of resource consuming calls per account by default",
-                    "minimum": 0,
+                    "minimum": -1,
                     "type": "integer"
                 },
                 "soft_limit_inbound": {

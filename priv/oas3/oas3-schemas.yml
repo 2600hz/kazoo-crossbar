@@ -13481,7 +13481,7 @@
       'x-support_level': supported
     'calls':
       'description': A hard limit for the total number calls per account by default
-      'minimum': 0
+      'minimum': -1
       'type': integer
       'x-support_level': beta
     'enabled':
@@ -13499,7 +13499,7 @@
       'default': 0
       'description': |-
         A hard limit for the postpay before limiting calls per account by default
-      'minimum': 0
+      'minimum': -1
       'type': integer
       'x-support_level': supported
     'outbound_trunks':
@@ -13517,7 +13517,7 @@
     'resource_consuming_calls':
       'description': |-
         A hard limit for the number of resource consuming calls per account by default
-      'minimum': 0
+      'minimum': -1
       'type': integer
       'x-support_level': beta
     'soft_limit_inbound':
