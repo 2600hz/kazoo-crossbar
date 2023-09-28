@@ -443,7 +443,7 @@ get_getstream_user(Context) ->
                  }
                 ]
                ),
-    QS = [{<<"payload">>, kz_http_util:urlencode(kz_json:encode(Payload))}],
+    QS = [{<<"payload">>, kz_json:encode(Payload)}],
     URL = build_url(Context, QS),
     Headers = create_headers(Context, <<"read">>),
 
