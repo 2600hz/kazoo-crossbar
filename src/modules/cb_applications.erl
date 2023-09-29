@@ -491,7 +491,7 @@ should_allow_admin_app_listing(Context, JObj) ->
 validate_application(Context, AppId, ?HTTP_GET) ->
     crossbar_doc:load(AppId, Context, ?TYPE_CHECK_OPTION(kzd_applications:pvt_type()));
 validate_application(Context, AppId, ?HTTP_PUT) ->
-    OnSuccess = fun(C) -> create_application(C, AppId) end,
+    OnSuccess = fun(C) -> create_application(C, AppId, kz_term:is_rfc4122_uuid(AppId)) end,
     cb_context:validate_request_data(kzd_applications:schema(), Context, OnSuccess);
 validate_application(Context, AppId, ?HTTP_POST) ->
     update_application(Context, AppId);
@@ -509,8 +509,8 @@ validate_application(Context, AppId, ?HTTP_DELETE) ->
 %% @doc check is this reseller or master creating/updating/overriding the app
 %% if reseller then then check if the app exist in master to merge with payload
 %% so effectively allowing reseller to override the app.
--spec create_application(cb_context:context(), path_token()) -> cb_context:context().
-create_application(Context, AppId) ->
+-spec create_application(cb_context:context(), path_token(), boolean()) -> cb_context:context().
+create_application(Context, AppId, 'true') ->
     %% FIXME: app_uuid
     MasterId = cb_context:master_account_id(Context),
     case cb_context:account_id(Context) of
@@ -519,12 +519,20 @@ create_application(Context, AppId) ->
             cb_context:add_validation_error(<<"account_id">>, <<"required">>, Message, Context);
         MasterId ->
             Setters = [{fun kz_doc:set_id/2, AppId}
+                      ,{fun set_uuid/2, AppId}
                       ,{fun kz_doc:set_type/2, kzd_applications:pvt_type()}
                       ],
             cb_context:set_doc(Context, kz_doc:setters(cb_context:doc(Context), Setters));
         _AccountId ->
             load_merge_master_app(AppId, Context)
-    end.
+    end;
+create_application(Context, _AppId, 'false') ->
+    Message = kz_json:from_list([{<<"message">>, <<"uuid in the url is not valid">>}]),
+    cb_context:add_validation_error(<<"uuid">>, <<"not_valid">>, Message, Context).
+
+-spec set_uuid(kz_json:object(), kz_term:ne_binary()) -> kz_json:object().
+set_uuid(JObj, Uuid) ->
+    kz_json:set_value(<<"uuid">>, Uuid, JObj).
 
 -spec update_application(cb_context:context(), path_token()) -> cb_context:context().
 update_application(Context, AppId) ->
@@ -543,6 +551,7 @@ load_merge_master_app(AppId, Context) ->
     case cb_context:resp_status(Context1) of
         'success' ->
             Setters = [{fun kz_doc:set_id/2, AppId}
+                      ,{fun set_uuid/2, AppId}
                       ,{fun kz_doc:set_type/2, kzd_applications:pvt_type()}
                       ],
             JObj = kz_doc:setters(kz_doc:public_fields(cb_context:doc(Context1), 'false'), Setters),
@@ -550,12 +559,20 @@ load_merge_master_app(AppId, Context) ->
         'error' when ErrCode =:= 404 ->
             JObj = kz_doc:setters(cb_context:req_data(Context)
                                  ,[{fun kz_doc:set_id/2, AppId}
+                                  ,{fun set_uuid/2, AppId}
                                   ,{fun kz_doc:set_type/2, kzd_applications:pvt_type()}
                                   ]),
-            crossbar_doc:handle_json_success(JObj, Context);
+            validate_uuid(kz_term:is_rfc4122_uuid(AppId), JObj, Context);
         _ ->
             Context1
     end.
+
+-spec validate_uuid(boolean(), kz_json:object(), cb_context:context()) -> cb_context:context().
+validate_uuid('true', JObj, Context) ->
+    crossbar_doc:handle_json_success(JObj, Context);
+validate_uuid('false', _JObj, Context) ->
+    Message = kz_json:from_list([{<<"message">>, <<"uuid is not valid">>}]),
+    cb_context:add_validation_error(<<"uuid">>, <<"not_valid">>, Message, Context).
 
 -spec on_successful_app_load(cb_context:context(), path_token()) ->
           cb_context:context().
