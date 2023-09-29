@@ -497,10 +497,7 @@ validate_application(Context, AppId, ?HTTP_POST) ->
     update_application(Context, AppId);
 validate_application(Context, AppId, ?HTTP_PATCH) ->
     OnSuccess = fun(_Id, C) ->
-                        case cb_context:resp_status(Context) of
-                            'success' -> update_application(C, AppId);
-                            _ -> C
-                        end
+                        update_application(C, AppId)
                 end,
     crossbar_doc:patch_and_validate(AppId, Context, OnSuccess);
 validate_application(Context, AppId, ?HTTP_DELETE) ->

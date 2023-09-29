@@ -359,12 +359,12 @@ curl -v -X DELETE \
 > **NOTE** You can also add `/i18n/{LANG_CODE}` to the URL before `applications` to work
 > with specific language, `/accounts/{RESELLER_ACCOUNT_ID}/i18n/de-DE/applications/application/{APP_ID}/...`
 
-> GET /v2/accounts/{RESELLER_ACCOUNT_ID}/applications/application/{APP_ID}/screenshot/{SCREENSHOT_ID}
+> GET /v2/accounts/{RESELLER_ACCOUNT_ID}/applications/application/{APP_ID}/screenshots/{SCREENSHOT_ID}
 
 ```shell
 curl -v -X GET \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
-    http://{SERVER}:8000/v2/accounts/{RESELLER_ACCOUNT_ID}/applications/application/{APP_ID}/screenshot/{SCREENSHOT_ID}
+    http://{SERVER}:8000/v2/accounts/{RESELLER_ACCOUNT_ID}/applications/application/{APP_ID}/screenshots/{SCREENSHOT_ID}
 ```
 
 ### Append a screenshot to the array by App ID
@@ -376,14 +376,14 @@ curl -v -X GET \
 This API will take care of adding the new/updated icon and or screenshot to their appropriate
 section, even if your are using `/i18n/{LANG_CODE}` URL.
 
-> POST /v2/accounts/{RESELLER_ACCOUNT_ID}/applications/application/{APP_ID}/screenshot/{SCREENSHOT_ID}
+> POST /v2/accounts/{RESELLER_ACCOUNT_ID}/applications/application/{APP_ID}/screenshots/{SCREENSHOT_ID}
 
 ```shell
 curl -v -X POST \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     -H "Content-Type: multipart/form-data" \
     -F 'file=@sticky-mustache.png; type=image/png' \
-    http://{SERVER}:8000/v2/accounts/{RESELLER_ACCOUNT_ID}/applications/application/{APP_ID}/screenshot/{SCREENSHOT_ID}
+    http://{SERVER}:8000/v2/accounts/{RESELLER_ACCOUNT_ID}/applications/application/{APP_ID}/screenshots/{SCREENSHOT_ID}
 ```
 
 ### Delete screenshot by App ID
@@ -395,12 +395,12 @@ curl -v -X POST \
 This API will take care of adding the new/updated icon and or screenshot to their appropriate
 section, even if your are using `/i18n/{LANG_CODE}` URL.
 
-> DELETE /v2/accounts/{RESELLER_ACCOUNT_ID}/applications/application/{APP_ID}/screenshot/{SCREENSHOT_ID}
+> DELETE /v2/accounts/{RESELLER_ACCOUNT_ID}/applications/application/{APP_ID}/screenshots/{SCREENSHOT_ID}
 
 ```shell
 curl -v -X DELETE \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
-    http://{SERVER}:8000/v2/accounts/{RESELLER_ACCOUNT_ID}/applications/application/{APP_ID}/screenshot/{SCREENSHOT_ID}
+    http://{SERVER}:8000/v2/accounts/{RESELLER_ACCOUNT_ID}/applications/application/{APP_ID}/screenshots/{SCREENSHOT_ID}
 ```
 
 ## Blocklist
@@ -889,10 +889,10 @@ curl -v -X GET \
 > **NOTE** You can also add `/i18n/{LANG_CODE}` to the URL before `applications` to work
 > with specific language, `/accounts/{ACCOUNT_ID}/i18n/de-DE/applications/{APP_TYPE}/{APP_ID}/...`
 
-> GET /v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/applications/{APP_TYPE}/{APP_ID}/screenshot/{SCREENSHOT_ID}
+> GET /v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/applications/{APP_TYPE}/{APP_ID}/screenshots/{SCREENSHOT_ID}
 
 ```shell
 curl -v -X GET \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
-    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/applications/{APP_TYPE}/{APP_ID}/screenshot/{SCREENSHOT_ID}
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/applications/{APP_TYPE}/{APP_ID}/screenshots/{SCREENSHOT_ID}
 ```
