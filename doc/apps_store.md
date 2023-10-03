@@ -488,3 +488,60 @@ curl -v -X DELETE \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/{APP_ID}/override/screenshot/{APP_SCREENSHOT_INDEX}
 ```
+
+## Get Marketplace Configurations
+
+> GET /v2/accounts/{ACCOUNT_ID}/apps_store/marketplace
+
+```shell
+curl -v -X GET \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/marketplace
+```
+
+```json
+{
+    "auth_token": "{AUTH_TOKEN}",
+    "data": {
+        "cluster_id": "d9b4a2bb568f7a2cd2f25e6f733209a3",
+        "enabled": true,
+        "app_exchange_url": "https://ui.appex1.2600hz.dev:4041",
+        "api_url": "http://192.168.1.150:8000/v2/",
+        "marketplace_url": "https://marketplace.2600hz.com",
+        "is_linked": true,
+        "is_aio_cluster": false,
+        "name": "cluster001"
+    },
+    "request_id": "{REQUEST_ID}",
+    "status": "success"
+}
+```
+
+## Patch Marketplace Configurations
+
+> PATCH /v2/accounts/{ACCOUNT_ID}/apps_store/marketplace
+
+```shell
+curl -v -X PATCH \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/apps_store/marketplace \
+    -d {"data":{"action":"enable", "setttings":{"is_aio_cluster": "true","name": "cluster001", "api_url": "http://192.168.1.150:8000/v2/"}}}
+```
+
+```json
+{
+    "auth_token": "{AUTH_TOKEN}",
+    "data": {
+        "cluster_id": "d9b4a2bb568f7a2cd2f25e6f733209a3",
+        "enabled": true,
+        "app_exchange_url": "https://ui.appex1.2600hz.dev:4041",
+        "api_url": "http://192.168.1.150:8000/v2/",
+        "marketplace_url": "https://marketplace.2600hz.com",
+        "is_linked": true,
+        "is_aio_cluster": true,
+        "name": "cluster001"
+    },
+    "request_id": "{REQUEST_ID}",
+    "status": "success"
+}
+```

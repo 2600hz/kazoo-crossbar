@@ -38,6 +38,8 @@
 -define(MARKET_ACTION_LINK, <<"link">>).
 -define(MARKET_ACTION_UNLINK, <<"unlink">>).
 -define(MARKET_ACTION_API_URL, <<"api_url">>).
+-define(MARKET_ACTION_UPDATE, <<"update">>).
+-define(MARKET_SETTINGS, <<"settings">>).
 
 -define(WHITELABEL_MIME_TYPES, ?IMAGE_CONTENT_TYPES ++ ?BASE64_CONTENT_TYPES ++ ?MULTIPART_CONTENT_TYPES).
 
@@ -269,7 +271,7 @@ validate(Context, ?BLACKLIST) ->
 validate(Context, ?MARKETPLACE) ->
     case cb_context:req_verb(Context) of
         ?HTTP_GET ->
-            crossbar_doc:handle_datamgr_success(appex_client_config:get_public_configs(), Context);
+            crossbar_doc:handle_datamgr_success(get_marketplace_configs(), Context);
         ?HTTP_PATCH ->
             validate_market_action(Context, cb_context:req_value(Context, <<"action">>))
     end;
@@ -400,28 +402,31 @@ patch(Context, ?MARKETPLACE) ->
 
 patch_market_action(Context, ?MARKET_ACTION_ENABLE) ->
     _ = appex_client_config:set_is_enabled('true'),
+    MaybeClusterName = maybe_patch_settings(cb_context:req_value(Context, ?MARKET_SETTINGS)),
     maybe_restart_kazoo_appex(),
-    crossbar_doc:handle_datamgr_success(appex_client_config:get_public_configs(), Context);
+    crossbar_doc:handle_datamgr_success(get_marketplace_configs(MaybeClusterName), Context);
 patch_market_action(Context, ?MARKET_ACTION_DISABLE) ->
     %% don't stop kazoo_appex to let it clean out apps when they stop
     _ = appex_client_config:set_is_enabled('false'),
-    crossbar_doc:handle_datamgr_success(appex_client_config:get_public_configs(), Context);
+    crossbar_doc:handle_datamgr_success(get_marketplace_configs(), Context);
 patch_market_action(Context, ?MARKET_ACTION_LINK) ->
     Doc = cb_context:doc(Context),
     case appex_client_client:link_cluster(Doc) of
-        {'ok', _RespData} ->
+        {'ok', RespData} ->
             _ = appex_client_config:set_is_enabled('true'),
             maybe_restart_kazoo_appex(),
-            crossbar_doc:handle_datamgr_success(appex_client_config:get_public_configs(), Context);
+            ClusterName = kz_json:get_ne_binary_value(<<"name">>, RespData, 'undefined'),
+            crossbar_doc:handle_datamgr_success(get_marketplace_configs(ClusterName), Context);
         {'error', Error} ->
             cb_context:add_system_error(500, <<"appex_passthrough_error">>, Error, Context)
     end;
 patch_market_action(Context, ?MARKET_ACTION_UNLINK) ->
     %% don't stop kazoo_appex to let it clean out apps when they stop
     case appex_client_client:unlink_cluster() of
-        {'ok', _RespData} ->
+        {'ok', RespData} ->
             _ = appex_client_config:set_is_enabled('false'),
-            crossbar_doc:handle_datamgr_success(appex_client_config:get_public_configs(), Context);
+            ClusterName = kz_json:get_ne_binary_value(<<"name">>, RespData, 'undefined'),
+            crossbar_doc:handle_datamgr_success(get_marketplace_configs(ClusterName), Context);
         {'error', Error} ->
             cb_context:add_system_error(500, <<"appex_passthrough_error">>, Error, Context)
     end;
@@ -429,7 +434,52 @@ patch_market_action(Context, ?MARKET_ACTION_API_URL) ->
     ApiUrl = kz_json:get_value(<<"api_url">>, cb_context:doc(Context)),
     %% TODO: we need to re-configure running mui apps source_url
     _ = appex_client_config:set_api_url(ApiUrl),
-    crossbar_doc:handle_datamgr_success(appex_client_config:get_public_configs(), Context).
+    MaybeClusterName = maybe_patch_settings(cb_context:req_value(Context, ?MARKET_SETTINGS)),
+    crossbar_doc:handle_datamgr_success(get_marketplace_configs(MaybeClusterName), Context);
+patch_market_action(Context, ?MARKET_ACTION_UPDATE) ->
+    MaybeClusterName = maybe_patch_settings(cb_context:req_value(Context, ?MARKET_SETTINGS)),
+    crossbar_doc:handle_datamgr_success(get_marketplace_configs(MaybeClusterName), Context).
+
+maybe_patch_settings('undefined') ->
+    'ok';
+maybe_patch_settings(Settings) ->
+    maybe_set_aio_cluster(kz_json:get_boolean_value(<<"is_aio_cluster">>, Settings, 'undefined')),
+    _ = maybe_set_api_url(kz_json:get_ne_binary_value(<<"api_url">>, Settings, 'undefined')),
+    maybe_set_cluster_name(kz_json:get_ne_binary_value(<<"name">>, Settings, 'undefined')).
+
+maybe_set_aio_cluster('undefined') ->
+    'ok';
+maybe_set_aio_cluster(Boolean) ->
+    appex_client_config:set_is_aio_cluster(Boolean).
+
+maybe_set_api_url('undefined') ->
+    'ok';
+maybe_set_api_url(ApiUrl) ->
+    appex_client_config:set_api_url(ApiUrl).
+
+maybe_set_cluster_name('undefined') ->
+    'ok';
+maybe_set_cluster_name(ClusterName) ->
+    case appex_client_client:update_cluster(kz_json:from_list([{<<"name">>, ClusterName}])) of
+        {'ok', RespData} ->
+            kz_json:get_ne_binary_value(<<"name">>, RespData, 'undefined');
+        _ ->
+            'ok'
+    end.
+
+get_marketplace_configs() -> get_marketplace_configs('ok').
+
+get_marketplace_configs('ok') ->
+    ClusterName = case appex_client_client:get_cluster() of
+                      {'ok', RespData} ->
+                          kz_json:get_ne_binary_value(<<"name">>, RespData, 'undefined');
+                      _ ->
+                          'undefined'
+                  end,
+    get_marketplace_configs(ClusterName);
+
+get_marketplace_configs(ClusterName) ->
+    kz_json:insert_value(<<"name">>, ClusterName, appex_client_config:get_public_configs()).
 
 %% FIXME: maybe check kazoo_appex was disable (or not running before on node)
 %% so it won't lost its state
@@ -659,7 +709,7 @@ validate_app_whitelabel_binary(Context, AppId, ?SCREENSHOT, Number, ?HTTP_DELETE
 %%------------------------------------------------------------------------------
 -spec validate_market_action(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 validate_market_action(Context, ?MARKET_ACTION_ENABLE) ->
-    set_ctx_success(Context);
+    maybe_validate_market_settings(Context, cb_context:req_value(Context, ?MARKET_SETTINGS));
 validate_market_action(Context, ?MARKET_ACTION_DISABLE) ->
     set_ctx_success(Context);
 validate_market_action(Context, ?MARKET_ACTION_LINK) ->
@@ -680,6 +730,15 @@ validate_market_action(Context, ?MARKET_ACTION_API_URL) ->
             Message = kz_json:from_list([{<<"message">>, <<"api_url is required but it is missing">>}]),
             cb_context:add_validation_error(<<"api_url">>, <<"required">>, Message, Context);
         _ ->
+            maybe_validate_market_settings(Context, cb_context:req_value(Context, ?MARKET_SETTINGS))
+    end;
+validate_market_action(Context, ?MARKET_ACTION_UPDATE) ->
+    ReqData = cb_context:req_data(Context),
+    case kz_json:get_ne_json_value(?MARKET_SETTINGS, ReqData, 'undefined') of
+        'undefined' ->
+            Message = kz_json:from_list([{<<"message">>, <<"settings is required but it is missing">>}]),
+            cb_context:add_validation_error(?MARKET_SETTINGS, <<"required">>, Message, Context);
+        _ ->
             set_ctx_success(Context)
     end;
 validate_market_action(Context, 'undefined') ->
@@ -688,6 +747,17 @@ validate_market_action(Context, 'undefined') ->
 validate_market_action(Context, _BadAction) ->
     Message = kz_json:from_list([{<<"message">>, <<"invalid action">>}]),
     cb_context:add_system_error(400, 'bad_request', Message, Context).
+
+maybe_validate_market_settings(Context, 'undefined') ->
+    set_ctx_success(Context);
+maybe_validate_market_settings(Context, Settings) ->
+    case kz_json:is_json_object(Settings) of
+        'true' ->
+            set_ctx_success(Context);
+        'false' ->
+            Message = kz_json:from_list([{<<"message">>, <<"invalid settings">>}]),
+            cb_context:add_system_error(400, 'bad_request', Message, Context)
+    end.
 
 -spec set_ctx_success(cb_context:context()) -> cb_context:context().
 set_ctx_success(Context) ->
