@@ -491,18 +491,18 @@ curl -v -X DELETE \
 
 ## 2600Hz Marketplace Connector
 
-This is a API endpoint to interact with 2600Hz Marketplace Connector and its
-configurations. Sysadmins (super duper admins) are excepted to use this API to setup their
+This is an API endpoint to interact with 2600Hz Marketplace Connector and its
+configurations. Sysadmins (super duper admins) are expected to use this API to setup their
 Kazoo Cluster to be able to use Kazoo Applications from 2600Hz Marketplace.
 
-Sysadmins can browser and purchase applications from 2600Hz Marketplace. To use their
+Sysadmins can browse and purchase applications from 2600Hz Marketplace. To use those
 apps, Kazoo needs to be configured and linked to Marketplace Server to be able to request
 access to Apps.
 
-Afar cluster is linked to Marketplace Server, and all things are configured, sysadmins can
+After cluster is linked to Marketplace Server, and all things are configured, sysadmins can
 purchase apps from Marketplace, then try to load and start the apps in their cluster.
 
-Please consult each applications documentation and or Marketplace to see how to initially
+Please consult each application documentation or Marketplace to see how to initially
 config the app and then how to start them.
 
 When starting applications purchase through Marketplace, Kazoo will see the app is
@@ -520,7 +520,7 @@ information.
 > GET /v2/accounts/{ACCOUNT_ID}/apps_store/marketplace
 
 Super duper admin can use this API to get the Marketplace Connector settings and its link
-state.  This is useful to get info to show in Marketplace Connector page in UI.
+state. This is useful to get info to show in Marketplace Connector page in UI.
 
 ```shell
 curl -v -X GET \
@@ -565,12 +565,12 @@ and is ready to access the purchased apps.
 >     -d '{"data":{"action":"enable"}}'
 > ```
 
-To enable starting apps off the marketplace, super duper admin can use this API to enabled it.
+To enable starting apps off the marketplace, super duper admin can use this API to enable it.
 
 Please note this won't start the apps from marketplace and sysadmin still need to perform
 starting the apps manually using `sup` commands!
 
-This app won't have any affect on stopping the marketplace apps.
+This app won't have any effect on stopping the marketplace apps.
 
 
 ### Disable Marketplace Connector
@@ -587,8 +587,8 @@ This app won't have any affect on stopping the marketplace apps.
 In case the sysadmin decided to disable starting apps off the marketplace, super duper
 admin can use this API to disable it.
 
-Please note this won't stop the currently running apps that has been fetched from marketplace!
-To stop those apps, sysadmin needs to stop each apps manually using `sup` commands.
+Please note this won't stop the currently running apps that have been fetched from the marketplace!
+To stop those apps, sysadmin needs to stop each app manually using `sup` commands.
 
 
 ### Link Cluster to Marketplace
@@ -599,27 +599,27 @@ To stop those apps, sysadmin needs to stop each apps manually using `sup` comman
 > curl -v -X PATCH \
 >     -H "X-Auth-Token: {AUTH_TOKEN}" \
 >     http://{SERVER}:8000/v2/apps_store/marketplace \
->     -d '{"data":{"action":"link","settings":{"name":"My Cool Cluster","is_aio_cluster":true}}}'
+>     -d '{"data":{"action":"link","access_code":"test","settings":{"name":"My Cool Cluster","is_aio_cluster":true}}}'
 > ```
 
 This will link the cluster to 2600Hz Marketplace server. Sysadmin first needs to get an
 Access Code from Marketplace Portal, in [Manage
-Cluster](https://marketplace.2600hz.com/settings/account/manage-cluster) section.
+Cluster] (https://marketplace.2600hz.com/settings/account/manage-cluster) section.
 
-The only require payload is `access_code` that you got from Marketplace Portal, the
+The only required payload is `access_code` that you got from Marketplace Portal, the
 settings is optional. It suggested at least set a friendly name for your cluster so you
-can recognise it in Marketplace Portal.
+can recognize it in Marketplace Portal.
 
 
 #### Request Schema
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`access_code` | Access Code from Marketplace Portal during cluster link request | `string()` | `true`  | `true` |
-`settings.api_url` | Crossbar API URL to be used to serve UI applications | `string()` |   | `true` |
-`settings.is_aio_cluster` | Indicates all Kazoo VM nodes are running same list of Kazoo Apps | `boolean()` |   | `true` |
-`settings.name` | A friendly name for cluster | `string()` |   | `true` |
-`settings` |   | `object()` |   | `true` |
+`access_code` | Access Code from Marketplace Portal during cluster link request | `string()` |   | `true`  | `true` |
+`settings.api_url` | Crossbar API URL to be used to serve UI applications | `string()` |   | `false` |
+`settings.is_aio_cluster` | Indicates all Kazoo VM nodes are running same list of Kazoo Apps | `boolean()` |   | `false` |
+`settings.name` | A friendly name for cluster | `string()` |   | `false` |
+`settings` |   | `object()` |   | `false` |
 
 
 ### Unlink Cluster from Marketplace
@@ -633,30 +633,15 @@ Key | Description | Type | Default | Required | Support Level
 >     -d '{"data":{"action":"unlink"}}'
 > ```
 
-If the sysadmin decided to unlink their cluster from Marketplace they can use this API to
+If the sysadmin decided to unlink their cluster from Marketplace, they can use this API to
 do so.
 
 Please note this won't stop the currently running apps that are fetched off marketplace.
-Also your purchases in your Marketplace Account won't be affected and you are going to
+Also, your purchases in your Marketplace Account won't be affected and you are going to
 billed for them.
 
 
-### Setting Crossbar API URl
-
-> PATCH /v2/apps_store/marketplace
->
-> ```shell
-> curl -v -X PATCH \
->     -H "X-Auth-Token: {AUTH_TOKEN}" \
->     http://{SERVER}:8000/v2/apps_store/marketplace \
->     -d '{"data":{"action":"api_url","settings":{"api_url":"http://localhost:8000/v2"}}}'
-> ```
-
-This the old deprecated API to set `api_url` used to setup UI applications. For newer
-API please see the next section for Updating Marketplace configs.
-
 ### Updating Marketplace Connector Configurations
-
 
 > PATCH /v2/apps_store/marketplace
 >
@@ -680,7 +665,7 @@ Key | Description | Type | Default | Required | Support Level
 `settings` |   | `object()` |   | `false` |
 
 - `api_url`: this is the Crossbar API URL, and is being used to serve the UI applications
-  assets. If you don't set this settings, the UI applications from Marketplace won't be
+  assets. If you don't set this setting, the UI applications from Marketplace won't be
 able to start or work.
 - `is_aio_cluster`: This indicates that All of Kazoo VM node servers in your cluster are
 running the same list of Kazoo apps across your whole cluster. This is the intended way of
@@ -701,7 +686,8 @@ knowing how to setup and start marketplace apps on your own, you
         "marketplace_url": "https://marketplace.2600hz.com",
         "is_linked": true,
         "is_aio_cluster": true,
-        "name": "cluster001"
+        "name": "cluster001",
+        "kazoo_version": "5.3.11"
     },
     "request_id": "{REQUEST_ID}",
     "status": "success"
