@@ -339,7 +339,7 @@ apply_plan_to_application_fun() ->
             AppJObj = maps:get(AppId, Acc, 'undefined'),
             case kz_json:get_ne_binary_value([AppId, <<"publish">>], ServicesAppJObj, 'undefined') of
                 'undefined' ->
-                    AppJObj;
+                    Acc;
                 <<"block">> when AppJObj =/= 'undefined' ->
                     Setters = [{fun kzd_applications:set_published/2, 'false'}
                               ,{fun kzd_applications:set_pvt_authority/2, <<"service_plan">>}
@@ -351,7 +351,7 @@ apply_plan_to_application_fun() ->
                               ],
                     maps:put(AppId, kz_doc:setters(AppJObj, Setters), Acc);
                 _ ->
-                    AppJObj
+                    Acc
             end
     end.
 
