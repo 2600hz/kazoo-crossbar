@@ -21,7 +21,6 @@
         ,validate/1, validate/2
         ,put/1, put/2
         ,post/2
-
         ,find_account/2
         ]).
 
@@ -216,9 +215,28 @@ authenticate_nouns(_Nouns) -> 'false'.
 
 -spec validate(cb_context:context()) -> cb_context:context().
 validate(Context) ->
-    case consume_tokens(Context) of
-        {'ok', Context1} -> validate_action(Context1, cb_context:req_value(Context1, <<"action">>));
-        {'error', Context1} -> Context1
+    TokenCost = cb_modules_util:token_cost(Context, ?USER_AUTH_TOKENS),
+    case cb_modules_util:consume_tokens_until(Context, TokenCost) of
+        {'true', Context1} ->
+            maybe_validate_auth_attempts(Context1, TokenCost);
+        {'false', Context1} ->
+            cb_context:add_system_error('too_many_requests', Context1)
+    end.
+
+-spec maybe_validate_auth_attempts(cb_context:context(), non_neg_integer()) -> cb_context:context().
+maybe_validate_auth_attempts(Context, TokenCost) ->
+    AuthBuckets = crossbar_auth:get_auth_account_info(Context),
+    case crossbar_auth:is_account_locked(Context, AuthBuckets) of
+        {'true', Context1} ->
+            Context1;
+        {'false', Context1} ->
+            Context2 = validate_action(Context1, cb_context:req_value(Context1, <<"action">>)),
+            case cb_context:resp_error_code(Context2) of
+                401 ->
+                    crossbar_auth:maybe_lock_account(Context2, AuthBuckets, TokenCost);
+                _ ->
+                    Context2
+            end
     end.
 
 -spec validate_action(cb_context:context(), kz_term:api_ne_binary()) -> cb_context:context().
@@ -256,9 +274,12 @@ validate_action(Context, _Action) ->
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, ?RECOVERY) ->
-    case consume_tokens(Context) of
-        {'ok', Context1} -> validate_recovery(Context1);
-        {'error', Context1} -> cb_context:add_system_error('too_many_requests', Context1)
+    TokenCost = cb_modules_util:token_cost(Context, ?USER_AUTH_TOKENS),
+    case cb_modules_util:consume_tokens_until(Context, TokenCost) of
+        {'true', Context1} ->
+            validate_recovery(Context1);
+        {'false', Context1} ->
+            cb_context:add_system_error('too_many_requests', Context1)
     end;
 validate(Context, AuthToken) ->
     Context1 = cb_context:set_db_name(Context, ?KZ_TOKEN_DB),
@@ -283,9 +304,19 @@ put(Context) ->
 
 -spec put(cb_context:context(), path_token()) -> cb_context:context().
 put(Context, ?RECOVERY) ->
+    maybe_do_recovery(Context).
+
+maybe_do_recovery(Context) ->
     _ = cb_context:put_reqid(Context),
-    MoDb = kazoo_modb:get_modb(cb_context:db_name(Context)),
-    save_reset_id_then_send_email(Context, MoDb).
+    maybe_do_recovery(Context, cb_context:db_name(Context)).
+
+maybe_do_recovery(Context, 'undefined') ->
+    lager:debug("failed to find account and/or user for password recovery, pretending success result to avoid account crawling attack"),
+    Msg = <<"Password resend email was sent, please check your email to learn how to reset your password.">>,
+    crossbar_util:response(Msg, Context);
+maybe_do_recovery(Context, DB) ->
+    MODB = kazoo_modb:get_modb(DB),
+    save_reset_id_then_send_email(Context, MODB).
 
 -spec post(cb_context:context(), path_token()) -> cb_context:context().
 post(Context, ?RECOVERY) ->
@@ -591,11 +622,8 @@ maybe_load_user_doc_by_username(Account, Context) ->
             crossbar_doc:handle_json_success(kz_json:new(), Context)
     end.
 
--spec save_reset_id_then_send_email(cb_context:context(), kz_term:ne_binary() | 'undefined') -> cb_context:context().
-save_reset_id_then_send_email(Context, 'undefined') ->
-    lager:debug("failed to find account and/or user for password recovery, pretending success result to avoid account crawling attack"),
-    Msg = <<"Password resend email was sent, please check your email to learn how to reset your password.">>,
-    crossbar_util:response(Msg, Context);
+-spec save_reset_id_then_send_email(cb_context:context(), kz_term:ne_binary()) ->
+          cb_context:context().
 save_reset_id_then_send_email(Context, MoDb) ->
     ResetId = reset_id(MoDb),
     UserDoc = cb_context:doc(Context),
@@ -791,15 +819,6 @@ error_no_account_name(Context, AccountName) ->
           ,{<<"cause">>, AccountName}
           ]),
     cb_context:add_validation_error(<<"account_name">>, <<"not_found">>, Msg, Context).
-
--spec consume_tokens(cb_context:context()) ->
-          kz_either:either(cb_context:context(), cb_context:context()).
-consume_tokens(Context) ->
-    TokenCost = cb_modules_util:token_cost(Context, ?USER_AUTH_TOKENS),
-    case cb_modules_util:consume_tokens_until(Context, TokenCost) of
-        {'true', Context1} -> {'ok', Context1};
-        {'false', Context1} -> {'error', cb_context:add_system_error('too_many_requests', Context1)}
-    end.
 
 -spec reset_id_size() -> integer().
 reset_id_size() ->

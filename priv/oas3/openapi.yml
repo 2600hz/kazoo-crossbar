@@ -594,6 +594,8 @@
   '/accounts/{ACCOUNT_ID}/security/attempts/{ATTEMPT_ID}':
     '$ref': >-
       paths/security.yml#/paths/~1accounts~1{ACCOUNT_ID}~1security~1attempts~1{ATTEMPT_ID}
+  '/accounts/{ACCOUNT_ID}/security/login_lock':
+    '$ref': 'paths/security.yml#/paths/~1accounts~1{ACCOUNT_ID}~1security~1login_lock'
   '/accounts/{ACCOUNT_ID}/services':
     '$ref': 'paths/services.yml#/paths/~1accounts~1{ACCOUNT_ID}~1services'
   '/accounts/{ACCOUNT_ID}/services/audit':
