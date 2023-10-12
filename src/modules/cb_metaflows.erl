@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc Metaflows execute on top of a call
 %%% /accounts/{account_id}/metaflows - manip account metaflows
 %%% /accounts/{account_id}/users/{user_id}/metaflows - manip user's metaflows
@@ -158,7 +158,8 @@ after_post(Context, DocType) ->
 
 -spec after_post(cb_context:context(), kz_term:ne_binary(), crossbar_status()) -> cb_context:context().
 after_post(Context, <<"account">>, 'success') ->
-    _ = kzd_accounts:save_accounts_doc(cb_context:doc(Context)),
+    %% Delete _read_only key added in crossbar_doc:handle_datamgr_success/2.
+    _ = kzd_accounts:save_accounts_doc(kz_json:delete_key(<<"_read_only">>, cb_context:doc(Context))),
     lager:debug("saved, returning the metaflows"),
     crossbar_util:response(kz_json:get_value(<<"metaflows">>, cb_context:doc(Context))
                           ,Context
