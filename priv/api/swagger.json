@@ -15164,7 +15164,7 @@
                             "scopes": [
                                 "crossbar"
                             ],
-                            "token_auth_expiry_s": 3600
+                            "token_auth_expiry_s": "infinity"
                         },
                         "cb_ip_auth": {
                             "enabled": true,
@@ -15191,9 +15191,6 @@
                             "$ref": "#/definitions/auth_module_config"
                         },
                         "cb_auth": {
-                            "$ref": "#/definitions/auth_module_config"
-                        },
-                        "cb_conference_auth": {
                             "$ref": "#/definitions/auth_module_config"
                         },
                         "cb_ip_auth": {
