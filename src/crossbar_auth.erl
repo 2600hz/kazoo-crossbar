@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2022, 2600Hz
+%%% @copyright (C) 2010-2023, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,7 +9,7 @@
 %%%-----------------------------------------------------------------------------
 -module(crossbar_auth).
 
--export([create_auth_token/2
+-export([create_auth_token/2, create_auth_token/3
         ,validate_auth_token/1, validate_auth_token/2
         ,authorize_auth_token/1
         ,reset_identity_secret/1
@@ -18,6 +18,13 @@
         ,get_inherited_config/1
         ,available_scopes/1
         ,scopes/2
+        ,validate_refresh_token/1, refresh_token/1
+
+        ,get_auth_account_info/1
+        ,is_account_locked/2
+        ,maybe_lock_account/3
+        ,find_account_buckets/1
+        ,unlock_account/1
         ]).
 
 -include("crossbar.hrl").
@@ -54,6 +61,14 @@
 -spec create_auth_token(cb_context:context(), atom()) ->
           cb_context:context().
 create_auth_token(Context, AuthModule) ->
+    create_auth_token(Context, AuthModule, []).
+
+-type token_option() :: {'expiration_timestamp', pos_integer()}. % unix seconds
+-type token_options() :: [token_option()].
+
+-spec create_auth_token(cb_context:context(), atom(), token_options()) ->
+          cb_context:context().
+create_auth_token(Context, AuthModule, TokenOptions) ->
     JObj = cb_context:doc(Context),
     Method = kz_term:to_binary(AuthModule),
     AccountId = kz_json:get_first_defined([<<"account_id">>, [<<"Claims">>, <<"account_id">>]], JObj),
@@ -64,14 +79,12 @@ create_auth_token(Context, AuthModule) ->
             log_failed_auth(Method, <<"jwt_auth_token">>, Reason, Context, AccountId),
             crossbar_util:response('error', <<"invalid credentials">>, 401, Context);
         'false' ->
-            create_auth_token(Context, Method, JObj)
+            create_auth_token(Context, Method, TokenOptions, JObj, AccountId)
     end.
 
--spec create_auth_token(cb_context:context(), kz_term:ne_binary(), kz_json:object()) ->
+-spec create_auth_token(cb_context:context(), kz_term:ne_binary(), token_options(), kz_json:object(), kz_term:api_ne_binary()) ->
           cb_context:context().
-create_auth_token(Context, <<Method/binary>>, JObj) ->
-    AccountId = kz_json:get_first_defined([<<"account_id">>, [<<"Claims">>, <<"account_id">>]], JObj),
-
+create_auth_token(Context, <<Method/binary>>, TokenOptions, JObj, AccountId) ->
     AuthConfig = get_account_config(AccountId),
 
     case is_auth_module_enabled(Method, AuthConfig) of
@@ -80,30 +93,31 @@ create_auth_token(Context, <<Method/binary>>, JObj) ->
             log_failed_auth(Method, <<"jwt_auth_token">>, Reason, Context, AccountId, AuthConfig),
             crossbar_util:response('error', <<"invalid credentials">>, 401, Context);
         'true' ->
-            create_auth_token(Context, Method, JObj, AuthConfig, AccountId)
+            create_auth_token(Context, Method, TokenOptions, JObj, AccountId, AuthConfig)
     end.
 
-create_auth_token(Context, Method, JObj, AuthConfig, AccountId) ->
+create_auth_token(Context, Method, TokenOptions, JObj, AccountId, AuthConfig) ->
     Data = cb_context:req_data(Context),
     OwnerId = kz_json:get_first_defined([<<"owner_id">>, [<<"Claims">>, <<"owner_id">>]], JObj),
 
-    Expiration = token_auth_expiry(Method, AuthConfig),
+    Expiration = token_auth_expiry(Method, TokenOptions, AuthConfig),
 
-    ReqClaims = kz_json:to_proplist(kz_json:get_json_value(<<"Claims">>, JObj, kz_json:new())),
+    ReqClaims = kz_json:get_json_value(<<"Claims">>, JObj, kz_json:new()),
     AdditionalClaims = props:filter_undefined([{<<"account_id">>, AccountId}
                                               ,{<<"owner_id">>, OwnerId}
                                               ,{<<"method">>, Method}
                                               ,{<<"exp">>, Expiration}
                                               ,{<<"mfa_resp">>, kz_json:get_ne_value(<<"multi_factor_response">>, Data)}
                                               ]),
-    Claims = props:set_values(AdditionalClaims, ReqClaims),
+    Claims = kz_json:to_proplist(kz_json:set_values(AdditionalClaims, ReqClaims)),
 
     IsMultiFactor = is_multi_factor_enabled(Context, Claims, AuthConfig),
 
-    case  maybe_create_token(Context, Claims, AuthConfig, Method, IsMultiFactor) of
+    case maybe_create_token(Context, Claims, AuthConfig, Method, IsMultiFactor) of
         {'ok', Token} ->
             Setters = [{fun cb_context:set_auth_token/2, Token}
                       ,{fun cb_context:set_auth_doc/2, kz_json:from_list(Claims)}
+                      ,{fun cb_context:store/3, 'include_token', 'true'}
                       ],
             Props = props:filter_undefined(
                       [{<<"account_id">>, AccountId}
@@ -210,7 +224,7 @@ reset_identity_secret(Context) ->
 %%------------------------------------------------------------------------------
 -spec get_account_config(kz_term:api_ne_binary()) -> kz_json:object().
 get_account_config(AccountId) ->
-    get_account_config(AccountId, ?AUTH_CONFIG_CAT,<<"auth_modules">>, ?DEFAULT_AUTH_CONFIG).
+    get_account_config(AccountId, ?AUTH_CONFIG_CAT, <<"auth_modules">>, ?DEFAULT_AUTH_CONFIG).
 
 get_account_config(AccountId, ConfigCat, Key, Default) ->
     kapps_account_config:get_hierarchy(AccountId
@@ -245,21 +259,27 @@ method_config_path(Method, Key) -> [Method, Key].
 -spec method_mfa_path(kz_term:ne_binary(), kz_term:ne_binary()) -> kz_json:path().
 method_mfa_path(Method, Key) -> [Method, <<"multi_factor">>, Key].
 
--spec token_auth_expiry(kz_term:ne_binary(), kz_json:object()) -> non_neg_integer().
-token_auth_expiry(Method, AuthConfig) ->
+-spec token_auth_expiry(kz_term:ne_binary(), token_options(), kz_json:object()) -> non_neg_integer() | 'null'.
+token_auth_expiry(Method, TokenOptions, AuthConfig) ->
+    token_auth_expiry(Method, TokenOptions, AuthConfig, props:get_integer_value('expiration', TokenOptions)).
+
+token_auth_expiry(Method, _TokenOptions, AuthConfig, 'undefined') ->
     Path = method_config_path(Method, <<"token_auth_expiry_s">>),
     case kz_json:get_integer_value(Path, AuthConfig, 'undefined') of
         'undefined' ->
             case ?DEFAULT_AUTH_EXPIRY of
                 TokenExp when TokenExp > 0 ->
                     kz_time:current_unix_tstamp() + TokenExp;
-                _ -> 'undefined'
+                _ -> 'null'
             end;
         TokenExp when TokenExp > 0 ->
             kz_time:current_unix_tstamp() + TokenExp;
         _Else ->
-            'undefined'
-    end.
+            'null'
+    end;
+token_auth_expiry(_Method, _TokenOptions, _AuthConfig, Expiration) ->
+    lager:info("using options-supplied exipration ~p", [Expiration]),
+    Expiration.
 
 %%------------------------------------------------------------------------------
 %% @doc Check if is authenticator module is enabled or not.
@@ -447,3 +467,135 @@ scopes(AccountId, ScopeRestriction) when is_binary(ScopeRestriction) ->
             kz_json:get_list_value(<<"scopes">>, Doc, []);
         _ -> 'undefined'
     end.
+
+-spec get_renew_config(cb_context:context()) -> kz_json:object().
+get_renew_config(Context) ->
+    get_account_config(cb_context:auth_account_id(Context)).
+
+-spec is_auth_module_renew_enabled(kz_term:ne_binary(), kz_json:object()) -> boolean().
+is_auth_module_renew_enabled(Method, Config) ->
+    kz_json:is_true(method_config_path(Method, <<"renew">>), Config, 'false').
+
+-spec is_auth_module_renew_enabled(cb_context:context()) -> boolean().
+is_auth_module_renew_enabled(Context) ->
+    is_auth_module_renew_enabled(auth_method(Context), get_renew_config(Context)).
+
+auth_method(Context) ->
+    kz_json:get_binary_value(<<"method">>, cb_context:auth_doc(Context)).
+
+-spec validate_refresh_token(cb_context:context()) -> cb_context:context().
+validate_refresh_token(Context) ->
+    validate_refresh_token(Context, auth_method(Context)).
+
+validate_refresh_token(Context, 'undefined') ->
+    lager:warning("trying to renew a token without method"),
+    crossbar_util:response('error', <<"invalid token for renew">>, 412, Context);
+validate_refresh_token(Context, Method) ->
+    case is_auth_module_renew_enabled(Context) of
+        'true' -> allow_refresh_token(Context);
+        'false' -> deny_refresh_token(Context, Method)
+    end.
+
+deny_refresh_token(Context, Method) ->
+    lager:warning("denying renew for a '~s' token", [Method]),
+    crossbar_util:response('error', <<Method/binary, " not allowed to renew">>, 405, Context).
+
+allow_refresh_token(Context) ->
+    AuthDoc = cb_context:auth_doc(Context),
+    Doc = kz_json:set_value(<<"Claims">>, AuthDoc, kz_json:new()),
+    Setters = [{fun cb_context:set_resp_status/2, 'success'}
+              ,{fun cb_context:set_doc/2, Doc}
+              ],
+    cb_context:setters(Context, Setters).
+
+-spec refresh_token(cb_context:context()) -> cb_context:context().
+refresh_token(Context) ->
+    Setters = [{fun create_auth_token/2, auth_method(Context)}
+              ,{fun cb_context:set_resp_data/2, kz_json:new()}
+              ],
+    cb_context:setters(Context, Setters).
+
+-spec get_auth_account_info(cb_context:context()) -> list().
+get_auth_account_info(Context) ->
+    ReqData = cb_context:req_data(Context),
+    [Value
+     || Key <-  [<<"account_id">>
+                ,<<"account_name">>
+                ,<<"account_realm">>
+                ,<<"realm">>
+                ,<<"phone_number">>
+                ],
+        Value <- [kz_json:get_ne_binary_value(Key, ReqData)],
+        kz_term:is_not_empty(Value)
+    ].
+
+-spec is_account_locked(cb_context:context(), kz_term:ne_binaries()) ->
+          {boolean(), cb_context:context()}.
+is_account_locked(Context, []) ->
+    {'false', Context};
+is_account_locked(Context, BucketNames) ->
+    case kapps_config:is_true(?AUTH_CONFIG_CAT, <<"lock_account_on_failed_attempts">>, 'false') of
+        'true' ->
+            case is_account_locked(BucketNames) of
+                'true'->
+                    Error = kz_json:from_list([{<<"message">>, <<"your account is locked because of too many failed login attempts">>}]),
+                    {'true', cb_context:add_system_error(401, <<"account_is_locked">>, Error, Context)};
+                'false' ->
+                    {'false', Context}
+            end;
+        'false' ->
+            {'false', Context}
+    end.
+
+-spec is_account_locked(kz_term:ne_binaries()) -> boolean().
+is_account_locked([]) ->
+    'false';
+is_account_locked([BucketName|BucketNames]) ->
+    case kz_buckets:tokens_remaining(?CROSSBAR_AUTH_BUCKET, BucketName) of
+        0 -> 'true';
+        _Reamining ->
+            is_account_locked(BucketNames)
+    end.
+
+-spec maybe_lock_account(cb_context:context(), kz_term:ne_binaries(), non_neg_integer()) ->
+          cb_context:context().
+maybe_lock_account(Context, [], _TokenCost) ->
+    Context;
+maybe_lock_account(Context, BucketNames, TokenCost) ->
+    case kapps_config:is_true(?AUTH_CONFIG_CAT, <<"lock_account_on_failed_attempts">>) of
+        'true' ->
+            maybe_lock_account_fold(Context, BucketNames, TokenCost);
+        _Other ->
+            Context
+    end.
+
+-spec maybe_lock_account_fold(cb_context:context(), kz_term:ne_binaries(), non_neg_integer()) ->
+          cb_context:context().
+maybe_lock_account_fold(Context, [], _TokenCost) ->
+    Context;
+maybe_lock_account_fold(Context, [BucketName|BucketNames], TokenCost) ->
+    case kz_buckets:consume_tokens_until(?CROSSBAR_AUTH_BUCKET, BucketName, TokenCost) of
+        'true' ->
+            maybe_lock_account(Context, BucketNames, TokenCost);
+        'false' ->
+            Error = kz_json:from_list([{<<"message">>, <<"your account is locked because of too many failed login attempts">>}]),
+            cb_context:add_system_error(401, <<"account_is_locked">>, Error, Context)
+    end.
+
+-spec find_account_buckets(kz_term:ne_binary()) -> kz_term:ne_binaries().
+find_account_buckets(AccountId) ->
+    [Key
+     || Key <- [AccountId
+               ,kzd_accounts:fetch_name(AccountId)
+               ,kzd_accounts:fetch_realm(AccountId)
+               ],
+        kz_term:is_not_empty(Key),
+        kz_buckets:exists(?CROSSBAR_AUTH_BUCKET, Key)
+    ].
+
+-spec unlock_account(kz_term:ne_binaries()) -> 'ok'.
+unlock_account(BucketNames) ->
+    _ = [kz_buckets:stop_bucket(?CROSSBAR_AUTH_BUCKET, BucketName)
+         || BucketName <- BucketNames
+        ],
+    'ok'.

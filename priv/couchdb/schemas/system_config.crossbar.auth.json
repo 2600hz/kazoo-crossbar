@@ -31,7 +31,7 @@
                     "scopes": [
                         "crossbar"
                     ],
-                    "token_auth_expiry_s": "infinity"
+                    "token_auth_expiry_s": 3600
                 },
                 "cb_ip_auth": {
                     "enabled": true,
@@ -58,6 +58,9 @@
                     "$ref": "auth_module_config"
                 },
                 "cb_auth": {
+                    "$ref": "auth_module_config"
+                },
+                "cb_conference_auth": {
                     "$ref": "auth_module_config"
                 },
                 "cb_ip_auth": {
@@ -90,6 +93,11 @@
                 "sha"
             ],
             "type": "string"
+        },
+        "lock_account_on_failed_attempts": {
+            "default": false,
+            "description": "crossbar auth lock_account_on_failed_attempts",
+            "type": "boolean"
         },
         "log_failed_attempts": {
             "default": false,

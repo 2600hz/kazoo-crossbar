@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2022, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc Devices module
 %%% Handle client requests for device documents
 %%%
@@ -46,7 +46,13 @@ resource_exists(_Number) -> 'true'.
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, _Number) ->
-    validate_quickcall(Context, cb_context:req_nouns(Context)).
+    TokenCost = cb_modules_util:token_cost(Context, 1, [?QUICKCALL_PATH_TOKEN]),
+    case cb_modules_util:consume_tokens(Context, TokenCost) of
+        {'true', Context1} ->
+            validate_quickcall(Context1, cb_context:req_nouns(Context1));
+        {'false', Context1} ->
+            Context1
+    end.
 
 validate_quickcall(Context, ?DEVICES_QCALL_NOUNS(DeviceId, _Number)) ->
     validate_quickcall(load_endpoint(Context, DeviceId, kzd_devices:type()));
@@ -80,14 +86,7 @@ post(Context, _Number) ->
 -spec maybe_validate_quickcall(cb_context:context()) ->
           cb_context:context().
 maybe_validate_quickcall(Context) ->
-    case kz_buckets:consume_tokens(?APP_NAME
-                                  ,cb_modules_util:bucket_name(Context)
-                                  ,cb_modules_util:token_cost(Context, 1, [?QUICKCALL_PATH_TOKEN])
-                                  )
-    of
-        'false' -> cb_context:add_system_error('too_many_requests', Context);
-        'true' -> maybe_validate_quickcall(Context, cb_context:resp_status(Context))
-    end.
+    maybe_validate_quickcall(Context, cb_context:resp_status(Context)).
 
 -spec maybe_validate_quickcall(cb_context:context(), crossbar_status()) ->
           cb_context:context().
@@ -221,7 +220,7 @@ aleg_cid(Number, Call) ->
 -spec originate_quickcall(kz_json:objects(), kapps_call:call(), cb_context:context()) ->
           cb_context:context().
 originate_quickcall(Endpoints, Call, Context) ->
-    AutoAnswer = kz_json:is_true(<<"auto_answer">>, cb_context:query_string(Context), 'true'),
+    AutoAnswer = kz_term:is_true(cb_context:req_value(Context, <<"auto_answer">>, 'true')),
     CCVs = [{<<"Account-ID">>, cb_context:account_id(Context)}
            ,{<<"Inherit-Codec">>, <<"false">>}
            ,{<<"Authorizing-Type">>, kapps_call:authorizing_type(Call)}
@@ -256,7 +255,6 @@ originate_quickcall(Endpoints, Call, Context) ->
           ,{<<"Custom-Channel-Vars">>, kz_json:from_list(CCVs)}
           ,{<<"Dial-Endpoint-Method">>, <<"simultaneous">>}
           ,{<<"Endpoints">>, update_quickcall_endpoints(AutoAnswer, Endpoints)}
-          ,{<<"Existing-Call-ID">>, cb_context:req_value(Context, <<"target_call_id">>)}
           ,{<<"Export-Custom-Channel-Vars">>, [<<"Account-ID">>
                                               ,<<"Authorizing-ID">>
                                               ,<<"Authorizing-Type">>
@@ -273,6 +271,7 @@ originate_quickcall(Endpoints, Call, Context) ->
           ,{<<"Outbound-Caller-ID-Number">>, get_uri_decoded_value(<<"caller-id-number">>, Context, kapps_call:request_user(Call))}
           ,{<<"Timeout">>, CallTimeoutS}
           | kz_api:default_headers(<<"resource">>, <<"originate_req">>, ?APP_NAME, ?APP_VERSION)
+           ++ maybe_add_existing_call_information(Context)
           ]),
 
     originate(Request, Context, cb_context:req_verb(Context), CallTimeoutS).
@@ -330,6 +329,29 @@ send_error_resp(Context, [Error]) ->
                           ,ErrorJObj
                           ,cb_context:set_resp_data(Context, ErrorJObj)
                           ).
+
+maybe_add_existing_call_information(Context) ->
+    maybe_add_existing_call_information(Context, cb_context:req_value(Context, <<"target_call_id">>)).
+
+maybe_add_existing_call_information(_Context, 'undefined') -> [];
+maybe_add_existing_call_information(Contenxt, <<TargetCallId/binary>>) ->
+    add_existing_call_information(Contenxt, TargetCallId).
+
+add_existing_call_information(Context, TargetCallId) ->
+    add_existing_call_information(Context
+                                 ,TargetCallId
+                                 ,cb_channels:channel_query(cb_context:account_id(Context), TargetCallId)
+                                 ).
+
+add_existing_call_information(_Context, TargetCallId, {'ok', Channel}) ->
+    MediaNode = kz_json:get_value(<<"Media-Node">>, Channel),
+    lager:info("found target call ~s on ~s", [TargetCallId, MediaNode]),
+    [{<<"Existing-Call-ID">>, TargetCallId}
+    ,{<<"Switch-Nodename">>, MediaNode}
+    ];
+add_existing_call_information(_Context, TargetCallId, _Resp) ->
+    lager:debug("querying target call ~s failed: ~p", [TargetCallId, _Resp]),
+    [{<<"Existing-Call-ID">>, TargetCallId}].
 
 -spec update_quickcall_endpoints(boolean(), kz_json:objects()) -> kz_json:objects().
 update_quickcall_endpoints(AutoAnswer, [Endpoint]) ->

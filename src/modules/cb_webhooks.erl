@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc Handle CRUD operations for Webhooks
 %%% @author James Aimonetti
 %%%
@@ -287,14 +287,7 @@ validate(Context, WebhookId=?NE_BINARY, ?PATH_TOKEN_ATTEMPTS) ->
 
 -spec validate_patch(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 validate_patch(Context, WebhookId) ->
-    case cb_context:resp_status(Context) of
-        'success' ->
-            PatchJObj = kz_doc:public_fields(cb_context:req_data(Context)),
-            JObj = kz_json:merge_jobjs(PatchJObj, cb_context:doc(Context)),
-            OnSuccess = fun(C) -> maybe_check_modifiers(crossbar_doc:load_merge(WebhookId, C, ?TYPE_CHECK_OPTION(kzd_webhooks:type()))) end,
-            cb_context:validate_request_data(<<"webhooks">>, cb_context:set_req_data(Context, JObj), OnSuccess);
-        _Status -> Context
-    end.
+    crossbar_doc:patch_and_validate(WebhookId, Context, fun update/2).
 
 -spec post(cb_context:context(), path_token()) -> cb_context:context().
 post(Context, _Id) ->
@@ -387,15 +380,17 @@ reenable_validation_error(Context) ->
 read(Id, Context) ->
     Context1 = crossbar_doc:load(Id, Context, ?TYPE_CHECK_OPTION(kzd_webhooks:type())),
     case cb_context:resp_status(Context1) of
-        'success' -> maybe_leak_pvt_fields(Context1);
+        'success' -> maybe_add_metadata_fields(Context1);
         _Status -> Context1
     end.
 
--spec maybe_leak_pvt_fields(cb_context:context()) -> cb_context:context().
-maybe_leak_pvt_fields(Context) ->
+-spec maybe_add_metadata_fields(cb_context:context()) -> cb_context:context().
+maybe_add_metadata_fields(Context) ->
     Doc = cb_context:doc(Context),
-    NewDoc = kz_json:set_value(<<"disable_reason">>, kzd_webhooks:disabled_message(Doc), Doc),
-    cb_context:set_doc(Context, NewDoc).
+    cb_context:add_metadata_value(Context
+                                 ,<<"disable_reason">>
+                                 ,kzd_webhooks:disabled_message(Doc)
+                                 ).
 
 %%------------------------------------------------------------------------------
 %% @doc Update an existing menu document with the data provided, if it is

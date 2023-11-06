@@ -8,33 +8,8 @@
             "description": "The audio media parameters",
             "properties": {
                 "codecs": {
-                    "description": "A list of audio codecs the endpoint supports",
-                    "items": {
-                        "enum": [
-                            "OPUS",
-                            "CELT@32000h",
-                            "G7221@32000h",
-                            "G7221@16000h",
-                            "G722",
-                            "speex@32000h",
-                            "speex@16000h",
-                            "PCMU",
-                            "PCMA",
-                            "G729",
-                            "GSM",
-                            "CELT@48000h",
-                            "CELT@64000h",
-                            "G722_16",
-                            "G722_32",
-                            "CELT_48",
-                            "CELT_64",
-                            "Speex",
-                            "speex"
-                        ],
-                        "type": "string"
-                    },
-                    "type": "array",
-                    "uniqueItems": true
+                    "$ref": "codecs.audio",
+                    "description": "A list of audio codecs the endpoint supports"
                 }
             },
             "type": "object"
@@ -96,24 +71,15 @@
             "description": "The video media parameters",
             "properties": {
                 "codecs": {
-                    "default": [],
-                    "description": "A list of video codecs the endpoint supports",
-                    "items": {
-                        "enum": [
-                            "H261",
-                            "H263",
-                            "H263+",
-                            "H264",
-                            "VP8",
-                            "VP9"
-                        ],
-                        "type": "string"
-                    },
-                    "type": "array",
-                    "uniqueItems": true
+                    "$ref": "codecs.video",
+                    "description": "A list of video codecs the endpoint supports"
                 }
             },
             "type": "object"
+        },
+        "webrtc": {
+            "description": "If true, forces a WebRTC compatible SDP on the INVITE",
+            "type": "boolean"
         }
     },
     "type": "object"

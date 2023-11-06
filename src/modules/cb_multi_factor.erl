@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2022, 2600Hz
+%%% @copyright (C) 2010-2023, 2600Hz
 %%% @doc Multi factor authentication configuration API endpoint
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -38,7 +38,7 @@
 %%------------------------------------------------------------------------------
 -spec init() -> 'ok'.
 init() ->
-    Bindings = [{<<"*.authorize">>, 'authorize'}
+    Bindings = [{<<"*.authorize.multi_factor">>, 'authorize'}
                ,{<<"*.allowed_methods.multi_factor">>, 'allowed_methods'}
                ,{<<"*.resource_exists.multi_factor">>, 'resource_exists'}
                ,{<<"*.validate.multi_factor">>, 'validate'}
@@ -68,8 +68,8 @@ authorize(Context) ->
 authorize(Context, _ProviderId) ->
     authorize_system_multi_factor(Context, cb_context:req_nouns(Context), cb_context:req_verb(Context)).
 
--spec authorize(cb_context:context(), path_token(), path_token()) -> 'true'.
-authorize(_Context, _, _) -> 'true'.
+-spec authorize(cb_context:context(), path_token(), path_token()) -> 'false'.
+authorize(_Context, _, _) -> 'false'.
 
 -spec authorize_system_multi_factor(cb_context:context(), req_nouns(), http_method()) ->
           boolean() |
@@ -88,7 +88,7 @@ authorize_system_multi_factor(C, [{<<"multi_factor">>, [_ProviderId]}], ?HTTP_DE
     cb_context:is_superduper_admin(C);
 authorize_system_multi_factor(C, [{<<"multi_factor">>, _}], _) ->
     {'stop', cb_context:add_system_error('forbidden', C)};
-authorize_system_multi_factor(_, _, _) -> 'true'.
+authorize_system_multi_factor(_, _, _) -> 'false'.
 
 %%------------------------------------------------------------------------------
 %% @doc Given the path tokens related to this module, what HTTP methods are

@@ -6,7 +6,7 @@ Webhooks allow Kazoo to send HTTP requests to a third-party web server, alerting
 
 #### Schema
 
-Web Hooks are subscriptions to allowed events that, when the event occurs, the event data is sent to the uri set in the Web Hook document.
+Web Hooks are subscriptions to allowed events that, when the event occurs, the event data is sent to the URI set in the Web Hook document.
 
 
 
@@ -20,8 +20,11 @@ Key | Description | Type | Default | Required | Support Level
 `include_internal_legs` | Whether to filter out call legs that are internal to the system (loopback) | `boolean()` | `true` | `false` |  
 `include_subaccounts` | Should the webhook be fired for subaccount events. | `boolean()` |   | `false` | `supported`
 `name` | A friendly name for the webhook | `string()` |   | `true` | `supported`
-`retries` | Retry the request this many times (if it fails) | `integer()` | `2` | `false` | `supported`
-`uri` | The 3rd party URI to call out to an event | `string()` |   | `true` | `supported`
+`retries` | Retry the request this many times (if it fails) | `integer(0..4)` | `2` | `false` | `supported`
+`security_settings.sha256_key` | Secret key to create a SHA256 HMAC with, so receiver can validate the webhook came from the cluster | `string()` |   | `false` |  
+`security_settings` | Security settings to harden webhook delivery | `object()` |   | `false` |  
+`uri` | The 3rd party URI to call out to an event | `string(1..)` |   | `true` | `supported`
+`version` | Whether to receive the full version of the event in the webhook payload | `string('v1' | 'v2')` | `v1` | `false` |  
 
 
 
@@ -517,7 +520,13 @@ curl -v -X PATCH \
 
 Here's what you can expect to receive when a webhook fires to your server:
 
-### Base Payload
+### Versioned payloads
+
+When `version` is not set on the webhook configuration, the `v1` format of the webhook event is used (see below).
+
+When `"version" = "v2"`, the shape of the event sent to the HTTP URL will resemble that of the websocket-fired event, a more verbose version of the event.
+
+### Base Payload (version 1)
 
 * hook_event: The type of hook being fired
 * call_direction: "inbound" or "outbound", relative to Kazoo
@@ -535,7 +544,7 @@ Here's what you can expect to receive when a webhook fires to your server:
 
 Most of these fields should be present on all payloads.
 
-### Hook Specific fields
+#### Hook Specific fields
 
 * channel_create
     * hook_event: channel_create
@@ -550,6 +559,18 @@ Most of these fields should be present on all payloads.
     * action: doc_created, doc_updated, doc_deleted
     * type: user, vmbox, callflow, account, device, faxbox, media
 
+### Base payload (version 2)
+
+See the blackhole documentation for more, but the general shape of the data will be a JSON envelope:
+
+```json
+{"action":"event"
+ ,"name":"{HOOK_EVENT}"
+ ,"data":{HOOK_DATA}
+}
+```
+
+Where `{HOOK_DATA}` will be the JSON object with the data of the event.
 
 ## Hook Specific Custom Data
 
@@ -567,3 +588,41 @@ To restrict the kind of document or the action or both. You can set the custom d
 ```
 
 Both `type` and `action` will accept `"all"` to avoid needing to create a hook per action/type combinations.
+
+## Hook Security
+
+For hooks using the "version 2" payload format, it is possible to include more information on the webhook payload to ensure the webhook event arrives from the cluster, timestamps to prevent replay attacks, etc.
+
+!!! warning
+    Please ensure the webhook also sets `"format":"json"` as "form-data" (the default) will result in integers (like timestamps) being encoded as strings, which will render the HMAC less useful.
+
+Timestamps will be included on all payloads:
+
+```json
+{"action":"{ACTION}"
+ ,"name":"{HOOK_NAME}"
+ ,"data":{...}
+ ,"timestamp":{GREGORIAN_SECONDS}
+}
+```
+
+If `security_settings.sha256_key` is included, an HMAC hash (base-64 encoded) of `hmac_sha256(SHA256Key, "Timestamp" + "DataJSON")` will be calculated and added to the payload:
+
+```
+SHA256Key = "123",
+TimestampString = "63834206532",
+DataJSON = "{\"foo\":\"bar\"}",
+
+HMAC = base64_encode(hmac(SHA256Key, TimestampString + DataJSON)),
+
+"z481V/jZHAnFEjNCMORc2FgX03CyzxV+fLV6BWhnY6U=" == HMAC
+```
+
+```json
+{"action":"{ACTION}"
+ ,"name":"{HOOK_NAME}"
+ ,"data":{"foo":"bar"}
+ ,"timestamp":63834206532
+ ,"hmac":"z481V/jZHAnFEjNCMORc2FgX03CyzxV+fLV6BWhnY6U="
+}
+```

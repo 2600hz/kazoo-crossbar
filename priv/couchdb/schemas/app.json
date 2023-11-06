@@ -15,6 +15,7 @@
         "api_url": {
             "description": "Application api url",
             "format": "uri",
+            "minLength": 7,
             "type": "string"
         },
         "author": {
@@ -72,6 +73,7 @@
         "source_url": {
             "description": "Application source url",
             "format": "uri",
+            "minLength": 7,
             "type": "string"
         },
         "tags": {

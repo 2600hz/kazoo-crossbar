@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2022, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -20,6 +20,8 @@
         ,post/2
         ,put/2
         ]).
+
+-export([channel_query/2]).
 
 -include("crossbar.hrl").
 
@@ -149,42 +151,60 @@ put(Context, UUID) ->
 %%------------------------------------------------------------------------------
 -spec read(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 read(Context, CallId) ->
-    case channels_query(CallId) of
-        {'ok', []} ->
-            lager:debug("no channel resp for ~s", [CallId]),
+    case channel_query(cb_context:account_id(Context), CallId) of
+        {'error', 'not_found'} ->
             crossbar_util:response_bad_identifier(CallId, Context);
-        {'ok', StatusJObjs} ->
-            case find_channel(cb_context:account_id(Context), CallId, StatusJObjs) of
-                'undefined' ->
-                    lager:warning("trying to get info about a channel ~s not in the account ~s", [CallId, cb_context:account_id(Context)]),
-                    crossbar_util:response_bad_identifier(CallId, Context);
-                Channel ->
-                    lager:debug("found our channel ~s: ~p", [CallId, Channel]),
-                    crossbar_util:response(normalize_channel(Channel), Context)
-            end;
-        {'returned', JObj, _BR} ->
-            lager:debug("return: ~p", [_BR]),
+        {'ok', Channel} ->
+            lager:debug("found our channel ~s: ~p", [CallId, Channel]),
+            crossbar_util:response(normalize_channel(Channel), Context);
+        {'returned', JObj} ->
             crossbar_util:response(JObj, Context);
-        {'timeout', _Resp} ->
-            lager:debug("timeout: ~p", [_Resp]),
+        {'error', 'timeout'} ->
             crossbar_util:response_datastore_timeout(Context);
         {'error', _E} ->
-            lager:debug("error: ~p", [_E]),
             crossbar_util:response_datastore_timeout(Context)
     end.
 
--spec channels_query(kz_term:ne_binary()) -> kz_amqp_worker:request_return().
-channels_query(CallId) ->
+-spec channel_query(kz_term:ne_binary(), kz_term:ne_binary()) ->
+          {'ok', kz_json:object()} |
+          {'returned', kz_json:object()} |
+          {'error', 'not_found' | 'timeout' | any()}.
+channel_query(AccountId, CallId) ->
     Req = [{<<"Call-ID">>, CallId}
           ,{<<"Fields">>, <<"all">>}
           ,{<<"Active-Only">>, 'false'}
           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
 
-    kz_amqp_worker:call_collect(Req
-                               ,fun kapi_call:publish_query_channels_req/1
-                               ,{'ecallmgr', fun custom_query_channels_resp_v/1, 'true'}
-                               ).
+    Resps = kz_amqp_worker:call_collect(Req
+                                       ,fun kapi_call:publish_query_channels_req/1
+                                       ,{'ecallmgr', fun custom_query_channels_resp_v/1, 'true'}
+                                       ),
+    handle_query_resps(AccountId, CallId, Resps).
+
+handle_query_resps(_AccountId, CallId, {'ok', []}) ->
+    lager:debug("no channel resp for ~s", [CallId]),
+    {'error', 'not_found'};
+handle_query_resps(AccountId, CallId, {'ok', StatusJObjs}) ->
+    case find_channel(AccountId, CallId, StatusJObjs) of
+        'undefined' ->
+            lager:warning("trying to get info about a channel ~s not in the account ~s"
+                         ,[CallId, AccountId]
+                         ),
+            {'error', 'not_found'};
+        Channel ->
+            lager:debug("found our channel ~s: ~p", [CallId, Channel]),
+            {'ok', Channel}
+    end;
+handle_query_resps(_AccountId, _CallId, {'returned', JObj, _BR}) ->
+    lager:debug("return: ~p", [_BR]),
+    {'returned', JObj};
+handle_query_resps(_AccountId, _CallId, {'timeout', _Resp}) ->
+    lager:debug("timeout: ~p", [_Resp]),
+    {'error', 'timeout'};
+handle_query_resps(_AccountId, _CallId, {'error', _E}=Error) ->
+    lager:debug("error: ~p", [_E]),
+    Error.
 
 -spec custom_query_channels_resp_v(kz_term:api_terms()) -> boolean().
 custom_query_channels_resp_v(Resp) when is_list(Resp) ->
@@ -358,7 +378,7 @@ get_channels(Context, Devices, PublisherFun) ->
     Usernames = [Username
                  || JObj <- Devices,
                     Username <- [kz_json:get_first_defined(Paths, JObj)],
-                    Username =/= undefined
+                    Username =/= 'undefined'
                 ],
 
     Req = props:filter_undefined(

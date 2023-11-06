@@ -151,21 +151,21 @@ curl -v -X PUT \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "_read_only": {
-            "account_id": "{ACCOUNT_ID}",
-            "auth_account_id": "{AUTH_ACCOUNT_ID}",
-            "action": "{ACTION}",
-            "category": "{CATEGORY}",
-            "id": "edfb48ea9617fa6832e43ce676c53f",
-            "submit_timestamp": 63632025993,
-            "total_count": "{RECORDS_COUNT}"
-        }
-    },
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REVISION}",
-    "status": "success"
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+  },
+  "metadata": {
+    "account_id": "{ACCOUNT_ID}",
+    "auth_account_id": "{AUTH_ACCOUNT_ID}",
+    "action": "{ACTION}",
+    "category": "{CATEGORY}",
+    "id": "edfb48ea9617fa6832e43ce676c53f",
+    "submit_timestamp": 63632025993,
+    "total_count": "{RECORDS_COUNT}"
+  },
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 
@@ -300,27 +300,27 @@ curl -v -X DELETE \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "_read_only": {
-            "account_id": "{ACCOUNT_ID}",
-            "auth_account_id": "{AUTH_ACCOUNT_ID}",
-            "action": "add",
-            "category": "number_management",
-            "end_timestamp": 63632524230,
-            "failure_count": 2,
-            "id": "{TASK_ID}",
-            "node": "whistle_apps@qwd",
-            "start_timestamp": 63632524230,
-            "status": "failure",
-            "submit_timestamp": 63632524207,
-            "success_count": 0,
-            "total_count": 2
-        }
-    },
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REVISION}",
-    "status": "success"
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+  },
+  "metadata": {
+    "account_id": "{ACCOUNT_ID}",
+    "auth_account_id": "{AUTH_ACCOUNT_ID}",
+    "action": "add",
+    "category": "number_management",
+    "end_timestamp": 63632524230,
+    "failure_count": 2,
+    "id": "{TASK_ID}",
+    "node": "whistle_apps@qwd",
+    "start_timestamp": 63632524230,
+    "status": "failure",
+    "submit_timestamp": 63632524207,
+    "success_count": 0,
+    "total_count": 2
+  },
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 
@@ -372,26 +372,28 @@ curl -v -X GET \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "_read_only": {
-            "account_id": "{ACCOUNT_ID}",
-            "auth_account_id": "{AUTH_ACCOUNT_ID}",
-            "action": "list",
-            "category": "number_management",
-            "created": 63633924886,
-            "failure_count": 0,
-            "id": "{TASK_ID}",
-            "node": "whistle_apps@qwd",
-            "start_timestamp": 63633924909,
-            "status": "executing",
-            "success_count": 50,
-            "csvs":["in.csv"]
-        }
-    },
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REVISION}",
-    "status": "success"
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+  },
+  "metadata": {
+    "account_id": "{ACCOUNT_ID}",
+    "auth_account_id": "{AUTH_ACCOUNT_ID}",
+    "action": "list",
+    "category": "number_management",
+    "created": 63633924886,
+    "failure_count": 0,
+    "id": "{TASK_ID}",
+    "node": "whistle_apps@qwd",
+    "start_timestamp": 63633924909,
+    "status": "executing",
+    "success_count": 50,
+    "csvs": [
+      "in.csv"
+    ]
+  },
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 
@@ -426,25 +428,25 @@ curl -v -X PATCH \
 **Success**
 
 ```json
-{
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "_read_only": {
-            "account_id": "{ACCOUNT_ID}",
-            "auth_account_id": "{AUTH_ACCOUNT_ID}",
-            "action": "add",
-            "category": "number_management",
-            "id": "{TASK_ID}",
-            "node": "whistle_apps@qwd",
-            "start_timestamp": 63632456149,
-            "status": "executing",
-            "submit_timestamp": 63632456101,
-            "total_count": 2
-        }
-    },
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REVISION}",
-    "status": "success"
+
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+  },
+  "metadata": {
+    "account_id": "{ACCOUNT_ID}",
+    "auth_account_id": "{AUTH_ACCOUNT_ID}",
+    "action": "add",
+    "category": "number_management",
+    "id": "{TASK_ID}",
+    "node": "whistle_apps@qwd",
+    "start_timestamp": 63632456149,
+    "status": "executing",
+    "submit_timestamp": 63632456101,
+    "total_count": 2
+  },
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 
@@ -500,29 +502,29 @@ curl -v -X PATCH \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "_read_only": {
-            "account_id": "{ACCOUNT_ID}",
-            "action": "list_all",
-            "auth_account_id": "{AUTH_ACCOUNT_ID}",
-            "category": "number_management",
-            "created": 63669534312,
-            "end_timestamp": 63669534747,
-            "failure_count": 0,
-            "id": "{TASK_ID}",
-            "start_timestamp": 63669534746,
-            "status": "stopped",
-            "success_count": 0
-        }
-    },
-    "node": "{NODE}",
-    "page_size": 1,
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REV}",
-    "status": "success",
-    "timestamp": "{TIMESTAMP}",
-    "version": "{VERSION}"
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+  },
+  "metadata": {
+    "account_id": "{ACCOUNT_ID}",
+    "action": "list_all",
+    "auth_account_id": "{AUTH_ACCOUNT_ID}",
+    "category": "number_management",
+    "created": 63669534312,
+    "end_timestamp": 63669534747,
+    "failure_count": 0,
+    "id": "{TASK_ID}",
+    "start_timestamp": 63669534746,
+    "status": "stopped",
+    "success_count": 0
+  },
+  "node": "{NODE}",
+  "page_size": 1,
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REV}",
+  "status": "success",
+  "timestamp": "{TIMESTAMP}",
+  "version": "{VERSION}"
 }
 ```
 

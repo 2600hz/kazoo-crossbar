@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc Account module
 %%% @author Jon Blanton <jon@2600hz.com>
 %%%
@@ -510,7 +510,7 @@ test_host(Host, HostConfig, DomainType, Options) ->
           kz_term:ne_binaries().
 lookup(Host, DomainType, Options) ->
     Type = kz_term:to_atom(kz_term:to_lower_binary(DomainType)),
-    {'ok', Lookup} = kz_network_utils:lookup_dns(Host, Type, Options),
+    {'ok', Lookup} = kz_network_utils:lookup_dns(kz_binary:remove_white_spaces(Host), Type, Options),
     lager:debug("lookup of ~s(~s): ~p", [Host, Type, Lookup]),
     format_lookup_results(Type, Lookup).
 
@@ -538,10 +538,18 @@ format_lookup_result(_Type, Value) ->
 test_network_options(Context) ->
     Domain = find_domain(Context),
     DefaultOptions = kz_network_utils:default_options(),
+    TransportOptions =
+        case kz_term:is_true(cb_context:req_value(Context, <<"use_tcp">>, 'true')) of
+            'true' ->
+                DefaultOptions;
+            'false' ->
+                props:set_value('usevc', 'false', DefaultOptions)
+        end,
+
     case kz_network_utils:find_nameservers(Domain) of
-        [] ->  DefaultOptions;
+        [] ->  TransportOptions;
         Nameservers ->
-            kz_network_utils:set_option_nameservers(DefaultOptions, Nameservers)
+            kz_network_utils:set_option_nameservers(TransportOptions, Nameservers)
     end.
 
 -spec validate_domain(cb_context:context(), path_token(), http_method()) ->
@@ -590,6 +598,8 @@ delete(Context) ->
 find_whitelabel(Context, Domain) ->
     ViewOptions = [{'databases', [?KZ_ACCOUNTS_DB]}
                   ,{'key', kz_term:to_lower_binary(Domain)}
+                  ,{'should_paginate', 'false'}
+                  ,{'unchunkable', 'true'}
                   ],
     Context1 = crossbar_view:load(Context, ?AGG_VIEW_WHITELABEL_DOMAIN, ViewOptions),
     case {cb_context:resp_status(Context1)

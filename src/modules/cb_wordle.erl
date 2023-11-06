@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2022, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc Module for Crossbar API implementing the wordle game
 %%% @author James Aimonetti
 %%%
@@ -177,7 +177,7 @@ validate_wordle(Context, WordId, ?HTTP_POST) ->
 post(Context, _WordId) ->
     cb_context:set_resp_status(Context, 'success').
 
--spec wordle(kz_term:ne_binary(), kz_term:binary()) -> {boolean(), kz_term:proplist()}.
+-spec wordle(kz_term:ne_binary(), kz_term:ne_binary()) -> {boolean(), kz_term:proplist()}.
 wordle(Wordle, Guess) ->
     Pos = lists:seq(1, byte_size(Wordle)),
     Ws = lists:zip(binary_to_list(Wordle), Pos),
@@ -213,6 +213,7 @@ result([{_, Pos} | Rs], [{G, Pos} | Gs], {_, Output}) ->
 match_green(#{pos := Pos}=Game) ->
     lists:foldl(fun match_green_fold/2, Game, Pos).
 
+-spec match_green_fold(integer(), map()) -> map().
 match_green_fold(Pos, #{wordle := Wordle
                        ,guess := Guess
                        ,result := Result
@@ -270,7 +271,7 @@ black(G) ->
               ,word_size :: pos_integer() | '_'
               }).
 
--type guess() :: {kz_term:ne_binary(), kz_time:now_s(), {boolean(), kz_term:proplist()}}.
+-type guess() :: {kz_term:ne_binary(), kz_time:gregorian_seconds(), {boolean(), kz_term:proplist()}}.
 -type guesses() :: [guess()].
 
 -record(attempt, {id :: {kz_term:ne_binary(), kz_term:ne_binary()} % {word_id, auth_user_id}
@@ -295,8 +296,8 @@ attempts(UserId, WordId) ->
     end.
 
 -spec make_attempt(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) ->
-          {boolean(), kz_term:ne_binary()} |
-          {'error', 'not_found' | 'too_many_guesses'}.
+          {boolean(), kz_term:proplist()} |
+          {'error', 'not_found'}.
 make_attempt(UserId, WordId, Guess) ->
     Today = erlang:date(),
     case get_word_by_id(WordId) of
@@ -308,6 +309,9 @@ make_attempt(UserId, WordId, Guess) ->
             {'error', 'not_found'}
     end.
 
+-spec get_word_by_id(kz_term:ne_binary()) ->
+          {'ok', kz_time:date(), kz_term:ne_binary()} |
+          {'error', 'not_found'}.
 get_word_by_id(WordId) ->
     case ets:match(?ETS_WORDS, #word{id=WordId, date='$1', word='$2', _='_'}) of
         [[Date, Wordle]] ->
@@ -323,6 +327,8 @@ get_attempt(UserId, WordId) ->
         [#attempt{}=Attempt] -> Attempt
     end.
 
+-spec maybe_make_attempt(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) ->
+          {boolean(), kz_term:proplist()}.
 maybe_make_attempt(UserId, WordId, Guess, Wordle) ->
     Result = wordle(Wordle, Guess),
     lager:debug("w: ~s g: ~s", [Wordle, Guess]),

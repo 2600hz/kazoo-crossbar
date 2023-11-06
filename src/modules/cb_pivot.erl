@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc Crossbar API for pivot.
 %%% @author James Aimonetti
 %%%
@@ -222,34 +222,34 @@ fix_page_size(Context) ->
 %%------------------------------------------------------------------------------
 -spec normalize_debug_read(kz_json:object(), kz_json:objects()) -> kz_json:objects().
 normalize_debug_read(JObj, Acc) ->
-    [leak_pvt_field(kz_json:get_value(<<"doc">>, JObj)) | Acc].
+    [add_metadata_fields(kz_json:get_json_value(<<"doc">>, JObj)) | Acc].
 
 %%------------------------------------------------------------------------------
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec leak_pvt_field(kz_json:object()) -> kz_json:object().
-leak_pvt_field(JObj) ->
-    Routines = [fun leak_pvt_created/2
-               ,fun leak_pvt_node/2
-               ,fun set_debug_id/2
+-spec add_metadata_fields(kz_json:object()) -> kz_json:object().
+add_metadata_fields(JObj) ->
+    Routines = [fun add_created/2
+               ,fun add_node/2
+               ,fun add_debug_id/2
                ],
     lists:foldl(fun(F, Acc) -> F(JObj, Acc) end
                ,JObj
                ,Routines
                ).
 
--spec leak_pvt_created(kz_json:object(), kz_json:object()) -> kz_json:object().
-leak_pvt_created(JObj, Acc) ->
+-spec add_created(kz_json:object(), kz_json:object()) -> kz_json:object().
+add_created(JObj, Acc) ->
     kz_json:set_value(<<"created">>, kz_doc:created(JObj), Acc).
 
--spec leak_pvt_node(kz_json:object(), kz_json:object()) -> kz_json:object().
-leak_pvt_node(JObj, Acc) ->
+-spec add_node(kz_json:object(), kz_json:object()) -> kz_json:object().
+add_node(JObj, Acc) ->
     Node = kz_json:get_value([<<"pvt_node">>], JObj),
     kz_json:set_value(<<"node">>, Node, Acc).
 
--spec set_debug_id(kz_json:object(), kz_json:objects()) -> kz_json:object().
-set_debug_id(JObj, Acc) ->
+-spec add_debug_id(kz_json:object(), kz_json:objects()) -> kz_json:object().
+add_debug_id(JObj, Acc) ->
     kz_json:set_value(<<"debug_id">>, debug_id(JObj), Acc).
 
 -spec debug_id(kz_json:object()) -> kz_term:ne_binary().

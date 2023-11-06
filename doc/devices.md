@@ -13,8 +13,10 @@ A device be it a SIP phone or landline number
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
+`addresses` | Device addresses | `object()` |   | `false` |  
 `call_failover` | The device call failover parameters, to replace the device with an extension/phone number when device is offline. | [#/definitions/call_failover](#call_failover) |   | `false` |  
-`call_forward` | The device call forward parameters | [#/definitions/call_forward](#call_forward) |   | `false` |  
+`call_forward` | Call forward settings | [#/definitions/call_forward](#call_forward) |   | `false` |  
+`call_limits` | Schema for call limits | [#/definitions/call_limits](#call_limits) |   | `false` |  
 `call_recording` | endpoint recording settings | [#/definitions/call_recording](#call_recording) |   | `false` |  
 `call_restriction` | Device level call restrictions for each available number classification | `object()` | `{}` | `false` |  
 `call_waiting` | Parameters for server-side call waiting | [#/definitions/call_waiting](#call_waiting) |   | `false` |  
@@ -38,7 +40,11 @@ Key | Description | Type | Default | Required | Support Level
 `mac_address` | The MAC Address of the device (if applicable) | `string()` |   | `false` | `supported`
 `media` | Configure audio/video/etc media options for this device | [#/definitions/endpoint.media](#endpointmedia) |   | `false` |  
 `metaflows` | The device metaflow parameters | [#/definitions/metaflows](#metaflows) |   | `false` |  
+`mobile.mdn` | The MDN - mobile device number | `string()` |   | `false` |  
+`mobile` | KAZOO devices that integrate with mobile providers | `object()` |   | `false` |  
 `music_on_hold.media_id` | The ID of a media object that should be used as the music on hold | `string(0..2048)` |   | `false` |  
+`music_on_hold.options.[]` |   | `string('preserve-position' | 'random-start')` |   | `false` |  
+`music_on_hold.options` | Options for playing music on hold | `array(string('preserve-position' | 'random-start'))` |   | `false` |  
 `music_on_hold` | The music on hold parameters used if not a property of the device owner | `object()` | `{}` | `false` |  
 `mwi_unsolicited_updates` | When true enables unsolicited mwi notifications | `boolean()` | `true` | `false` |  
 `name` | A friendly name for the device | `string(1..128)` |   | `true` | `supported`
@@ -85,6 +91,30 @@ Key | Description | Type | Default | Required | Support Level
 `suppress_unregister_notifications` | When true disables deregister notifications | `boolean()` | `false` | `false` |  
 `timezone` | Device's timezone | [#/definitions/timezone](#timezone) |   | `false` | `supported`
 
+### addresses
+
+Account, user or device addresses
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`emergency.additional_information` | Additional location information. Example: Room 543 | `string()` |   | `false` |  
+`emergency.country` | The country is identified by the two-letter ISO 3166 code. Example: US | `string()` |   | `true` |  
+`emergency.county` | County, parish, gun (JP), district (IN). Example: King's County | `string()` |   | `false` |  
+`emergency.floor` | Floor. Example: 4 | `integer()` |   | `false` |  
+`emergency.house_number` | House number, numeric part only. Example: 123 | `integer()` |   | `true` |  
+`emergency.house_number_suffix` | House number suffix. Example: A, 1/2 | `string()` |   | `false` |  
+`emergency.locality` | City, township, shi (JP). Example: New York | `string()` |   | `true` |  
+`emergency.location_identifier` | United States unique 10-digit number known as an E911 location identifier (ELIN) | `integer()` |   | `false` |  
+`emergency.name` | Name (residence, business or office occupant). Example: Joe's Barbershop | `string()` |   | `true` |  
+`emergency.postal_code` | Postal code. Example: 10027-0401 | `string()` |   | `true` |  
+`emergency.region` | National subdivisions (state, region, province, prefecture). Example: New York | `string()` |   | `true` |  
+`emergency.street` | Primary road or street. Example: Broadway | `string()` |   | `true` |  
+`emergency.street_direction` | Leading street direction. Example: N, W | `string()` |   | `false` |  
+`emergency.street_suffix` | Trailing street suffix. Example: SW | `string()` |   | `false` |  
+`emergency.street_type` | Street type. Example: Avenue, Platz, Street | `string()` |   | `false` |  
+`emergency` | Emergency address | `object()` |   | `false` |  
+
 ### call_failover
 
 The device call failover parameters, to replace the device with an extension/phone number when device is offline.
@@ -101,18 +131,59 @@ Key | Description | Type | Default | Required | Support Level
 
 ### call_forward
 
-The device call forward parameters
+Call Forward
 
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`direct_calls_only` | Determines if the calls that are not directly sent to the device should be forwarded | `boolean()` | `false` | `false` | `supported`
-`enabled` | Determines if the call forwarding should be used | `boolean()` | `false` | `false` | `supported`
-`ignore_early_media` | The option to determine if early media from the call forwarded number should ignored | `boolean()` | `true` | `false` |  
-`keep_caller_id` | Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used | `boolean()` | `true` | `false` | `supported`
-`number` | The number to forward calls to | `string(0..35)` |   | `false` | `supported`
-`require_keypress` | Determines if the callee is prompted to press 1 to accept the call | `boolean()` | `true` | `false` | `supported`
-`substitute` | Determines if the call forwarding replaces the device | `boolean()` | `true` | `false` | `supported`
+`busy` | Call Forward Properties | `object()` |   | `false` |  
+`direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`enabled` |   | `boolean()` | `false` | `true` |  
+`ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`no_answer` | Call Forward Properties | `object()` |   | `false` |  
+`number` |   | `string(0..35)` |   | `false` |  
+`require_keypress` |   | `boolean()` | `true` | `false` |  
+`selective.direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`selective.enabled` |   | `boolean()` | `false` | `false` |  
+`selective.ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`selective.keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`selective.number` |   | `string(0..35)` |   | `false` |  
+`selective.require_keypress` |   | `boolean()` | `true` | `false` |  
+`selective.rules.[].direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`selective.rules.[].enabled` |   | `boolean()` | `false` | `false` |  
+`selective.rules.[].ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`selective.rules.[].keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`selective.rules.[].match_list_id` |   | `string()` |   | `false` |  
+`selective.rules.[].number` |   | `string(0..35)` |   | `false` |  
+`selective.rules.[].require_keypress` |   | `boolean()` | `true` | `false` |  
+`selective.rules` | Match list rules to check for call forwarding | `array(object())` |   | `false` |  
+`selective` | Conditionally check match lists to determine if call forwarding should be used | `object()` |   | `false` |  
+`substitute` | Determines if the call forwarding replaces the device | `boolean()` | `true` | `false` |  
+`unconditional` | Call Forward Properties | `object()` |   | `false` |  
+
+### call_forward_type
+
+Call Forward Properties
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`enabled` |   | `boolean()` | `false` | `true` |  
+`ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`number` |   | `string(0..35)` |   | `false` |  
+`require_keypress` |   | `boolean()` | `true` | `false` |  
+
+### call_limits
+
+Schema for call limits
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`max_concurrent` | Maximum number of concurrent calls allowed per endpoint | `integer()` |   | `false` |  
 
 ### call_recording
 
@@ -136,9 +207,10 @@ Key | Description | Type | Default | Required | Support Level
 `record_on_answer` | Recording should start on answer | `boolean()` |   | `false` |  
 `record_on_bridge` | Recording should start on bridge | `boolean()` |   | `false` |  
 `record_sample_rate` | What sampling rate to use on the recording | `integer()` |   | `false` |  
+`should_announce_when_recording` | Whether or not a prompt should be played (after bridge) when the call is being recorded | `boolean()` |   | `false` |  
 `should_record_feature_calls` | Toggles whether to start a recording for calls to feature codes | `boolean()` | `true` | `false` |  
-`time_limit` | Time limit, in seconds, for the recording | `integer()` |   | `false` |  
-`url` | The URL to use when sending the recording for storage | `string()` |   | `false` |  
+`time_limit` | Time limit, in seconds, for the recording | `integer(5..10800)` |   | `false` |  
+`url` | The URL to use when sending the recording for storage | `string(6..)` |   | `false` |  
 
 ### call_recording.source
 
@@ -201,6 +273,22 @@ Key | Description | Type | Default | Required | Support Level
 `show_rate` | Whether to show the rate | `boolean()` |   | `false` |  
 `type` | Caller ID on endpoint to choose | `string('internal' | 'external' | 'emergency')` |   | `false` |  
 
+### codecs.audio
+
+A list of audio codecs the endpoint supports
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+
+### codecs.video
+
+A list of video codecs the endpoint supports
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+
 ### custom_sip_headers
 
 Custom SIP headers applied to an INVITE
@@ -235,8 +323,7 @@ Schema for endpoint media options
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`audio.codecs.[]` |   | `string('OPUS' | 'CELT@32000h' | 'G7221@32000h' | 'G7221@16000h' | 'G722' | 'speex@32000h' | 'speex@16000h' | 'PCMU' | 'PCMA' | 'G729' | 'GSM' | 'CELT@48000h' | 'CELT@64000h' | 'G722_16' | 'G722_32' | 'CELT_48' | 'CELT_64' | 'Speex' | 'speex')` |   | `false` |  
-`audio.codecs` | A list of audio codecs the endpoint supports | `array(string('OPUS' | 'CELT@32000h' | 'G7221@32000h' | 'G7221@16000h' | 'G722' | 'speex@32000h' | 'speex@16000h' | 'PCMU' | 'PCMA' | 'G729' | 'GSM' | 'CELT@48000h' | 'CELT@64000h' | 'G722_16' | 'G722_32' | 'CELT_48' | 'CELT_64' | 'Speex' | 'speex'))` |   | `false` |  
+`audio.codecs` | A list of audio codecs the endpoint supports | [#/definitions/codecs.audio](#codecsaudio) |   | `false` |  
 `audio` | The audio media parameters | `object()` | `{}` | `false` |  
 `bypass_media` | Default bypass media mode (The string type is deprecated, please use this as a boolean) | `boolean() | string('auto' | 'false' | 'true')` |   | `false` |  
 `encryption.enforce_security` | Is Encryption Enabled? | `boolean()` | `false` | `false` |  
@@ -246,9 +333,9 @@ Key | Description | Type | Default | Required | Support Level
 `fax_option` | Is T.38 Supported? | `boolean()` |   | `false` |  
 `ignore_early_media` | The option to determine if early media from the endpoint should always be ignored | `boolean()` |   | `false` |  
 `progress_timeout` | The progress timeout to apply to the endpoint (seconds) | `integer()` |   | `false` |  
-`video.codecs.[]` |   | `string('H261' | 'H263' | 'H263+' | 'H264' | 'VP8' | 'VP9')` |   | `false` |  
-`video.codecs` | A list of video codecs the endpoint supports | `array(string('H261' | 'H263' | 'H263+' | 'H264' | 'VP8' | 'VP9'))` | `[]` | `false` |  
+`video.codecs` | A list of video codecs the endpoint supports | [#/definitions/codecs.video](#codecsvideo) |   | `false` |  
 `video` | The video media parameters | `object()` | `{}` | `false` |  
+`webrtc` | If true, forces a WebRTC compatible SDP on the INVITE | `boolean()` |   | `false` |  
 
 ### formatters
 
@@ -294,7 +381,7 @@ Actions applied to a call outside of the normal callflow, initiated by the calle
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `binding_digit` | What DTMF will trigger the collection and analysis of the subsequent DTMF sequence | `string('1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' | '*' | '#')` | `*` | `false` |  
-`digit_timeout` | How long to wait between DTMF presses before processing the collected sequence (milliseconds) | `integer()` |   | `false` |  
+`digit_timeout` | How long to wait between DTMF presses before processing the collected sequence (milliseconds) | `integer(0..)` |   | `false` |  
 `listen_on` | Which leg(s) of the call to listen for DTMF | `string('both' | 'self' | 'peer')` |   | `false` |  
 `numbers./^[0-9]+$/` | A metaflow node defines a module to execute, data to provide to that module, and one or more children to branch to | [#/definitions/metaflow](#metaflow) |   | `false` |  
 `numbers` | A list of static numbers with their flows | `object()` |   | `false` |  
@@ -313,9 +400,118 @@ Key | Description | Type | Default | Required | Support Level
 
 ### Call forwarding
 
+#### Legacy format
+
 Currently the `call_forward` object allows you to define call forwarding *or* failover but not both. If `call_forward.enabled` is `true` it will take precedence and settings will be used only for call forwarding. If `call_forward.enabled` is `false` *and* `call_forward.failover` is `true`, failover settings will be used.
 
-## Fetch
+#### 5.2 and beyond
+
+In 5.2, call forwarding is being retooled to allow more dynamic decision-making for when to use the forwarding settings, one example being only allow a list of caller IDs to be sent through to the call-forwarding settings if the device fails to be rung.
+
+As such, the `call_forward` object (if it exists) will be transformed into a set of sub-objects representing the new call forwarding options.
+
+KAZOO will automatically "fix" the legacy format to the new format when processing calls; saving of the device doc with "call_forward" in legacy mode will result in schema errors.
+
+#### Mapping legacy settings to the new format
+
+It is a straight-forward process to move to the new format.
+
+For system admins, `sup crossbar_maintenance migrate_call_forward {ACCOUNT_ID}` will migrate individual accounts. Normal `sup kapps_maintenance migrate` will also walk the account databases and migrate necessary docs.
+
+For API clients, move the legacy call forwarding settings under the `unconditional` key:
+
+Legacy JSON:
+```json
+{
+  "call_forward": {
+    "enabled": "{ENABLED}",
+    "number": "{CFWD_DID}"
+  }
+}
+```
+
+Converts to:
+```json
+{
+  "call_forward": {
+    "unconditional": {
+      "enabled": "{ENABLED}",
+      "number": "{CFWD_DID}"
+    }
+  }
+}
+```
+
+#### Example `call_forward` settings
+
+As noted above, to always forward the device/user to a PSTN number:
+
+```json
+{
+  "call_forward": {
+    "unconditional": {
+      "enabled": true,
+      "number": "{PSTN_NUMBER}"
+    }
+  }
+}
+```
+
+For forwarding only when the device/user doesn't answer, replace `unconditional` with `no_answer`. For when a device/user is "busy", use `busy`. The settings under those keys are identical.
+
+##### Selective call forwarding
+
+Selective call forwarding allows the device/user's call forwarding settings to only apply in certain cases. For instance, you may want calls from your family to route to your cell phone instead of your SIP devices.
+
+To do so, the `selective` settings for call forwarding include a list of `rules` that map to [matchlists](./match_lists.md "match lists") where you can configure the logic around when to call forward.
+
+For example, a simple match list based on the caller ID number could be created thusly:
+
+```shell
+curl -X PUT \
+    -X "X-Auth-Token: {AUTH_TOKEN}" \
+    -d '{"data":{"name":"My Call Forwarding Rules","rules":[{"name":"Match CID","regex":"41588679\\d{2}","target":"caller_id_number","type":"regex"}]}} \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/match_lists
+```
+The match list JSON:
+```json
+{
+  "name": "My Call Forwarding Rules",
+  "rules": [
+    {
+      "name": "Match CID",
+      "regex": "41588679\\d{2}",
+      "target": "caller_id_number",
+      "type": "regex"
+    }
+  ]
+}
+```
+
+Capture the match list ID from the response, then create the `call_forward` settings:
+
+```json
+{
+  "call_forward": {
+    "enabled": true,
+    "selective": {
+      "enabled": true,
+      "number": "+14158867900",
+      "rules": [
+        {
+          "enabled": true,
+          "match_list_id": "{MATCH_LIST_ID}"
+        }
+      ]
+    }
+  }
+}
+
+```
+
+PUT/POST/PATCH that to the device/user and only calls with caller ID matching 41588679 plus any two digits will be forwarded to the `number` configured.
+
+## Fetch the device summary
 
 Lists all devices in an account.
 
@@ -778,6 +974,10 @@ curl -v -X GET \
     "status": "success"
 }
 ```
+
+## Push payload to device
+
+See [pushes.md](./pushes.md) for information about this action.
 
 ## Reboot a device
 

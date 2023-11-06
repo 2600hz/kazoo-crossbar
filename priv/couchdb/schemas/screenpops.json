@@ -59,6 +59,36 @@
             },
             "type": "array"
         },
+        "permissions": {
+            "default": {},
+            "description": "Used when screenpops are allowed for userwise, this object contains which users are allowed and not allowed for a screenpop",
+            "properties": {
+                "all_users": {
+                    "default": true,
+                    "description": "Whether the screenpop allowed for all users in the account",
+                    "type": "boolean"
+                },
+                "allow": {
+                    "default": [],
+                    "description": "Specific list of users who are allowed the screenpop",
+                    "items": {
+                        "type": "string"
+                    },
+                    "maxItems": 50,
+                    "type": "array"
+                },
+                "deny": {
+                    "default": [],
+                    "description": "Specific list of users who are not allowed the screenpop",
+                    "items": {
+                        "type": "string"
+                    },
+                    "maxItems": 50,
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
         "post_call_extension_time": {
             "description": "Contains the time the screenpop will remain active when the temporal type is selected.",
             "type": "number"

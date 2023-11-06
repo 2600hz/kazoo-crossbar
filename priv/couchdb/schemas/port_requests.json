@@ -64,7 +64,8 @@
         "comments": {
             "description": "The history of comments made on a port request",
             "items": {
-                "$ref": "comment"
+                "$ref": "comment",
+                "type": "object"
             },
             "type": "array"
         },

@@ -84,6 +84,12 @@ curl -v -X POST \
     'http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/presence/{EXTENSION}'
 ```
 
+**Note about *reset* request**: actually, *reset* is not what it seems to represent. *reset* action
+request *presence* listeners such as *kamailio* to reset any state they have for the given presence\_id
+({EXTENSION} in this case).
+
+In short, *reset* acts like a *flush* command.
+
 ### Post To Update Presence State
 
 ```shell

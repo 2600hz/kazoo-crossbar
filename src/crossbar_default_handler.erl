@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2021, 2600Hz
+%%% @copyright (C) 2012-2023, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%%
@@ -81,7 +81,6 @@ get_magic_token_from_path([Path|Paths]) ->
 
 -spec handle(cowboy_req:req(), State) -> {'ok', cowboy_req:req(), State}.
 handle(Req, #{body := Bytes} = State) ->
-    lager:debug("responding with default handler"),
     Headers = #{<<"content-type">> => <<"text/plain; charset=UTF-8">>},
     Req1 = cowboy_req:reply(200, Headers, Bytes, Req),
     {'ok', Req1, State}.

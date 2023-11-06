@@ -3,11 +3,48 @@
     "_id": "users",
     "description": "Schema for a user",
     "properties": {
+        "addresses": {
+            "allOf": [
+                {
+                    "$ref": "addresses"
+                }
+            ],
+            "description": "User addresses",
+            "properties": {
+                "vcard": {
+                    "description": "Addresses list to build user's vcard",
+                    "items": {
+                        "properties": {
+                            "address": {
+                                "type": "string"
+                            },
+                            "types": {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            }
+                        },
+                        "required": [
+                            "address"
+                        ],
+                        "type": "object"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
         "call_failover": {
             "$ref": "call_failover"
         },
         "call_forward": {
-            "$ref": "call_forward"
+            "$ref": "call_forward",
+            "description": "Call forward settings",
+            "kz:skip_subproperty_builder": true
+        },
+        "call_limits": {
+            "$ref": "call_limits"
         },
         "call_recording": {
             "$ref": "call_recording"
@@ -169,6 +206,17 @@
                     "description": "The ID of a media object that should be used as the music on hold",
                     "maxLength": 128,
                     "type": "string"
+                },
+                "options": {
+                    "description": "Options for playing music on hold",
+                    "items": {
+                        "enum": [
+                            "preserve-position",
+                            "random-start"
+                        ],
+                        "type": "string"
+                    },
+                    "type": "array"
                 }
             },
             "type": "object"

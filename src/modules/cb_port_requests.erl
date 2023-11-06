@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2013-2021, 2600Hz
+%%% @copyright (C) 2013-2023, 2600Hz
 %%% @doc Handles port request life cycles
 %%% See doc/port_requests.md
 %%%
@@ -362,7 +362,11 @@ put(Context) ->
     case cb_context:resp_status(Context1) of
         'success' ->
             Doc = cb_context:doc(Context1),
-            cb_context:set_resp_data(Context1, knm_port_request:public_fields(Doc));
+            Metadata = knm_port_request:read_only_public_fields(Doc),
+            cb_context:setters(Context1
+                              ,[{fun cb_context:set_resp_data/2, knm_port_request:public_fields(Doc)}
+                               ,{fun cb_context:add_metadata_values/2, kz_json:to_proplist(Metadata)}
+                               ]);
         _ ->
             Context1
     end.
@@ -707,6 +711,7 @@ patch_then_validate_then_maybe_transition(Context, PortId, ToState) ->
               ],
     Context1 = cb_context:setters(Context, Setters),
     LoadOptions = ?TYPE_CHECK_OPTION(?TYPE_PORT_REQUEST),
+    %% patch_and_validate always calls ValidateFun even if it fails to load the doc!
     crossbar_doc:patch_and_validate(PortId, set_port_authority(Context1), ValidateFun, LoadOptions).
 
 -spec validate_lnp_lookup(cb_context:context()) -> cb_context:context().
@@ -728,6 +733,9 @@ validate_lnp_lookup(Context) ->
 -spec validate_port_comments(cb_context:context(), fun((cb_context:context()) -> cb_context:context())) ->
           cb_context:context().
 validate_port_comments(Context, OnSuccess) ->
+    %% this function is not guaranties to be called ONLY if resp_status is success,
+    %% read the caller funs comment, we may end up with failed load and if validation passes, this function will be
+    %% called. We have no way to check if load in patch_and_validate was successful or not.
     validate_port_comments(Context, OnSuccess, get_new_comments(Context)).
 
 -spec validate_port_comments(cb_context:context(), fun((cb_context:context()) -> cb_context:context()), kz_json:objects()) ->
@@ -1186,23 +1194,16 @@ run_comment_filter(Comments, Filters) ->
 %%------------------------------------------------------------------------------
 -spec normalize_view_results(kz_json:object(), kz_json:objects()) ->
           kz_json:objects().
-normalize_view_results(Res, Acc) ->
-    [leak_pvt_fields(Res, knm_port_request:public_fields(kz_json:get_value(<<"doc">>, Res)))
+normalize_view_results(ViewResult, Acc) ->
+    Doc = kz_json:get_json_value(<<"doc">>, ViewResult),
+    Normalized = knm_port_request:public_fields(Doc),
+    [add_metadata_fields(Doc, Normalized)
     | Acc
     ].
 
--spec leak_pvt_fields(kz_json:object(), kz_json:object()) -> kz_json:object().
-leak_pvt_fields(Res, JObj) ->
-    Fields = [{[<<"doc">>, <<"pvt_account_id">>], <<"account_id">>}],
-    lists:foldl(fun({Field, Key}, J) ->
-                        case kz_json:get_ne_value(Field, Res) of
-                            'undefined' -> J;
-                            Value -> kz_json:set_value(Key, Value, J)
-                        end
-                end
-               ,JObj
-               ,Fields
-               ).
+-spec add_metadata_fields(kz_json:object(), kz_json:object()) -> kz_json:object().
+add_metadata_fields(Doc, PublicJObj) ->
+    kz_json:set_value(<<"account_id">>, kz_doc:account_id(Doc), PublicJObj).
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -1231,6 +1232,7 @@ on_successful_validation(Context, Id) ->
 -spec on_successful_validation(cb_context:context(), kz_term:api_binary(), boolean()) -> cb_context:context().
 on_successful_validation(Context, Id, 'true') ->
     JObj = cb_context:doc(Context),
+
     Numbers = kz_json:get_keys(kz_json:get_value(<<"numbers">>, JObj)),
     Context1 = lists:foldl(fun(Number, ContextAcc) ->
                                    check_number_portability(Id, Number, ContextAcc)
@@ -1424,7 +1426,7 @@ move_state(Context, PortState, Metadata, Options0) ->
     try knm_port_request:attempt_transition(cb_context:doc(Context), Metadata, PortState, Options) of
         {'ok', PortRequest} ->
             lager:debug("loaded new port request state ~s", [PortState]),
-            cb_context:set_doc(Context, PortRequest);
+            cb_context:set_resp_status(cb_context:set_doc(Context, PortRequest), 'success');
         {'error', 'user_not_allowed'} ->
             Msg = kz_json:from_list(
                     [{<<"message">>

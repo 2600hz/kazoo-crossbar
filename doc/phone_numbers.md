@@ -273,19 +273,19 @@ curl -v -X DELETE \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "_read_only": {
-            "created": 63627848588,
-            "modified": 63627848588,
-            "state": "available"
-        },
-        "id": "{PHONE_NUMBER}",
-        "state": "available"
-    },
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REVISION}",
-    "status": "success"
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+    "id": "{PHONE_NUMBER}",
+    "state": "available"
+  },
+  "metadata": {
+    "created": 63627848588,
+    "modified": 63627848588,
+    "state": "available"
+  },
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 
@@ -320,19 +320,19 @@ curl -v -X DELETE \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "_read_only": {
-            "created": 63627848588,
-            "modified": 63627848588,
-            "state": "deleted"
-        },
-        "id": "{PHONE_NUMBER}",
-        "state": "deleted"
-    },
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REVISION}",
-    "status": "success"
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+    "id": "{PHONE_NUMBER}",
+    "state": "deleted"
+  },
+  "metadata": {
+    "created": 63627848588,
+    "modified": 63627848588,
+    "state": "deleted"
+  },
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 
@@ -353,26 +353,27 @@ curl -v -X GET \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "_read_only": {
-            "created": 63627848989,
-            "features": [
-                "local"
-            ],
-            "modified": 63627848989,
-            "state": "reserved"
-        },
-        "features": [
-            "local"
-        ],
-        "id": "{PHONE_NUMBER}",
-        "state": "reserved",
-        "my_own_field": {}
-    },
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REVISION}",
-    "status": "success"
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+    "features": [
+      "local"
+    ],
+    "id": "{PHONE_NUMBER}",
+    "state": "reserved",
+    "my_own_field": {
+    }
+  },
+  "metadata": {
+    "created": 63627848989,
+    "features": [
+      "local"
+    ],
+    "modified": 63627848989,
+    "state": "reserved"
+  },
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 
@@ -414,34 +415,34 @@ curl -v -X POST \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "_read_only": {
-            "created": 63635220353,
-            "features": [
-                "outbound_cnam",
-                "inbound_cnam"
-            ],
-            "modified": 63635220353,
-            "state": "in_service",
-            "used_by": "callflow"
-        },
-        "cnam": {
-            "display_name": "My caller ID",
-            "inbound_lookup": true
-        },
-        "features": [
-            "outbound_cnam",
-            "inbound_cnam"
-        ],
-        "id": "{PHONE_NUMBER}",
-        "my_own_field": "some other value",
-        "state": "in_service",
-        "used_by": "callflow"
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+    "cnam": {
+      "display_name": "My caller ID",
+      "inbound_lookup": true
     },
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REVISION}",
-    "status": "success"
+    "features": [
+      "outbound_cnam",
+      "inbound_cnam"
+    ],
+    "id": "{PHONE_NUMBER}",
+    "my_own_field": "some other value",
+    "state": "in_service",
+    "used_by": "callflow"
+  },
+  "metadata": {
+    "created": 63635220353,
+    "features": [
+      "outbound_cnam",
+      "inbound_cnam"
+    ],
+    "modified": 63635220353,
+    "state": "in_service",
+    "used_by": "callflow"
+  },
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 
@@ -458,34 +459,34 @@ curl -v -X PATCH \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "_read_only": {
-            "created": 63635220353,
-            "features": [
-                "outbound_cnam",
-                "inbound_cnam"
-            ],
-            "modified": 63635220353,
-            "state": "in_service",
-            "used_by": "callflow"
-        },
-        "cnam": {
-            "display_name": "My caller ID",
-            "inbound_lookup": true
-        },
-        "features": [
-            "outbound_cnam",
-            "inbound_cnam"
-        ],
-        "id": "{PHONE_NUMBER}",
-        "my_own_field": 42,
-        "state": "in_service",
-        "used_by": "callflow"
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+    "cnam": {
+      "display_name": "My caller ID",
+      "inbound_lookup": true
     },
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REVISION}",
-    "status": "success"
+    "features": [
+      "outbound_cnam",
+      "inbound_cnam"
+    ],
+    "id": "{PHONE_NUMBER}",
+    "my_own_field": 42,
+    "state": "in_service",
+    "used_by": "callflow"
+  },
+  "metadata": {
+    "created": 63635220353,
+    "features": [
+      "outbound_cnam",
+      "inbound_cnam"
+    ],
+    "modified": 63635220353,
+    "state": "in_service",
+    "used_by": "callflow"
+  },
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 
@@ -512,20 +513,21 @@ curl -v -X PUT \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "_read_only": {
-            "created": 63627848989,
-            "modified": 63627848989,
-            "state": "reserved"
-        },
-        "id": "{PHONE_NUMBER}",
-        "state": "reserved",
-        "my_own_field": {}
-    },
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REVISION}",
-    "status": "success"
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+    "id": "{PHONE_NUMBER}",
+    "state": "reserved",
+    "my_own_field": {
+    }
+  },
+  "metadata": {
+    "created": 63627848989,
+    "modified": 63627848989,
+    "state": "reserved"
+  },
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 
@@ -1052,44 +1054,51 @@ curl -v -X GET \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "caribbean": {
-            "friendly_name": "Caribbean",
-            "pretty_print": "SS(###) ###-####",
-            "regex": "^\\+?1((?:684|264|268|242|246|441|284|345|767|809|829|849|473|671|876|664|670|787|939|869|758|784|721|868|649|340)\\d{7})$"
-        },
-        "did_us": {
-            "friendly_name": "US DID",
-            "pretty_print": "SS(###) ###-####",
-            "regex": "^\\+?1?([2-9][0-9]{2}[2-9][0-9]{6})$"
-        },
-        "emergency": {
-            "friendly_name": "Emergency Dispatcher",
-            "regex": "^(911)$"
-        },
-        "international": {
-            "friendly_name": "International",
-            "regex": "^(011\\d*)$|^(00\\d*)$"
-        },
-        "toll_us": {
-            "friendly_name": "US Toll",
-            "pretty_print": "SS(###) ###-####",
-            "regex": "^\\+1(900\\d{7})$"
-        },
-        "tollfree_us": {
-            "friendly_name": "US TollFree",
-            "pretty_print": "SS(###) ###-####",
-            "regex": "^\\+1((?:800|888|877|866|855)\\d{7})$"
-        },
-        "unknown": {
-            "friendly_name": "Unknown",
-            "regex": "^(.*)$"
-        }
+  "auth_token": "{AUTH_TOKEN}",
+  "data": [
+    {
+      "name": "caribbean",
+      "friendly_name": "Caribbean",
+      "pretty_print": "SS(###) ###-####",
+      "regex": "^\\+?1((?:684|264|268|242|246|441|284|345|767|809|829|849|473|671|876|664|670|787|939|869|758|784|721|868|649|340)\\d{7})$"
     },
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REVISION}",
-    "status": "success"
+    {
+      "name": "did_us",
+      "friendly_name": "US DID",
+      "pretty_print": "SS(###) ###-####",
+      "regex": "^\\+?1?([2-9][0-9]{2}[2-9][0-9]{6})$"
+    },
+    {
+      "name": "emergency",
+      "friendly_name": "Emergency Dispatcher",
+      "regex": "^(911)$"
+    },
+    {
+      "name": "international",
+      "friendly_name": "International",
+      "regex": "^(011\\d*)$|^(00\\d*)$"
+    },
+    {
+      "name": "toll_us",
+      "friendly_name": "US Toll",
+      "pretty_print": "SS(###) ###-####",
+      "regex": "^\\+1(900\\d{7})$"
+    },
+    {
+      "name": "tollfree_us",
+      "friendly_name": "US TollFree",
+      "pretty_print": "SS(###) ###-####",
+      "regex": "^\\+1((?:800|888|877|866|855)\\d{7})$"
+    },
+    {
+      "name": "unknown",
+      "friendly_name": "Unknown",
+      "regex": "^(.*)$"
+    }
+  ],
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 
@@ -1151,47 +1160,46 @@ curl -v -X POST \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "_read_only": {
-            "created": 63635220353,
-            "features": [
-                "inbound_cnam",
-                "outbound_cnam"
-            ],
-            "features_available": [
-                "cnam",
-                "e911",
-                "port",
-                "prepend"
-            ],
-            "modified": 63635220353,
-            "state": "in_service",
-            "used_by": "callflow"
-        },
-        "cnam": {
-            "display_name": "My Main Num2",
-            "inbound_lookup": true
-        },
-        "features": [
-            "inbound_cnam",
-            "outbound_cnam"
-        ],
-        "id": "+15554445563",
-        "state": "in_service",
-        "ui_metadata": {
-            "origin": "common",
-            "ui": "monster-ui",
-            "version": "3.23"
-        },
-        "used_by": "callflow"
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+    "cnam": {
+      "display_name": "My Main Num2",
+      "inbound_lookup": true
     },
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REVISION}",
-    "status": "success"
+    "features": [
+      "inbound_cnam",
+      "outbound_cnam"
+    ],
+    "id": "+15554445563",
+    "state": "in_service",
+    "ui_metadata": {
+      "origin": "common",
+      "ui": "monster-ui",
+      "version": "3.23"
+    },
+    "used_by": "callflow"
+  },
+  "metadata": {
+    "created": 63635220353,
+    "features": [
+      "inbound_cnam",
+      "outbound_cnam"
+    ],
+    "features_available": [
+      "cnam",
+      "e911",
+      "port",
+      "prepend"
+    ],
+    "modified": 63635220353,
+    "state": "in_service",
+    "used_by": "callflow"
+  },
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
-
 
 ## Return which account a number belongs to
 
@@ -1264,36 +1272,35 @@ curl -v -X PUT \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "_read_only": {
-            "created": 63644564835,
-            "features": [
-                "local"
-            ],
-            "features_available": [
-                "cnam",
-                "e911",
-                "failover",
-                "port",
-                "prepend"
-            ],
-            "modified": 63644564835,
-            "state": "port_in"
-        },
-        "blip": 432,
-        "features": [
-            "local"
-        ],
-        "id": "+14145137345",
-        "state": "port_in"
-    },
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REVISION}",
-    "status": "success"
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+    "blip": 432,
+    "features": [
+      "local"
+    ],
+    "id": "+14145137345",
+    "state": "port_in"
+  },
+  "metadata": {
+    "created": 63644564835,
+    "features": [
+      "local"
+    ],
+    "features_available": [
+      "cnam",
+      "e911",
+      "failover",
+      "port",
+      "prepend"
+    ],
+    "modified": 63644564835,
+    "state": "port_in"
+  },
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
-
 
 ## Move a number to the reserved state
 
@@ -1309,19 +1316,19 @@ curl -v -X PUT \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "_read_only": {
-            "created": 63628556896,
-            "modified": 63628556896,
-            "state": "reserved"
-        },
-        "id": "{PHONE_NUMBER}",
-        "state": "reserved"
-    },
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REVISION}",
-    "status": "success"
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+    "id": "{PHONE_NUMBER}",
+    "state": "reserved"
+  },
+  "metadata": {
+    "created": 63628556896,
+    "modified": 63628556896,
+    "state": "reserved"
+  },
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 
@@ -1358,7 +1365,6 @@ curl -v -X PUT \
 }
 ```
 
-
 ## Buy a number once searched for
 
 Note: one is not charged if number is already in service.
@@ -1375,19 +1381,19 @@ curl -v -X PUT \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "_read_only": {
-            "created": 63628027112,
-            "modified": 63628027112,
-            "state": "in_service"
-        },
-        "id": "{PHONE_NUMBER}",
-        "state": "in_service"
-    },
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REVISION}",
-    "status": "success"
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+    "id": "{PHONE_NUMBER}",
+    "state": "in_service"
+  },
+  "metadata": {
+    "created": 63628027112,
+    "modified": 63628027112,
+    "state": "in_service"
+  },
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 

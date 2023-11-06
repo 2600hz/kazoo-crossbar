@@ -3,10 +3,14 @@
 ## SUP-able functions
 
 | Function                              | Arguments                               | Description                                                                                          |
-| --------                              | ---------                               | -----------                                                                                          |
+|---------------------------------------|-----------------------------------------|------------------------------------------------------------------------------------------------------|
 | `allow_account_number_additions/1`    | `(AccountId)`                           | Allows the account to add its own numbers                                                            |
 | `app/1`                               | `(AppNameOrId)`                         | Fetch and print an App's metadata                                                                    |
 | `apps/0`                              |                                         | Fetch and print all known Apps' metadata                                                             |
+| `cascade_disable_accounts/1`          | `(AccountId)`                           | Disable the account and all descendants                                                              |
+| `cascade_disable_delinquent/1`        | `(AccountId)`                           | Disable the account and all descendants IF the account has less than -$1                             |
+| `cascade_disable_delinquent/2`        | `(AccountId,ThresholdCurrency)`         | Disable the account and all descendants IF the account has less than ThresholdCurrency               |
+| `cascade_enable_accounts/1`           | `(AccountId)`                           | Enable the account and all descendants                                                               |
 | `create_account/4`                    | `(AccountName,Realm,Username,Password)` | Create an account - typically used for the master account                                            |
 | `db_init/0`                           |                                         | Updates system schemas using files in Crossbar `priv' folder during startup                          |
 | `demote_account/1`                    | `(AccountId)`                           | Remove `superduper_admin` status from the account                                                    |
@@ -26,6 +30,9 @@
 | `init_apps/1`                         | `(AppsPath)`                            | `AppsPath` is the filesystem path to a directory of apps (which each have a `metadata/app.json` file |
 | `init_apps/2`                         | `(AppsPath,AppUrl)`                     | Initializes (or updates) the apps to use the `AppUrl` for API requests                               |
 | `migrate/0`                           |                                         | Applies any data migrations needed between versions of KAZOO                                         |
+| `migrate/1`                           | `(AccountDbs)`                          |                                                                                                      |
+| `migrate_call_forward/1`              | `(AccountDb)`                           |                                                                                                      |
+
 | `move_account/2`                      | `(Account,ToAccount)`                   | Moves `Account` to be a child of `ToAccount`                                                         |
 | `promote_account/1`                   | `(AccountId)`                           | Add the `superduper_admin` status to the account                                                     |
 | `refresh/0`                           |                                         | Deprecated: use `kapps_maintenance refresh` instead                                                  |

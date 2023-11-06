@@ -6,8 +6,10 @@ Recordings endpoint provides a way to access call recordings.
 
 ## Fetch recordings
 
+Fetches recordings for the whole account
 > GET /v2/accounts/{ACCOUNT_ID}/recordings
 
+Fetches recordings for the {USER_ID}
 > GET /v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/recordings
 
 Lists the call recording with pagination and filtering.
@@ -41,6 +43,36 @@ curl -v -X GET \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     -H "Accept: audio/mpeg" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/recordings/{RECORDING_ID}
+```
+
+## Change writable properties on a recording
+
+You can change user metadata on a recording to store extra information with the recording for your own purposes. This metadata can also be used by some [storage back-ends](./storage.md#attachments).
+
+> PATCH /v2/accounts/{ACCOUNT_ID}/recordings/{RECORDING_ID}
+
+```shell
+curl -v -X PATCH \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d '{"data": {
+          "user_metadata": { "tags": { "important": 1 } }
+         }
+        }' \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/recordings/{RECORDING_ID}
+```
+
+```json
+{
+    "data": {
+        "user_metadata": {
+            "tags": {
+                "important": 1
+            }
+        },
+        ...
+    }
+}
 ```
 
 ## Remove a recording

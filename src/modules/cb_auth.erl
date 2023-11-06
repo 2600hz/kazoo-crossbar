@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc
 %%% @author Daniel Finke
 %%%
@@ -50,7 +50,7 @@
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec init() -> ok.
+-spec init() -> 'ok'.
 init() ->
     _ = crossbar_bindings:bind(<<"*.authenticate.auth">>, ?MODULE, 'authenticate'),
     _ = crossbar_bindings:bind(<<"*.authorize.auth">>, ?MODULE, 'authorize'),
@@ -62,7 +62,7 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.execute.put.auth">>, ?MODULE, 'put'),
     _ = crossbar_bindings:bind(<<"*.execute.post.auth">>, ?MODULE, 'post'),
     _ = crossbar_bindings:bind(<<"*.execute.delete.auth">>, ?MODULE, 'delete'),
-    ok.
+    'ok'.
 
 %%------------------------------------------------------------------------------
 %% @doc This function determines the verbs that are appropriate for the
@@ -187,6 +187,7 @@ authorize_nouns(C, _, _, _, _) -> {'stop', cb_context:add_system_error('forbidde
 -spec authorize_action(cb_context:context(), kz_json:api_json_term()) -> boolean().
 authorize_action(C, <<"reset_signature_secret">>) -> cb_context:is_superduper_admin(C);
 authorize_action(_, <<"refresh_token">>) -> 'true';
+authorize_action(_, <<"renew">>) -> 'true';
 authorize_action(_, _) -> 'false'.
 
 %%------------------------------------------------------------------------------
@@ -243,11 +244,7 @@ validate_action(Context, <<"reset_signature_secret">>, ?HTTP_PUT) ->
         _ -> reset_identity_secret(Context)
     end;
 validate_action(Context, <<"refresh_token">>, ?HTTP_PUT) ->
-    Doc = kz_json:from_list([{<<"account_id">>, cb_context:auth_account_id(Context)}
-                            ,{<<"owner_id">>, cb_context:auth_user_id(Context)}
-                            ]),
-    Context1 = cb_context:set_doc(Context, Doc),
-    crossbar_auth:create_auth_token(Context1, ?MODULE);
+    crossbar_auth:validate_refresh_token(Context);
 validate_action(Context, _Action, _Method) ->
     lager:debug("unknown action ~s on ~s", [_Action, _Method]),
     cb_context:add_system_error(<<"action required">>, Context).
@@ -282,6 +279,8 @@ validate_path(Context, ?LINKS_PATH, ?HTTP_GET) ->
     Options = [{'key', [cb_context:auth_account_id(Context), cb_context:auth_user_id(Context)]}
               ,{'databases', [?KZ_AUTH_DB]}
               ,{'mapper', crossbar_view:get_value_fun()}
+              ,{'should_paginate', 'false'}
+              ,{'unchunkable', 'true'}
               ,'include_docs'
               ],
     crossbar_view:load(Context, ?LINKS_VIEW, Options);
@@ -300,6 +299,8 @@ validate_path(Context, ?APPS_PATH, ?HTTP_GET) ->
     Options = [{'key', account_id(Context)}
               ,{'databases', [?KZ_AUTH_DB]}
               ,{'mapper', crossbar_view:get_value_fun()}
+              ,{'should_paginate', 'false'}
+              ,{'unchunkable', 'true'}
               ,'include_docs'
               ],
     crossbar_view:load(Context, ?APPS_VIEW, Options);
@@ -364,24 +365,34 @@ validate_token_info(Context, Token) ->
             lager:debug("validate token info error ~p", [Error]),
             crossbar_util:response('error', Error, 401, Context);
         {'ok', Claims} ->
-            lager:debug("token is valid, sending info"),
+            lager:debug("token is valid, sending info: ~p", [Claims]),
             send_token_info(Context, Token, Claims)
     end.
 
 -spec send_token_info(cb_context:context(), binary(), kz_json:object()) -> cb_context:context().
 send_token_info(Context, Token, Claims) ->
+    StripKeys = [<<"exp">>, <<"identity_sig">>, <<"iss">>, <<"method">>, <<"token">>],
+    RespClaims = kz_json:delete_keys(StripKeys, Claims),
+
     AccountId = kz_json:get_value(<<"account_id">>, Claims),
     OwnerId = kz_json:get_value(<<"owner_id">>, Claims),
+
     Props = [{<<"account_id">>, AccountId}
+            ,{<<"account_realm">>, kzd_accounts:fetch_value(AccountId, fun kzd_accounts:realm/1)}
             ,{<<"owner_id">>, OwnerId}
             ],
-    Resp = crossbar_util:response_auth(kz_json:from_list(Props), AccountId, OwnerId),
+    Resp = crossbar_util:response_auth(kz_json:set_values(Props, RespClaims), AccountId, OwnerId),
     Setters = [{fun cb_context:set_auth_token/2, Token}],
     crossbar_util:response(Resp, cb_context:setters(Context, Setters)).
 
 
 -spec put(cb_context:context()) -> cb_context:context().
 put(Context) ->
+    put_action(Context, cb_context:req_value(Context, <<"action">>)).
+
+put_action(Context, <<"refresh_token">>) ->
+    crossbar_auth:refresh_token(Context);
+put_action(Context, _Other) ->
     cb_context:set_resp_status(Context, 'success').
 
 -spec put(cb_context:context(), path_token()) -> cb_context:context().

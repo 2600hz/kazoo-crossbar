@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2021, 2600Hz
+%%% @copyright (C) 2012-2023, 2600Hz
 %%% @doc Provides access to stored call recordings.
 %%%
 %%% @author OnNet (Kirill Sysoev [github.com/onnet])
@@ -19,6 +19,7 @@
         ,resource_exists/0, resource_exists/1
         ,content_types_provided/2
         ,validate/1, validate/2
+        ,patch/2
         ,delete/2
         ]).
 
@@ -45,6 +46,7 @@ init() ->
                ,{<<"*.resource_exists.recordings">>, 'resource_exists'}
                ,{<<"*.content_types_provided.recordings">>, 'content_types_provided'}
                ,{<<"*.validate.recordings">>, 'validate'}
+               ,{<<"*.execute.patch.recordings">>, 'patch'}
                ,{<<"*.execute.delete.recordings">>, 'delete'}
                ],
     cb_modules_util:bind(?MODULE, Bindings).
@@ -59,7 +61,7 @@ init() ->
 allowed_methods() -> [?HTTP_GET].
 
 -spec allowed_methods(path_token()) -> http_methods().
-allowed_methods(_RecordingId) -> [?HTTP_GET, ?HTTP_DELETE].
+allowed_methods(_RecordingId) -> [?HTTP_GET, ?HTTP_PATCH, ?HTTP_DELETE].
 
 %%------------------------------------------------------------------------------
 %% @doc Does the path point to a valid resource.
@@ -102,8 +104,17 @@ validate(Context) ->
     recording_summary(Context).
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
+validate(Context, ?MATCH_MODB_PREFIX(Year, Month, _)=RecordingId) ->
+    Context1 = cb_context:set_db_name(Context
+                                     ,kzs_util:format_account_id(
+                                        cb_context:account_id(Context)
+                                       ,kz_term:to_integer(Year)
+                                       ,kz_term:to_integer(Month)
+                                       )
+                                     ),
+    validate_recording(Context1, RecordingId, cb_context:req_verb(Context1));
 validate(Context, RecordingId) ->
-    validate_recording(Context, RecordingId, cb_context:req_verb(Context)).
+    crossbar_util:response_bad_identifier(RecordingId, Context).
 
 validate_recording(Context, RecordingId, ?HTTP_GET) ->
     case action_lookup(Context) of
@@ -112,8 +123,48 @@ validate_recording(Context, RecordingId, ?HTTP_GET) ->
         'download' ->
             load_recording_binary(Context, RecordingId)
     end;
+validate_recording(Context, RecordingId, ?HTTP_PATCH) ->
+    Context1 = validate_only_writable_props_included(
+                 cb_context:set_resp_status(Context, 'success')
+                ),
+
+    case cb_context:has_errors(Context1) of
+        'true' -> Context1;
+        'false' ->
+            crossbar_doc:patch_and_validate(
+              RecordingId
+             ,Context1
+             ,fun validate_patch/2
+             ,?TYPE_CHECK_OPTION(kzd_call_recordings:type())
+             )
+    end;
 validate_recording(Context, RecordingId, ?HTTP_DELETE) ->
     load_recording_doc(Context, RecordingId).
+
+%%------------------------------------------------------------------------------
+%% @doc Validate the request body of a `PATCH' request.
+%% @end
+%%------------------------------------------------------------------------------
+-spec validate_patch(path_token(), cb_context:context()) -> cb_context:context().
+validate_patch(_, Context) ->
+    cb_context:validate_request_data(<<"call_recordings">>
+                                    ,strip_id_from_req_data(Context)
+                                    ).
+
+%%------------------------------------------------------------------------------
+%% @doc Save changes to the writable properties of a recording. If there have
+%% been no changes, this is a no-op.
+%% @end
+%%------------------------------------------------------------------------------
+-spec patch(cb_context:context(), path_token()) -> cb_context:context().
+patch(Context, RecordingId) ->
+    Doc = cb_context:doc(Context),
+    ReqData = cb_context:fetch(Context, 'patch'),
+
+    case kz_json:is_json_object(kzd_call_recordings:user_metadata(ReqData)) of
+        'false' -> crossbar_doc:handle_json_success(Doc, Context);
+        'true' -> save_user_metadata(Context, RecordingId, Doc)
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -165,24 +216,15 @@ get_view_name('undefined') -> ?CB_LIST;
 get_view_name(_) -> ?CB_LIST_BY_OWNERID.
 
 -spec load_recording_doc(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
-load_recording_doc(Context, ?MATCH_MODB_PREFIX(Year, Month, _) = RecordingId) ->
-    Ctx = cb_context:set_db_name(Context
-                                ,kzs_util:format_account_id(cb_context:account_id(Context)
-                                                           ,kz_term:to_integer(Year)
-                                                           ,kz_term:to_integer(Month)
-                                                           )
-                                ),
-    crossbar_doc:load({<<"call_recording">>, RecordingId}, Ctx, ?TYPE_CHECK_OPTION(<<"call_recording">>));
-load_recording_doc(Context, Id) ->
-    crossbar_util:response_bad_identifier(Id, Context).
+load_recording_doc(Context, RecordingId) ->
+    crossbar_doc:load({kzd_call_recordings:type(), RecordingId}
+                     ,Context
+                     ,?TYPE_CHECK_OPTION(kzd_call_recordings:type())
+                     ).
 
 -spec load_recording_binary(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
-load_recording_binary(Context, ?MATCH_MODB_PREFIX(Year, Month, _) = DocId) ->
-    do_load_recording_binary(cb_context:set_db_name(Context, kzs_util:format_account_id(cb_context:account_id(Context), kz_term:to_integer(Year), kz_term:to_integer(Month))), DocId).
-
--spec do_load_recording_binary(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
-do_load_recording_binary(Context, DocId) ->
-    Context1 = crossbar_doc:load({<<"call_recording">>, DocId}, Context, ?TYPE_CHECK_OPTION(<<"call_recording">>)),
+load_recording_binary(Context, DocId) ->
+    Context1 = load_recording_doc(Context, DocId),
     case cb_context:resp_status(Context1) of
         'success' ->
             do_load_recording_binary_attachment(Context1, DocId);
@@ -199,9 +241,9 @@ do_load_recording_binary_attachment(Context, DocId) ->
                                        ,Context
                                        );
         [AName | _] ->
-            LoadedContext = crossbar_doc:load_attachment({<<"call_recording">>, DocId}
+            LoadedContext = crossbar_doc:load_attachment({kzd_call_recordings:type(), DocId}
                                                         ,AName
-                                                        ,?TYPE_CHECK_OPTION(<<"call_recording">>)
+                                                        ,?TYPE_CHECK_OPTION(kzd_call_recordings:type())
                                                         ,Context
                                                         ),
 
@@ -286,3 +328,62 @@ acceptable_content_types(Context) ->
 -spec is_acceptable_accept(cowboy_content_type(), [cowboy_content_type()]) -> boolean().
 is_acceptable_accept(ContentType, Acceptable) ->
     api_util:content_type_matches(ContentType, Acceptable).
+
+%%------------------------------------------------------------------------------
+%% @doc Strip the `"id"' property from the context's request data.
+%% @end
+%%------------------------------------------------------------------------------
+-spec strip_id_from_req_data(cb_context:context()) -> cb_context:context().
+strip_id_from_req_data(Context) ->
+    ReqData = cb_context:req_data(Context),
+    cb_context:set_req_data(Context, kz_doc:delete_id(ReqData)).
+
+%%------------------------------------------------------------------------------
+%% @doc Validate that only writable properties of the recording have been
+%% included in the request. Errors are added if read-only properties have been
+%% included.
+%% @end
+%%------------------------------------------------------------------------------
+-spec validate_only_writable_props_included(cb_context:context()) -> cb_context:context().
+validate_only_writable_props_included(Context) ->
+    ReqData = cb_context:req_data(Context),
+    Context1 = cb_context:store(Context, 'patch', ReqData),
+    ReadOnlyData = kz_json:filter(fun is_read_only_prop/1, ReqData),
+    kz_json:foldl(fun add_read_only_error/3, Context1, ReadOnlyData).
+
+%%------------------------------------------------------------------------------
+%% @doc Return `true' if the property is read-only.
+%% @end
+%%------------------------------------------------------------------------------
+-spec is_read_only_prop({kz_json:key(), kz_json:json_term()}) -> boolean().
+is_read_only_prop({K, _}) ->
+    WritablePaths = [kzd_call_recordings:path_user_metadata()],
+    not lists:member([K], WritablePaths).
+
+%%------------------------------------------------------------------------------
+%% @doc Add a read-only validation error for a property.
+%% @end
+%%------------------------------------------------------------------------------
+-spec add_read_only_error(kz_json:key(), kz_json:json_term(), cb_context:context()) ->
+          cb_context:context().
+add_read_only_error(K, _, Context) ->
+    Message = <<"Read-only property">>,
+    cb_context:add_validation_error([K], <<"forbidden">>, Message, Context).
+
+%%------------------------------------------------------------------------------
+%% @doc Attempt to save user metadata. If there is an attachment handler
+%% configured for call recordings in the account, the handler tries to update
+%% metadata on the external service first. If this fails, the recording metadata
+%% will not be saved.
+%% @end
+%%------------------------------------------------------------------------------
+-spec save_user_metadata(cb_context:context(), kz_term:ne_binary(), kz_doc:doc()) ->
+          cb_context:context().
+save_user_metadata(Context, RecordingId, Doc) ->
+    DbName = cb_context:db_name(Context),
+    [AttachmentName] = kz_doc:attachment_names(Doc),
+
+    case kz_datamgr:update_attachment_metadata(DbName, RecordingId, AttachmentName, Doc) of
+        'ok' -> crossbar_doc:save(Context);
+        {'error', E, _} -> cb_context:add_system_error(E, Context)
+    end.

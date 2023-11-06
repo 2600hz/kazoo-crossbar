@@ -21,6 +21,37 @@
     - cidrs
     - order
   'type': object
+'account_config.auth.password':
+  'description': Schema for auth.password account_config
+  'properties':
+    'should_enforce_strength':
+      'default': false
+      'description': auth password should_enforce_strength
+      'type': boolean
+    'should_prevent_reuse':
+      'default': false
+      'description': auth password should_prevent_reuse
+      'type': boolean
+    'strength_regexes':
+      'default':
+        'digit':
+          'message': at least one digit is required
+          'regex': '[0-9]'
+        'lower_case':
+          'message': at least one lower case character is required
+          'regex': '[a-z]'
+        'minimum_length':
+          'message': minimum password length is 10 characters
+          'regex': '^.{10,}$'
+        'special':
+          'message': at least one special character is required
+          'regex': '[-_.,<>!?@#$%^&*=+(){}[\]/\\|;:''"]'
+        'upper_case':
+          'message': at least one upper case character is required
+          'regex': '[A-Z]'
+      'description': auth password strength_regexes
+      'type': object
+  'type': object
 'account_config.call_command':
   'description': Schema for call_command account_config
   'properties':
@@ -98,6 +129,12 @@
           'default': true
           'description': callflow voicemail should_disable_offnet_callback
           'type': boolean
+        'silence_hits':
+          'description': callflow voicemail silence_hits
+          'type': integer
+        'silence_threshold':
+          'description': callflow voicemail silence_threshold
+          'type': integer
         'transcribe_default':
           'default': false
           'description': callflow voicemail transcribe_default
@@ -118,6 +155,15 @@
       'default': true
       'description': cdr ignore loopback bowout
       'type': boolean
+    'ignore_reorder_reasons':
+      'default': []
+      'description': cdr ignore_reorder_reasons
+      'items':
+        'enum':
+          - known_number
+          - unknown_number
+        'type': string
+      'type': array
   'type': object
 'account_config.conferences':
   'description': Schema for conferences account_config
@@ -175,6 +221,7 @@
       'x-patternProperties':
         '.+':
           'description': conferences controls  +
+          'type': object
     'entry_tone':
       'default': |-
         tone_stream://v=-7;>=2;+=.1;%(300,0,523,659);v=-7;>=3;+=.1;%(800,0,659,783)
@@ -208,9 +255,13 @@
         'page':
           'description': conferences profiles page
           'type': object
+        'video':
+          'description': conferences profiles video
+          'type': object
       'x-patternProperties':
         '.+':
           'description': conferences profiles  +
+          'type': object
     'support_name_announcement':
       'default': true
       'description': conferences support name announcement
@@ -242,7 +293,7 @@
           'log_successful_attempts': false
           'scopes':
             - crossbar
-          'token_auth_expiry_s': infinity
+          'token_auth_expiry_s': 3600
         'cb_ip_auth':
           'enabled': true
           'log_failed_attempts': true
@@ -263,6 +314,8 @@
           '$ref': '#/auth_module_config'
         'cb_auth':
           '$ref': '#/auth_module_config'
+        'cb_conference_auth':
+          '$ref': '#/auth_module_config'
         'cb_ip_auth':
           '$ref': '#/auth_module_config'
         'cb_user_auth':
@@ -282,6 +335,18 @@
       'default': false
       'description': crossbar.sms api e164 convert to
       'type': boolean
+  'type': object
+'account_config.default':
+  'description': Schema for default account_config
+  'properties':
+    'max_upload_size':
+      'default': 20
+      'description': maximum upload file size (megabytes)
+      'type': integer
+    'smtp_max_msg_size':
+      'default': 20
+      'description': maximum smpt message size (megabytes)
+      'type': integer
   'type': object
 'account_config.doodle':
   'description': Schema for doodle account_config
@@ -349,6 +414,9 @@
   'properties':
     'call_recording':
       'properties':
+        'default_user_metadata':
+          'description': Default user-defined metadata to set on call recordings
+          'type': object
         'extension':
           'default': mp3
           'description': Default media file format
@@ -475,6 +543,13 @@
   'description': |-
     Accounts represent tenants or customers on the system. Each account represents an individual dataset or sandbox that only one tenant can access. The data set is architecturally independent from other tenants.
   'properties':
+    'addresses':
+      '$ref': '#/addresses'
+      'description': Account addresses
+    'announcement':
+      'description': The announcement will be pop up when use log in to this account
+      'type': string
+      'x-kazoo-validation': true
     'blacklists':
       'description': A list blacklist ids that apply to the account
       'items':
@@ -485,6 +560,10 @@
       '$ref': '#/call_failover'
     'call_forward':
       '$ref': '#/call_forward'
+      'description': Call forward settings
+      'kz:skip_subproperty_builder': true
+    'call_limits':
+      '$ref': '#/call_limits'
     'call_recording':
       'additionalProperties': false
       'description': call recording configuration
@@ -553,6 +632,14 @@
             The ID of a media object that should be used as the default music on hold
           'maxLength': 2048
           'type': string
+        'options':
+          'description': Options for playing music on hold
+          'items':
+            'enum':
+              - preserve-position
+              - random-start
+            'type': string
+          'type': array
       'type': object
     'name':
       'description': A friendly name for the account
@@ -687,6 +774,71 @@
     - network-list-name
     - type
   'type': object
+'addresses':
+  'description': 'Account, user or device addresses'
+  'properties':
+    'emergency':
+      'description': Emergency address
+      'properties':
+        'additional_information':
+          'description': 'Additional location information. Example: Room 543'
+          'type': string
+        'country':
+          'description': |-
+            The country is identified by the two-letter ISO 3166 code. Example: US
+          'type': string
+        'county':
+          'description': 'County, parish, gun (JP), district (IN). Example: King''s County'
+          'type': string
+        'floor':
+          'description': 'Floor. Example: 4'
+          'type': integer
+        'house_number':
+          'description': 'House number, numeric part only. Example: 123'
+          'type': integer
+        'house_number_suffix':
+          'description': 'House number suffix. Example: A, 1/2'
+          'type': string
+        'locality':
+          'description': 'City, township, shi (JP). Example: New York'
+          'type': string
+        'location_identifier':
+          'description': |-
+            United States unique 10-digit number known as an E911 location identifier (ELIN)
+          'type': integer
+        'name':
+          'description': |-
+            Name (residence, business or office occupant). Example: Joe's Barbershop
+          'type': string
+        'postal_code':
+          'description': 'Postal code. Example: 10027-0401'
+          'type': string
+        'region':
+          'description': |-
+            National subdivisions (state, region, province, prefecture). Example: New York
+          'type': string
+        'street':
+          'description': 'Primary road or street. Example: Broadway'
+          'type': string
+        'street_direction':
+          'description': 'Leading street direction. Example: N, W'
+          'type': string
+        'street_suffix':
+          'description': 'Trailing street suffix. Example: SW'
+          'type': string
+        'street_type':
+          'description': 'Street type. Example: Avenue, Platz, Street'
+          'type': string
+      'required':
+        - country
+        - house_number
+        - locality
+        - name
+        - postal_code
+        - region
+        - street
+      'type': object
+  'type': object
 'allotments':
   'description': Create buckets of minutes per time-period
   'type': object
@@ -746,6 +898,7 @@
     'api_url':
       'description': Application api url
       'format': uri
+      'minLength': 7
       'type': string
     'author':
       'description': Application author
@@ -790,6 +943,7 @@
     'source_url':
       'description': Application source url
       'format': uri
+      'minLength': 7
       'type': string
     'tags':
       'items':
@@ -822,26 +976,32 @@
     '[a-z]{2}\-[A-Z]{2}':
       'properties':
         'description':
+          'description': Application Summary
           'minLength': 3
           'type': string
         'extended_description':
+          'description': Application extended description
           'type': string
         'features':
+          'description': Application features list
           'items':
             'type': string
           'type': array
         'icon':
-          'description': I18N application icon attachment name
+          'description': Application icon name
           'type': string
         'label':
+          'description': Application label
           'maxLength': 64
           'minLength': 3
           'type': string
         'screenshots':
+          'description': Application screenshot names
           'items':
             'type': string
           'type': array
         'urls':
+          'description': Application urls
           'type': object
       'required':
         - description
@@ -859,6 +1019,129 @@
       'items':
         'type': string
       'type': array
+  'type': object
+'application_blocklist':
+  'description': |-
+    List of blocked apps for the account which queries for API endpoint applications
+  'properties':
+    'app_id':
+      'description': ID of the application that has been blocklisted
+      'type': string
+    'app_type':
+      'description': Application type either monster-ui or commland or some other type
+      'type': string
+  'type': object
+'application_entitlement':
+  'description': List of entitlements related to query accounts for endpoint cb_applications
+  'oneOf':
+    - 'properties':
+        'type':
+          'description': Type of entitlement granted or users with the entitlement
+          'enum':
+            - all
+            - admins
+          'type': string
+      'required':
+        - type
+    - 'properties':
+        'type':
+          'description': Type of entitlement granted or users with the entitlement
+          'enum':
+            - specific
+          'type': string
+        'users':
+          'default': []
+          'description': Specific User IDs granting access to the app
+          'items':
+            'type': string
+          'type': array
+      'required':
+        - type
+  'properties':
+    'app_id':
+      'description': Id of the application that has been entitled
+      'type': string
+    'app_type':
+      'description': |-
+        Application type either monster-ui or commland or some other type of wrap
+      'type': string
+  'type': object
+'applications':
+  'description': UI application metadata schema
+  'properties':
+    'api_url':
+      'description': Optional API URL that application can use. default to Kazoo Crossbar API
+      'format': uri
+      'minLength': 7
+      'type': string
+    'author':
+      'description': Name of app publisher
+      'maxLength': 64
+      'minLength': 2
+      'type': string
+    'i18n':
+      '$ref': '#/app_i18n'
+      'type': object
+    'icon':
+      'description': Name of application icon
+      'type': string
+    'license':
+      'description': Application license
+      'type': string
+    'masqueradable':
+      'default': true
+      'description': Whether an application is masqueradable or not
+      'type': boolean
+    'name':
+      'description': Application name
+      'maxLength': 64
+      'minLength': 3
+      'type': string
+    'phase':
+      'description': Application test phase
+      'enum':
+        - alpha
+        - beta
+        - gold
+      'type': string
+    'price':
+      'description': Application price
+      'minimum': 0
+      'type': number
+    'published':
+      'default': true
+      'description': Indicated if the app is published
+      'type': boolean
+    'screenshots':
+      'items':
+        'type': string
+      'type': array
+    'source_url':
+      'description': |-
+        an URL which indicates where the UI must load the application source files
+      'format': uri
+      'type': string
+    'tags':
+      'items':
+        'type': string
+      'type': array
+    'type':
+      'description': |-
+        Type of application that can be used, for example commland_ui, monster_ui
+      'maxLength': 64
+      'minLength': 2
+      'type': string
+    'urls':
+      'type': object
+    'version':
+      'description': Application version
+      'type': string
+  'required':
+    - author
+    - license
+    - name
+    - version
+    - type
   'type': object
 'audit_logs':
   'description': Audit log of what caused a billing event to occur
@@ -947,6 +1230,7 @@
       'type': string
     'redirect_uri':
       'description': redirect URI
+      'minLength': 7
       'type': string
     'state':
       'description': state
@@ -1070,45 +1354,191 @@
       'type': boolean
   'type': object
 'call_forward':
-  'description': The device call forward parameters
+  'additionalProperties': false
+  'description': Call Forward
   'properties':
+    'busy':
+      '$ref': '#/call_forward_type'
+      'type': object
     'direct_calls_only':
       'default': false
-      'description': |-
-        Determines if the calls that are not directly sent to the device should be forwarded
       'type': boolean
-      'x-support_level': supported
     'enabled':
       'default': false
-      'description': Determines if the call forwarding should be used
       'type': boolean
-      'x-support_level': supported
     'ignore_early_media':
       'default': true
-      'description': |-
-        The option to determine if early media from the call forwarded number should ignored
       'type': boolean
     'keep_caller_id':
       'default': true
-      'description': |-
-        Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used
       'type': boolean
-      'x-support_level': supported
+    'no_answer':
+      '$ref': '#/call_forward_type'
+      'type': object
     'number':
-      'description': The number to forward calls to
       'maxLength': 35
       'type': string
-      'x-support_level': supported
     'require_keypress':
       'default': true
-      'description': Determines if the callee is prompted to press 1 to accept the call
       'type': boolean
-      'x-support_level': supported
+    'selective':
+      'additionalProperties': false
+      'description': |-
+        Conditionally check match lists to determine if call forwarding should be used
+      'properties':
+        'direct_calls_only':
+          'default': false
+          'type': boolean
+        'enabled':
+          'default': false
+          'type': boolean
+        'ignore_early_media':
+          'default': true
+          'type': boolean
+        'keep_caller_id':
+          'default': true
+          'type': boolean
+        'number':
+          'maxLength': 35
+          'type': string
+        'require_keypress':
+          'default': true
+          'type': boolean
+        'rules':
+          'description': Match list rules to check for call forwarding
+          'items':
+            'additionalProperties': false
+            'properties':
+              'direct_calls_only':
+                'default': false
+                'type': boolean
+              'enabled':
+                'default': false
+                'type': boolean
+              'ignore_early_media':
+                'default': true
+                'type': boolean
+              'keep_caller_id':
+                'default': true
+                'type': boolean
+              'match_list_id':
+                'type': string
+              'number':
+                'maxLength': 35
+                'type': string
+              'require_keypress':
+                'default': true
+                'type': boolean
+            'type': object
+          'type': array
+      'type': object
     'substitute':
       'default': true
       'description': Determines if the call forwarding replaces the device
       'type': boolean
-      'x-support_level': supported
+    'unconditional':
+      '$ref': '#/call_forward_type'
+      'type': object
+  'required':
+    - enabled
+  'type': object
+'call_forward_type':
+  'additionalProperties': false
+  'description': Call Forward Properties
+  'properties':
+    'direct_calls_only':
+      'default': false
+      'type': boolean
+    'enabled':
+      'default': false
+      'type': boolean
+    'ignore_early_media':
+      'default': true
+      'type': boolean
+    'keep_caller_id':
+      'default': true
+      'type': boolean
+    'number':
+      'maxLength': 35
+      'type': string
+    'require_keypress':
+      'default': true
+      'type': boolean
+  'required':
+    - enabled
+  'type': object
+'call_forward_types':
+  'additionalProperties': false
+  'properties':
+    'busy':
+      '$ref': '#/call_forward_type'
+      'type': object
+    'no_answer':
+      '$ref': '#/call_forward_type'
+      'type': object
+    'selective':
+      'additionalProperties': false
+      'description': |-
+        Conditionally check match lists to determine if call forwarding should be used
+      'properties':
+        'direct_calls_only':
+          'default': false
+          'type': boolean
+        'enabled':
+          'default': false
+          'type': boolean
+        'ignore_early_media':
+          'default': true
+          'type': boolean
+        'keep_caller_id':
+          'default': true
+          'type': boolean
+        'number':
+          'maxLength': 35
+          'type': string
+        'require_keypress':
+          'default': true
+          'type': boolean
+        'rules':
+          'description': Match list rules to check for call forwarding
+          'items':
+            'additionalProperties': false
+            'properties':
+              'direct_calls_only':
+                'default': false
+                'type': boolean
+              'enabled':
+                'default': false
+                'type': boolean
+              'ignore_early_media':
+                'default': true
+                'type': boolean
+              'keep_caller_id':
+                'default': true
+                'type': boolean
+              'match_list_id':
+                'type': string
+              'number':
+                'maxLength': 35
+                'type': string
+              'require_keypress':
+                'default': true
+                'type': boolean
+            'type': object
+          'type': array
+      'type': object
+    'unconditional':
+      '$ref': '#/call_forward_type'
+      'type': object
+  'required':
+    - enabled
+  'type': object
+'call_limits':
+  'description': Schema for call limits
+  'properties':
+    'max_concurrent':
+      'description': Maximum number of concurrent calls allowed per endpoint
+      'type': integer
   'type': object
 'call_recording':
   'additionalProperties': false
@@ -1149,6 +1579,10 @@
     'record_sample_rate':
       'description': What sampling rate to use on the recording
       'type': integer
+    'should_announce_when_recording':
+      'description': |-
+        Whether or not a prompt should be played (after bridge) when the call is being recorded
+      'type': boolean
     'should_record_feature_calls':
       'default': true
       'description': Toggles whether to start a recording for calls to feature codes
@@ -1161,6 +1595,7 @@
     'url':
       'description': The URL to use when sending the recording for storage
       'format': uri
+      'minLength': 6
       'type': string
       'x-kazoo-validation': true
   'type': object
@@ -1231,6 +1666,10 @@
       'minimum': 0
       'name': duration_ms
       'type': integer
+    'endpoint_id':
+      'description': ID of the endpoint that was recorded
+      'name': endpoint_id
+      'type': string
     'from':
       'description': from
       'name': from
@@ -1276,9 +1715,14 @@
       'name': to
       'type': string
     'url':
-      'description': url
+      'description': URL to send the recording to once finished
+      'minLength': 6
       'name': url
       'type': string
+    'user_metadata':
+      'description': |-
+        Arbitrary user-defined metadata. May be used in part or in full by storage handlers depending on the active storage configuration.
+      'type': object
   'type': object
 'call_reports':
   'description': Schema for a call report
@@ -1475,6 +1919,9 @@
         'type': string
       'type': array
       'uniqueItems': true
+    'owner_id':
+      'description': Callflow's owner id
+      'type': string
     'patterns':
       'default': []
       'description': |-
@@ -1894,10 +2341,26 @@
         - toggle
         - menu
       'type': string
+    'menu_retries':
+      'default': 3
+      'description': 'If the action is menu, how many retries to get a correct menu selection'
+      'type': integer
     'skip_module':
       'description': |-
         When set to true this callflow action is skipped, advancing to the wildcard branch (if any)
       'type': boolean
+  'type': object
+'callflows.call_pickup':
+  'description': Validator for the call_pickup callflow data object
+  'properties':
+    'skip_module':
+      'description': |-
+        When set to true this callflow action is skipped, advancing to the wildcard branch (if any)
+      'type': boolean
+    'target_call_id':
+      'description': The existing call-id to connect to the caller
+      'minLength': 1
+      'type': string
   'type': object
 'callflows.call_waiting':
   'description': Validator for the call_waiting callflow data object
@@ -2207,6 +2670,9 @@
         - simultaneous
         - single
       'type': string
+    'fail_on_single_reject':
+      'description': 'If any leg rejects the call, cancel all other legs'
+      'type': boolean
     'id':
       'description': Device ID
       'type': string
@@ -2296,6 +2762,46 @@
       'description': |-
         When set to true this callflow action is skipped, advancing to the wildcard branch (if any)
       'type': boolean
+  'type': object
+'callflows.doorman':
+  'description': Validator for the doorman callflow data object
+  'properties':
+    'call_timeout':
+      'default': 30
+      'description': How long to ring the callee
+      'type': integer
+    'caller_greeting':
+      'default': ''
+      'description': Greeting played to caller to inform her/him about name/purpose recording
+      'type': string
+    'caller_id_name':
+      'default': Doorman
+      'description': Custom Caller ID Name to denote the doorman is calling
+      'type': string
+    'id':
+      'description': The KAZOO device or user ID
+      'type': string
+    'origin':
+      'default': 'callflow : cf_doorman'
+      'description': Read-only setting if the call is recorded
+      'type': string
+    'recording_limit':
+      'default': 4
+      'description': The caller's recording limit for name and reason for calling
+      'type': integer
+    'skip_module':
+      'description': |-
+        When set to true this callflow action is skipped, advancing to the wildcard branch (if any)
+      'type': boolean
+    'tones':
+      'description': Ring tone to play to the caller after recording their name
+      'items':
+        '$ref': '#/tone'
+        'type': object
+      'type': array
+    'vmbox_id':
+      'description': Voicemail box ID to send caller to if callee choses
+      'type': string
   'type': object
 'callflows.dynamic_cid':
   'description': Validator for the dynamic_cid callflow data object
@@ -2480,12 +2986,18 @@
     'group_id':
       'description': ID of the group
       'type': string
+    'group_name':
+      'description': group name
+      'type': string
     'hard_stop_after_successful_group':
       'description': should hard stop on successful bridge
       'type': boolean
     'id':
       'description': Group ID
       'type': string
+    'ignore_early_media':
+      'description': ignore early media
+      'type': boolean
     'ignore_forward':
       'default': true
       'description': Whether to ignore forwarded phones
@@ -2505,6 +3017,12 @@
         'internal':
           'description': Ring tone for calls from external sources
           'type': string
+      'type': object
+    'sca':
+      'properties':
+        'enabled':
+          'description': is sca enabled
+          'type': boolean
       'type': object
     'skip_module':
       'description': |-
@@ -2744,6 +3262,11 @@
 'callflows.missed_call_alert':
   'description': Validator for the missed_call_alert callflow data object
   'properties':
+    'alert_on_internal_calls':
+      'default': false
+      'description': |-
+        When set to true missed calls from internal resource or account will also notified
+      'type': boolean
     'recipients':
       'description': |-
         One or more specific email addresses, Kazoo user ids or a combination of both
@@ -2869,8 +3392,14 @@
     - recipients
   'type': object
 'callflows.offnet':
-  'description': Validator for the offnet callflow data object
+  'description': Validator for the deprecated offnet callflow data object
   'properties':
+    'addresses':
+      'properties':
+        'emergency':
+          'description': Emergency address to use for PIDF+LO if the carrier supports it
+          'type': object
+      'type': object
     'bypass_e164':
       'description': Use the original requested number instead of normalizing to E164
       'type': boolean
@@ -3061,8 +3590,17 @@
   'properties':
     'cdr_url':
       'description': Optional URL to send the CDR to at the end of the call
+      'minLength': 7
       'pattern': '^https?://'
       'type': string
+    'custom_request_headers':
+      'description': |-
+        Custom HTTP X- headers to be included on each Pivot request to the voice_url
+      'type': object
+      'x-patternProperties':
+        '^[x|X]-':
+          'description': Include a custom X- header
+          'type': string
     'debug':
       'default': false
       'description': Store debug logs related to processing this Pivot call
@@ -3101,6 +3639,7 @@
       'type': boolean
     'voice_url':
       'description': What URL to request the initial Pivot callflow
+      'minLength': 7
       'pattern': '^https?://'
       'type': string
       'x-kazoo-validation': true
@@ -3247,6 +3786,10 @@
     'label':
       'description': Label to include in the origin of call recording
       'type': string
+    'media_id':
+      'description': |-
+        Doc ID of the created recording - if unspecified, KAZOO will generate one
+      'type': string
     'media_name':
       'description': the name of media
       'type': string
@@ -3292,6 +3835,7 @@
     'url':
       'description': The URL to use when sending the recording for storage
       'format': uri
+      'minLength': 5
       'type': string
       'x-kazoo-validation': true
   'required':
@@ -3306,13 +3850,42 @@
         - mp3
         - wav
       'type': string
+    'media_id':
+      'description': |-
+        Doc ID of the created recording - if unspecified, KAZOO will generate one
+      'type': string
+    'media_name':
+      'description': the name of media
+      'type': string
     'method':
       'default': put
-      'description': What HTTP method to use when sending the recording
+      'description': HTTP verb to use when sending the recording to the supplied URL
       'enum':
         - put
         - post
       'type': string
+    'origin':
+      'description': How the recording was started
+      'type': string
+    'record_min_sec':
+      'description': |-
+        The minimum length, in seconds, the recording must be to be considered successful. Otherwise it is deleted
+      'type': integer
+    'record_on_answer':
+      'default': false
+      'description': Whether to delay the recording until the channel is answered
+      'type': boolean
+    'record_on_bridge':
+      'default': false
+      'description': Whether to delay the recording until the channel is bridged
+      'type': boolean
+    'record_sample_rate':
+      'description': What sampling rate to use on the recording
+      'type': integer
+    'should_follow_transfer':
+      'default': true
+      'description': 'If true, the recording will continue after a transfer on the active leg'
+      'type': boolean
     'skip_module':
       'description': |-
         When set to true this callflow action is skipped, advancing to the wildcard branch (if any)
@@ -3326,12 +3899,19 @@
     'url':
       'description': The URL to use when sending the recording for storage
       'format': uri
+      'minLength': 5
       'type': string
       'x-kazoo-validation': true
   'type': object
 'callflows.resources':
   'description': Validator for the resources callflow data object
   'properties':
+    'addresses':
+      'properties':
+        'emergency':
+          'description': Emergency address
+          'type': object
+      'type': object
     'bypass_e164':
       'description': Use the original requested number instead of normalizing to E164
       'type': boolean
@@ -3482,8 +4062,14 @@
       'maxLength': 128
       'minLength': 1
       'type': string
+    'group_name':
+      'description': group name
+      'type': string
     'hard_stop_after_successful_group':
       'description': should hard stop on successful bridge
+      'type': boolean
+    'ignore_early_media':
+      'description': ignore early media
       'type': boolean
     'ignore_forward':
       'default': true
@@ -3505,6 +4091,12 @@
         'internal':
           'description': Ring tone for calls from external sources
           'type': string
+      'type': object
+    'sca':
+      'properties':
+        'enabled':
+          'description': is sca enabled
+          'type': boolean
       'type': object
     'skip_module':
       'description': |-
@@ -3740,8 +4332,8 @@
         When set to true this callflow action is skipped, advancing to the wildcard branch (if any)
       'type': boolean
     'timezone':
-      '$ref': '#/timezone'
       'description': Timezone to use when processing temporal rules
+      'type': string
   'type': object
 'callflows.tones':
   'description': Validator for the tones callflow data object
@@ -3753,31 +4345,7 @@
     'tones':
       'description': list of tones to play to caller
       'items':
-        'properties':
-          'duration_off':
-            'description': 'duration, in milliseconds, for tone to be off'
-            'type': integer
-          'duration_on':
-            'description': 'duration, in milliseconds, for the tone to be on'
-            'type': integer
-          'frequencies':
-            'description': list of Frequencies to play
-            'items':
-              'description': 'Frequency, in Hz, to play'
-              'type': integer
-            'minItems': 1
-            'type': array
-          'repeat':
-            'description': How many times to loop the tones
-            'type': integer
-          'volume':
-            'description': 'Volume, in dB. 0 = max, negative = quieter'
-            'maximum': 0
-            'type': integer
-        'required':
-          - frequencies
-          - duration_off
-          - duration_on
+        '$ref': '#/tone'
         'type': object
       'type': array
   'type': object
@@ -3974,6 +4542,7 @@
       'type': boolean
     'uri':
       'description': The HTTP URI to send the request
+      'minLength': 6
       'type': string
       'x-kazoo-validation': true
   'type': object
@@ -4272,6 +4841,14 @@
           'description': The ID of a media object that should be used as the music on hold
           'maxLength': 2048
           'type': string
+        'options':
+          'description': Options for playing music on hold
+          'items':
+            'enum':
+              - preserve-position
+              - random-start
+            'type': string
+          'type': array
       'type': object
     'name':
       'description': A friendly name for the click to call
@@ -4307,6 +4884,82 @@
     - extension
     - name
   'type': object
+'codecs':
+  'description': A list of codecs the endpoint supports
+  'items':
+    'enum':
+      - AMR
+      - AMR-WB
+      - CELT_32
+      - CELT_48
+      - CELT_64
+      - CELT@32000h
+      - CELT@48000h
+      - CELT@64000h
+      - G7221@32000h
+      - G7221@16000h
+      - G722
+      - G722_16
+      - G722_32
+      - G729
+      - GSM
+      - OPUS
+      - PCMA
+      - PCMU
+      - speex
+      - speex@16000h
+      - speex@32000h
+      - H261
+      - H263
+      - H263+
+      - H264
+      - VP8
+      - VP9
+    'type': string
+  'type': array
+  'uniqueItems': true
+'codecs.audio':
+  'description': A list of audio codecs the endpoint supports
+  'items':
+    'enum':
+      - AMR
+      - AMR-WB
+      - CELT_32
+      - CELT_48
+      - CELT_64
+      - CELT@32000h
+      - CELT@48000h
+      - CELT@64000h
+      - G7221@32000h
+      - G7221@16000h
+      - G722
+      - G722_16
+      - G722_32
+      - G729
+      - GSM
+      - OPUS
+      - PCMA
+      - PCMU
+      - speex
+      - speex@16000h
+      - speex@32000h
+    'type': string
+  'type': array
+  'uniqueItems': true
+'codecs.video':
+  'default': []
+  'description': A list of video codecs the endpoint supports
+  'items':
+    'enum':
+      - H261
+      - H263
+      - H263+
+      - H264
+      - VP8
+      - VP9
+    'type': string
+  'type': array
+  'uniqueItems': true
 'comment':
   'description': Schema for a single comment
   'properties':
@@ -4344,6 +4997,7 @@
       'description': The history of comments made on a object
       'items':
         '$ref': '#/comment'
+        'type': object
       'type': array
   'type': object
 'conference_auth':
@@ -4375,6 +5029,9 @@
       'default': false
       'description': Indicates if the conference is reachable using a public link
       'type': boolean
+    'base_profile_name':
+      'description': name of base profile
+      'type': string
     'bridge_password':
       'description': the password used for a conference bridge
       'type': string
@@ -4599,7 +5256,6 @@
       'type': string
       'x-support_level': supported
   'required':
-    - conference_link
     - guests
     - invite_message
   'type': object
@@ -4963,10 +5619,18 @@
 'devices':
   'description': A device be it a SIP phone or landline number
   'properties':
+    'addresses':
+      '$ref': '#/addresses'
+      'description': Device addresses
+      'type': object
     'call_failover':
       '$ref': '#/call_failover'
     'call_forward':
       '$ref': '#/call_forward'
+      'description': Call forward settings
+      'kz:skip_subproperty_builder': true
+    'call_limits':
+      '$ref': '#/call_limits'
     'call_recording':
       '$ref': '#/call_recording'
     'call_restriction':
@@ -5055,6 +5719,13 @@
     'metaflows':
       '$ref': '#/metaflows'
       'description': The device metaflow parameters
+    'mobile':
+      'description': KAZOO devices that integrate with mobile providers
+      'properties':
+        'mdn':
+          'description': The MDN - mobile device number
+          'type': string
+      'type': object
     'music_on_hold':
       'default': {}
       'description': The music on hold parameters used if not a property of the device owner
@@ -5063,6 +5734,14 @@
           'description': The ID of a media object that should be used as the music on hold
           'maxLength': 2048
           'type': string
+        'options':
+          'description': Options for playing music on hold
+          'items':
+            'enum':
+              - preserve-position
+              - random-start
+            'type': string
+          'type': array
       'type': object
     'mwi_unsolicited_updates':
       'default': true
@@ -5275,7 +5954,6 @@
   'type': object
 'devices.combo_key':
   'description': Device provisioner Combo/Feature Key
-  'nullable': true
   'oneOf':
     - 'properties':
         'type':
@@ -5495,31 +6173,8 @@
       'description': The audio media parameters
       'properties':
         'codecs':
+          '$ref': '#/codecs.audio'
           'description': A list of audio codecs the endpoint supports
-          'items':
-            'enum':
-              - OPUS
-              - CELT@32000h
-              - G7221@32000h
-              - G7221@16000h
-              - G722
-              - speex@32000h
-              - speex@16000h
-              - PCMU
-              - PCMA
-              - G729
-              - GSM
-              - CELT@48000h
-              - CELT@64000h
-              - G722_16
-              - G722_32
-              - CELT_48
-              - CELT_64
-              - Speex
-              - speex
-            'type': string
-          'type': array
-          'uniqueItems': true
       'type': object
     'bypass_media':
       'description': |-
@@ -5564,20 +6219,12 @@
       'description': The video media parameters
       'properties':
         'codecs':
-          'default': []
+          '$ref': '#/codecs.video'
           'description': A list of video codecs the endpoint supports
-          'items':
-            'enum':
-              - H261
-              - H263
-              - H263+
-              - H264
-              - VP8
-              - VP9
-            'type': string
-          'type': array
-          'uniqueItems': true
       'type': object
+    'webrtc':
+      'description': 'If true, forces a WebRTC compatible SDP on the INVITE'
+      'type': boolean
   'type': object
 'external_numbers':
   'description': Schema for an external number
@@ -5707,6 +6354,7 @@
                   'type': string
                 'url':
                   'description': The URL to call back with the results
+                  'minLength': 7
                   'pattern': '^https?://'
                   'type': string
                   'x-kazoo-validation': true
@@ -5760,6 +6408,7 @@
                   'type': string
                 'url':
                   'description': The URL to call back with the results
+                  'minLength': 7
                   'pattern': '^https?://'
                   'type': string
                   'x-kazoo-validation': true
@@ -5851,6 +6500,7 @@
           'type': string
         'url':
           'description': The url of the fax document
+          'minLength': 7
           'pattern': '^https?://'
           'type': string
       'required':
@@ -6051,6 +6701,14 @@
           'description': The ID of a media object that should be used as music on hold
           'maxLength': 128
           'type': string
+        'options':
+          'description': Options for playing music on hold
+          'items':
+            'enum':
+              - preserve-position
+              - random-start
+            'type': string
+          'type': array
       'type': object
       'x-support_level': beta
     'name':
@@ -6219,48 +6877,71 @@
 'list_entries':
   'description': Schema for a match list entries
   'properties':
-    'capture_group_key':
-      'description': |-
-        The number which is used to select this entry, length should be same as `capture_group_length`
+    'contacts':
+      'default': []
+      'items':
+        'description': Contacts to save
+        'properties':
+          'contact':
+            'description': The phone number or email associated with the contact
+            'type': string
+          'contact_type':
+            'description': The type of contact this is
+            'enum':
+              - phone_number
+              - email
+              - sms
+            'type': string
+          'created':
+            'description': |-
+              The Gregorian timestamp this element was added to the contact array
+            'type': integer
+          'default':
+            'description': If this is the default for this contact type
+            'type': boolean
+          'description':
+            'description': The description of the contact
+            'type': string
+        'type': object
+      'type': array
+    'description':
+      'description': A description of the list entity
       'type': string
-    'capture_group_length':
-      'description': |-
-        Length of the numbers in the list entries for which it used to select desire Caller ID
-      'type': integer
-    'displayname':
-      'description': Display name
-      'maxLength': 128
-      'minLength': 1
-      'type': string
-    'firstname':
-      'description': A friendly firstname
-      'maxLength': 128
-      'minLength': 1
-      'type': string
-    'lastname':
-      'description': A friendly lastname
-      'maxLength': 128
-      'minLength': 1
-      'type': string
+    'history':
+      'default': []
+      'items':
+        'description': The contacts Schema
+        'properties':
+          'contact':
+            'title': The contact that was used
+            'type': object
+          'notes':
+            'description': Notes from the communication
+            'type': string
+          'timestamp':
+            'title': The gregorian timestamp
+            'type': integer
+        'type': object
+      'type': array
     'list_id':
-      'description': List id
+      'description': The document id of the list document this list entry belongs to
       'type': string
-    'number':
-      'description': Phone number
+    'name':
+      'description': The name of the list entity
       'type': string
-    'pattern':
-      'description': Match pattern
-      'type': string
-    'profile':
-      '$ref': '#/profile'
+    'organization':
       'default': {}
-      'description': Profile data
+      'description': The organization this entity belongs to
+      'properties':
+        'name':
+          'description': The name of the organization
+          'type': string
+      'required':
+        - name
       'type': object
-    'type':
-      'maxLength': 128
-      'minLength': 1
-      'type': string
   'required':
+    - name
+    - contacts
     - list_id
   'type': object
 'lists':
@@ -6278,6 +6959,9 @@
       'type': string
     'org':
       'description': Full legal name of the organization
+      'type': string
+    'owner_id':
+      'description': UserId owner of the list
       'type': string
   'required':
     - name
@@ -6346,6 +7030,70 @@
       'type': object
   'required':
     - media_id
+  'type': object
+'marketplace_settings':
+  'description': 2600Hz Marketplace Connector settings
+  'properties':
+    'access_code':
+      'description': Access Code from Marketplace Portal during cluster link request
+      'type': string
+    'settings':
+      'properties':
+        'api_url':
+          'description': Crossbar API URL to be used to serve UI applications
+          'type': string
+        'is_aio_cluster':
+          'description': Indicates all Kazoo VM nodes are running same list of Kazoo Apps
+          'type': boolean
+        'name':
+          'description': A friendly name for cluster
+          'type': string
+      'type': object
+  'type': object
+'match_lists':
+  'description': |-
+    Match lists - define a set of rules for matching against call properties, callflows, etc
+  'properties':
+    'name':
+      'description': Friendly name for the match list
+      'type': string
+    'owner_id':
+      'description': KAZOO User ID of the owner of this match list
+      'type': string
+    'rules':
+      'description': Evaluated rules to determine if the match list has matched
+      'items':
+        '$ref': '#/match_lists.rule'
+        'type': object
+      'type': array
+  'required':
+    - rules
+  'type': object
+'match_lists.rule':
+  'description': Match list rule - express the logic of a match
+  'properties':
+    'name':
+      'description': Friendly name of the rule
+      'maxLength': 255
+      'minLength': 3
+      'type': string
+    'regex':
+      'description': Regular expression to match with when type=regex
+      'type': string
+    'target':
+      'description': The target field to match against - context-dependent
+      'type': string
+    'temporal_route_id':
+      'description': |-
+        When type=temporal_route, set this to the ID of the temporal route (or route set) to use
+    'type':
+      'enum':
+        - regex
+        - temporal_route
+      'type': string
+  'required':
+    - name
+    - type
   'type': object
 'media':
   'description': Schema for media
@@ -6872,6 +7620,7 @@
   'properties':
     'cdr_url':
       'description': Optional URL to send the CDR to at the end of the call
+      'minLength': 7
       'pattern': '^https?://'
       'type': string
     'debug':
@@ -6896,6 +7645,7 @@
       'type': string
     'voice_url':
       'description': What URL to request the initial Pivot callflow
+      'minLength': 7
       'pattern': '^https?://'
       'type': string
       'x-kazoo-validation': true
@@ -6970,6 +7720,7 @@
       'type': integer
     'url':
       'description': HTTP URL to send the finished recording
+      'minLength': 7
       'type': string
       'x-kazoo-validation': true
   'type': object
@@ -7183,7 +7934,6 @@
   'properties':
     'body':
       'description': mime encoded mms message
-      'minLength': 1
       'type': string
     'from':
       'description': 'caller-id-number, taken from user if absent'
@@ -7544,6 +8294,7 @@
       'description': The history of comments made on a port request
       'items':
         '$ref': '#/comment'
+        'type': object
       'type': array
     'name':
       'description': A friendly name for the port request
@@ -7713,6 +8464,135 @@
       'description': To specify the position or job of the user
       'type': string
   'type': object
+'pushes':
+  'description': Generic endpoint's push notifications
+  'properties':
+    'alert':
+      'description': Alert parameters
+      'properties':
+        'body':
+          'description': The body of the notification
+          'type': string
+        'body_key':
+          'description': The key for a localized notification body
+          'type': string
+        'body_params':
+          'description': The array of values to replace placeholders in the localized body
+          'items':
+            'type': string
+          'type': array
+        'subtitle':
+          'description': The subtitle of the notification
+          'type': string
+        'title':
+          'description': The title of the notification
+          'type': string
+        'title_key':
+          'description': The key for a localized notification title
+          'type': string
+        'title_params':
+          'description': The array of values to replace placeholders in the localized title
+          'items':
+            'type': string
+          'type': array
+      'type': object
+    'apns':
+      'description': APNs parameters
+      'properties':
+        'alert':
+          'properties':
+            'subtitle_key':
+              'description': The key for a localized notification subtitle
+              'type': string
+            'subtitle_params':
+              'description': |-
+                The array of values to replace placeholders in the localized subtitle
+              'items':
+                'type': string
+              'type': array
+          'type': object
+        'push_type':
+          'description': The type of push notification
+          'enum':
+            - alert
+            - background
+            - complication
+            - fileprovider
+            - location
+            - mdm
+            - voip
+          'type': string
+        'thread_id':
+          'description': The app-specific identifier for grouping related notifications
+          'type': string
+        'topic':
+          'description': The topic for the notification
+          'type': string
+      'type': object
+    'badge':
+      'description': |-
+        The value to set the home screen app icon badge to. `0` removes the badge
+      'type': integer
+    'call_id':
+      'description': (Legacy) The call ID for a call notification
+      'minLength': 1
+      'type': string
+    'category':
+      'description': |-
+        The app-specific type of notification, which corresponds to a pre-registered `UNNotificationCategory` on iOS or an intent filter launched on click on Android
+      'type': string
+    'collapse_id':
+      'description': Coalesce multiple notifications matching the same ID into one
+      'type': string
+    'content_available':
+      'description': |-
+        Specify `true` to deliver the notification as a silent background update on iOS
+      'type': boolean
+    'content_mutable':
+      'description': |-
+        Specify `true` to allow a notification service app extension on iOS to modify the notification's content before delivery
+      'type': boolean
+    'data':
+      'description': The custom data to include in the notification
+      'type': object
+    'fcm':
+      'android':
+        'description': FCM Android parameters
+        'properties':
+          'channel_id':
+            'description': |-
+              The pre-registered notification channel to associate the notification with
+            'type': string
+          'color':
+            'description': 'The color, expressed in `#rrggbb` format, of the notification'
+            'type': string
+          'icon':
+            'description': The name of a drawable resource to use as the notification's icon
+            'type': string
+          'tag':
+            'description': |-
+              Replace existing notifications in the notification drawer that have the same tag
+            'type': string
+        'type': object
+      'description': FCM parameters
+      'type': object
+    'priority':
+      'default': high
+      'description': The priority of the notification
+      'enum':
+        - low
+        - normal
+        - high
+      'type': string
+    'sound':
+      'description': |-
+        The name of a sound file to play when the device receives the notification
+      'type': string
+    'ttl':
+      'description': |-
+        The duration (in seconds) for which notification delivery should be retried if it fails
+      'type': integer
+  'type': object
 'queue_update':
   'description': Schema for queue update request
   'properties':
@@ -7809,6 +8689,7 @@
     'cdr_url':
       'description': An optional HTTP URL to POST the CDR
       'format': uri
+      'minLength': 6
       'type': string
     'connection_timeout':
       'default': 3600
@@ -7848,6 +8729,7 @@
       'description': |-
         An optional HTTP URL to PUT the call recording after the call ends (and should respond to GET for retrieving the audio data)
       'format': uri
+      'minLength': 6
       'type': string
     'ring_simultaneously':
       'default': 1
@@ -8132,7 +9014,11 @@
               'type': boolean
             'enabled':
               'default': true
-              'description': Determines if the resource is currently enabled
+              'description': Determines if the classifier is currently enabled
+              'type': boolean
+            'include_pidflo':
+              'description': |-
+                Whether or not to include PIDF+LO payload when calling device's address is available
               'type': boolean
             'prefix':
               'description': |-
@@ -8167,7 +9053,7 @@
               '$ref': '#/custom_channel_vars'
               'description': |-
                 Custom Channel Vars to be applied to calls outbound from Kazoo to the endpoint
-      'description': A property list of C hannel Vars
+      'description': A property list of Channel Vars
       'type': object
     'custom_sip_headers':
       'anyOf':
@@ -8254,27 +9140,9 @@
               - descending
             'type': string
           'codecs':
+            '$ref': '#/codecs'
             'description': |-
               A list of single list codecs supported by this gateway (to support backward compatibility)
-            'items':
-              'enum':
-                - G729
-                - PCMU
-                - PCMA
-                - G722_16
-                - G722_32
-                - CELT_48
-                - CELT_64
-                - Speex
-                - GSM
-                - OPUS
-                - H261
-                - H263
-                - H264
-                - VP8
-              'type': string
-            'type': array
-            'uniqueItems': true
           'custom_channel_vars':
             'anyOf':
               - '$ref': '#/custom_channel_vars'
@@ -8411,17 +9279,32 @@
             'description': The progress timeout to apply to the resource gateway
             'type': integer
           'realm':
+            'anyOf':
+              - 'maxLength': 128
+                'minLength': 1
+                'type': string
+              - 'format': ipv4
+                'type': string
+              - 'format': ipv6
+                'type': string
             'description': This resource gateway authentication realm
-            'maxLength': 64
             'type': string
+            'x-kazoo-validation': true
           'route':
             'description': A statically configured SIP URI to route all call to
             'type': string
           'server':
+            'anyOf':
+              - 'maxLength': 128
+                'minLength': 1
+                'type': string
+              - 'format': ipv4
+                'type': string
+              - 'format': ipv6
+                'type': string
             'description': This resource gateway server
-            'maxLength': 128
-            'minLength': 1
             'type': string
+            'x-kazoo-validation': true
           'skype_interface':
             'description': The name of the Skype interface to route the call over
             'type': string
@@ -8481,6 +9364,10 @@
       'items':
         'type': string
       'type': array
+    'supports_pidflo':
+      'description': |-
+        Whether or not the resource supports multi-part PIDF+LO INVITEs for calls
+      'type': boolean
     'weight_cost':
       'default': 50
       'description': |-
@@ -8598,6 +9485,30 @@
             'type': array
         'type': object
       'type': array
+    'permissions':
+      'default': {}
+      'description': |-
+        Used when screenpops are allowed for userwise, this object contains which users are allowed and not allowed for a screenpop
+      'properties':
+        'all_users':
+          'default': true
+          'description': Whether the screenpop allowed for all users in the account
+          'type': boolean
+        'allow':
+          'default': []
+          'description': Specific list of users who are allowed the screenpop
+          'items':
+            'type': string
+          'maxItems': 50
+          'type': array
+        'deny':
+          'default': []
+          'description': Specific list of users who are not allowed the screenpop
+          'items':
+            'type': string
+          'maxItems': 50
+          'type': array
+      'type': object
     'post_call_extension_time':
       'description': |-
         Contains the time the screenpop will remain active when the temporal type is selected.
@@ -8852,10 +9763,14 @@
           'minLength': 1
           'pattern': '^[^\s]*$'
           'type': string
+        'tags_key_path':
+          'description': |-
+            The key path to an array of values in the document to use as S3 object tags
+          'items':
+            'type': string
+          'type': array
       'required':
         - bucket
-        - key
-        - secret
       'type': object
   'required':
     - handler
@@ -8992,6 +9907,7 @@
           'type': boolean
         'url':
           'description': The base HTTP(s) URL to use when creating the request
+          'minLength': 7
           'type': string
           'x-kazoo-validation': true
         'verb':
@@ -9200,20 +10116,32 @@
             'type': string
           'type': array
       'type': object
+    'range':
+      'x-patternProperties':
+        '[0-9]{6}-[0-9]{6}':
+          'properties':
+            'attachments':
+              '$ref': '#/storage.plan.database.attachment'
+            'connection':
+              'type': string
+              'x-kazoo-validation': true
+          'type': object
+    'regex':
+      'x-patternProperties':
+        '.+':
+          'properties':
+            'attachments':
+              '$ref': '#/storage.plan.database.attachment'
+            'connection':
+              'type': string
+              'x-kazoo-validation': true
+          'type': object
     'types':
       'description': The document types to store with this plan
-      'properties':
-        'call_recording':
-          '$ref': '#/storage.plan.database.document'
-        'fax':
-          '$ref': '#/storage.plan.database.document'
-        'function':
-          '$ref': '#/storage.plan.database.document'
-        'mailbox_message':
-          '$ref': '#/storage.plan.database.document'
-        'media':
-          '$ref': '#/storage.plan.database.document'
       'type': object
+      'x-patternProperties':
+        '[a-z_]+':
+          '$ref': '#/storage.plan.database.document'
   'type': object
 'storage.plan.database.attachment':
   'description': schema for attachment ref type storage plan
@@ -9238,6 +10166,26 @@
     'connection':
       'type': string
       'x-kazoo-validation': true
+    'range':
+      'x-patternProperties':
+        '[0-9]{6}-[0-9]{6}':
+          'properties':
+            'attachments':
+              '$ref': '#/storage.plan.database.attachment'
+            'connection':
+              'type': string
+              'x-kazoo-validation': true
+          'type': object
+    'regex':
+      'x-patternProperties':
+        '.+':
+          'properties':
+            'attachments':
+              '$ref': '#/storage.plan.database.attachment'
+            'connection':
+              'type': string
+              'x-kazoo-validation': true
+          'type': object
   'type': object
 'system_config.accounts':
   'description': Schema for accounts system_config
@@ -9351,6 +10299,51 @@
                   'description': ananke timeout in seconds
                   'type': integer
   'type': object
+'system_config.appex_client':
+  'description': Schema for appex_client system_config
+  'properties':
+    'api_url':
+      'description': appex_client api_url
+      'type': string
+    'app_exchange_url':
+      'description': appex_client app_exchange_url
+      'type': string
+    'cluster_secret':
+      'description': appex_client cluster_secret
+      'type': string
+    'enabled':
+      'default': false
+      'description': appex_client enabled
+      'type': boolean
+    'fetch_timer_s':
+      'default': 3600
+      'description': appex_client fetch_timer_s
+      'type': integer
+    'http_timeout_s':
+      'default': 120
+      'description': appex_client http_timeout_s
+      'type': integer
+    'is_aio_cluster':
+      'default': false
+      'description': appex_client is_aio_cluster
+      'type': boolean
+    'marketplace_url':
+      'description': appex_client marketplace_url
+      'type': string
+    'use_tcp':
+      'default': false
+      'description': appex_client use_tcp for dns query
+      'type': boolean
+  'type': object
+'system_config.attachments.s3':
+  'description': Schema for AWS S3 attachment handler system config
+  'properties':
+    'allow_metadata_credentials':
+      'default': false
+      'description': |-
+        Whether to allow using AWS task or instance metadata credentials for authentication. Not recommended if storage plans are openly configurable (e.g. by users) on your system.
+      'type': boolean
+  'type': object
 'system_config.auth':
   'description': Schema for auth system_config
   'properties':
@@ -9380,6 +10373,37 @@
       'default': 30
       'description': auth totp_period_s
       'type': integer
+  'type': object
+'system_config.auth.password':
+  'description': Schema for auth.password system_config
+  'properties':
+    'should_enforce_strength':
+      'default': false
+      'description': auth password should_enforce_strength
+      'type': boolean
+    'should_prevent_reuse':
+      'default': false
+      'description': auth password should_prevent_reuse
+      'type': boolean
+    'strength_regexes':
+      'default':
+        'digit':
+          'message': at least one digit is required
+          'regex': '[0-9]'
+        'lower_case':
+          'message': at least one lower case character is required
+          'regex': '[a-z]'
+        'minimum_length':
+          'message': minimum password length is 10 characters
+          'regex': '^.{10,}$'
+        'special':
+          'message': at least one special character is required
+          'regex': '[-_.,<>!?@#$%^&*=+(){}[\]/\\|;:''"]'
+        'upper_case':
+          'message': at least one upper case character is required
+          'regex': '[A-Z]'
+      'description': auth password strength_regexes
+      'type': object
   'type': object
 'system_config.blackhole':
   'description': Schema for blackhole system_config
@@ -9411,6 +10435,21 @@
           'items':
             'type': string
           'type': array
+    'channel_events':
+      'default':
+        - CHANNEL_CREATE
+        - CHANNEL_ANSWER
+        - CHANNEL_DESTROY
+        - CHANNEL_HOLD
+        - CHANNEL_UNHOLD
+        - CHANNEL_BRIDGE
+        - PARK_PARKED
+        - PARK_RETRIEVED
+        - PARK_ABANDONED
+      'description': blackhole channel_events
+      'items':
+        'type': string
+      'type': array
     'compress_response_body':
       'default': true
       'description': blackhole compress_response_body
@@ -9425,6 +10464,13 @@
       'default': 50
       'description': blackhole max_queued_messages
       'type': integer
+    'notification_events':
+      'default':
+        - missed_call
+      'description': blackhole notification_events
+      'items':
+        'type': string
+      'type': array
     'port':
       'default': 5555
       'description': blackhole port
@@ -9788,6 +10834,12 @@
           'description': |-
             If true, requires caller to use an authorized device to use voicemail callback feature
           'type': boolean
+        'silence_hits':
+          'description': callflow voicemail silence_hits
+          'type': integer
+        'silence_threshold':
+          'description': callflow voicemail silence_threshold
+          'type': integer
         'transcribe_default':
           'default': false
           'description': callflow voicemail transcribe_default
@@ -9988,6 +11040,15 @@
       'default': true
       'description': cdr ignore loopback bowout
       'type': boolean
+    'ignore_reorder_reasons':
+      'default': []
+      'description': cdr ignore_reorder_reasons
+      'items':
+        'enum':
+          - known_number
+          - unknown_number
+        'type': string
+      'type': array
     'refresh_view_enabled':
       'default': false
       'description': enable or disable the view refresh feature
@@ -10079,6 +11140,18 @@
       'description': cnam http_user_agent_header
       'type': string
   'type': object
+'system_config.commland':
+  'description': Schema for commland system_config
+  'properties':
+    'base_url':
+      'default': 'https://packages.2600hz.com/commland/compatibility'
+      'description': commland base_url for updates
+      'type': string
+    'base_version':
+      'default': 5.1
+      'description': kazoo base_version to use for updates
+      'type': string
+  'type': object
 'system_config.conferences':
   'description': Schema for conferences system_config
   'properties':
@@ -10142,6 +11215,7 @@
       'x-patternProperties':
         '.+':
           'description': conferences controls  +
+          'type': object
     'entry_tone':
       'default': |-
         tone_stream://v=-7;>=2;+=.1;%(300,0,523,659);v=-7;>=3;+=.1;%(800,0,659,783)
@@ -10216,10 +11290,14 @@
             'rate': 8000
           'description': conferences page
           'type': object
+        'video':
+          'description': conferences profiles video
+          'type': object
       'type': object
       'x-patternProperties':
         '.+':
           'description': conferences profiles  +
+          'type': object
     'review_name':
       'default': false
       'description': conferences review name
@@ -10288,9 +11366,6 @@
       'items':
         'type': string
       'type': array
-    'deb_download_url':
-      'description': crossbar deb_download_url
-      'type': string
     'default_allow_anonymous_quickcalls':
       'default': true
       'description': crossbar default allow anonymous quickcalls
@@ -10303,6 +11378,11 @@
       'default': 35
       'description': crossbar desktop_auth_tokens
       'type': integer
+    'display_dependency_list':
+      'default': true
+      'description': |-
+        When toggled to false, the Erlang dependency list will not be displayed when accessing the root API URL
+      'type': boolean
     'ensure_valid_schema':
       'default': true
       'description': crossbar ensure valid schema
@@ -10311,6 +11391,10 @@
       'default': 120000
       'description': timeout (in milliseconds) when no data is being sent
       'type': integer
+    'include_auth_token':
+      'default': true
+      'description': crossbar include_auth_token
+      'type': boolean
     'ip':
       'description': crossbar ip
       'type': string
@@ -10319,9 +11403,6 @@
       'description': crossbar load_view_chunk_size
       'minimum': 1
       'type': integer
-    'mac_dowload_url':
-      'description': crossbar mac_dowload_url
-      'type': string
     'magic_path_patterns':
       'default':
         - |-
@@ -10346,6 +11427,10 @@
       'description': crossbar maximum range
       'minimum': 1
       'type': integer
+    'mdn_provider':
+      'default': tower-of-power
+      'description': crossbar mdn_provider
+      'type': string
     'pagination_page_size':
       'default': 50
       'description': crossbar pagination page size
@@ -10394,9 +11479,6 @@
       'items':
         'type': string
       'type': array
-    'rpm_download_url':
-      'description': crossbar rpm_download_url
-      'type': string
     'schema_strict_validation':
       'default': false
       'description': crossbar schema strict validation
@@ -10449,9 +11531,6 @@
       'default': 35
       'description': crossbar user auth tokens
       'type': integer
-    'windows_dowload_url':
-      'description': crossbar windows_dowload_url
-      'type': string
     'workers':
       'default': 100
       'description': crossbar workers
@@ -10569,7 +11648,7 @@
           'log_successful_attempts': false
           'scopes':
             - crossbar
-          'token_auth_expiry_s': infinity
+          'token_auth_expiry_s': 3600
         'cb_ip_auth':
           'enabled': true
           'log_failed_attempts': true
@@ -10589,6 +11668,8 @@
         'cb_api_auth':
           '$ref': '#/auth_module_config'
         'cb_auth':
+          '$ref': '#/auth_module_config'
+        'cb_conference_auth':
           '$ref': '#/auth_module_config'
         'cb_ip_auth':
           '$ref': '#/auth_module_config'
@@ -10612,6 +11693,10 @@
         - md5
         - sha
       'type': string
+    'lock_account_on_failed_attempts':
+      'default': false
+      'description': crossbar auth lock_account_on_failed_attempts
+      'type': boolean
     'log_failed_attempts':
       'default': false
       'description': Should log failed login attempts
@@ -10705,6 +11790,22 @@
       'default': false
       'description': crossbar.channels system wide channels list
       'type': boolean
+  'type': object
+'system_config.crossbar.commland':
+  'description': Schema for crossbar.commland system_config
+  'properties':
+    'base_salt':
+      'default': ''
+      'description': crossbar commland base_salt for generating hashes
+      'type': string
+    'base_url':
+      'default': 'https://packages.2600hz.com/commland/misc/compatibility'
+      'description': crossbar commland base_url for accessing updates
+      'type': string
+    'base_version':
+      'default': 5.1
+      'description': crossbar commland base_version to return when no version can be found
+      'type': string
   'type': object
 'system_config.crossbar.conference_auth':
   'description': Schema for crossbar.conference_auth system_config
@@ -10903,8 +12004,18 @@
       'default': false
       'description': Whether or not normalize voicemail audio file
       'type': boolean
+    'should_restrict_access_to_owner':
+      'default': false
+      'description': |-
+        When true, API access to a voicemail box (and messages) is restricted to admins and the owner of the box
+      'type': boolean
+    'should_restrict_access_to_unowned':
+      'default': false
+      'description': |-
+        When true, API access to an unowned voicemail box (and messages) is restricted to admins
+      'type': boolean
     'transcribe_format':
-      'description': crossbar voicemail transcribe_format
+      'description': Voicemail message format needed for transcription
       'type': string
   'type': object
 'system_config.crossbar.wordle':
@@ -10970,6 +12081,18 @@
     'performance':
       'description': datamgr performance
       'type': object
+  'type': object
+'system_config.default':
+  'description': Schema for default system_config
+  'properties':
+    'max_upload_size':
+      'default': 20
+      'description': maximum upload file size (mega byte)
+      'type': integer
+    'smtp_max_msg_size':
+      'default': 20
+      'description': maximum smpt message size (mega byte)
+      'type': integer
   'type': object
 'system_config.doodle':
   'description': Schema for doodle system_config
@@ -11859,6 +12982,16 @@
 'system_config.jonny5':
   'description': Schema for jonny5 system_config
   'properties':
+    'bypass_authz_classifiers':
+      'default':
+        - 'classifier': emergency
+        - 'classifier': tollfree_us
+          'direction': outbound
+      'description': |-
+        Classifiers (and optional call direction) that bypass jonny5 authz checks
+      'items':
+        'type': object
+      'type': array
     'check_service_standing':
       'default': true
       'description': jonny5 check_service_standing
@@ -12135,6 +13268,10 @@
     'custom_sip_interface':
       'description': kazoo_endpoint custom sip interface
       'type': string
+    'default_call_limits':
+      'default': {}
+      'description': kazoo_endpoint default_call_limits
+      'type': object
     'default_caller_id_name':
       'description': kazoo_endpoint default caller id name
       'type': string
@@ -12146,6 +13283,12 @@
       'default': true
       'description': kazoo_endpoint default can text self
       'type': boolean
+    'default_cavs':
+      'description': kazoo_endpoint default_cavs
+      'type': object
+    'default_ccvs':
+      'description': kazoo_endpoint default_ccvs
+      'type': object
     'default_ignore_completed_elsewhere':
       'default': true
       'description': kazoo_endpoint default ignore completed elsewhere
@@ -12153,6 +13296,10 @@
     'endpoint_module':
       'default': kz_endpoint_v5
       'description': kazoo_endpoint endpoint_module
+      'type': string
+    'endpoint_module_version':
+      'default': v5
+      'description': kazoo_endpoint endpoint_module_version
       'type': string
     'restrict_to_known_types':
       'default': false
@@ -12180,6 +13327,10 @@
       'default': false
       'description': kazoo_endpoint.mobile create sip endpoint
       'type': boolean
+    'custom_sip_headers':
+      'default': {}
+      'description': kazoo_endpoint mobile custom_sip_headers
+      'type': object
     'custom_sip_interface':
       'description': kazoo_endpoint.mobile custom sip interface
       'type': string
@@ -12244,6 +13395,11 @@
 'system_config.kazoo_web':
   'description': Schema for kazoo_web system_config
   'properties':
+    'allow_restricted_ips':
+      'default': true
+      'description': |-
+        Whether to allow webhook callbacks to have URLs containing restricted IPs (private network, localhost, etc). true maintains backwards compat but allows nefarious URLs to probe internal networks for services
+      'type': boolean
     'client':
       'properties':
         'blacklist':
@@ -12252,17 +13408,38 @@
               'default':
                 - 127.0.0.1/32
                 - 0.0.0.0/32
-              'description': kazoo_web client blacklist cidrs
+              'description': |-
+                List of CIDRs to disallow from being in client-supplied URLs (pivot, webhooks, etc)
               'items':
                 'type': string
               'type': array
             'hosts':
               'default':
                 - localhost
-              'description': kazoo_web client blacklist hosts
+                - localhost.localdomain
+              'description': |-
+                List of hostnames to disallow from being in the client-supplied URLs (pivot, webhooks, etc)
               'items':
                 'type': string
               'type': array
+            'ports':
+              'default':
+                - 5984
+                - 5984
+                - 15984
+                - 15986
+                - 4369
+                - 15672
+                - 22002
+              'description': |-
+                List of port numbers to disallow from being in the client-supplied URLs (pivot, webhooks, etc)
+              'items':
+                'type': integer
+              'type': array
+    'should_validate_dns':
+      'default': true
+      'description': kazoo_web should_validate_dns
+      'type': boolean
   'type': object
 'system_config.keys':
   'description': Schema for DTMF keys system_config
@@ -12435,6 +13612,9 @@
       'type': boolean
     'call_recording':
       'properties':
+        'default_user_metadata':
+          'description': Default user-defined metadata to set on call recordings
+          'type': object
         'extension':
           'default': mp3
           'description': Default media file format
@@ -13064,35 +14244,58 @@
       'type': array
     'classifiers':
       'default':
-        'caribbean':
-          'friendly_name': Caribbean
+        - 'friendly_name': Caribbean
+          'name': caribbean
           'pretty_print': 'SS(###) ###-####'
           'regex': |-
             ^\+?1((?:684|264|268|242|246|441|284|345|767|809|829|849|473|671|876|664|670|787|939|869|758|784|721|868|649|340)\d{7})$
-        'did_us':
-          'friendly_name': US DID
+        - 'friendly_name': US DID
+          'name': did_us
           'pretty_print': 'SS(###) ###-####'
           'regex': '^(\+?1)?([2-9][0-9]{2}[2-9][0-9]{6})$'
-        'emergency':
-          'emergency': true
+        - 'emergency': true
           'friendly_name': Emergency Dispatcher
+          'name': emergency
           'regex': ^(911|922|933|988|833|811|711|999)$
-        'international':
-          'friendly_name': International
+        - 'friendly_name': International
+          'name': international
           'regex': '^\+([2-9]\d{7,})$'
-        'toll_us':
-          'friendly_name': US Toll
+        - 'friendly_name': US Toll
+          'name': toll_us
           'pretty_print': 'SS(###) ###-####'
           'regex': '^\+1(900\d{7})$'
-        'tollfree_us':
-          'friendly_name': US Tollfree
+        - 'friendly_name': US Tollfree
+          'name': tollfree_us
           'pretty_print': 'SS(###) ###-####'
           'regex': '^\+1((?:800|88\d|877|866|855|844|833|822)\d{7})$'
-        'unknown':
-          'friendly_name': Unknown
+        - 'friendly_name': Unknown
+          'name': unknown
           'regex': ^(.*)$
       'description': regular expressions & billing names for numbers
-      'type': object
+      'items':
+        'properties':
+          'emergency':
+            'description': Does this classifier match emergency numbers
+            'type': boolean
+          'friendly_name':
+            'description': Friendly name for the classifier
+            'type': string
+          'name':
+            'description': |-
+              name of classifier for use as a reference elsewhere in KAZOO to this configured classifier
+            'type': string
+          'pretty_print':
+            'description': |-
+              Formatting string for pretty-printing numbers matching the classifier
+            'type': string
+          'regex':
+            'description': Regular expression to match a number to this classifier
+            'type': string
+        'required':
+          - name
+          - regex
+        'type': object
+      'type': array
     'converters':
       'default':
         - regex
@@ -13547,6 +14750,10 @@
       'default': anonymous
       'description': privacy default_privacy_number
       'type': string
+    'default_privacy_realm':
+      'default': anonymous.invalid
+      'description': privacy default_privacy_realm
+      'type': string
     'method':
       'default': kazoo
       'description': privacy method
@@ -13563,6 +14770,10 @@
       'default': 0000000000
       'description': Default Caller ID Number should be shown for anonymous calls
       'type': string
+    'should_hide_realm':
+      'default': false
+      'description': privacy should_hide_realm
+      'type': boolean
     'use_sip_privacy_header':
       'default': true
       'description': privacy use_sip_privacy_header
@@ -13732,6 +14943,13 @@
       'default': true
       'description': registrar device enabled default
       'type': boolean
+    'integration_device_types':
+      'default':
+        - teammate
+      'description': registrar integration_device_types
+      'items':
+        'type': string
+      'type': array
     'integrations_user_agent_regexes':
       'default': []
       'description': list of user agents regexes for accepted integration services
@@ -13742,9 +14960,18 @@
       'default': 1
       'description': registrar listeners
       'type': integer
+    'migrate_softphone_to_ms_teams':
+      'default': false
+      'description': registrar migrate_softphone_to_ms_teams
+      'type': boolean
     'owner_enabled_default':
       'default': true
       'description': registrar owner enabled default
+      'type': boolean
+    'should_check_device_emergency_address':
+      'default': false
+      'description': |-
+        When enabled, REGISTER requests will be rejected if the registering device does not have an emergency address set
       'type': boolean
     'use_aggregate':
       'default': true
@@ -13836,6 +15063,26 @@
           'description': onnet phone number to transfer unknown numbers to
           'type': string
       'type': object
+  'type': object
+'system_config.schema_validation':
+  'description': Schema for schema_validation system_config
+  'properties':
+    'validate_dns_records':
+      'default': true
+      'description': schema_validation validate_dns_records
+      'type': boolean
+    'validate_ip_addresses':
+      'default': true
+      'description': schema_validation validate_ip_addresses
+      'type': boolean
+    'validate_ports':
+      'default': true
+      'description': schema_validation validate_ports
+      'type': boolean
+    'validate_sip_hosts':
+      'default': true
+      'description': schema_validation validate_sip_hosts
+      'type': boolean
   'type': object
 'system_config.servers':
   'description': Schema for servers system_config
@@ -14291,6 +15538,10 @@
       'default': stepswitch_resources
       'description': stepswitch route by
       'type': string
+    'should_enforce_account_cid':
+      'default': false
+      'description': whether or not account's CID should be used instead of user's CID
+      'type': boolean
     'use_first_dedicated_proxy_only':
       'default': true
       'description': |-
@@ -14381,6 +15632,10 @@
       'description': tasks aging expiry in days
       'minimum': 0
       'type': integer
+    'archive_modb_before_delete':
+      'default': true
+      'description': tasks archive_modb_before_delete
+      'type': boolean
     'attempt_upload_output_times':
       'default': 5
       'description': |-
@@ -14984,7 +16239,7 @@
       'type': string
       'x-support_level': supported
     'days':
-      'description': The recurrence days for this rule
+      'description': The occurance day(s) of the month (1-31) for this rule
       'items':
         'maximum': 31
         'minimum': 1
@@ -15040,6 +16295,9 @@
         - last
       'type': string
       'x-support_level': supported
+    'owner_id':
+      'description': KAZOO User ID of the owner of this temporal rule
+      'type': string
     'start_date':
       'default': 62586115200
       'description': The date that any recurrence should be calculated as starting on
@@ -15092,7 +16350,7 @@
       'type': string
       'x-support_level': supported
     'temporal_rules':
-      'description': Temporal Rules
+      'description': Temporal rule IDs
       'items':
         'type': string
       'minItems': 1
@@ -15350,6 +16608,7 @@
     - Asia/Bishkek
     - Asia/Brunei
     - Asia/Calcutta
+    - Asia/Chita
     - Asia/Choibalsan
     - Asia/Chongqing
     - Asia/Chungking
@@ -15407,6 +16666,7 @@
     - Asia/Seoul
     - Asia/Shanghai
     - Asia/Singapore
+    - Asia/Srednekolymsk
     - Asia/Taipei
     - Asia/Tashkent
     - Asia/Tbilisi
@@ -15729,6 +16989,34 @@
                     'type': object
                   'type': array
   'type': object
+'tone':
+  'description': Validator for a teletone config
+  'properties':
+    'duration_off':
+      'description': 'duration, in milliseconds, for tone to be off'
+      'type': integer
+    'duration_on':
+      'description': 'duration, in milliseconds, for the tone to be on'
+      'type': integer
+    'frequencies':
+      'description': list of Frequencies to play
+      'items':
+        'description': 'Frequency, in Hz, to play'
+        'type': integer
+      'minItems': 1
+      'type': array
+    'repeat':
+      'description': How many times to loop the tones
+      'type': integer
+    'volume':
+      'description': 'Volume, in dB. 0 = max, negative = quieter'
+      'maximum': 0
+      'type': integer
+  'required':
+    - frequencies
+    - duration_off
+    - duration_on
+  'type': object
 'trunkstore':
   'description': |-
     Trunkstore configuration document - this is old stuff; do not recommend building off this if possible
@@ -16038,10 +17326,34 @@
 'users':
   'description': Schema for a user
   'properties':
+    'addresses':
+      'allOf':
+        - '$ref': '#/addresses'
+      'description': User addresses
+      'properties':
+        'vcard':
+          'description': Addresses list to build user's vcard
+          'items':
+            'properties':
+              'address':
+                'type': string
+              'types':
+                'items':
+                  'type': string
+                'type': array
+            'required':
+              - address
+            'type': object
+          'type': array
+      'type': object
     'call_failover':
       '$ref': '#/call_failover'
     'call_forward':
       '$ref': '#/call_forward'
+      'description': Call forward settings
+      'kz:skip_subproperty_builder': true
+    'call_limits':
+      '$ref': '#/call_limits'
     'call_recording':
       '$ref': '#/call_recording'
     'call_restriction':
@@ -16170,6 +17482,14 @@
           'description': The ID of a media object that should be used as the music on hold
           'maxLength': 128
           'type': string
+        'options':
+          'description': Options for playing music on hold
+          'items':
+            'enum':
+              - preserve-position
+              - random-start
+            'type': string
+          'type': array
       'type': object
     'password':
       'description': The GUI login password
@@ -16254,6 +17574,30 @@
     - first_name
     - last_name
   'type': object
+'users_delete':
+  'description': Schema for deleting a user
+  'properties':
+    'object_types':
+      'oneOf':
+        - 'description': |-
+            List of object types owned by the user that should also be deleted as part of the user delete process. NOTE: If "phone_numbers" is included in the list, numbers assigned to callflows owned by the user will also be released.
+          'items':
+            'enum':
+              - phone_numbers
+              - callflow
+              - vmbox
+              - device
+              - conference
+              - faxbox
+              - media
+            'type': string
+          'type': array
+        - 'description': |-
+            List of object types owned by the user that should also be deleted as part of the user delete process.
+          'enum':
+            - all
+          'type': string
+  'type': object
 'vm_message_metadata':
   'description': Schema for a voicemail message metadata
   'properties':
@@ -16300,6 +17644,15 @@
         - prompt
         - save
       'type': string
+    'aliases':
+      'default': []
+      'description': The voicemail box aliases string list
+      'items':
+        'maxLength': 36
+        'minLength': 1
+        'type': string
+      'type': array
+      'uniqueItems': true
     'announcement_only':
       'default': false
       'description': Determine if the mailbox should only play announcements
@@ -16316,6 +17669,13 @@
       'description': Move the voicemail to delete folder after the notification has been sent
       'type': boolean
       'x-support_level': supported
+    'envelope_type':
+      'default': default
+      'description': The voicemail envelope type to determine the envelope format
+      'enum':
+        - default
+        - caller_and_time
+      'type': string
     'flags':
       'description': Flags set by external applications
       'items':
@@ -16435,6 +17795,16 @@
       'default': 10000
       'description': callflow fastforward and rewind seek duration
       'minimum': 0
+      'type': integer
+    'silence_hits':
+      'description': |-
+        The number of consecutive hits to see before the channel is considered silent
+      'minimum': 1
+      'type': integer
+    'silence_threshold':
+      'description': |-
+        Threshold value compared to score - if score drops below threshold, add a hit. Lower threshold means quieter channel before hits start
+      'minimum': 1
       'type': integer
     'skip_envelope':
       'default': false
@@ -16604,7 +17974,7 @@
   'type': object
 'webhooks':
   'description': |-
-    Web Hooks are subscriptions to allowed events that, when the event occurs, the event data is sent to the uri set in the Web Hook document.
+    Web Hooks are subscriptions to allowed events that, when the event occurs, the event data is sent to the URI set in the Web Hook document.
   'properties':
     'custom_data':
       'additionalProperties':
@@ -16658,20 +18028,89 @@
       'minimum': 0
       'type': integer
       'x-support_level': supported
+    'security_settings':
+      'description': Security settings to harden webhook delivery
+      'properties':
+        'sha256_key':
+          'description': |-
+            Secret key to create a SHA256 HMAC with, so receiver can validate the webhook came from the cluster
+          'type': string
+      'type': object
     'uri':
       'description': The 3rd party URI to call out to an event
       'format': uri
+      'minLength': 1
       'type': string
       'x-kazoo-validation': true
       'x-support_level': supported
+    'version':
+      'default': v1
+      'description': Whether to receive the full version of the event in the webhook payload
+      'enum':
+        - v1
+        - v2
+      'type': string
   'required':
     - hook
     - name
     - uri
   'type': object
+'websites':
+  'description': |-
+    Websites represent the website urls that can be added to a account and it's child accounts
+  'properties':
+    'account_wide':
+      'default': true
+      'description': Whether an website is visible to all accounts in the parent account
+      'type': boolean
+    'name':
+      'description': A name for the website to be displayed
+      'maxLength': 128
+      'minLength': 1
+      'type': string
+    'open_in_browser':
+      'default': false
+      'description': Whether a website should be opened in browser
+      'type': boolean
+    'users':
+      'default': []
+      'description': A list users who are assigned the website
+      'items':
+        'type': string
+      'type': array
+      'uniqueItems': true
+    'web_url':
+      'description': Application api url
+      'format': uri
+      'minLength': 7
+      'type': string
+  'required':
+    - name
+    - web_url
+  'type': object
 'whitelabel':
   'description': Whitelabel settings
   'properties':
+    'commland':
+      'description': Properties related to commland
+      'properties':
+        'downloads':
+          'description': The URLs of commland downloads related to the account
+          'properties':
+            'deb':
+              'description': Commland debian download URL for the account
+              'type': string
+            'mac':
+              'description': Commland mac download URL for the account
+              'type': string
+            'rpm':
+              'description': Commland rpm download URL for the account
+              'type': string
+            'windows':
+              'description': Commland windows download URL for the account
+              'type': string
+          'type': object
+      'type': object
     'company_name':
       'description': The company name to display to users
       'type': string

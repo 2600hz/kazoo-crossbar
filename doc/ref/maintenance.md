@@ -5,6 +5,10 @@
 | `allow_account_number_additions/1` | `(AccountId)` | |
 | `app/1` | `(AppNameOrId)` | |
 | `apps/0` |  | |
+| `cascade_disable_accounts/1` | `(AccountId)` | |
+| `cascade_disable_delinquent/1` | `(AccountId)` | |
+| `cascade_disable_delinquent/2` | `(AccountId,ThresholdCurrency)` | |
+| `cascade_enable_accounts/1` | `(AccountId)` | |
 | `create_account/4` | `(AccountName,Realm,Username,Password)` | |
 | `create_account/5` | `(AccountName,Realm,Username,Password,AccountId)` | |
 | `create_account/6` | `(AccountName,Realm,Username,Password,AccountId,UserId)` | |
@@ -26,6 +30,7 @@
 | `init_apps/1` | `(AppsPath)` | |
 | `init_apps/2` | `(AppsPath,AppUrl)` | |
 | `migrate/0` |  | |
+| `migrate/1` | `(_AccountDbs)` | |
 | `move_account/2` | `(Account,ToAccount)` | |
 | `promote_account/1` | `(AccountId)` | |
 | `refresh/0` |  | |
@@ -49,3 +54,4 @@
 | `stop_module/1` | `(Module)` | |
 | `update_schema/1` | `(Schema)` | |
 | `update_schemas/0` |  | |
+| `wait_for_prechecks/0` |  | |

@@ -10,10 +10,13 @@ Accounts represent tenants or customers on the system. Each account represents a
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
+`addresses` | Account addresses | [#/definitions/addresses](#addresses) |   | `false` |  
+`announcement` | The announcement will be pop up when use log in to this account | `string()` |   | `false` |  
 `blacklists.[]` |   | `string()` |   | `false` |  
 `blacklists` | A list blacklist ids that apply to the account | `array(string())` |   | `false` |  
 `call_failover` | The device call failover parameters, to replace the device with an extension/phone number when device is offline. | [#/definitions/call_failover](#call_failover) |   | `false` |  
-`call_forward` | The device call forward parameters | [#/definitions/call_forward](#call_forward) |   | `false` |  
+`call_forward` | Call forward settings | [#/definitions/call_forward](#call_forward) |   | `false` |  
+`call_limits` | Schema for call limits | [#/definitions/call_limits](#call_limits) |   | `false` |  
 `call_recording.account` | endpoint recording settings | [#/definitions/call_recording](#call_recording) |   | `false` |  
 `call_recording.endpoint` | endpoint recording settings | [#/definitions/call_recording](#call_recording) |   | `false` |  
 `call_recording` | call recording configuration | `object()` |   | `false` |  
@@ -31,6 +34,8 @@ Key | Description | Type | Default | Required | Support Level
 `language` | The language for this account | `string()` |   | `false` | `supported`
 `metaflows` | Actions applied to a call outside of the normal callflow, initiated by the caller(s) | [#/definitions/metaflows](#metaflows) |   | `false` |  
 `music_on_hold.media_id` | The ID of a media object that should be used as the default music on hold | `string(0..2048)` |   | `false` |  
+`music_on_hold.options.[]` |   | `string('preserve-position' | 'random-start')` |   | `false` |  
+`music_on_hold.options` | Options for playing music on hold | `array(string('preserve-position' | 'random-start'))` |   | `false` |  
 `music_on_hold` | The default music on hold parameters | `object()` | `{}` | `false` |  
 `name` | A friendly name for the account | `string(1..128)` |   | `true` | `supported`
 `notifications.first_occurrence.sent_initial_call` | has the account made their first call | `boolean()` | `false` | `false` |  
@@ -58,6 +63,30 @@ Key | Description | Type | Default | Required | Support Level
 `voicemail` |   | `object()` |   | `false` |  
 `zones` | A priority ordered mapping of zones for the account | `object()` |   | `false` |  
 
+### addresses
+
+Account, user or device addresses
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`emergency.additional_information` | Additional location information. Example: Room 543 | `string()` |   | `false` |  
+`emergency.country` | The country is identified by the two-letter ISO 3166 code. Example: US | `string()` |   | `true` |  
+`emergency.county` | County, parish, gun (JP), district (IN). Example: King's County | `string()` |   | `false` |  
+`emergency.floor` | Floor. Example: 4 | `integer()` |   | `false` |  
+`emergency.house_number` | House number, numeric part only. Example: 123 | `integer()` |   | `true` |  
+`emergency.house_number_suffix` | House number suffix. Example: A, 1/2 | `string()` |   | `false` |  
+`emergency.locality` | City, township, shi (JP). Example: New York | `string()` |   | `true` |  
+`emergency.location_identifier` | United States unique 10-digit number known as an E911 location identifier (ELIN) | `integer()` |   | `false` |  
+`emergency.name` | Name (residence, business or office occupant). Example: Joe's Barbershop | `string()` |   | `true` |  
+`emergency.postal_code` | Postal code. Example: 10027-0401 | `string()` |   | `true` |  
+`emergency.region` | National subdivisions (state, region, province, prefecture). Example: New York | `string()` |   | `true` |  
+`emergency.street` | Primary road or street. Example: Broadway | `string()` |   | `true` |  
+`emergency.street_direction` | Leading street direction. Example: N, W | `string()` |   | `false` |  
+`emergency.street_suffix` | Trailing street suffix. Example: SW | `string()` |   | `false` |  
+`emergency.street_type` | Street type. Example: Avenue, Platz, Street | `string()` |   | `false` |  
+`emergency` | Emergency address | `object()` |   | `false` |  
+
 ### call_failover
 
 The device call failover parameters, to replace the device with an extension/phone number when device is offline.
@@ -74,18 +103,59 @@ Key | Description | Type | Default | Required | Support Level
 
 ### call_forward
 
-The device call forward parameters
+Call Forward
 
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`direct_calls_only` | Determines if the calls that are not directly sent to the device should be forwarded | `boolean()` | `false` | `false` | `supported`
-`enabled` | Determines if the call forwarding should be used | `boolean()` | `false` | `false` | `supported`
-`ignore_early_media` | The option to determine if early media from the call forwarded number should ignored | `boolean()` | `true` | `false` |  
-`keep_caller_id` | Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used | `boolean()` | `true` | `false` | `supported`
-`number` | The number to forward calls to | `string(0..35)` |   | `false` | `supported`
-`require_keypress` | Determines if the callee is prompted to press 1 to accept the call | `boolean()` | `true` | `false` | `supported`
-`substitute` | Determines if the call forwarding replaces the device | `boolean()` | `true` | `false` | `supported`
+`busy` | Call Forward Properties | `object()` |   | `false` |  
+`direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`enabled` |   | `boolean()` | `false` | `true` |  
+`ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`no_answer` | Call Forward Properties | `object()` |   | `false` |  
+`number` |   | `string(0..35)` |   | `false` |  
+`require_keypress` |   | `boolean()` | `true` | `false` |  
+`selective.direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`selective.enabled` |   | `boolean()` | `false` | `false` |  
+`selective.ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`selective.keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`selective.number` |   | `string(0..35)` |   | `false` |  
+`selective.require_keypress` |   | `boolean()` | `true` | `false` |  
+`selective.rules.[].direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`selective.rules.[].enabled` |   | `boolean()` | `false` | `false` |  
+`selective.rules.[].ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`selective.rules.[].keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`selective.rules.[].match_list_id` |   | `string()` |   | `false` |  
+`selective.rules.[].number` |   | `string(0..35)` |   | `false` |  
+`selective.rules.[].require_keypress` |   | `boolean()` | `true` | `false` |  
+`selective.rules` | Match list rules to check for call forwarding | `array(object())` |   | `false` |  
+`selective` | Conditionally check match lists to determine if call forwarding should be used | `object()` |   | `false` |  
+`substitute` | Determines if the call forwarding replaces the device | `boolean()` | `true` | `false` |  
+`unconditional` | Call Forward Properties | `object()` |   | `false` |  
+
+### call_forward_type
+
+Call Forward Properties
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`enabled` |   | `boolean()` | `false` | `true` |  
+`ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`number` |   | `string(0..35)` |   | `false` |  
+`require_keypress` |   | `boolean()` | `true` | `false` |  
+
+### call_limits
+
+Schema for call limits
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`max_concurrent` | Maximum number of concurrent calls allowed per endpoint | `integer()` |   | `false` |  
 
 ### call_recording
 
@@ -109,9 +179,10 @@ Key | Description | Type | Default | Required | Support Level
 `record_on_answer` | Recording should start on answer | `boolean()` |   | `false` |  
 `record_on_bridge` | Recording should start on bridge | `boolean()` |   | `false` |  
 `record_sample_rate` | What sampling rate to use on the recording | `integer()` |   | `false` |  
+`should_announce_when_recording` | Whether or not a prompt should be played (after bridge) when the call is being recorded | `boolean()` |   | `false` |  
 `should_record_feature_calls` | Toggles whether to start a recording for calls to feature codes | `boolean()` | `true` | `false` |  
-`time_limit` | Time limit, in seconds, for the recording | `integer()` |   | `false` |  
-`url` | The URL to use when sending the recording for storage | `string()` |   | `false` |  
+`time_limit` | Time limit, in seconds, for the recording | `integer(5..10800)` |   | `false` |  
+`url` | The URL to use when sending the recording for storage | `string(6..)` |   | `false` |  
 
 ### call_recording.source
 
@@ -228,7 +299,7 @@ Actions applied to a call outside of the normal callflow, initiated by the calle
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `binding_digit` | What DTMF will trigger the collection and analysis of the subsequent DTMF sequence | `string('1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' | '*' | '#')` | `*` | `false` |  
-`digit_timeout` | How long to wait between DTMF presses before processing the collected sequence (milliseconds) | `integer()` |   | `false` |  
+`digit_timeout` | How long to wait between DTMF presses before processing the collected sequence (milliseconds) | `integer(0..)` |   | `false` |  
 `listen_on` | Which leg(s) of the call to listen for DTMF | `string('both' | 'self' | 'peer')` |   | `false` |  
 `numbers./^[0-9]+$/` | A metaflow node defines a module to execute, data to provide to that module, and one or more children to branch to | [#/definitions/metaflow](#metaflow) |   | `false` |  
 `numbers` | A list of static numbers with their flows | `object()` |   | `false` |  

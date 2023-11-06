@@ -70,12 +70,17 @@
                     "minLength": 1,
                     "pattern": "^[^\\s]*$",
                     "type": "string"
+                },
+                "tags_key_path": {
+                    "description": "The key path to an array of values in the document to use as S3 object tags",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
                 }
             },
             "required": [
-                "bucket",
-                "key",
-                "secret"
+                "bucket"
             ],
             "type": "object"
         }

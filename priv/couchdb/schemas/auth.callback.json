@@ -18,6 +18,7 @@
         },
         "redirect_uri": {
             "description": "redirect URI",
+            "minLength": 7,
             "type": "string"
         },
         "state": {

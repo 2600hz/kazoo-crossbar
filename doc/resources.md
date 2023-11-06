@@ -30,17 +30,18 @@ Key | Description | Type | Default | Required | Support Level
 `cid_rules.[]` |   | `string()` |   | `false` |  
 `cid_rules` | Regexps to match against caller ID | `array(string())` |   | `false` |  
 `classifiers./.+/.emergency` | Determines if the resource represents emergency services | `boolean()` | `false` | `false` |  
-`classifiers./.+/.enabled` | Determines if the resource is currently enabled | `boolean()` | `true` | `false` |  
+`classifiers./.+/.enabled` | Determines if the classifier is currently enabled | `boolean()` | `true` | `false` |  
+`classifiers./.+/.include_pidflo` | Whether or not to include PIDF+LO payload when calling device's address is available | `boolean()` |   | `false` |  
 `classifiers./.+/.prefix` | A string to prepend to the dialed number or capture group of the matching rule | `string(0..64)` |   | `false` |  
 `classifiers./.+/.regex` | regexp to match against dialed number | `string()` |   | `false` |  
 `classifiers./.+/.suffix` | A string to append to the dialed number or capture group of the matching rule | `string(0..64)` |   | `false` |  
-`classifiers./.+/.weight_cost` | A value between 0 and 100 that determines the order of resources when multiple can be used | `integer()` | `50` | `false` |  
+`classifiers./.+/.weight_cost` | A value between 0 and 100 that determines the order of resources when multiple can be used | `integer(0..100)` | `50` | `false` |  
 `classifiers./.+/` |   | `object()` |   | `false` |  
 `classifiers` | Resource classifiers to use as rules when matching against dialed numbers | `object()` |   | `false` |  
 `custom_channel_vars.in` | Custom Channel Vars to be applied to calls inbound to Kazoo from the endpoint | [#/definitions/custom_channel_vars](#custom_channel_vars) |   | `false` |  
 `custom_channel_vars.out` | Custom Channel Vars to be applied to calls outbound from Kazoo to the endpoint | [#/definitions/custom_channel_vars](#custom_channel_vars) |   | `false` |  
 `custom_channel_vars.^[a-zA-z0-9_\-]+$` | The Custom Channel Var to add | `string() | boolean() | integer() | object()` |   | `false` |  
-`custom_channel_vars` | A property list of C hannel Vars | `object()` |   | `false` |  
+`custom_channel_vars` | A property list of Channel Vars | `object()` |   | `false` |  
 `custom_sip_headers.in` | Custom SIP Headers to be applied to calls inbound to Kazoo from the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
 `custom_sip_headers.out` | Custom SIP Headers to be applied to calls outbound from Kazoo to the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
 `custom_sip_headers.^[a-zA-z0-9_\-]+$` | The SIP header to add | `string() | boolean() | integer()` |   | `false` |  
@@ -60,8 +61,7 @@ Key | Description | Type | Default | Required | Support Level
 `gateways.[].bypass_media` | The resource gateway bypass media mode | `boolean()` |   | `false` |  
 `gateways.[].caller_id_type` | The type of caller id to use | `string('internal' | 'external' | 'emergency')` |   | `false` |  
 `gateways.[].channel_selection` | Automatic selection of the channel within the span: ascending starts at 1 and moves up; descending is the opposite | `string('ascending' | 'descending')` | `ascending` | `false` |  
-`gateways.[].codecs.[]` |   | `string('G729' | 'PCMU' | 'PCMA' | 'G722_16' | 'G722_32' | 'CELT_48' | 'CELT_64' | 'Speex' | 'GSM' | 'OPUS' | 'H261' | 'H263' | 'H264' | 'VP8')` |   | `false` |  
-`gateways.[].codecs` | A list of single list codecs supported by this gateway (to support backward compatibility) | `array(string('G729' | 'PCMU' | 'PCMA' | 'G722_16' | 'G722_32' | 'CELT_48' | 'CELT_64' | 'Speex' | 'GSM' | 'OPUS' | 'H261' | 'H263' | 'H264' | 'VP8'))` |   | `false` |  
+`gateways.[].codecs` | A list of single list codecs supported by this gateway (to support backward compatibility) | [#/definitions/codecs](#codecs) |   | `false` |  
 `gateways.[].custom_channel_vars.in` | Custom Channel Vars to be applied to calls inbound to Kazoo from the endpoint | [#/definitions/custom_channel_vars](#custom_channel_vars) |   | `false` |  
 `gateways.[].custom_channel_vars.out` | Custom Channel Vars to be applied to calls outbound from Kazoo to the endpoint | [#/definitions/custom_channel_vars](#custom_channel_vars) |   | `false` |  
 `gateways.[].custom_channel_vars.^[a-zA-z0-9_\-]+$` | The Custom Channel Var to add | `string() | boolean() | integer() | object()` |   | `false` |  
@@ -89,16 +89,16 @@ Key | Description | Type | Default | Required | Support Level
 `gateways.[].port` | This resource gateway port | `integer()` | `5060` | `false` |  
 `gateways.[].prefix` | A string to prepend to the dialed number or capture group of the matching rule | `string(0..64)` |   | `false` |  
 `gateways.[].progress_timeout` | The progress timeout to apply to the resource gateway | `integer()` |   | `false` |  
-`gateways.[].realm` | This resource gateway authentication realm | `string(0..64)` |   | `false` |  
+`gateways.[].realm` | This resource gateway authentication realm | `string()` |   | `false` |  
 `gateways.[].route` | A statically configured SIP URI to route all call to | `string()` |   | `false` |  
-`gateways.[].server` | This resource gateway server | `string(1..128)` |   | `true` |  
+`gateways.[].server` | This resource gateway server | `string()` |   | `true` |  
 `gateways.[].skype_interface` | The name of the Skype interface to route the call over | `string()` |   | `false` |  
 `gateways.[].skype_rr` | Determines whether to round-robin calls amongst all interfaces (overrides "skype_interface" setting) | `boolean()` | `true` | `false` |  
 `gateways.[].span` | The identity of the hardware on the media server | `string()` |   | `false` |  
 `gateways.[].suffix` | A string to append to the dialed number or capture group of the matching rule | `string(0..64)` |   | `false` |  
 `gateways.[].username` | SIP authentication username | `string(0..32)` |   | `false` |  
 `gateways` | A list of gateways available for this resource | `array(object())` |   | `true` |  
-`grace_period` | The amount of time, in seconds, to wait before starting another resource | `integer()` | `5` | `false` |  
+`grace_period` | The amount of time, in seconds, to wait before starting another resource | `integer(1..20)` | `5` | `false` |  
 `ignore_flags` | When set to true this resource is used if the rules/classifiers match regardless of flags | `boolean()` |   | `false` |  
 `media` | Media options for resources | [#/definitions/endpoint.media](#endpointmedia) |   | `false` |  
 `name` | A friendly name for the resource | `string(1..128)` |   | `true` |  
@@ -107,7 +107,8 @@ Key | Description | Type | Default | Required | Support Level
 `rules` | A list of regular expressions of which one must match for the rule to be eligible, they can optionally contain capture groups | `array(string())` | `[]` | `false` |  
 `rules_test.[]` |   | `string()` |   | `false` |  
 `rules_test` | A list of regular expressions of which if matched denotes a test rule | `array(string())` | `[]` | `false` |  
-`weight_cost` | A value between 0 and 100 that determines the order of resources when multiple can be used | `integer()` | `50` | `false` |  
+`supports_pidflo` | Whether or not the resource supports multi-part PIDF+LO INVITEs for calls | `boolean()` |   | `false` |  
+`weight_cost` | A value between 0 and 100 that determines the order of resources when multiple can be used | `integer(0..100)` | `50` | `false` |  
 
 ### caller_id_options
 
@@ -130,6 +131,30 @@ Key | Description | Type | Default | Required | Support Level
 `privacy_method` | Method to use for anonymizing CID | `string('sip' | 'none' | 'kazoo')` |   | `false` |  
 `show_rate` | Whether to show the rate | `boolean()` |   | `false` |  
 `type` | Caller ID on endpoint to choose | `string('internal' | 'external' | 'emergency')` |   | `false` |  
+
+### codecs
+
+A list of codecs the endpoint supports
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+
+### codecs.audio
+
+A list of audio codecs the endpoint supports
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+
+### codecs.video
+
+A list of video codecs the endpoint supports
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
 
 ### custom_channel_vars
 
@@ -156,8 +181,7 @@ Schema for endpoint media options
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`audio.codecs.[]` |   | `string('OPUS' | 'CELT@32000h' | 'G7221@32000h' | 'G7221@16000h' | 'G722' | 'speex@32000h' | 'speex@16000h' | 'PCMU' | 'PCMA' | 'G729' | 'GSM' | 'CELT@48000h' | 'CELT@64000h' | 'G722_16' | 'G722_32' | 'CELT_48' | 'CELT_64' | 'Speex' | 'speex')` |   | `false` |  
-`audio.codecs` | A list of audio codecs the endpoint supports | `array(string('OPUS' | 'CELT@32000h' | 'G7221@32000h' | 'G7221@16000h' | 'G722' | 'speex@32000h' | 'speex@16000h' | 'PCMU' | 'PCMA' | 'G729' | 'GSM' | 'CELT@48000h' | 'CELT@64000h' | 'G722_16' | 'G722_32' | 'CELT_48' | 'CELT_64' | 'Speex' | 'speex'))` |   | `false` |  
+`audio.codecs` | A list of audio codecs the endpoint supports | [#/definitions/codecs.audio](#codecsaudio) |   | `false` |  
 `audio` | The audio media parameters | `object()` | `{}` | `false` |  
 `bypass_media` | Default bypass media mode (The string type is deprecated, please use this as a boolean) | `boolean() | string('auto' | 'false' | 'true')` |   | `false` |  
 `encryption.enforce_security` | Is Encryption Enabled? | `boolean()` | `false` | `false` |  
@@ -167,9 +191,9 @@ Key | Description | Type | Default | Required | Support Level
 `fax_option` | Is T.38 Supported? | `boolean()` |   | `false` |  
 `ignore_early_media` | The option to determine if early media from the endpoint should always be ignored | `boolean()` |   | `false` |  
 `progress_timeout` | The progress timeout to apply to the endpoint (seconds) | `integer()` |   | `false` |  
-`video.codecs.[]` |   | `string('H261' | 'H263' | 'H263+' | 'H264' | 'VP8' | 'VP9')` |   | `false` |  
-`video.codecs` | A list of video codecs the endpoint supports | `array(string('H261' | 'H263' | 'H263+' | 'H264' | 'VP8' | 'VP9'))` | `[]` | `false` |  
+`video.codecs` | A list of video codecs the endpoint supports | [#/definitions/codecs.video](#codecsvideo) |   | `false` |  
 `video` | The video media parameters | `object()` | `{}` | `false` |  
+`webrtc` | If true, forces a WebRTC compatible SDP on the INVITE | `boolean()` |   | `false` |  
 
 ### formatters
 

@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2022, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -47,6 +47,10 @@ kazoo_bytes() ->
     KAZOOBytes.
 
 deps_bytes() ->
+    deps_bytes(kapps_config:get_is_true(?CONFIG_CAT, <<"display_dependency_list">>, 'true')).
+
+deps_bytes('false') -> <<>>;
+deps_bytes('true') ->
     case file:read_file(filename:join(code:priv_dir(?APP), "deps_list.txt")) of
         {'ok', DepsBytes} -> DepsBytes;
         {'error', _} -> <<>>

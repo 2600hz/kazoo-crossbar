@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc storage
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -272,8 +272,10 @@ log_deleted({'ok', OK}) ->
         'true' -> lager:info("deleted account storage plan");
         'false' -> lager:info("failed to delete account storage plan: ~p", [OK])
     end;
+log_deleted({'error', 'not_found'}) ->
+    lager:debug("account storage plan not found");
 log_deleted(_Else) ->
-    lager:info("failed to delete account storage plan: ~p", [_Else]).
+    lager:error("failed to delete account storage plan: ~p", [_Else]).
 
 -spec delete_storage_plans(kz_term:ne_binaries()) -> 'ok'.
 delete_storage_plans(StorageIDs) ->

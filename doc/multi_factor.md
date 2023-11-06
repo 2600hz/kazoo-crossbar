@@ -62,17 +62,17 @@ The important bit is `provider_name = otp`.
 ```json
 {
   "data": {
-    "_read_only": {
-      "created": 63814257545,
-      "id": "{PROVIDER_ID}",
-      "modified": 63814257545
-    },
     "enabled": true,
     "id": "{PROVIDER_ID}",
     "name": "KAZOO",
     "provider_name": "otp",
     "settings": {
     }
+  },
+  "metadata": {
+    "created": 63814257545,
+    "id": "{PROVIDER_ID}",
+    "modified": 63814257545
   },
   "revision": "{REV}",
   "status": "success"

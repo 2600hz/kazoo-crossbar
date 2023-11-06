@@ -3,11 +3,21 @@
     "_id": "devices",
     "description": "A device be it a SIP phone or landline number",
     "properties": {
+        "addresses": {
+            "$ref": "addresses",
+            "description": "Device addresses",
+            "type": "object"
+        },
         "call_failover": {
             "$ref": "call_failover"
         },
         "call_forward": {
-            "$ref": "call_forward"
+            "$ref": "call_forward",
+            "description": "Call forward settings",
+            "kz:skip_subproperty_builder": true
+        },
+        "call_limits": {
+            "$ref": "call_limits"
         },
         "call_recording": {
             "$ref": "call_recording"
@@ -127,6 +137,16 @@
             "$ref": "metaflows",
             "description": "The device metaflow parameters"
         },
+        "mobile": {
+            "description": "KAZOO devices that integrate with mobile providers",
+            "properties": {
+                "mdn": {
+                    "description": "The MDN - mobile device number",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "music_on_hold": {
             "default": {},
             "description": "The music on hold parameters used if not a property of the device owner",
@@ -135,6 +155,17 @@
                     "description": "The ID of a media object that should be used as the music on hold",
                     "maxLength": 2048,
                     "type": "string"
+                },
+                "options": {
+                    "description": "Options for playing music on hold",
+                    "items": {
+                        "enum": [
+                            "preserve-position",
+                            "random-start"
+                        ],
+                        "type": "string"
+                    },
+                    "type": "array"
                 }
             },
             "type": "object"

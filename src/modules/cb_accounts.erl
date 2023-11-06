@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc Account module
 %%% Handle client requests for account documents
 %%%
@@ -144,7 +144,7 @@ resource_exists(_, Path) ->
 
 -spec validate_resource(cb_context:context()) -> cb_context:context().
 validate_resource(Context) ->
-    Context.
+    validate_resource(Context, cb_context:auth_account_id(Context)).
 
 -spec validate_resource(cb_context:context(), path_token()) -> cb_context:context().
 validate_resource(Context, AccountId) ->
@@ -165,11 +165,7 @@ validate_resource(Context, AccountId, _Path) ->
 -spec validate(cb_context:context()) ->
           cb_context:context().
 validate(Context) ->
-    validate_accounts(Context, cb_context:req_verb(Context)).
-
--spec validate_accounts(cb_context:context(), http_method()) -> cb_context:context().
-validate_accounts(Context, ?HTTP_PUT) ->
-    validate_request('undefined', prepare_context('undefined', Context)).
+    validate(Context, cb_context:auth_account_id(Context)).
 
 -spec validate(cb_context:context(), path_token()) ->
           cb_context:context().
@@ -186,7 +182,7 @@ validate_account(Context, AccountId, ?HTTP_POST) ->
 validate_account(Context, AccountId, ?HTTP_PATCH) ->
     validate_patch_request(AccountId, prepare_context(AccountId, Context));
 validate_account(Context, AccountId, ?HTTP_DELETE) ->
-    validate_delete_request(AccountId, prepare_context(AccountId, Context)).
+    validate_delete_request(AccountId, cb_context:auth_account_id(Context), prepare_context(AccountId, Context)).
 
 -spec validate(cb_context:context(), path_token(), kz_term:ne_binary()) ->
           cb_context:context().
@@ -224,14 +220,18 @@ validate_account_path(Context, AccountId, ?API_KEY, ?HTTP_GET) ->
         _Else -> Context1
     end;
 validate_account_path(Context, AccountId, ?API_KEY, ?HTTP_PUT) ->
-    case cb_context:is_account_admin(Context) of
+    case cb_context:is_account_admin(Context)
+        orelse cb_context:is_superduper_admin(Context)
+    of
+        'false' ->
+            lager:info("requestor is forbidden from this request"),
+            cb_context:add_system_error('forbidden', Context);
         'true' ->
-            Context1 = crossbar_doc:load(AccountId, prepare_context('undefined', Context), ?TYPE_CHECK_OPTION(?PVT_TYPE)),
+            Context1 = load_account(AccountId, prepare_context(AccountId, Context)),
             case cb_context:resp_status(Context1) of
                 'success' -> add_pvt_api_key(Context1);
                 _Else -> Context1
-            end;
-        'false' -> cb_context:add_system_error('forbidden', Context)
+            end
     end;
 validate_account_path(Context, AccountId, ?MOVE, ?HTTP_POST) ->
     Data = cb_context:req_data(Context),
@@ -245,15 +245,7 @@ validate_account_path(Context, AccountId, ?MOVE, ?HTTP_POST) ->
                                            ,Context
                                            );
         ToAccount ->
-            case validate_move(kapps_config:get_ne_binary(?ACCOUNTS_CONFIG_CAT, <<"allow_move">>, <<"superduper_admin">>)
-                              ,Context
-                              ,AccountId
-                              ,ToAccount
-                              )
-            of
-                'true' -> cb_context:set_resp_status(Context, 'success');
-                'false' -> cb_context:add_system_error('forbidden', Context)
-            end
+            maybe_move_account(Context, AccountId, ToAccount)
     end;
 validate_account_path(Context, AccountId, ?TREE, ?HTTP_GET) ->
     load_account_tree(Context, AccountId).
@@ -262,6 +254,17 @@ validate_account_path(Context, AccountId, ?TREE, ?HTTP_GET) ->
 add_pvt_api_key(Context) ->
     JObj = cb_context:doc(Context),
     cb_context:set_doc(Context, kzd_accounts:add_pvt_api_key(JObj)).
+
+maybe_move_account(Context, AccountId, ToAccountId) ->
+    MoveType = kapps_config:get_ne_binary(?ACCOUNTS_CONFIG_CAT, <<"allow_move">>, <<"superduper_admin">>),
+    case validate_move(Context, AccountId, ToAccountId, MoveType) of
+        'true' ->
+            lager:debug("request for move type ~s is valid", [MoveType]),
+            cb_context:set_resp_status(Context, 'success');
+        'false' ->
+            lager:info("invalid request for move type ~s", [MoveType]),
+            cb_context:add_system_error('forbidden', Context)
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -277,7 +280,7 @@ post(Context, AccountId) ->
             _ = kz_process:spawn(fun crossbar_notify_util:maybe_notify_account_change/2, [Existing, Context]),
             update_provisioner_account(Context1),
 
-            leak_pvt_fields(AccountId, Context1);
+            add_metadata_fields(AccountId, Context1);
         {'error', Error} ->
             lager:warning("failed to update account information with error: ~p", [Error]),
             crossbar_doc:handle_datamgr_errors(Error, AccountId, Context)
@@ -294,10 +297,7 @@ update_provisioner_account(Context) ->
 
 -spec post(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 post(Context, AccountId, ?MOVE) ->
-    case cb_context:resp_status(Context) of
-        'success' -> move_account(Context, AccountId);
-        _Status -> Context
-    end.
+    move_account(Context, AccountId).
 
 -spec patch(cb_context:context(), path_token()) -> cb_context:context().
 patch(Context, AccountId) ->
@@ -331,7 +331,7 @@ put(Context, PathAccountId) ->
             Tree = kzd_accounts:tree(ReqJObj),
             _ = maybe_update_descendants_count(Tree),
             _ = create_apps_store_doc(NewAccountId),
-            leak_pvt_fields(PathAccountId, Context2)
+            add_metadata_fields(PathAccountId, Context2)
     catch
         'throw':'datastore_fault' ->
             ContextErr = cb_context:add_system_error('datastore_fault', Context),
@@ -350,15 +350,16 @@ unroll(Context, NewAccountId) ->
     Context.
 
 -spec put(cb_context:context(), path_token(), path_token()) -> cb_context:context().
-put(Context, _AccountId, ?API_KEY) ->
-    C1 = crossbar_doc:save(Context),
-    case cb_context:resp_status(C1) of
-        'success' ->
-            JObj = cb_context:doc(C1),
-            ApiKey = kzd_accounts:api_key(JObj),
+put(Context, AccountId, ?API_KEY) ->
+    AccountDoc = cb_context:doc(Context),
+    case kzd_accounts:save(AccountDoc) of
+        {'ok', Saved} ->
+            ApiKey = kzd_accounts:api_key(Saved),
             RespJObj = kz_json:from_list([{<<"api_key">>, ApiKey}]),
-            cb_context:set_resp_data(C1, RespJObj);
-        _ -> C1
+            crossbar_doc:handle_json_success(RespJObj, Context, ?HTTP_GET);
+        {'error', E} ->
+            lager:info("failed to save API key reset: ~p", [E]),
+            crossbar_doc:handle_datamgr_errors(E, AccountId, Context)
     end;
 put(Context, AccountId, ?RESELLER) ->
     case kz_services_reseller:promote(AccountId) of
@@ -399,6 +400,11 @@ delete(Context, Account) ->
                        ,Context
                        ,Errors
                        );
+        {'error', 'unauthorized'} ->
+            Msg = kz_json:from_list([{<<"message">>, <<"deleting account is forbidden">>}
+                                    ,{<<"cause">>, AccountId}
+                                    ]),
+            cb_context:add_system_error(403, 'forbidden', Msg, Context);
         {'error', Error} ->
             lager:info("error deleting account: ~p", [Error]),
             crossbar_doc:handle_datamgr_errors(Error, Account, Context)
@@ -435,12 +441,11 @@ create_apps_store_doc(AccountId) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec validate_move(kz_term:ne_binary(), cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) -> boolean().
-validate_move(<<"superduper_admin">>, Context, _, _) ->
+-spec validate_move(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) -> boolean().
+validate_move(Context, _AccountId, _ToAccountId, <<"superduper_admin">>) ->
     lager:debug("using superduper_admin flag to allow move account"),
-    AuthId = kz_json:get_value(<<"account_id">>, cb_context:auth_doc(Context)),
-    kzd_accounts:is_superduper_admin(AuthId);
-validate_move(<<"tree">>, Context, MoveAccount, ToAccount) ->
+    cb_context:is_superduper_admin(Context);
+validate_move(Context, MoveAccount, ToAccount, <<"tree">>) ->
     lager:debug("using tree to allow move account"),
     AuthId = kz_doc:account_id(cb_context:auth_doc(Context)),
     MoveTree = crossbar_util:get_tree(MoveAccount),
@@ -455,7 +460,7 @@ validate_move(<<"tree">>, Context, MoveAccount, ToAccount) ->
                    ,MoveTree
                    ),
     lists:member(AuthId, L);
-validate_move(_Type, _, _, _) ->
+validate_move(_, _, _, _Type) ->
     lager:error("unknown move type ~p", [_Type]),
     'false'.
 
@@ -466,12 +471,18 @@ validate_move(_Type, _, _, _) ->
 -spec move_account(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 move_account(Context, AccountId) ->
     Data = cb_context:req_data(Context),
-    ToAccount = kz_json:get_binary_value(<<"to">>, Data),
-    case crossbar_util:move_account(AccountId, ToAccount) of
-        {'error', 'forbidden'} -> cb_context:add_system_error('forbidden', Context);
-        {'error', _E} -> cb_context:add_system_error('datastore_fault', Context);
-        {'ok', _} ->
-            load_account(AccountId, prepare_context(AccountId, Context))
+    ToAccountId = kz_json:get_binary_value(<<"to">>, Data),
+
+    case crossbar_util:move_account(AccountId, ToAccountId) of
+        {'error', 'forbidden'} ->
+            lager:info("forbidden from moving ~s under ~s", [AccountId, ToAccountId]),
+            cb_context:add_system_error('forbidden', Context);
+        {'error', E} ->
+            lager:info("error moving ~s under ~s: ~p", [AccountId, ToAccountId, E]),
+            crossbar_doc:handle_datamgr_errors(E, AccountId, Context);
+        {'ok', AccountDoc} ->
+            lager:info("moved account ~s under ~s", [AccountId, ToAccountId]),
+            crossbar_doc:handle_datamgr_success(AccountDoc, Context)
     end.
 
 %%------------------------------------------------------------------------------
@@ -522,11 +533,7 @@ maybe_add_pvt_fields(AccountId, AccountJObj) -> %% Existing account (update)
 get_parent_id_from_req(Context) ->
     case props:get_value(<<"accounts">>, cb_context:req_nouns(Context)) of
         [ParentId] -> ParentId;
-        _Nouns ->
-            case cb_context:auth_doc(Context) of
-                'undefined' -> 'undefined';
-                AuthDoc -> kz_json:get_ne_binary_value(<<"account_id">>, AuthDoc)
-            end
+        _Params -> cb_context:auth_account_id(Context)
     end.
 
 -spec extra_validation(cb_context:context()) -> cb_context:context().
@@ -534,10 +541,7 @@ extra_validation(Context) ->
     Extra = [fun maybe_import_enabled/1
             ,fun disallow_direct_clients/1
             ],
-    lists:foldl(fun(F, C) -> F(C) end
-               ,Context
-               ,Extra
-               ).
+    cb_context:setters(Context, Extra).
 
 -spec disallow_direct_clients(cb_context:context()) -> cb_context:context().
 disallow_direct_clients(Context) ->
@@ -601,8 +605,14 @@ maybe_import_enabled(Context, Doc, 'false') ->
 %% @doc Load an account document from the database
 %% @end
 %%------------------------------------------------------------------------------
--spec validate_delete_request(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
-validate_delete_request(AccountId, Context) ->
+-spec validate_delete_request(kz_term:ne_binary(), kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
+validate_delete_request(AuthAccountId, AuthAccountId, Context) ->
+    lager:debug("preventing auth account_id ~s to delete its own account", [AuthAccountId]),
+    Msg = kz_json:from_list([{<<"message">>, <<"deleting your own account is forbidden">>}
+                            ,{<<"cause">>, AuthAccountId}
+                            ]),
+    cb_context:add_system_error(403, 'forbidden', Msg, Context);
+validate_delete_request(AccountId, _AuthAccountId, Context) ->
     case kapps_util:account_has_descendants(AccountId) of
         'true' ->  cb_context:add_system_error('account_has_descendants', Context);
         'false' ->
@@ -627,126 +637,117 @@ validate_patch_request(AccountId, Context) ->
 %%------------------------------------------------------------------------------
 -spec load_account(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
 load_account(AccountId, Context) ->
-    leak_pvt_fields(AccountId, crossbar_doc:load(AccountId, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE))).
+    add_metadata_fields(AccountId, crossbar_doc:load(AccountId, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE))).
 
 %%------------------------------------------------------------------------------
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
 
--spec leak_pvt_fields(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
-leak_pvt_fields(AccountId, Context) ->
-    leak_pvt_fields(AccountId, Context, cb_context:resp_status(Context)).
+-spec add_metadata_fields(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
+add_metadata_fields(AccountId, Context) ->
+    add_metadata_fields(AccountId, Context, cb_context:resp_status(Context)).
 
--spec leak_pvt_fields(kz_term:api_binary(), cb_context:context(), crossbar_status()) -> cb_context:context().
-leak_pvt_fields(AccountId, Context, 'success') ->
-    Routines = [fun leak_pvt_allow_additions/1
-               ,fun leak_pvt_superduper_admin/1
-               ,fun leak_pvt_api_key/1
-               ,fun leak_pvt_created/1
-               ,fun leak_pvt_enabled/1
-               ,{fun leak_reseller_id/2, AccountId}
-               ,fun leak_is_reseller/1
-               ,{fun leak_billing_mode/2, AccountId}
-               ,fun leak_notification_preference/1
-               ,fun leak_trial_time_left/1
+-spec add_metadata_fields(kz_term:api_binary(), cb_context:context(), crossbar_status()) -> cb_context:context().
+add_metadata_fields(AccountId, Context, 'success') ->
+    Routines = [fun add_metadata_allow_additions/1
+               ,fun add_metadata_superduper_admin/1
+               ,fun add_metadata_api_key/1
+               ,fun add_metadata_created/1
+               ,fun add_metadata_enabled/1
+               ,{fun add_metadata_reseller_id/2, AccountId}
+               ,fun add_metadata_is_reseller/1
+               ,{fun add_metadata_billing_mode/2, AccountId}
+               ,fun add_metadata_notification_preference/1
+               ,fun add_metadata_trial_time_left/1
                ],
     cb_context:setters(Context, Routines);
-leak_pvt_fields(_AccountId, Context, _Status) -> Context.
+add_metadata_fields(_AccountId, Context, _Status) -> Context.
 
--spec leak_pvt_allow_additions(cb_context:context()) -> cb_context:context().
-leak_pvt_allow_additions(Context) ->
-    cb_context:set_resp_data(Context
-                            ,kz_json:set_value(<<"wnm_allow_additions">>
-                                              ,kzd_accounts:allow_number_additions(cb_context:doc(Context))
-                                              ,cb_context:resp_data(Context)
-                                              )
-                            ).
+-spec add_metadata_allow_additions(cb_context:context()) -> cb_context:context().
+add_metadata_allow_additions(Context) ->
+    cb_context:add_metadata_value(Context
+                                 ,<<"wnm_allow_additions">>
+                                 ,kzd_accounts:allow_number_additions(cb_context:doc(Context))
+                                 ).
 
--spec leak_pvt_superduper_admin(cb_context:context()) -> cb_context:context().
-leak_pvt_superduper_admin(Context) ->
-    cb_context:set_resp_data(Context
-                            ,kz_json:set_value(<<"superduper_admin">>
-                                              ,kzd_accounts:is_superduper_admin(cb_context:doc(Context))
-                                              ,cb_context:resp_data(Context)
-                                              )
-                            ).
+-spec add_metadata_superduper_admin(cb_context:context()) -> cb_context:context().
+add_metadata_superduper_admin(Context) ->
+    cb_context:add_metadata_value(Context
+                                 ,<<"superduper_admin">>
+                                 ,kzd_accounts:is_superduper_admin(cb_context:doc(Context))
+                                 ).
 
--spec leak_pvt_api_key(cb_context:context()) -> cb_context:context().
-leak_pvt_api_key(Context) ->
+-spec add_metadata_api_key(cb_context:context()) -> cb_context:context().
+add_metadata_api_key(Context) ->
     case kz_term:is_true(cb_context:req_value(Context, <<"include_api_key">>, 'false'))
         orelse kapps_config:get_is_true(?ACCOUNTS_CONFIG_CAT, <<"expose_api_key">>, 'false')
     of
         'false' -> Context;
         'true' ->
-            cb_context:set_resp_data(Context
-                                    ,kz_json:set_value(<<"api_key">>
-                                                      ,kzd_accounts:api_key(cb_context:doc(Context))
-                                                      ,cb_context:resp_data(Context)
-                                                      )
-                                    )
+            cb_context:add_metadata_value(Context
+                                         ,<<"api_key">>
+                                         ,kzd_accounts:api_key(cb_context:doc(Context))
+                                         )
     end.
 
--spec leak_pvt_created(cb_context:context()) -> cb_context:context().
-leak_pvt_created(Context) ->
-    cb_context:set_resp_data(Context
-                            ,kz_json:set_value(<<"created">>
-                                              ,kz_doc:created(cb_context:doc(Context))
-                                              ,cb_context:resp_data(Context)
-                                              )
-                            ).
+-spec add_metadata_created(cb_context:context()) -> cb_context:context().
+add_metadata_created(Context) ->
+    cb_context:add_metadata_value(Context
+                                 ,<<"created">>
+                                 ,kz_doc:created(cb_context:doc(Context))
+                                 ).
 
--spec leak_pvt_enabled(cb_context:context()) -> cb_context:context().
-leak_pvt_enabled(Context) ->
-    RespJObj = cb_context:resp_data(Context),
+-spec add_metadata_enabled(cb_context:context()) -> cb_context:context().
+add_metadata_enabled(Context) ->
     case kzd_accounts:is_enabled(cb_context:doc(Context)) of
         'true' ->
-            cb_context:set_resp_data(Context
-                                    ,kzd_accounts:set_enabled(RespJObj, 'true')
-                                    );
+            cb_context:add_metadata_value(Context
+                                         ,<<"enabled">>
+                                         ,'true'
+                                         );
         'false' ->
-            cb_context:set_resp_data(Context
-                                    ,kzd_accounts:set_enabled(RespJObj, 'false')
-                                    )
+            cb_context:add_metadata_value(Context
+                                         ,<<"enabled">>
+                                         ,'false'
+                                         )
     end.
 
--spec leak_reseller_id(cb_context:context(), kz_term:api_binary()) -> cb_context:context().
-leak_reseller_id(Context, PathAccountId) ->
-    cb_context:set_resp_data(Context
-                            ,kz_json:set_value(<<"reseller_id">>
-                                              ,find_reseller_id(Context, PathAccountId)
-                                              ,cb_context:resp_data(Context)
-                                              )
-                            ).
+-spec add_metadata_reseller_id(cb_context:context(), kz_term:api_binary()) -> cb_context:context().
+add_metadata_reseller_id(Context, PathAccountId) ->
+    cb_context:add_metadata_value(Context
+                                 ,<<"reseller_id">>
+                                 ,find_reseller_id(Context, PathAccountId)
+                                 ).
 
--spec leak_is_reseller(cb_context:context()) -> cb_context:context().
-leak_is_reseller(Context) ->
+-spec add_metadata_is_reseller(cb_context:context()) -> cb_context:context().
+add_metadata_is_reseller(Context) ->
     IsReseller = kz_services_reseller:is_reseller(cb_context:account_id(Context)),
-    cb_context:set_resp_data(Context
-                            ,kz_json:set_value(<<"is_reseller">>
-                                              ,IsReseller
-                                              ,cb_context:resp_data(Context)
-                                              )
-                            ).
+    cb_context:add_metadata_value(Context
+                                 ,<<"is_reseller">>
+                                 ,IsReseller
+                                 ).
 
--spec leak_billing_mode(cb_context:context(), kz_term:api_binary()) -> cb_context:context().
-leak_billing_mode(Context, PathAccountId) ->
+-spec add_metadata_billing_mode(cb_context:context(), kz_term:api_binary()) -> cb_context:context().
+add_metadata_billing_mode(Context, PathAccountId) ->
     {'ok', MasterAccountId} = kapps_util:get_master_account_id(),
     AuthAccountId = cb_context:auth_account_id(Context),
-    RespJObj = cb_context:resp_data(Context),
     case find_reseller_id(Context, PathAccountId) of
         AuthAccountId ->
-            cb_context:set_resp_data(Context
-                                    ,kz_json:set_value(<<"billing_mode">>, <<"limits_only">>, RespJObj)
-                                    );
+            cb_context:add_metadata_value(Context
+                                         ,<<"billing_mode">>
+                                         ,<<"limits_only">>
+                                         );
         MasterAccountId ->
-            cb_context:set_resp_data(Context
-                                    ,kz_json:set_value(<<"billing_mode">>, <<"normal">>, RespJObj)
-                                    );
+            cb_context:add_metadata_value(Context
+                                         ,<<"billing_mode">>
+                                         ,<<"normal">>
+                                         );
         _AccountId ->
-            cb_context:set_resp_data(Context
-                                    ,kz_json:set_value(<<"billing_mode">>, <<"manual">>, RespJObj)
-                                    )
+            cb_context:add_metadata_value(Context
+                                         ,<<"billing_mode">>
+                                         ,<<"manual">>
+                                         )
     end.
 
 -spec find_reseller_id(cb_context:context(), kz_term:api_binary()) -> kz_term:api_binary().
@@ -761,31 +762,31 @@ find_reseller_id(Context, PathAccountId) ->
         'false' -> cb_context:reseller_id(Context)
     end.
 
--spec leak_notification_preference(cb_context:context()) -> cb_context:context().
-leak_notification_preference(Context) ->
-    leak_notification_preference(Context, kzd_accounts:notification_preference(cb_context:doc(Context))).
+-spec add_metadata_notification_preference(cb_context:context()) -> cb_context:context().
+add_metadata_notification_preference(Context) ->
+    add_metadata_notification_preference(Context, kzd_accounts:notification_preference(cb_context:doc(Context))).
 
--spec leak_notification_preference(cb_context:context(), kz_term:api_binary()) -> cb_context:context().
-leak_notification_preference(Context, 'undefined') ->
+-spec add_metadata_notification_preference(cb_context:context(), kz_term:api_binary()) -> cb_context:context().
+add_metadata_notification_preference(Context, 'undefined') ->
     Context;
-leak_notification_preference(Context, Pref) ->
+add_metadata_notification_preference(Context, Pref) ->
     UpdatedRespJObj = kz_json:set_value(<<"notification_preference">>, Pref, cb_context:resp_data(Context)),
     cb_context:set_resp_data(Context, UpdatedRespJObj).
 
--spec leak_trial_time_left(cb_context:context()) ->
+-spec add_metadata_trial_time_left(cb_context:context()) ->
           cb_context:context().
-leak_trial_time_left(Context) ->
+add_metadata_trial_time_left(Context) ->
     JObj = cb_context:doc(Context),
-    leak_trial_time_left(Context, JObj, kzd_accounts:trial_expiration(JObj)).
+    add_metadata_trial_time_left(Context, JObj, kzd_accounts:trial_expiration(JObj)).
 
--spec leak_trial_time_left(cb_context:context(), kz_json:object(), kz_term:api_integer()) ->
+-spec add_metadata_trial_time_left(cb_context:context(), kz_json:object(), kz_term:api_integer()) ->
           cb_context:context().
-leak_trial_time_left(Context, _JObj, 'undefined') ->
+add_metadata_trial_time_left(Context, _JObj, 'undefined') ->
     RespData = kz_json:delete_key(<<"trial_time_left">>
                                  ,cb_context:resp_data(Context)
                                  ),
     cb_context:set_resp_data(Context, RespData);
-leak_trial_time_left(Context, JObj, _Expiration) ->
+add_metadata_trial_time_left(Context, JObj, _Expiration) ->
     RespData = kz_json:set_value(<<"trial_time_left">>
                                 ,kzd_accounts:trial_time_left(JObj)
                                 ,cb_context:resp_data(Context)
@@ -894,18 +895,18 @@ format_account_tree_results(Context, JObjs) ->
            ])
          || JObj <- JObjs
         ],
-    cb_context:set_resp_data(Context, RespData).
+    crossbar_util:response(RespData, Context).
 
 %%------------------------------------------------------------------------------
 %% @doc This function will attempt to load the context with the db name of
 %% for this account
 %% @end
 %%------------------------------------------------------------------------------
--spec load_account_db(cb_context:context(), kz_term:ne_binary() | kz_term:ne_binaries()) ->
+-spec load_account_db(cb_context:context(), kz_term:api_ne_binary() | kz_term:ne_binaries()) ->
           cb_context:context().
 load_account_db(Context, [AccountId|_]) ->
     load_account_db(Context, AccountId);
-load_account_db(Context, AccountId) when is_binary(AccountId) ->
+load_account_db(Context, <<AccountId/binary>>) ->
     case kzd_accounts:fetch(AccountId) of
         {'ok', JObj} ->
             lager:debug("account ~s db exists", [AccountId]),
@@ -921,7 +922,11 @@ load_account_db(Context, AccountId) when is_binary(AccountId) ->
             cb_context:add_system_error('bad_identifier', Msg, Context);
         {'error', _R} ->
             crossbar_util:response_db_fatal(Context)
-    end.
+    end;
+load_account_db(Context, 'undefined') ->
+    lager:info("no account id to load"),
+    cb_context:add_system_error('faulty_request', Context).
+
 
 %%------------------------------------------------------------------------------
 %% @doc This function will create a new account and corresponding database

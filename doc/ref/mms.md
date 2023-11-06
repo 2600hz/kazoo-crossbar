@@ -10,7 +10,7 @@ mms document
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`body` | mime encoded mms message | `string(1..)` |   | `false` |  
+`body` | mime encoded mms message | `string()` |   | `false` |  
 `from` | caller-id-number, taken from user if absent | `string()` |   | `false` |  
 `to` | callee-id-number | `array(string()) | string()` |   | `true` |  
 

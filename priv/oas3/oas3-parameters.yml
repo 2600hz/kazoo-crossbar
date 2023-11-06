@@ -8,6 +8,16 @@
     'minLength': 32
     'pattern': '^[0-9a-f]+$'
     'type': string
+'ADDRESS_ID':
+  'description': request ADDRESS_ID parameter
+  'in': path
+  'name': ADDRESS_ID
+  'required': true
+  'schema':
+    'maxLength': 32
+    'minLength': 32
+    'pattern': '^[0-9a-f]+$'
+    'type': string
 'ALERT_ID':
   'description': request ALERT_ID parameter
   'in': path
@@ -35,6 +45,16 @@
   'required': true
   'schema':
     'pattern': '^[0-9]+$'
+    'type': string
+'APP_TYPE':
+  'description': request APP_TYPE parameter
+  'in': path
+  'name': APP_TYPE
+  'required': true
+  'schema':
+    'maxLength': 32
+    'minLength': 32
+    'pattern': '^[0-9a-f]+$'
     'type': string
 'ARGS':
   'description': request ARGS parameter
@@ -113,6 +133,16 @@
   'name': CALL_ID
   'required': true
   'schema':
+    'type': string
+'CARD_ID':
+  'description': request CARD_ID parameter
+  'in': path
+  'name': CARD_ID
+  'required': true
+  'schema':
+    'maxLength': 32
+    'minLength': 32
+    'pattern': '^[0-9a-f]+$'
     'type': string
 'CDR_ID':
   'description': request CDR_ID parameter
@@ -368,6 +398,16 @@
     'minLength': 32
     'pattern': '^[0-9a-f]+$'
     'type': string
+'MATCH_LIST_ID':
+  'description': request MATCH_LIST_ID parameter
+  'in': path
+  'name': MATCH_LIST_ID
+  'required': true
+  'schema':
+    'maxLength': 32
+    'minLength': 32
+    'pattern': '^[0-9a-f]+$'
+    'type': string
 'MEDIA_ID':
   'description': request MEDIA_ID parameter
   'in': path
@@ -579,6 +619,16 @@
     'minLength': 32
     'pattern': '^[0-9a-f]+$'
     'type': string
+'SCREENSHOT_ID':
+  'description': request SCREENSHOT_ID parameter
+  'in': path
+  'name': SCREENSHOT_ID
+  'required': true
+  'schema':
+    'maxLength': 32
+    'minLength': 32
+    'pattern': '^[0-9a-f]+$'
+    'type': string
 'SELECTOR_NAME':
   'description': request SELECTOR_NAME parameter
   'in': path
@@ -664,6 +714,16 @@
     'minLength': 32
     'pattern': '^[0-9a-f]+$'
     'type': string
+'THING_ID':
+  'description': request THING_ID parameter
+  'in': path
+  'name': THING_ID
+  'required': true
+  'schema':
+    'maxLength': 32
+    'minLength': 32
+    'pattern': '^[0-9a-f]+$'
+    'type': string
 'TRANSACTION_ID':
   'description': request TRANSACTION_ID parameter
   'in': path
@@ -717,6 +777,16 @@
   'description': request WEBHOOK_ID parameter
   'in': path
   'name': WEBHOOK_ID
+  'required': true
+  'schema':
+    'maxLength': 32
+    'minLength': 32
+    'pattern': '^[0-9a-f]+$'
+    'type': string
+'WEBSITE_ID':
+  'description': request WEBSITE_ID parameter
+  'in': path
+  'name': WEBSITE_ID
   'required': true
   'schema':
     'maxLength': 32

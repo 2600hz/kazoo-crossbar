@@ -24,6 +24,10 @@
             "description": "Label to include in the origin of call recording",
             "type": "string"
         },
+        "media_id": {
+            "description": "Doc ID of the created recording - if unspecified, KAZOO will generate one",
+            "type": "string"
+        },
         "media_name": {
             "description": "the name of media",
             "type": "string"
@@ -79,6 +83,7 @@
             "description": "The URL to use when sending the recording for storage",
             "format": "uri",
             "kazoo-validation": true,
+            "minLength": 5,
             "type": "string"
         }
     },

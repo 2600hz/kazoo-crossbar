@@ -50,6 +50,10 @@
             "type": "array",
             "uniqueItems": true
         },
+        "owner_id": {
+            "description": "Callflow's owner id",
+            "type": "string"
+        },
         "patterns": {
             "default": [],
             "description": "A list of regular expressions that the callflow should execute for, with optional capture groups",

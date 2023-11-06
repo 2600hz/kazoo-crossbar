@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc
 %%% @author Peter Defebvre
 %%%
@@ -47,12 +47,10 @@ init() ->
 
 -spec authorize(cb_context:context()) -> boolean().
 authorize(Context) ->
-    _ = cb_context:put_reqid(Context),
     authorize_nouns(Context, cb_context:req_nouns(Context)).
 
 -spec authorize(cb_context:context(), path_token()) -> boolean().
 authorize(Context, _) ->
-    _ = cb_context:put_reqid(Context),
     authorize_nouns(Context, cb_context:req_nouns(Context)).
 
 authorize_nouns(Context, [{<<"ips">>, _}]) ->
@@ -108,7 +106,6 @@ resource_exists(_) -> 'true'.
 
 -spec validate(cb_context:context()) -> cb_context:context().
 validate(Context) ->
-    _ = cb_context:put_reqid(Context),
     validate_ips(Context, cb_context:req_verb(Context)).
 
 -spec validate_ips(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
@@ -123,7 +120,6 @@ validate_ips(Context, ?HTTP_DELETE) ->
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, PathToken) ->
-    _ = cb_context:put_reqid(Context),
     validate_ips(Context, PathToken, cb_context:req_verb(Context)).
 
 -spec validate_ips(cb_context:context(), path_token(), kz_term:ne_binary()) -> cb_context:context().
@@ -171,12 +167,13 @@ put(Context) ->
 
     case kz_ip:create(IP, Zone, Host) of
         {'ok', IPJObj} ->
-            JObj = kz_doc:leak_private_fields(IPJObj),
+            PrivateFields = kz_doc:private_fields(IPJObj),
             cb_context:setters(Context
-                              ,[{fun cb_context:set_doc/2, JObj}
+                              ,[{fun cb_context:set_doc/2, IPJObj}
                                ,{fun cb_context:set_resp_status/2, 'success'}
-                               ,{fun cb_context:set_resp_data/2, JObj}
-                               ,{fun cb_context:set_resp_etag/2, crossbar_doc:rev_to_etag(JObj)}
+                               ,{fun cb_context:set_resp_data/2, kz_doc:public_fields(IPJObj)}
+                               ,{fun cb_context:set_resp_etag/2, crossbar_doc:rev_to_etag(IPJObj)}
+                               ,{fun cb_context:add_metadata_values/2, kz_json:to_proplist(PrivateFields)}
                                ]);
         {'error', Error} ->
             lager:debug("failed to create ip ~s: ~p", [IP, Error]),
@@ -473,21 +470,31 @@ additional_release_validations(Context) ->
 additional_release_validations(Context, [], Release, _Index) ->
     cb_context:store(Context, 'release_ips', Release);
 additional_release_validations(Context, [{Address, {'ok', JObj}} | IPs], Release, Index) ->
-    AccountId = cb_context:account_id(Context),
-    case kz_ip:assigned_to(JObj) of
-        'undefined' ->
+    case {cb_context:account_id(Context), kz_ip:assigned_to(JObj)} of
+        {'undefined', 'undefined'} ->
+            lager:info("delete unassigned ip ~p", [Address]),
+            additional_release_validations(Context, IPs, [JObj|Release], Index + 1);
+        {'undefined', _AssignedTo} ->
+            lager:info("delete assigned ip ~p (account ~s)", [Address, _AssignedTo]),
+            additional_release_validations(Context, IPs, [JObj|Release], Index + 1);
+        {_AccountId, 'undefined'} ->
+            lager:info("ip ~p not assigned", [Address]),
             Context1 = validate_error_not_assigned(Context, Address, Index),
             additional_release_validations(Context1, IPs, Release, Index + 1);
-        AccountId ->
+        {AccountId, AccountId} ->
+            lager:info("delete our assigned ip ~p (account ~s)", [Address, AccountId]),
             additional_release_validations(Context, IPs, [JObj|Release], Index + 1);
-        _Else ->
+        {_AccountId, _AssignedIp} ->
+            lager:info("ip ~p assigned to other account ~p", [Address, _AssignedIp]),
             Context1 = validate_error_assigned(Context, Address, Index),
             additional_assignment_validations(Context1, IPs, Release, Index + 1)
     end;
 additional_release_validations(Context, [{Address, {'error', 'not_found'}}|IPs], Release, Index) ->
+    lager:info("ip ~p not found", [Address]),
     Context1 = validate_error_not_found(Context, Address, Index),
     additional_release_validations(Context1, IPs, Release, Index + 1);
 additional_release_validations(Context, [{_Address, {'error', Reason}}|_IPs], _Release, _Index) ->
+    lager:info("ip ~p error: ~p", [Reason]),
     cb_context:add_system_error('datastore_fault'
                                ,kz_json:from_list([{<<"cause">>, Reason}])
                                ,Context

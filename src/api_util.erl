@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2022, 2600Hz
+%%% @copyright (C) 2012-2023, 2600Hz
 %%% @doc Crossbar REST-related functions.
 %%% @author James Aimonetti
 %%% @author Karl Anderson
@@ -40,7 +40,6 @@
         ,which_cb_module/2
 
          %% Content
-        ,create_resp_content/2
         ,create_resp_body/2
         ,create_resp_file/2
         ,create_csv_resp_content/2
@@ -50,6 +49,7 @@
         ,create_pull_response/2, create_pull_response/3
 
         ,init_chunk_stream/3
+        ,create_resp_envelope/1
         ,close_chunk_json_envelope/2
         ,create_json_chunk_response/2, create_csv_chunk_response/2
 
@@ -132,12 +132,21 @@
 -type req_fun_2() :: fun((any(), cowboy_req:req()) -> cowboy_req:req()).
 -type req_fun_3() :: fun((any(), any(), cowboy_req:req()) -> cowboy_req:req()).
 -type req_fun() :: req_fun_1() | req_fun_2() | req_fun_3().
+
+%% The arguments/payload provided to a `request_data' event binding.
+-type request_data_args() :: {cowboy_req:req()
+                             ,cb_context:context()
+                             ,cowboy_content_type()
+                             ,kz_json:object()
+                             }.
+
 -export_type([pull_response_return/0
              ,req_fun/0
              ,req_fun_1/0
              ,req_fun_2/0
              ,req_fun_3/0
              ,req_funs/0
+             ,request_data_args/0
              ]).
 
 -type req_kv() :: req_fun_1() |
@@ -240,7 +249,7 @@ get_query_string_data([], Req) ->
     {kz_json:new(), Req};
 get_query_string_data(QS0, Req) ->
     QS = kz_json:from_list(QS0),
-    lager:debug("query string: ~s", [kz_json:encode(QS, ['pretty'])]),
+    lager:debug("query string: ~s", [kz_json:encode(QS)]),
     {QS, Req}.
 
 -spec get_content_type(cowboy_req:req()) -> kz_term:api_ne_binary().
@@ -328,13 +337,14 @@ get_req_data(Context, Req, ContentType, QS) ->
           {cb_context:context(), cowboy_req:req()} |
           stop_return().
 maybe_extract_multipart(Context, Req0, QS) ->
-    try extract_multipart(Context, Req0, QS)
+    try
+        extract_multipart(Context, Req0, QS)
     catch
-        ?STACKTRACE(_E, _R, ST)
-        lager:debug("failed to extract multipart ~s: ~p", [_E, _R]),
-        kz_log:log_stacktrace(ST),
-        handle_failed_multipart(Context, Req0, QS)
-        end.
+        _Exc:_Reason:ST ->
+            lager:debug("failed to extract multipart ~s: ~p", [_Exc, _Reason]),
+            kz_log:log_stacktrace(ST),
+            handle_failed_multipart(Context, Req0, QS)
+    end.
 
 -spec handle_failed_multipart(cb_context:context(), cowboy_req:req(), kz_json:object()) ->
           {cb_context:context(), cowboy_req:req()} |
@@ -394,7 +404,7 @@ set_valid_data_in_context(Context, JObj, QS) ->
               ],
     cb_context:setters(Context, Setters).
 
--spec try_json(kz_term:ne_binary(), kz_json:object(), cb_context:context(), cowboy_req:req()) ->
+-spec try_json(binary(), kz_json:object(), cb_context:context(), cowboy_req:req()) ->
           {cb_context:context(), cowboy_req:req()} |
           stop_return().
 try_json(ReqBody, QS, Context, Req) ->
@@ -649,10 +659,11 @@ get_request_body(_, Acc, {'ok', Data, Req1}) ->
     lager:debug("received request body payload (size: ~b bytes)", [size(Body)]),
     {'ok', Body, Req1}.
 
--type get_json_return() :: {kz_term:api_object(), cowboy_req:req()} |
-                           {{'malformed', kz_term:ne_binary()}, cowboy_req:req()}.
--spec get_json_body(binary(), cowboy_req:req()) -> get_json_return().
+-type get_json_return() :: {'undefined', cowboy_req:req()} | decode_json_return().
+-type decode_json_return() :: {kz_json:object(), cowboy_req:req()} |
+                              {{'malformed', kz_term:ne_binary()}, cowboy_req:req()}.
 
+-spec get_json_body(binary(), cowboy_req:req()) -> get_json_return().
 get_json_body(<<>>, Req) -> {'undefined', Req};
 get_json_body(ReqBody, Req) -> decode_json_body(ReqBody, Req).
 
@@ -673,7 +684,7 @@ handle_max_filesize_exceeded(Context, Req1) ->
 
     ?MODULE:stop(Req1, Context1).
 
--spec decode_json_body(binary(), cowboy_req:req()) -> get_json_return().
+-spec decode_json_body(binary(), cowboy_req:req()) -> decode_json_return().
 decode_json_body(ReqBody, Req) ->
     try kz_json:unsafe_decode(ReqBody) of
         JObj ->
@@ -696,8 +707,7 @@ decode_json_body(ReqBody, Req) ->
 normalize_envelope_keys(JObj) ->
     kz_json:foldl(fun normalize_envelope_keys_foldl/3, kz_json:new(), JObj).
 
--spec normalize_envelope_keys_foldl(kz_json:path(), kz_json:json_term(), kz_json:object()) -> kz_json:object().
-normalize_envelope_keys_foldl(_K, 'undefined', JObj) -> JObj;
+-spec normalize_envelope_keys_foldl(kz_json:key(), kz_json:json_term(), kz_json:object()) -> kz_json:object().
 normalize_envelope_keys_foldl(K, V, JObj) -> kz_json:set_value(kz_json:normalize_key(K), V, JObj).
 
 %%------------------------------------------------------------------------------
@@ -916,17 +926,20 @@ maybe_add_post_method(_, _, Allowed) ->
           stop_return().
 is_early_authentic(Req, Context) ->
     Event = create_event_name(Context, <<"early_authenticate">>),
-    case crossbar_bindings:succeeded(crossbar_bindings:pmap(Event, Context)) of
+    Results = crossbar_bindings:pmap(Event, Context),
+    Failed = crossbar_bindings:failed(Results),
+    case crossbar_bindings:succeeded(Results) of
         [] ->
-            {'true', Req, Context};
-        ['true'|T] ->
-            prefer_new_context(T, Req, Context, 'true');
-        [{'true', Context1}|_T] ->
-            lager:debug("one true context: ~p", [_T]),
+            Context1 = merge_buckets(Context, collect_remaining_buckets(Failed)),
             {'true', Req, Context1};
-        [{'stop', Context1}|_] ->
+        ['true'|T] ->
+            prefer_new_context(T, Req, Context, 'true', collect_remaining_buckets(Failed));
+        [{'true', Context1}|T] ->
+            lager:debug("one true context"),
+            {'true', Req, merge_buckets(Context1, collect_remaining_buckets(T ++ Failed))};
+        [{'stop', Context1}|T] ->
             lager:debug("pre-authn stopped"),
-            ?MODULE:stop(Req, Context1)
+            ?MODULE:stop(Req, merge_buckets(Context1, collect_remaining_buckets(T ++ Failed)))
     end.
 
 -spec is_authentic(cowboy_req:req(), cb_context:context()) ->
@@ -943,20 +956,24 @@ is_authentic(Req, Context, ?HTTP_OPTIONS) ->
     {'true', Req, Context};
 is_authentic(Req, Context0, _ReqVerb) ->
     Event = create_event_name(Context0, <<"authenticate">>),
-    case cb_context:auth_doc(Context0) =:= 'undefined'
-        andalso crossbar_bindings:succeeded(crossbar_bindings:pmap(Event, Context0))
-    of
-        'false' ->
-            {'true', Req, Context0};
-        [] ->
-            is_authentic_noun(Req, Context0, cb_context:req_nouns(Context0));
-        ['true'|T] ->
-            prefer_new_context(T, Req, Context0);
-        [{'true', Context1}|_] ->
-            {'true', Req, Context1};
-        [{'stop', Context1}|_] ->
-            lager:debug("authn stopped"),
-            ?MODULE:stop(Req, Context1)
+    case cb_context:auth_doc(Context0) of
+        'undefined' ->
+            Results = crossbar_bindings:pmap(Event, Context0),
+            Failed = crossbar_bindings:failed(Results),
+            case crossbar_bindings:succeeded(Results) of
+                [] ->
+                    Context1 = merge_buckets(Context0, collect_remaining_buckets(Failed)),
+                    is_authentic_noun(Req, Context1, cb_context:req_nouns(Context0));
+                ['true'|T] ->
+                    prefer_new_context(T, Req, Context0, 'undefined', collect_remaining_buckets(Failed));
+                [{'true', Context1}|T] ->
+                    {'true', Req, merge_buckets(Context1, collect_remaining_buckets(T ++ Failed))};
+                [{'stop', Context1}|T] ->
+                    lager:debug("authn stopped"),
+                    ?MODULE:stop(Req, merge_buckets(Context1, collect_remaining_buckets(T ++ Failed)))
+            end;
+        _AuthDoc ->
+            {'true', Req, Context0}
     end.
 
 -spec is_authentic_noun(cowboy_req:req(), cb_context:context(), req_nouns()) ->
@@ -968,43 +985,96 @@ is_authentic_noun(Req, Context, []) ->
 is_authentic_noun(Req, Context, [{Mod, Params} | _ReqNouns]) ->
     Event = create_event_name(Context, <<"authenticate.", Mod/binary>>),
     Payload = [Context | Params],
-    case crossbar_bindings:succeeded(crossbar_bindings:pmap(Event, Payload)) of
+    Results = crossbar_bindings:pmap(Event, Payload),
+    Failed = crossbar_bindings:failed(Results),
+    case crossbar_bindings:succeeded(Results) of
         [] ->
             lager:debug("failed to authenticate : ~p", [Mod]),
-            ?MODULE:stop(Req, cb_context:add_system_error('invalid_credentials', Context));
+            Context1 = merge_buckets(Context, collect_remaining_buckets(Failed)),
+            ?MODULE:stop(Req, cb_context:add_system_error('invalid_credentials', Context1));
         ['true'|T] ->
-            prefer_new_context(T, Req, Context);
-        [{'true', Context2}|_] ->
-            {'true', Req, Context2};
-        [{'stop', Context2}|_] ->
+            prefer_new_context(T, Req, Context, 'undefined', collect_remaining_buckets(Failed));
+        [{'true', Context2}|T] ->
+            {'true', Req, merge_buckets(Context2, collect_remaining_buckets(T ++ Failed))};
+        [{'stop', Context2}|T] ->
             lager:debug("authn stopped"),
-            ?MODULE:stop(Req, Context2)
+            ?MODULE:stop(Req, merge_buckets(Context2, collect_remaining_buckets(T ++ Failed)))
     end.
 
--spec prefer_new_context(kz_term:proplist(), cowboy_req:req(), cb_context:context()) ->
-          {'true', cowboy_req:req(), cb_context:context()} |
+-spec prefer_new_context(kz_term:proplist(), cowboy_req:req(), cb_context:context(), 'undefined' | boolean(), bucket_collection()) ->
+          {boolean(), cowboy_req:req(), cb_context:context()} |
           stop_return().
-prefer_new_context(Results, Req, Context) ->
-    prefer_new_context(Results, Req, Context, 'undefined').
+prefer_new_context([], Req, Context, 'false', CollectBuckets) ->
+    {'false', Req, merge_buckets(Context, CollectBuckets)};
+prefer_new_context([], Req, Context, _Return, CollectBuckets) ->
+    {'true', Req, merge_buckets(Context, CollectBuckets)};
 
-prefer_new_context([], Req, Context, 'false') ->
-    {'false', Req, Context};
-prefer_new_context([], Req, Context, _Return) ->
-    {'true', Req, Context};
+prefer_new_context([{'true', Context1}|T], Req, _Context, _Return, CollectBuckets) ->
+    {'true', Req, merge_buckets(Context1, collect_remaining_buckets(T, CollectBuckets))};
+prefer_new_context(['true'|T], Req, Context, _Return, CollectBuckets) ->
+    prefer_new_context(T, Req, Context, 'true', CollectBuckets);
 
-prefer_new_context([{'true', Context1}|_], Req, _Context, _Return) ->
-    {'true', Req, Context1};
-prefer_new_context(['true'|T], Req, Context, _Return) ->
-    prefer_new_context(T, Req, Context, 'true');
+prefer_new_context(['false'|T], Req, Context, 'undefined', CollectBuckets) ->
+    prefer_new_context(T, Req, Context, 'false', CollectBuckets);
+prefer_new_context([{'false', Context1}|T], Req, Context, 'undefined', CollectBuckets) ->
+    prefer_new_context(T, Req, Context, 'false', collect_buckets(Context1, CollectBuckets));
+prefer_new_context(['false'|T], Req, Context, 'false', CollectBuckets) ->
+    prefer_new_context(T, Req, Context, 'false', CollectBuckets);
+prefer_new_context([{'false', Context1}|T], Req, Context, 'false', CollectBuckets) ->
+    prefer_new_context(T, Req, Context, 'false', collect_buckets(Context1, CollectBuckets));
 
-prefer_new_context(['false'|T], Req, Context, 'undefined') ->
-    prefer_new_context(T, Req, Context, 'false');
-prefer_new_context(['false'|T], Req, Context, 'false') ->
-    prefer_new_context(T, Req, Context, 'false');
-
-prefer_new_context([{'stop', Context1}|_], Req, _Context, _Return) ->
+prefer_new_context([{'stop', Context1}|T], Req, _Context, _Return, CollectBuckets) ->
     lager:debug("authn stopped"),
-    ?MODULE:stop(Req, Context1).
+    Context2 = merge_buckets(Context1, collect_remaining_buckets(T, CollectBuckets)),
+    ?MODULE:stop(Req, Context2).
+
+-type bucket_collection() :: #{consumed_token_buckets => non_neg_integer()
+                              ,token_bucket_names => kz_term:ne_binaries()
+                              }.
+-spec new_bucket_collect() -> bucket_collection().
+new_bucket_collect() ->
+    #{consumed_token_buckets => 0
+     ,token_bucket_names => []
+     }.
+
+-spec collect_buckets(cb_context:context(), bucket_collection()) -> bucket_collection().
+collect_buckets(Context, #{consumed_token_buckets := ConsumedTokens
+                          ,token_bucket_names := BucketNames
+                          }
+               ) ->
+    #{consumed_token_buckets => cb_context:consumed_token_buckets(Context) + ConsumedTokens
+     ,token_bucket_names => lists:usort(cb_context:token_bucket_names(Context) ++ BucketNames)
+     }.
+
+-spec collect_remaining_buckets(kazoo_bindings:map_results()) -> bucket_collection().
+collect_remaining_buckets(Results) ->
+    collect_remaining_buckets(Results, new_bucket_collect()).
+
+-spec collect_remaining_buckets(kazoo_bindings:map_results(), bucket_collection()) -> bucket_collection().
+collect_remaining_buckets([], CollectBuckets) ->
+    CollectBuckets;
+collect_remaining_buckets([{'stop', _}|T], CollectBuckets) ->
+    %% not counting stop, we only have one result when stop in succeeded.
+    collect_remaining_buckets(T, CollectBuckets);
+collect_remaining_buckets([{'EXIT', _}|T], CollectBuckets) ->
+    collect_remaining_buckets(T, CollectBuckets);
+collect_remaining_buckets([{_, Context}|T], CollectBuckets) ->
+    collect_remaining_buckets(T, collect_buckets(Context, CollectBuckets));
+collect_remaining_buckets([_|T], CollectBuckets) ->
+    collect_remaining_buckets(T, CollectBuckets).
+
+-spec merge_buckets(cb_context:context(), bucket_collection()) -> cb_context:context().
+merge_buckets(Context, #{consumed_token_buckets := ConsumedTokens
+                        ,token_bucket_names := BucketNames
+                        }) ->
+    CtxConsumedTokens = cb_context:consumed_token_buckets(Context),
+    CtxBucketNames = cb_context:token_bucket_names(Context),
+
+    Setters = [{fun cb_context:set_consumed_token_buckets/2, CtxConsumedTokens + ConsumedTokens}
+              ,{fun cb_context:set_token_bucket_names/2, lists:usort(CtxBucketNames ++ BucketNames)}
+              ],
+
+    cb_context:setters(Context, Setters).
 
 -spec get_auth_token(cowboy_req:req(), cb_context:context()) -> cb_cowboy_payload().
 get_auth_token(Req, Context) ->
@@ -1112,16 +1182,21 @@ is_permitted_verb(Req, Context, ?HTTP_OPTIONS) ->
     {'true', Req, Context};
 is_permitted_verb(Req, Context0, _ReqVerb) ->
     Event = create_event_name(Context0, <<"authorize">>),
-    case crossbar_bindings:succeeded(crossbar_bindings:pmap(Event, Context0)) of
+    Results = crossbar_bindings:pmap(Event, Context0),
+    Failed = crossbar_bindings:failed(Results),
+    case crossbar_bindings:succeeded(Results) of
         [] ->
-            is_permitted_nouns(Req, Context0, cb_context:req_nouns(Context0));
-        ['true'|_] ->
-            is_permitted_verb_on_module(Req, Context0, cb_context:req_nouns(Context0));
-        [{'true', Context1}|_] ->
-            is_permitted_verb_on_module(Req, Context1, cb_context:req_nouns(Context1));
-        [{'stop', Context1}|_] ->
+            Context1 = merge_buckets(Context0, collect_remaining_buckets(Failed)),
+            is_permitted_nouns(Req, Context1, cb_context:req_nouns(Context1));
+        ['true'|T] ->
+            Context2 = merge_buckets(Context0, collect_remaining_buckets(T ++ Failed)),
+            is_permitted_verb_on_module(Req, Context2, cb_context:req_nouns(Context0));
+        [{'true', Context1}|T] ->
+            Context2 = merge_buckets(Context0, collect_remaining_buckets(T ++ Failed)),
+            is_permitted_verb_on_module(Req, Context2, cb_context:req_nouns(Context1));
+        [{'stop', Context1}|T] ->
             lager:debug("authz stopped"),
-            ?MODULE:stop(Req, Context1)
+            ?MODULE:stop(Req, merge_buckets(Context1, collect_remaining_buckets(T ++ Failed)))
     end.
 
 -spec is_permitted_verb_on_module(cowboy_req:req(), cb_context:context(), req_nouns()) ->
@@ -1130,11 +1205,13 @@ is_permitted_verb(Req, Context0, _ReqVerb) ->
 is_permitted_verb_on_module(Req, Context0, [{Mod, Params} | _ReqNouns]) ->
     Event = create_event_name(Context0, <<"authorize.", Mod/binary>>),
     Payload = [Context0 | Params],
-    case crossbar_bindings:succeeded(crossbar_bindings:pmap(Event, Payload)) of
-        [{'stop', Context1}|_] ->
+    Results = crossbar_bindings:pmap(Event, Payload),
+    Failed = crossbar_bindings:failed(Results),
+    case crossbar_bindings:succeeded(Results) of
+        [{'stop', Context1}|T] ->
             lager:debug("authz stopped"),
-            ?MODULE:stop(Req, Context1);
-        _Other -> {'true', Req, Context0}
+            ?MODULE:stop(Req, merge_buckets(Context1, collect_remaining_buckets(T ++ Failed)));
+        Other -> {'true', Req, merge_buckets(Context0, collect_remaining_buckets(Other ++ Failed))}
     end.
 
 -spec is_permitted_nouns(cowboy_req:req(), cb_context:context(), req_nouns()) ->
@@ -1148,17 +1225,20 @@ is_permitted_nouns(Req, Context, []) ->
 is_permitted_nouns(Req, Context0, [{Mod, Params} | _ReqNouns]) ->
     Event = create_event_name(Context0, <<"authorize.", Mod/binary>>),
     Payload = [Context0 | Params],
-    case crossbar_bindings:succeeded(crossbar_bindings:pmap(Event, Payload)) of
+    Results = crossbar_bindings:pmap(Event, Payload),
+    Failed = crossbar_bindings:failed(Results),
+    case crossbar_bindings:succeeded(Results) of
         [] ->
             lager:debug("failed to authorize : ~p", [Mod]),
-            ?MODULE:stop(Req, cb_context:add_system_error('forbidden', Context0));
-        ['true'|_] ->
-            {'true', Req, Context0};
-        [{'true', Context1}|_] ->
-            {'true', Req, Context1};
-        [{'stop', Context1}|_] ->
+            Context1 = merge_buckets(Context0, collect_remaining_buckets(Failed)),
+            ?MODULE:stop(Req, cb_context:add_system_error('forbidden', Context1));
+        ['true'|T] ->
+            {'true', Req, merge_buckets(Context0, collect_remaining_buckets(T ++ Failed))};
+        [{'true', Context1}|T] ->
+            {'true', Req, merge_buckets(Context1, collect_remaining_buckets(T ++ Failed))};
+        [{'stop', Context1}|T] ->
             lager:debug("authz stopped"),
-            ?MODULE:stop(Req, Context1)
+            ?MODULE:stop(Req, merge_buckets(Context1, collect_remaining_buckets(T ++ Failed)))
     end.
 
 -spec is_known_content_type(cowboy_req:req(), cb_context:context()) ->
@@ -1770,16 +1850,33 @@ csv_body(Context, JObjs) when is_list(JObjs) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec create_push_response(cowboy_req:req(), cb_context:context()) ->
-          {boolean(), cowboy_req:req(), cb_context:context()}.
+          {boolean() | 'stop', cowboy_req:req(), cb_context:context()}.
 create_push_response(Req0, Context) ->
     create_push_response(Req0, Context, fun create_resp_content/2).
 
 -spec create_push_response(cowboy_req:req(), cb_context:context(), resp_content_fun()) ->
-          {boolean(), cowboy_req:req(), cb_context:context()}.
+          {boolean() | 'stop', cowboy_req:req(), cb_context:context()}.
 create_push_response(Req0, Context, Fun) ->
-    {Content, Req1} = Fun(Req0, Context),
-    Req2 = set_resp_headers(Req1, Context),
-    {succeeded(Context), cowboy_req:set_resp_body(Content, Req2), Context}.
+    case should_use_explicit_error_code(cb_context:resp_error_code(Context)) of
+        {'true', _CustomHTTPStatus} ->
+            lager:debug("using explicit ~p HTTP status code for reply", [_CustomHTTPStatus]),
+            stop(Req0, Context);
+        'false' ->
+            {Content, Req1} = Fun(Req0, Context),
+            Req2 = set_resp_headers(Req1, Context),
+            {succeeded(Context), cowboy_req:set_resp_body(Content, Req2), Context}
+    end.
+
+-spec should_use_explicit_error_code(kz_term:api_non_neg_integer()) ->
+          {'true', non_neg_integer()} | 'false'.
+should_use_explicit_error_code(?DEFAULT_RESP_ERROR_CODE) ->
+    %% Not explicit HTTP status set, ignore.
+    'false';
+should_use_explicit_error_code('undefined') ->
+    %% Places like `crossbar_util:response/2' will set 'resp_error_code=undefined'. Ignore.
+    'false';
+should_use_explicit_error_code(CustomHTTPStatus) when is_integer(CustomHTTPStatus) ->
+    {'true', CustomHTTPStatus}.
 
 %%------------------------------------------------------------------------------
 %% @doc This function will create response expected for a request that
@@ -1825,7 +1922,7 @@ maybe_set_pull_response_stream(Other, Req, Context) ->
 
 -spec get_token_obj(cb_context:context()) -> kz_json:object().
 get_token_obj(Context) ->
-    kz_json:from_list([{<<"consumed">>, cb_modules_util:token_cost(Context)}
+    kz_json:from_list([{<<"consumed">>, cb_context:consumed_token_buckets(Context)}
                       ,{<<"remaining">>, cb_modules_util:tokens_remaining(Context)}
                       ]).
 %%------------------------------------------------------------------------------
@@ -1851,42 +1948,63 @@ do_create_resp_envelope(Context) ->
 
 -spec create_default_resp_envelope(cb_context:context()) -> kz_json:object().
 create_default_resp_envelope(Context) ->
-    BaseResp = [{<<"auth_token">>, cb_context:auth_token(Context)}
-               ,{<<"tokens">>, get_token_obj(Context)}
-               ,{<<"request_id">>, cb_context:req_id(Context)}
+    BaseResp = [{<<"metadata">>, cb_context:get_metadata(Context)}
                ,{<<"node">>, kz_nodes:node_encoded()}
+               ,{<<"request_id">>, cb_context:req_id(Context)}
                ,{<<"timestamp">>, kz_time:iso8601(kz_time:now_s())}
+               ,{<<"tokens">>, get_token_obj(Context)}
                | conditional_resp_data(Context)
                ],
     Resp = case cb_context:response(Context) of
                {'ok', RespData} ->
-                   [{<<"status">>, <<"success">>}
-                   ,{<<"request_id">>, cb_context:req_id(Context)}
-                   ,{<<"revision">>, kz_term:to_api_binary(cb_context:resp_etag(Context))}
-                   ,{<<"data">>, RespData}
-                   | BaseResp
-                   ];
+                   success_envelope(Context, BaseResp, RespData);
                {'error', {ErrorCode, ErrorMsg, RespData}} ->
-                   lager:debug("generating error ~b ~s response", [ErrorCode, ErrorMsg]),
-                   [{<<"status">>, <<"error">>}
-                   ,{<<"message">>, ErrorMsg}
-                   ,{<<"error">>, kz_term:to_binary(ErrorCode)}
-                   ,{<<"data">>, RespData}
-                   | BaseResp
-                   ]
+                   error_envelope(BaseResp, RespData, ErrorCode, ErrorMsg)
            end,
-
     maybe_delete_range_keys(kz_json:set_values(Resp, cb_context:resp_envelope(Context))
                            ,cb_context:should_paginate(Context)
                            ).
 
+success_envelope(Context, BaseResp, RespData) ->
+    [{<<"status">>, <<"success">>}
+    ,{<<"revision">>, kz_term:to_api_binary(cb_context:resp_etag(Context))}
+    ,{<<"data">>, RespData}
+    | BaseResp
+    ].
+
+error_envelope(BaseResp, RespData, ErrorCode, ErrorMsg) ->
+    lager:info("generating error ~b ~s response", [ErrorCode, ErrorMsg]),
+    [{<<"status">>, <<"error">>}
+    ,{<<"message">>, ErrorMsg}
+    ,{<<"error">>, kz_term:to_binary(ErrorCode)}
+    ,{<<"data">>, RespData}
+    | BaseResp
+    ].
+
 conditional_resp_data(Context) ->
-    Fs = [fun maybe_add_version/2],
+    Fs = [fun maybe_add_version/2
+         ,fun maybe_add_auth_token/2
+         ],
     lists:foldl(fun(F, Acc) -> F(Context, Acc) end, [], Fs).
 
 maybe_add_version(Context, Acc) ->
     case cb_context:is_authenticated(Context) of
-        'true' -> [{<<"version">>, kapps_util:kazoo_version()} | Acc];
+        'true' -> props:set_value(<<"version">>, kapps_util:kazoo_version(), Acc);
+        'false' -> Acc
+    end.
+
+-spec should_include_auth_token(cb_context:context()) -> boolean().
+should_include_auth_token(Context) ->
+    kz_app_config:is_true({?APP, cb_context:auth_account_id(Context)}, <<"include_auth_token">>, true).
+
+maybe_add_auth_token(Context, Acc) ->
+    maybe_add_auth_token(Context, Acc, should_include_auth_token(Context)).
+
+maybe_add_auth_token(Context, Acc, 'true') ->
+    props:set_value(<<"auth_token">>, cb_context:auth_token(Context), Acc);
+maybe_add_auth_token(Context, Acc, 'false') ->
+    case kz_term:is_true(cb_context:fetch(Context, 'include_token')) of
+        'true' -> props:set_value(<<"auth_token">>, cb_context:auth_token(Context), Acc);
         'false' -> Acc
     end.
 
@@ -1904,9 +2022,8 @@ close_chunk_json_envelope(Req, Context) ->
         ,{<<"version">>, kapps_util:kazoo_version()}
         ,{<<"timestamp">>, kz_time:iso8601(kz_time:now_s())}
         ,{<<"revision">>, kz_term:to_api_binary(cb_context:resp_etag(Context))}
-        ,{<<"auth_token">>, cb_context:auth_token(Context)}
         ],
-    Encoded = encode_trailer(Trailer),
+    Encoded = encode_trailer(maybe_add_auth_token(Context, Trailer)),
     'ok' = cowboy_req:stream_body(<<"], ", (kz_binary:join(Encoded))/binary, "}">>, 'fin', Req).
 
 -spec maybe_delete_range_keys(kz_json:object(), boolean()) -> kz_json:object().

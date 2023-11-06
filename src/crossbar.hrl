@@ -9,6 +9,7 @@
 
 -define(APP, 'crossbar').
 -define(APP_NAME, <<"crossbar">>).
+-define(CROSSBAR_AUTH_BUCKET, <<"crossbar_auth_bucket">>).
 -define(APP_VERSION, <<"4.0.0">>).
 -define(CONFIG_CAT, ?APP_NAME).
 -define(AUTH_CONFIG_CAT, <<(?CONFIG_CAT)/binary, ".auth">>).
@@ -93,6 +94,7 @@
                          ,'cb_schemas'
                          ,'cb_scopes'
                          ,'cb_scope_retrictions'
+                         ,'cb_screenpops'
                          ,'cb_search'
                          ,'cb_security'
                          ,'cb_services'
@@ -109,9 +111,12 @@
                          ,'cb_users'
                          ,'cb_vmboxes'
                          ,'cb_webhooks'
+                         ,'cb_websites'
                          ,'cb_websockets'
                          ,'cb_whitelabel'
                          ]).
+
+-define(DEFAULT_RESP_ERROR_CODE, 500).
 
 -define(MAX_RANGE, kapps_config:get_pos_integer(?CONFIG_CAT
                                                ,<<"maximum_range">>
@@ -119,9 +124,13 @@
                                                )
        ).
 
+-define(NUMBERS_COLLECTION, <<"collection">>).
+
 -define(OPTION_EXPECTED_TYPE, 'expected_type').
 -define(TYPE_CHECK_OPTION(ExpectedType), [{?OPTION_EXPECTED_TYPE, ExpectedType}]).
 -define(TYPE_CHECK_OPTION_ANY, ?TYPE_CHECK_OPTION(<<"any">>)).
 
 -define(CROSSBAR_HRL, 'true').
+
+-define(DEFAULT_CONFIG_ID, <<"default">>).
 -endif.

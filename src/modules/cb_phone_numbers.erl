@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc Handle client requests for phone_number documents
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -25,6 +25,7 @@
         ,delete/2
 
         ,set_response/3
+        ,default_knm_options/1
         ]).
 
 -include("crossbar.hrl").
@@ -40,7 +41,7 @@
 
 -define(CLASSIFIERS, <<"classifiers">>).
 -define(IDENTIFY, <<"identify">>).
--define(COLLECTION, <<"collection">>).
+-define(COLLECTION, ?NUMBERS_COLLECTION). %% ?NUMBERS_COLLECTION is defined within crossbar.hrl file.
 -define(COLLECTION_NUMBERS, <<"numbers">>).
 -define(CARRIERS_INFO, <<"carriers_info">>).
 -define(FIX, <<"fix">>).
@@ -67,7 +68,6 @@
                                        ,'false'
                                        )).
 
-
 %%%=============================================================================
 %%% API
 %%%=============================================================================
@@ -76,7 +76,7 @@
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec init() -> ok.
+-spec init() -> 'ok'.
 init() ->
     _ = crossbar_bindings:bind(<<"*.authenticate.phone_numbers">>, ?MODULE, 'authenticate'),
     _ = crossbar_bindings:bind(<<"*.authorize.phone_numbers">>, ?MODULE, 'authorize'),
@@ -87,7 +87,7 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.execute.post.phone_numbers">>, ?MODULE, 'post'),
     _ = crossbar_bindings:bind(<<"*.execute.patch.phone_numbers">>, ?MODULE, 'patch'),
     _ = crossbar_bindings:bind(<<"*.execute.delete.phone_numbers">>, ?MODULE, 'delete'),
-    ok.
+    'ok'.
 
 %%------------------------------------------------------------------------------
 %% @doc Authenticates the incoming request, returning true if the requestor is
@@ -277,9 +277,14 @@ validate(Context, ?COLLECTION, ?ACTIVATE) ->
 validate(Context, ?CLASSIFIERS, Number) ->
     classify_number(Context, Number);
 validate(Context, _Number, ?ACTIVATE) ->
-    case has_tokens(Context) of
-        'true' -> validate_request(Context);
-        'false' -> cb_context:add_system_error('too_many_requests', Context)
+    BucketName = <<(cb_context:account_id(Context))/binary, "/", ?PHONE_NUMBERS_CONFIG_CAT/binary>>,
+    Cost = cb_modules_util:token_cost(Context, 1),
+    case cb_modules_util:consume_tokens(Context, Cost, BucketName) of
+        {'true', Context1} ->
+            validate_request(Context1);
+        {'false', Context1} ->
+            lager:warning("rate limiting activation limit reached, rejecting"),
+            cb_context:add_system_error('too_many_requests', Context1)
     end;
 validate(Context, _Number, ?RESERVE) ->
     validate_request(Context);
@@ -310,10 +315,10 @@ base_classified_number(_Context, Number) ->
     ].
 
 -spec classified_number(cb_context:context(), path_token(), kz_term:api_binary()) -> cb_context:context().
-classified_number(Context, Number, Classifier) ->
-    ClassifierJObj = kz_json:get_value(Classifier, knm_converters:available_classifiers()),
+classified_number(Context, Number, ClassifierName) ->
+    ClassifierJObj = kz_json:find_value(<<"name">>, ClassifierName, knm_converters:available_classifiers()),
     BaseData = base_classified_number(Context, Number),
-    RespData = kz_json:set_values([{<<"name">>, Classifier}
+    RespData = kz_json:set_values([{<<"name">>, ClassifierName}
                                   | BaseData
                                   ]
                                  ,ClassifierJObj
@@ -356,25 +361,26 @@ post(Context, Number) ->
     CB = fun() -> ?MODULE:post(cb_context:set_accepting_charges(Context), Number) end,
     set_response(Result, Context, CB).
 
-
 -spec put(cb_context:context(), path_token()) -> cb_context:context().
 put(Context, ?COLLECTION) ->
     {Numbers, ReqData} = take_collection_numbers(Context),
-    Options = [{'assign_to', cb_context:account_id(Context)}
-              ,{'public_fields', kz_json:delete_key(?PUBLIC_FIELDS_STATE, ReqData)}
-              | maybe_ask_for_state(kz_json:get_ne_binary_value(?PUBLIC_FIELDS_STATE, ReqData))
-               ++ default_knm_options(Context)
-              ],
+    Options = props:set_values([{'assign_to', cb_context:account_id(Context)}
+                               ,{'public_fields', kz_json:delete_key(?PUBLIC_FIELDS_STATE, ReqData)}
+                               | maybe_ask_for_state(kz_json:get_ne_binary_value(?PUBLIC_FIELDS_STATE, ReqData))
+                               ]
+                              ,default_knm_options(Context)
+                              ),
     Results = knm_numbers:create(Numbers, Options),
     CB = fun() -> ?MODULE:put(cb_context:set_accepting_charges(Context), ?COLLECTION) end,
     set_response(Results, Context, CB, ?COLLECTION);
 put(Context, Number) ->
     Doc = cb_context:doc(Context),
-    Options = [{'assign_to', cb_context:account_id(Context)}
-              ,{'public_fields', kz_json:delete_key(?PUBLIC_FIELDS_STATE, Doc)}
-              | maybe_ask_for_state(kz_json:get_ne_binary_value(?PUBLIC_FIELDS_STATE, Doc))
-               ++ default_knm_options(Context)
-              ],
+    Options = props:set_values([{'assign_to', cb_context:account_id(Context)}
+                               ,{'public_fields', kz_json:delete_key(?PUBLIC_FIELDS_STATE, Doc)}
+                               | maybe_ask_for_state(kz_json:get_ne_binary_value(?PUBLIC_FIELDS_STATE, Doc))
+                               ]
+                              ,default_knm_options(Context)
+                              ),
     Result = knm_numbers:create(Number, Options),
     CB = fun() -> ?MODULE:put(cb_context:set_accepting_charges(Context), Number) end,
     set_response(Result, Context, CB).
@@ -479,24 +485,25 @@ maybe_find_port_number(Context, Number, 'false') ->
     reply_number_not_found(Number, Context);
 maybe_find_port_number(Context, Number, 'true') ->
     Num = knm_converters:normalize(Number),
-    ViewOption = [{'key', [cb_context:account_id(Context), Num]}
-                 ],
+    ViewOption = [{'key', [cb_context:account_id(Context), Num]}],
     case kz_datamgr:get_single_result(?KZ_PORT_REQUESTS_DB, ?PORT_NUM_LISTING, ViewOption) of
         {'error', _} -> reply_number_not_found(Number, Context);
         {'ok', Result} ->
             Port = kz_json:get_value(<<"value">>, Result),
             {'ok', PN} = normalize_port_number(Port, Num, cb_context:auth_account_id(Context)),
-            Values = [{[<<"_read_only">>, <<"port_id">>], kz_json:get_value(<<"port_id">>, Port)}
-                     ,{[<<"_read_only">>, <<"port_state">>], kz_json:get_value(<<"port_state">>, Port)}
+            Values = [{<<"port_id">>, kz_json:get_value(<<"port_id">>, Port)}
+                     ,{<<"port_state">>, kz_json:get_value(<<"port_state">>, Port)}
                      ],
-            JObj = kz_json:set_values(Values, knm_phone_number:to_public_json(PN)),
-            port_number_summary(JObj, Context, knm_phone_number:is_authorized(PN))
+            port_number_summary(cb_context:add_metadata_values(Context, Values)
+                               ,knm_phone_number:to_public_json(PN)
+                               ,knm_phone_number:is_authorized(PN)
+                               )
     end.
 
--spec port_number_summary(kz_json:object(), cb_context:context(), boolean()) -> cb_context:context().
-port_number_summary(PhoneNumberJObj, Context, 'true') ->
+-spec port_number_summary(cb_context:context(), kz_json:object(), boolean()) -> cb_context:context().
+port_number_summary(Context, PhoneNumberJObj, 'true') ->
     crossbar_doc:handle_datamgr_success(PhoneNumberJObj, Context);
-port_number_summary(PhoneNumberJObj, Context, 'false') ->
+port_number_summary(Context, PhoneNumberJObj, 'false') ->
     reply_number_not_found(PhoneNumberJObj, Context).
 
 -spec normalize_port_number(kz_json:object(), kz_term:ne_binary(), kz_term:ne_binary()) ->
@@ -550,7 +557,6 @@ view_account_phone_numbers(Context) ->
 -spec should_include_ports(cb_context:context()) -> boolean().
 should_include_ports(Context) ->
     kz_term:is_true(cb_context:req_value(Context, <<"include_ports">>, 'true')).
-
 
 -spec maybe_add_port_request_numbers(cb_context:context()) -> kz_json:object().
 maybe_add_port_request_numbers(Context) ->
@@ -716,26 +722,22 @@ validate_collection_request(Context) ->
 
 -spec validate_collection_request(cb_context:context(), any()) -> cb_context:context().
 validate_collection_request(Context, 'undefined') ->
-    Msg = kz_json:from_list([{<<"message">>, <<"list of numbers missing">>}
-                            ]),
+    Msg = kz_json:from_list([{<<"message">>, <<"list of numbers missing">>}]),
     cb_context:add_validation_error(?COLLECTION_NUMBERS, <<"required">>, Msg, Context);
 validate_collection_request(Context, []) ->
-    Msg = kz_json:from_list([{<<"message">>, <<"minimum 1 number required">>}
-                            ]),
+    Msg = kz_json:from_list([{<<"message">>, <<"minimum 1 number required">>}]),
     cb_context:add_validation_error(?COLLECTION_NUMBERS, <<"minimum">>, Msg, Context);
 validate_collection_request(Context, Numbers)
   when is_list(Numbers) ->
-    UniqNomalised = lists:usort([knm_converters:normalize(N) || N <- Numbers]),
-    case length(Numbers) =:= length(UniqNomalised) of
+    UniqNormalized = lists:usort([knm_converters:normalize(N) || N <- Numbers]),
+    case length(Numbers) =:= length(UniqNormalized) of
         'true' -> cb_context:set_resp_status(Context, 'success');
         'false' ->
-            Msg = kz_json:from_list([{<<"message">>, <<"some numbers appear twice">>}
-                                    ]),
+            Msg = kz_json:from_list([{<<"message">>, <<"some numbers appear twice">>}]),
             cb_context:add_validation_error(?COLLECTION_NUMBERS, <<"uniqueItems">>, Msg, Context)
     end;
 validate_collection_request(Context, _E) ->
-    Msg = kz_json:from_list([{<<"message">>, <<"numbers must be a list">>}
-                            ]),
+    Msg = kz_json:from_list([{<<"message">>, <<"numbers must be a list">>}]),
     cb_context:add_validation_error(?COLLECTION_NUMBERS, <<"type">>, Msg, Context).
 
 %%------------------------------------------------------------------------------
@@ -1007,21 +1009,6 @@ maybe_ask_for_state(StateAskedFor) -> [{'state', StateAskedFor}].
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
-
--spec has_tokens(cb_context:context()) -> boolean().
-has_tokens(Context) -> has_tokens(Context, 1).
-
--spec has_tokens(cb_context:context(), pos_integer()) -> boolean().
-has_tokens(Context, Count) ->
-    Name = <<(cb_context:account_id(Context))/binary, "/", ?PHONE_NUMBERS_CONFIG_CAT/binary>>,
-    Cost = cb_modules_util:token_cost(Context, Count),
-    case kz_buckets:consume_tokens(?APP_NAME, Name, Cost) of
-        'true' -> 'true';
-        'false' ->
-            lager:warning("rate limiting activation limit reached, rejecting"),
-            'false'
-    end.
-
 -spec default_knm_options(cb_context:context()) -> knm_options:options().
 default_knm_options(Context) ->
     AuthAccountId = cb_context:auth_account_id(Context),

@@ -31,6 +31,10 @@
             "description": "What sampling rate to use on the recording",
             "type": "integer"
         },
+        "should_announce_when_recording": {
+            "description": "Whether or not a prompt should be played (after bridge) when the call is being recorded",
+            "type": "boolean"
+        },
         "should_record_feature_calls": {
             "default": true,
             "description": "Toggles whether to start a recording for calls to feature codes",
@@ -46,6 +50,7 @@
             "description": "The URL to use when sending the recording for storage",
             "format": "uri",
             "kazoo-validation": true,
+            "minLength": 6,
             "type": "string"
         }
     },

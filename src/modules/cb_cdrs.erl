@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc CDR
 %%% Read only access to CDR docs
 %%%
@@ -307,6 +307,7 @@ get_view_options([{<<"cdrs">>, [?PATH_INTERACTION]}, {?KZ_ACCOUNTS_DB, _}|_]) ->
     ,props:filter_undefined(
        [{'range_start_keymap', []}
        ,{'range_end_keymap', crossbar_view:suffix_key_fun([kz_json:new()])}
+       ,{'key_min_length', 3}
        ,{'group', 'true'}
        ,{'group_level', 2}
        ,{'reduce', 'true'}
@@ -354,10 +355,9 @@ load_chunked_cdrs(Context0, JObjs) ->
     QS = cb_context:query_string(Context0),
     %% range keys are using interaction_time, crossbar_filter for create_* is using pvt_created
     %% and interaction_time could be before pvt_created
-    Context = cb_context:set_query_string(Context0, kz_json:delete_keys([<<"created_from">>, <<"create_to">>], QS)),
+    Context = cb_context:set_query_string(Context0, kz_json:delete_keys([<<"created_from">>, <<"created_to">>], QS)),
 
     SplitIds = split_to_modbs(cb_context:account_id(Context), JObjs, #{}),
-
 
     ContextSetter = [{fun cb_context:set_resp_data/2, []}
                     ,{fun cb_context:set_resp_status/2, 'success'}

@@ -4,7 +4,7 @@
 
 Conference documents are enriched with real-time information along side their configuration, namely showing the number of members, number of moderators, duration of the conference, conference locked status.
 
-The real-time information (if available) is added to conference document under `_read_only` key (to avoid accident document update).
+The real-time information (if available) is added to conference document under the `_read_only` key (to avoid accidental document update).
 
 #### Schema
 
@@ -15,6 +15,7 @@ Schema for conferences
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `allow_shareable_link` | Indicates if the conference is reachable using a public link | `boolean()` | `false` | `false` |  
+`base_profile_name` | name of base profile | `string()` |   | `false` |  
 `bridge_password` | the password used for a conference bridge | `string()` |   | `false` |  
 `bridge_username` | the username used for a conference bridge | `string()` |   | `false` |  
 `caller_controls` | caller controls (config settings) | `string()` |   | `false` |  
@@ -66,13 +67,13 @@ Key | Description | Type | Default | Required | Support Level
 `alone-sound` | Audio that plays while you are alone in the conference | `string()` |   | `false` |  
 `announce-count` | Play member count to conference when above this threshold | `integer()` |   | `false` |  
 `caller-controls` | Name of the caller control group | `string()` |   | `false` |  
-`comfort-noise` | The volume level of background white noise | `integer()` |   | `false` |  
-`energy-level` | Energy level required for audio to be sent to other users | `integer()` |   | `false` |  
+`comfort-noise` | The volume level of background white noise | `integer(0..10000)` |   | `false` |  
+`energy-level` | Energy level required for audio to be sent to other users | `integer(0..1800)` |   | `false` |  
 `enter-sound` | Audio to play when entering a conference | `string()` |   | `false` |  
 `exit-sound` | Audio to play when exiting a conference | `string()` |   | `false` |  
-`interval` | Milliseconds per frame | `integer()` |   | `false` |  
+`interval` | Milliseconds per frame | `integer(10..120)` |   | `false` |  
 `locked-sound` | Audio to play when the conference is locked | `string()` |   | `false` |  
-`max-members` | Set the maximum number of members in the conference | `integer()` |   | `false` |  
+`max-members` | Set the maximum number of members in the conference | `integer(2..)` |   | `false` |  
 `max-members-sound` | If max-members has been reached, audio to play to caller instead of joining the conference | `string()` |   | `false` |  
 `moderator-controls` | Name of the moderator control group to use | `string()` |   | `false` |  
 `moh-sound` | Audio to play, on a loop, while participant count is 1 | `string()` |   | `false` |  
@@ -105,6 +106,7 @@ curl -v -X PUT \
  `dial` | Dial an endpoint (user/device/DID)
  `play` | Play media to the conference (all participants)
  `record` | Start/stop the recording of the conference
+ `vars` | Put custom conference variables on the conference
 
 ### Lock / unlock
 
@@ -139,6 +141,20 @@ curl -v -X PUT \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/conferences/{CONFERENCE_ID}
 ```
 
+### Set custom conference variables
+
+This action allows the client to associate custom conference variables on a running (active) conference. No effect if the conference isn't running.
+
+Optionally, a SIP NOTIFY can be sent to participants with the `X-Conference-Vars` header where the key/value pairs will be encoded `X-Conference-Vars: key=value;key-value`
+
+```shell
+curl -v -X PUT \
+    -d '{"action":"vars","data":{"custom_conference_vars":{"key_the_first":"value_the_first"}}}'
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/conferences/{CONFERENCE_ID}
+```
+
+When the conference config is fetched, custom conference variables will appear in the `metadata` top-level key.
 
 ### Dialing an endpoint
 
@@ -153,6 +169,7 @@ Schema for conferences
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `allow_shareable_link` | Indicates if the conference is reachable using a public link | `boolean()` | `false` | `false` |  
+`base_profile_name` | name of base profile | `string()` |   | `false` |  
 `bridge_password` | the password used for a conference bridge | `string()` |   | `false` |  
 `bridge_username` | the username used for a conference bridge | `string()` |   | `false` |  
 `caller_controls` | caller controls (config settings) | `string()` |   | `false` |  
@@ -204,13 +221,13 @@ Key | Description | Type | Default | Required | Support Level
 `alone-sound` | Audio that plays while you are alone in the conference | `string()` |   | `false` |  
 `announce-count` | Play member count to conference when above this threshold | `integer()` |   | `false` |  
 `caller-controls` | Name of the caller control group | `string()` |   | `false` |  
-`comfort-noise` | The volume level of background white noise | `integer()` |   | `false` |  
-`energy-level` | Energy level required for audio to be sent to other users | `integer()` |   | `false` |  
+`comfort-noise` | The volume level of background white noise | `integer(0..10000)` |   | `false` |  
+`energy-level` | Energy level required for audio to be sent to other users | `integer(0..1800)` |   | `false` |  
 `enter-sound` | Audio to play when entering a conference | `string()` |   | `false` |  
 `exit-sound` | Audio to play when exiting a conference | `string()` |   | `false` |  
-`interval` | Milliseconds per frame | `integer()` |   | `false` |  
+`interval` | Milliseconds per frame | `integer(10..120)` |   | `false` |  
 `locked-sound` | Audio to play when the conference is locked | `string()` |   | `false` |  
-`max-members` | Set the maximum number of members in the conference | `integer()` |   | `false` |  
+`max-members` | Set the maximum number of members in the conference | `integer(2..)` |   | `false` |  
 `max-members-sound` | If max-members has been reached, audio to play to caller instead of joining the conference | `string()` |   | `false` |  
 `moderator-controls` | Name of the moderator control group to use | `string()` |   | `false` |  
 `moh-sound` | Audio to play, on a loop, while participant count is 1 | `string()` |   | `false` |  

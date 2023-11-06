@@ -4,7 +4,7 @@
 
 #### Schema
 
-Web Hooks are subscriptions to allowed events that, when the event occurs, the event data is sent to the uri set in the Web Hook document.
+Web Hooks are subscriptions to allowed events that, when the event occurs, the event data is sent to the URI set in the Web Hook document.
 
 
 
@@ -18,8 +18,11 @@ Key | Description | Type | Default | Required | Support Level
 `include_internal_legs` | Whether to filter out call legs that are internal to the system (loopback) | `boolean()` | `true` | `false` |  
 `include_subaccounts` | Should the webhook be fired for subaccount events. | `boolean()` |   | `false` | `supported`
 `name` | A friendly name for the webhook | `string()` |   | `true` | `supported`
-`retries` | Retry the request this many times (if it fails) | `integer()` | `2` | `false` | `supported`
-`uri` | The 3rd party URI to call out to an event | `string()` |   | `true` | `supported`
+`retries` | Retry the request this many times (if it fails) | `integer(0..4)` | `2` | `false` | `supported`
+`security_settings.sha256_key` | Secret key to create a SHA256 HMAC with, so receiver can validate the webhook came from the cluster | `string()` |   | `false` |  
+`security_settings` | Security settings to harden webhook delivery | `object()` |   | `false` |  
+`uri` | The 3rd party URI to call out to an event | `string(1..)` |   | `true` | `supported`
+`version` | Whether to receive the full version of the event in the webhook payload | `string('v1' | 'v2')` | `v1` | `false` |  
 
 
 

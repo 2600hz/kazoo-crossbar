@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc VMBoxes module
 %%% Handle client requests for vmbox documents
 %%%
@@ -26,7 +26,7 @@
         ,post/2, post/3, post/4
         ,patch/2
         ,delete/2, delete/3, delete/4
-
+        ,authorize/1, authorize/2, authorize/3, authorize/4
         ,acceptable_content_types/0
         ]).
 
@@ -53,6 +53,13 @@
 -define(NORMALIZATION_FORMAT, kapps_config:get_ne_binary(?MOD_CONFIG_CAT, <<"normalization_format">>, <<"mp3">>)).
 -define(TRANSCRIBE_FORMAT, kapps_config:get_ne_binary(?MOD_CONFIG_CAT, <<"transcribe_format">>)).
 
+-define(SHOULD_RESTRICT_ACCESS_TO_OWNER
+       ,kapps_config:get_is_true(?MOD_CONFIG_CAT, <<"should_restrict_access_to_owner">>, 'false')
+       ).
+-define(SHOULD_RESTRICT_ACCESS_TO_UNOWNED
+       ,kapps_config:get_is_true(?MOD_CONFIG_CAT, <<"should_restrict_access_to_unowned">>, 'false')
+       ).
+
 %%%=============================================================================
 %%% API
 %%%=============================================================================
@@ -67,6 +74,7 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.content_types_provided.vmboxes">>, ?MODULE, 'content_types_provided'),
     _ = crossbar_bindings:bind(<<"*.allowed_methods.vmboxes">>, ?MODULE, 'allowed_methods'),
     _ = crossbar_bindings:bind(<<"*.resource_exists.vmboxes">>, ?MODULE, 'resource_exists'),
+    _ = crossbar_bindings:bind(<<"*.authorize.vmboxes">>, ?MODULE, 'authorize'),
     _ = crossbar_bindings:bind(<<"*.validate.vmboxes">>, ?MODULE, 'validate'),
     _ = crossbar_bindings:bind(<<"*.execute.put.vmboxes">>, ?MODULE, 'put'),
     _ = crossbar_bindings:bind(<<"*.execute.post.vmboxes">>, ?MODULE, 'post'),
@@ -139,6 +147,82 @@ allowed_methods(_VMBoxId, ?MESSAGES_RESOURCE, _VMMsgId) ->
 -spec allowed_methods(path_token(), path_token(), path_token(), path_token()) -> http_methods().
 allowed_methods(_VMBoxId, ?MESSAGES_RESOURCE, _VMMsgId, ?BIN_DATA) ->
     [?HTTP_GET, ?HTTP_PUT].
+
+
+%%------------------------------------------------------------------------------
+%% @doc Returns true if the requested account id is an superduper admin, admin
+%% or the user is the owner of the requested data
+%% @end
+%%------------------------------------------------------------------------------
+-spec authorize(cb_context:context()) -> boolean() | {'stop', cb_context:context()}.
+authorize(Context) ->
+    authorize_user(Context, cb_context:is_superduper_admin(Context)).
+
+-spec authorize(cb_context:context(), path_token()) -> boolean() | {'stop', cb_context:context()}.
+authorize(Context, _VMBoxId) ->
+    authorize_user(Context, cb_context:is_superduper_admin(Context)).
+
+-spec authorize(cb_context:context(), path_token(), path_token()) -> boolean() | {'stop', cb_context:context()}.
+authorize(Context, _VMBoxId, _MessagePath) ->
+    authorize_user(Context, cb_context:is_superduper_admin(Context)).
+
+-spec authorize(cb_context:context(), path_token(), path_token(), path_token()) -> boolean() | {'stop', cb_context:context()}.
+authorize(Context, _VMBoxId, _MessagePath, _MsdId) ->
+    authorize_user(Context, cb_context:is_superduper_admin(Context)).
+
+%%------------------------------------------------------------------------------
+%% @doc Returns true if user is the owner of the requested data
+%% @end
+%%------------------------------------------------------------------------------
+-spec authorize_user(cb_context:context(), boolean()) -> boolean().
+authorize_user(_Context, 'true') -> 'true';
+authorize_user(Context, 'false') ->
+    case cb_context:is_account_admin(Context) of
+        'true' -> 'true';
+        'false' ->
+            case ?SHOULD_RESTRICT_ACCESS_TO_OWNER of
+                'false' -> 'true';
+                'true' ->
+                    validate_request_for_user(Context, cb_context:req_nouns(Context))
+            end
+    end.
+
+%%------------------------------------------------------------------------------
+%% @doc Returns true if user is the owner of the requested data
+%% @end
+%%------------------------------------------------------------------------------
+-spec validate_request_for_user(cb_context:context(), req_nouns()) -> boolean().
+validate_request_for_user(Context, [{<<"vmboxes">>, [VMBoxID | _Args]} | _ReqNouns]) ->
+    check_if_user_is_owner(Context, VMBoxID);
+validate_request_for_user(_Context, _ReqNouns) ->
+    'true'.
+
+%%------------------------------------------------------------------------------
+%% @doc Returns true if user is the owner of the requested data
+%% @end
+%%------------------------------------------------------------------------------
+-spec check_if_user_is_owner(cb_context:context(), kz_term:ne_binary()) -> boolean().
+check_if_user_is_owner(Context, VMBoxId) ->
+    VMBox = crossbar_doc:load(VMBoxId, Context, ?TYPE_CHECK_OPTION(kzd_vmboxes:type())),
+    AuthUserId = cb_context:auth_user_id(Context),
+
+    ShouldRestrictToUnowned = ?SHOULD_RESTRICT_ACCESS_TO_UNOWNED,
+    case kzd_vmboxes:owner_id(cb_context:doc(VMBox)) of
+        AuthUserId -> 'true';
+        'undefined' when ShouldRestrictToUnowned ->
+            lager:debug("vmbox ~s has no owner, auth user ~s cannot access this box"
+                       ,[VMBoxId, AuthUserId]
+                       ),
+            {'stop', cb_context:add_system_error('forbidden', Context)};
+        'undefined' ->
+            lager:debug("vmbox ~s has no owner, no restrictions on access", [VMBoxId]),
+            'true';
+        _OwnerId  ->
+            lager:debug("access to vmbox ~s for auth user ~s denied, box is owned by ~s"
+                       ,[VMBoxId, AuthUserId, _OwnerId]
+                       ),
+            {'stop', cb_context:add_system_error('forbidden', Context)}
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc This function determines if the provided list of Nouns are valid.
@@ -701,12 +785,17 @@ validate_unique_vmbox(VMBoxId, Context) ->
 validate_unique_vmbox(VMBoxId, Context, 'undefined') ->
     check_vmbox_schema(VMBoxId, Context);
 validate_unique_vmbox(VMBoxId, Context, _AccountDb) ->
-    case check_uniqueness(VMBoxId, Context) of
-        'true' -> check_vmbox_schema(VMBoxId, Context);
-        'false' ->
-            Msg = kz_json:from_list([{<<"message">>, <<"Invalid mailbox number or already exists">>}]),
-            C = cb_context:add_validation_error(<<"mailbox">>, <<"unique">>, Msg, Context),
-            check_vmbox_schema(VMBoxId, C)
+    ValidatedContext = check_vmbox_schema(VMBoxId, Context),
+    case cb_context:resp_status(ValidatedContext) of
+        'success' ->
+            case check_uniqueness(VMBoxId, ValidatedContext) of
+                'true' -> ValidatedContext;
+                'false' ->
+                    Msg = kz_json:from_list([{<<"message">>, <<"Invalid mailbox number, alias or already exists">>}]),
+                    cb_context:add_validation_error(<<"mailbox">>, <<"unique">>, Msg, ValidatedContext)
+            end;
+        _SchemaInvalid ->
+            ValidatedContext
     end.
 
 %%------------------------------------------------------------------------------
@@ -737,11 +826,12 @@ find_schema() ->
 -spec validate_media_extension(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
 validate_media_extension(VMBoxId, Context) ->
     MediaExt = ?TRANSCRIBE_FORMAT,
-    case MediaExt /= 'undefined'
+    case MediaExt =/= 'undefined'
         andalso cb_context:req_value(Context, <<"transcribe">>, 'false')
-        andalso cb_context:req_value(Context, <<"media_extension">>) /= MediaExt of
+        andalso cb_context:req_value(Context, <<"media_extension">>) =/= MediaExt
+    of
         'true' ->
-            Resp = [{<<"message">>, <<"if you want transcribe message, then use '", MediaExt/binary, "' media extension">>}],
+            Resp = [{<<"message">>, <<"if you want transcribe the message, use '", MediaExt/binary, "' media extension">>}],
             cb_context:add_validation_error(<<"media_extension">>, <<"invalid">>, kz_json:from_list(Resp), Context);
         'false' -> on_successful_validation(VMBoxId, Context)
     end.
@@ -1188,24 +1278,19 @@ generate_media_name(CallerId, GregorianSeconds, Ext, Timezone) ->
     list_to_binary([CallerId, "_", Date, Ext]).
 
 %%------------------------------------------------------------------------------
-%% @doc
+%% @doc Returns true if all the aliases and the vmbox number are unique
+%% to the vmbox docs (also a vmbox number and an aliase can not be the same)
 %% @end
 %%------------------------------------------------------------------------------
 
 -spec check_uniqueness(kz_term:api_binary(), cb_context:context()) -> boolean().
 check_uniqueness(VMBoxId, Context) ->
-    try kz_json:get_integer_value(<<"mailbox">>, cb_context:req_data(Context)) of
-        Mailbox ->
-            check_uniqueness(VMBoxId, Context, Mailbox)
-    catch
-        _:_ ->
-            lager:debug("can't convert mailbox number to integer"),
-            'false'
-    end.
+    BoxIdentities = get_aliases_and_mailbox(Context),
+    check_uniqueness(VMBoxId, Context, BoxIdentities).
 
--spec check_uniqueness(kz_term:api_binary(), cb_context:context(), pos_integer()) -> boolean().
-check_uniqueness(VMBoxId, Context, Mailbox) ->
-    ViewOptions = [{'key', Mailbox}],
+-spec check_uniqueness(kz_term:api_binary(), cb_context:context(), kz_term:ne_binaries()) -> boolean().
+check_uniqueness(VMBoxId, Context, BoxIdentities) ->
+    ViewOptions = [{'keys', BoxIdentities}],
     case kz_datamgr:get_results(cb_context:db_name(Context)
                                ,<<"vmboxes/listing_by_mailbox">>
                                ,ViewOptions
@@ -1214,9 +1299,9 @@ check_uniqueness(VMBoxId, Context, Mailbox) ->
         {'ok', []} -> 'true';
         {'ok', [VMBox]} ->
             VMBoxId =:= kz_doc:id(VMBox);
-        {'ok', _} ->
-            lager:warning("found multiple mailboxes for '~p'", [Mailbox]),
-            'false';
+        {'ok', Boxes} ->
+            lists:all(fun(VMBox) -> VMBoxId =:= kz_doc:id(VMBox) end, Boxes)
+                andalso length(BoxIdentities) =:= length(props:unique(BoxIdentities));
         {'error', _E} ->
             lager:debug("failed to load listing_by_mailbox view: ~p", [_E]),
             'false'
@@ -1242,3 +1327,11 @@ update_mwi(Context, BoxId, 'success') ->
     Context;
 update_mwi(Context, _BoxId, _Status) ->
     Context.
+
+get_aliases_and_mailbox(Context)->
+    [BoxIdentity
+     || BoxIdentity <- [kzd_vmboxes:mailbox(cb_context:req_data(Context))
+                       | kzd_vmboxes:aliases(cb_context:req_data(Context), [])
+                       ],
+        kz_term:is_not_empty(BoxIdentity)
+    ].

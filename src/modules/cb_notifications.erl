@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2022, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -353,7 +353,7 @@ put(Context) ->
         'undefined' ->
             Context1 = crossbar_doc:save(set_system_macros(Context)),
             case cb_context:resp_status(Context1) of
-                'success' -> leak_doc_id(Context1);
+                'success' -> add_metadata_doc_id(Context1);
                 _Status -> Context1
             end;
         _ -> Context
@@ -381,7 +381,7 @@ do_post(Context) ->
     case cb_context:resp_status(Context1) of
         'success' ->
             maybe_set_teletype_as_default(Context1),
-            leak_doc_id(Context1);
+            add_metadata_doc_id(Context1);
         _Status -> Context1
     end.
 
@@ -428,7 +428,8 @@ post(Context, ?CUSTOMER_UPDATE, ?MESSAGE) ->
 post(Context, <<"customer_update_", _/binary>>, ?PREVIEW) ->
     post(Context, ?CUSTOMER_UPDATE, ?PREVIEW);
 
-post(Context, Id, ?PREVIEW) ->
+post(Context, ReqNotificationId, ?PREVIEW) ->
+    Id = kz_notification:resp_id(ReqNotificationId),
     Notification = cb_context:doc(Context),
     Preview = build_preview_payload(Context, Notification),
     {API, _} = lists:foldl(fun preview_fold/2
@@ -541,23 +542,16 @@ maybe_add_extra_data(<<"number_feature_manual_action">>, API) ->
                      ,{<<"Feature">>, kz_json:new()}
                      ]
                     , API);
+maybe_add_extra_data(<<"conference_email_invite">>, API) ->
+    props:set_values([{<<"Conference-Participant-Pins">>,[<<"1234">>]}
+                     ,{<<"Guests">>,[<<"johndoe@gmail.com">>, <<"janesmith@gmail.com">>]}
+                     ,{<<"Conference-Call-In-Numbers">>,[<<"+15557770104">>]}
+                     ,{<<"Conference-Numbers">>,[<<"12345">>]}
+                     ]
+                    , API);
 maybe_add_extra_data(_Id, API) -> API.
 
 -spec publish_fun(kz_term:ne_binary()) -> fun((kz_term:api_terms()) -> 'ok').
-publish_fun(<<"account_zone_change">>) ->
-    fun kapi_notifications:publish_account_zone_change/1;
-publish_fun(<<"bill_reminder">>) ->
-    fun kapi_notifications:publish_bill_reminder/1;
-publish_fun(<<"cnam_request">>) ->
-    fun kapi_notifications:publish_cnam_request/1;
-publish_fun(<<"customer_update">>) ->
-    fun kapi_notifications:publish_customer_update/1;
-publish_fun(<<"emergency_bridge">>) ->
-    fun kapi_notifications:publish_emergency_bridge/1;
-publish_fun(<<"denied_emergency_bridge">>) ->
-    fun kapi_notifications:publish_denied_emergency_bridge/1;
-publish_fun(<<"deregister">>) ->
-    fun kapi_notifications:publish_deregister/1;
 publish_fun(<<"fax_inbound_error_to_email">>) ->
     fun kapi_notifications:publish_fax_inbound_error/1;
 publish_fun(<<"fax_inbound_error_to_email_filtered">>) ->
@@ -570,61 +564,33 @@ publish_fun(<<"fax_outbound_smtp_error_to_email">>) ->
     fun kapi_notifications:publish_fax_outbound_smtp_error/1;
 publish_fun(<<"fax_outbound_to_email">>) ->
     fun kapi_notifications:publish_fax_outbound/1;
-publish_fun(<<"first_occurrence">>) ->
-    fun kapi_notifications:publish_first_occurrence/1;
-publish_fun(<<"low_balance">>) ->
-    fun kapi_notifications:publish_low_balance/1;
-publish_fun(<<"missed_call">>) ->
-    fun kapi_notifications:publish_missed_call/1;
-publish_fun(<<"new_account">>) ->
-    fun kapi_notifications:publish_new_account/1;
-publish_fun(<<"new_user">>) ->
-    fun kapi_notifications:publish_new_user/1;
-publish_fun(<<"password_recovery">>) ->
-    fun kapi_notifications:publish_password_recovery/1;
-publish_fun(<<"port_cancel">>) ->
-    fun kapi_notifications:publish_port_cancel/1;
-publish_fun(<<"port_comment">>) ->
-    fun kapi_notifications:publish_port_comment/1;
-publish_fun(<<"port_pending">>) ->
-    fun kapi_notifications:publish_port_pending/1;
-publish_fun(<<"port_request">>) ->
-    fun kapi_notifications:publish_port_request/1;
-publish_fun(<<"port_rejected">>) ->
-    fun kapi_notifications:publish_port_rejected/1;
 publish_fun(<<"port_request_admin">>) ->
     fun kapi_notifications:publish_port_request/1;
-publish_fun(<<"port_scheduled">>) ->
-    fun kapi_notifications:publish_port_scheduled/1;
-publish_fun(<<"port_unconfirmed">>) ->
-    fun kapi_notifications:publish_port_unconfirmed/1;
-publish_fun(<<"ported">>) ->
-    fun kapi_notifications:publish_ported/1;
-publish_fun(<<"service_added">>) ->
-    fun kapi_notifications:publish_service_added/1;
-publish_fun(<<"system_alert">>) ->
-    fun kapi_notifications:publish_system_alert/1;
-publish_fun(<<"topup">>) ->
-    fun kapi_notifications:publish_topup/1;
-publish_fun(<<"transaction">>) ->
-    fun kapi_notifications:publish_transaction/1;
 publish_fun(<<"transaction_failed">>) ->
     fun kapi_notifications:publish_transaction/1;
-publish_fun(<<"voicemail_deleted">>) ->
-    fun kapi_notifications:publish_voicemail_deleted/1;
-publish_fun(<<"voicemail_full">>) ->
-    fun kapi_notifications:publish_voicemail_full/1;
 publish_fun(<<"voicemail_to_email">>) ->
     fun kapi_notifications:publish_voicemail_new/1;
-publish_fun(<<"webhook_disabled">>) ->
-    fun kapi_notifications:publish_webhook_disabled/1;
-publish_fun(<<"number_feature_manual_action">>) ->
-    fun kapi_notifications:publish_number_feature_manual_action/1;
-publish_fun(<<"desktop_app_welcome">>) ->
-    fun kapi_notifications:publish_desktop_app_welcome/1;
-publish_fun(_Id) ->
-    lager:debug("no kapi_notifications:publish_~s/1 defined", [_Id]),
-    fun(_Any) -> 'ok' end.
+publish_fun(<<"conference_email_invite">>) ->
+    fun kapi_notifications:publish_email_invite/1;
+publish_fun(TemplateId) ->
+    PublishFunName = kz_term:to_atom(<<"publish_", TemplateId/binary>>),
+    case kz_module:is_exported('kapi_notifications', PublishFunName, 1) of
+        'true' -> fun kapi_notifications:PublishFunName/1;
+        'false' -> maybe_find_publisher(TemplateId)
+    end.
+
+maybe_find_publisher(TemplateId) ->
+    case kapi_notifications:find_publisher(TemplateId) of
+        [] ->
+            lager:warning("failed to find publisher for notification ~s", [TemplateId]),
+            fun(_Id) -> 'ok' end;
+        [{Module, Function}] ->
+            lager:info("found publisher ~s:~p/1 for ~s (~s)", [Module, Function, TemplateId]),
+            fun Module:Function/1;
+        [Function] when is_function(Function, 1) ->
+            lager:info("found publisher function ~p for ~s (~s)", [Function, TemplateId]),
+            Function
+    end.
 
 -spec preview_fold(kz_term:ne_binary(), {kz_term:proplist(), kz_json:object()}) ->
           {kz_term:proplist(), kz_json:object()}.
@@ -660,7 +626,7 @@ delete_doc(Context, Id) ->
     case cb_context:resp_status(Context1) of
         'success' ->
             kz_datamgr:flush_cache_doc(cb_context:db_name(Context), Id),
-            leak_doc_id(Context1);
+            add_metadata_doc_id(Context1);
         _Status -> Context1
     end.
 
@@ -1055,8 +1021,8 @@ note_account_defined(JObj) ->
 
 -spec read_success(cb_context:context()) -> cb_context:context().
 read_success(Context) ->
-    cb_context:setters(Context, [fun leak_attachments/1
-                                ,fun leak_doc_id/1
+    cb_context:setters(Context, [fun add_metadata_attachments/1
+                                ,fun add_metadata_doc_id/1
                                 ]).
 
 -spec maybe_read_template(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) -> cb_context:context().
@@ -1465,25 +1431,21 @@ clean_req_doc(Doc) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec leak_doc_id(cb_context:context()) -> cb_context:context().
-leak_doc_id(Context) ->
+-spec add_metadata_doc_id(cb_context:context()) -> cb_context:context().
+add_metadata_doc_id(Context) ->
     RespData = cb_context:resp_data(Context),
-    cb_context:set_resp_data(Context
-                            ,kz_json:set_value(<<"id">>
-                                              ,kz_notification:resp_id(RespData)
-                                              ,RespData
-                                              )
-                            ).
+    Id = kz_notification:resp_id(RespData),
+    cb_context:add_metadata_value(Context, <<"id">>, Id).
 
--spec leak_attachments(cb_context:context()) -> cb_context:context().
-leak_attachments(Context) ->
+-spec add_metadata_attachments(cb_context:context()) -> cb_context:context().
+add_metadata_attachments(Context) ->
     Attachments = kz_doc:attachments(cb_context:fetch(Context, 'db_doc'), kz_json:new()),
-    Templates = kz_json:foldl(fun leak_attachments_fold/3, kz_json:new(), Attachments),
+    Templates = kz_json:foldl(fun add_metadata_attachments_fold/3, kz_json:new(), Attachments),
     NewRespData = kz_json:set_value(<<"templates">>, Templates, cb_context:resp_data(Context)),
     cb_context:set_resp_data(Context, NewRespData).
 
--spec leak_attachments_fold(kz_json:path(), kz_json:json_term(), kz_json:object()) -> kz_json:object().
-leak_attachments_fold(_Attachment, Props, Acc) ->
+-spec add_metadata_attachments_fold(kz_json:path(), kz_json:json_term(), kz_json:object()) -> kz_json:object().
+add_metadata_attachments_fold(_Attachment, Props, Acc) ->
     kz_json:set_value(kz_json:get_value(<<"content_type">>, Props)
                      ,kz_json:from_list([{<<"length">>, kz_json:get_integer_value(<<"length">>, Props)}])
                      ,Acc

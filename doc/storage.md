@@ -63,11 +63,13 @@ Key | Description | Type | Default | Required | Support Level
 `settings.bucket_access_method` | how to access the host. | `string('auto' | 'vhost' | 'path')` |   | `false` |  
 `settings.bucket_after_host` | use bucket after host as part of url | `boolean()` |   | `false` |  
 `settings.host` | the s3 host, leave empty for default | `string(1..)` |   | `false` |  
-`settings.key` | AWS Key to use | `string(1..128)` |   | `true` |  
+`settings.key` | AWS Key to use | `string(1..128)` |   | `false` |  
 `settings.port` | port to use | `integer()` |   | `false` |  
 `settings.region` | the region where the bucket is located | `string(1..)` |   | `false` |  
 `settings.scheme` | scheme to use to access host | `string('http' | 'https')` |   | `false` |  
-`settings.secret` | AWS Secret to use | `string(1..128)` |   | `true` |  
+`settings.secret` | AWS Secret to use | `string(1..128)` |   | `false` |  
+`settings.tags_key_path.[]` |   | `string()` |   | `false` |  
+`settings.tags_key_path` | The key path to an array of values in the document to use as S3 object tags | `array(string())` |   | `false` |  
 `settings` | AWS API settings | `object()` |   | `true` |  
 
 ### storage.attachment.azure
@@ -126,7 +128,7 @@ Key | Description | Type | Default | Required | Support Level
 `handler` | The handler interface to use | `string('http')` |   | `true` |  
 `settings.base64_encode_data` | Toggles whether to base64-encode the attachment data | `boolean()` | `false` | `false` |  
 `settings.send_multipart` | Toggle whether to send multipart payload when storing attachment - will include metadata JSON if true | `boolean()` |   | `false` |  
-`settings.url` | The base HTTP(s) URL to use when creating the request | `string()` |   | `true` |  
+`settings.url` | The base HTTP(s) URL to use when creating the request | `string(7..)` |   | `true` |  
 `settings.verb` | The HTTP verb to use when sending the data | `string('post' | 'put')` | `put` | `false` |  
 `settings` | HTTP server settings | `object()` |   | `true` |  
 
@@ -149,7 +151,7 @@ Defines where and how to store attachments. Keys are 32-character identifiers to
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `^[a-z0-9]{32}$.name` | Friendly name for this configuration | `string()` |   | `false` |  
-`^[a-z0-9]{32}$.settings.field_list` | list of fields to compose destination url | `["array(", "[#/definitions/storage.attachments.field](#storageattachments.field)", ")"]` |   | `false` |  
+`^[a-z0-9]{32}$.settings.field_list` | list of fields to compose destination url | `array([#/definitions/storage.attachments.field](#storageattachments.field))` |   | `false` |  
 `^[a-z0-9]{32}$.settings.field_separator` | toplevel, field separator to compose destination url | `string()` |   | `false` |  
 `^[a-z0-9]{32}$.settings.folder_base_path` | base folder path | `string()` |   | `false` |  
 `^[a-z0-9]{32}$.settings` | Settings all handlers implement | `object()` |   | `false` |  
@@ -222,11 +224,9 @@ Key | Description | Type | Default | Required | Support Level
 `database.names.[]` |   | `string()` |   | `false` |  
 `database.names` | List of database names to match (non-matching names won't use this plan) | `array(string())` |   | `false` |  
 `database` |   | `object()` |   | `false` |  
-`types.call_recording` | schema for document type storage plan | [#/definitions/storage.plan.database.document](#storageplan.database.document) |   | `false` |  
-`types.fax` | schema for document type storage plan | [#/definitions/storage.plan.database.document](#storageplan.database.document) |   | `false` |  
-`types.function` | schema for document type storage plan | [#/definitions/storage.plan.database.document](#storageplan.database.document) |   | `false` |  
-`types.mailbox_message` | schema for document type storage plan | [#/definitions/storage.plan.database.document](#storageplan.database.document) |   | `false` |  
-`types.media` | schema for document type storage plan | [#/definitions/storage.plan.database.document](#storageplan.database.document) |   | `false` |  
+`range` |   |   |   | `false` |  
+`regex` |   |   |   | `false` |  
+`types./[a-z_]+/` | schema for document type storage plan | [#/definitions/storage.plan.database.document](#storageplan.database.document) |   | `false` |  
 `types` | The document types to store with this plan | `object()` |   | `false` |  
 
 ### storage.plan.database.attachment
@@ -250,6 +250,8 @@ Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `attachments` | schema for attachment ref type storage plan | [#/definitions/storage.plan.database.attachment](#storageplan.database.attachment) |   | `false` |  
 `connection` |   | `string()` |   | `false` |  
+`range` |   |   |   | `false` |  
+`regex` |   |   |   | `false` |  
 
 
 

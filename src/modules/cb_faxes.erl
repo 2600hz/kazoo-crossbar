@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2021, 2600Hz
+%%% @copyright (C) 2012-2023, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%%
@@ -623,7 +623,9 @@ get_view_and_filter(_, {_, _}, ?NE_BINARY=Folder) ->
     };
 get_view_and_filter(_, {?NE_BINARY=Id, <<"faxbox">>}, 'undefined') ->
     {?CB_LIST_BY_FAXBOX
-    ,[{'key', Id}]
+    ,[{'startkey', Id}
+     ,{'endkey', Id}
+     ]
     };
 get_view_and_filter(Context, {_, _}, 'undefined') ->
     {?CB_LIST_BY_ACCOUNT

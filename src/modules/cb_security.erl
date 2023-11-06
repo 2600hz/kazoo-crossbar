@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2021, 2600Hz
+%%% @copyright (C) 2010-2023, 2600Hz
 %%% @doc Kazoo authentication configuration API endpoint
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -17,7 +17,7 @@
         ,validate/1, validate/2, validate/3
         ,post/1
         ,patch/1
-        ,delete/1
+        ,delete/1, delete/2
         ]).
 
 -include("crossbar.hrl").
@@ -39,6 +39,7 @@
 -define(CB_LIST_ATTEMPT_LOG, <<"auth/login_attempt_by_time">>).
 
 -define(ATTEMPTS, <<"attempts">>).
+-define(LOGIN_LOCK, <<"login_lock">>).
 -define(AUTH_ATTEMPT_TYPE, <<"login_attempt">>).
 
 %%%=============================================================================
@@ -72,11 +73,21 @@ init() ->
 authorize(Context) ->
     authorize_list_available_module(Context, cb_context:req_nouns(Context), cb_context:req_verb(Context)).
 
--spec authorize(cb_context:context(), path_token()) -> 'true'.
-authorize(_Context, _) -> 'true'.
+-spec authorize(cb_context:context(), path_token()) -> boolean() | {'stop', cb_context:context()}.
+authorize(Context, ?LOGIN_LOCK) ->
+    AuthAccountId = cb_context:auth_account_id(Context),
+    AuthUserReseller = kz_services_reseller:get_id(AuthAccountId),
+    case AuthAccountId =:= AuthUserReseller
+        orelse cb_context:is_superduper_admin(Context) of
+        'true' ->
+            'true';
+        'false' ->
+            {'stop', cb_context:add_system_error('forbidden', Context)}
+    end;
+authorize(_Context, _) -> 'false'.
 
--spec authorize(cb_context:context(), path_token(), path_token()) -> 'true'.
-authorize(_Context, _, _) -> 'true'.
+-spec authorize(cb_context:context(), path_token(), path_token()) -> 'false'.
+authorize(_Context, _, _) -> 'false'.
 
 -spec authorize_list_available_module(cb_context:context(), req_nouns(), http_method()) ->
           boolean() |
@@ -86,7 +97,7 @@ authorize_list_available_module(_Context, [{<<"security">>, []}], ?HTTP_GET) ->
 authorize_list_available_module(Context, [{<<"security">>, []}], _) ->
     {'stop', cb_context:add_system_error('forbidden', Context)};
 authorize_list_available_module(_Context, _Nouns, _Verb) ->
-    'true'.
+    'false'.
 
 %%------------------------------------------------------------------------------
 %% @doc Given the path tokens related to this module, what HTTP methods are
@@ -98,6 +109,8 @@ allowed_methods() ->
     [?HTTP_GET, ?HTTP_POST, ?HTTP_PATCH, ?HTTP_DELETE].
 
 -spec allowed_methods(path_token()) -> http_methods().
+allowed_methods(?LOGIN_LOCK) ->
+    [?HTTP_GET, ?HTTP_DELETE];
 allowed_methods(?ATTEMPTS) ->
     [?HTTP_GET].
 
@@ -120,6 +133,7 @@ allowed_methods(?ATTEMPTS, _AttemptId) ->
 resource_exists() -> 'true'.
 
 -spec resource_exists(path_token()) -> 'true'.
+resource_exists(?LOGIN_LOCK) -> 'true';
 resource_exists(?ATTEMPTS) -> 'true';
 resource_exists(_ConfigId) -> 'false'.
 
@@ -140,7 +154,9 @@ validate(Context) ->
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, ?ATTEMPTS) ->
-    crossbar_view:load_modb(Context, ?CB_LIST_ATTEMPT_LOG, [{mapper, crossbar_view:get_value_fun()}]).
+    crossbar_view:load_modb(Context, ?CB_LIST_ATTEMPT_LOG, [{'mapper', crossbar_view:get_value_fun()}]);
+validate(Context, ?LOGIN_LOCK) ->
+    validate_login_lock(Context, cb_context:req_verb(Context)).
 
 -spec validate(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 validate(Context, ?ATTEMPTS, AttemptId) ->
@@ -169,6 +185,25 @@ validate_auth_configs(Context, ?HTTP_DELETE) ->
             Msg = <<"account does not have customize auth configuration">>,
             cb_context:add_system_error('bad_identifier', kz_json:from_list([{<<"cause">>, Msg}]),  Context)
     end.
+
+-spec validate_login_lock(cb_context:context(), http_method()) -> cb_context:context().
+validate_login_lock(Context, ?HTTP_GET) ->
+    Buckets = get_auth_buckets(Context),
+    Msg =
+        case crossbar_auth:is_account_locked(Context, Buckets) of
+            {'true', _} -> <<"account is locked">>;
+            {'false', _} -> <<"account is not locked">>
+        end,
+    Setters = [{fun cb_context:set_resp_data/2, kz_json:from_list([{<<"status">>, Msg}])}
+              ,{fun cb_context:set_resp_status/2, 'success'}
+              ],
+    cb_context:setters(Context, Setters);
+validate_login_lock(Context, ?HTTP_DELETE) ->
+    Buckets = get_auth_buckets(Context),
+    Setters = [{fun cb_context:store/3, 'auth_buckets', Buckets}
+              ,{fun cb_context:set_resp_status/2, 'success'}
+              ],
+    cb_context:setters(Context, Setters).
 
 %%------------------------------------------------------------------------------
 %% @doc If the HTTP verb is POST, execute the actual action, usually a db save
@@ -216,6 +251,24 @@ patch(Context) ->
 -spec delete(cb_context:context()) -> cb_context:context().
 delete(Context) ->
     crossbar_doc:delete(Context, ?HARD_DELETE).
+
+-spec delete(cb_context:context(), path_token()) -> cb_context:context().
+delete(Context, ?LOGIN_LOCK) ->
+    case cb_context:fetch(Context, 'auth_buckets') of
+        [] ->
+            Msg = kz_json:from_list([{<<"status">>, <<"account was not locked">>}]),
+            cb_context:setters(Context
+                              ,[{fun cb_context:set_resp_data/2, Msg}
+                               ,{fun cb_context:set_resp_status/2, 'success'}
+                               ]);
+        AuthBuckets ->
+            crossbar_auth:unlock_account(AuthBuckets),
+            Msg = kz_json:from_list([{<<"status">>, <<"account is unlocked">>}]),
+            cb_context:setters(Context
+                              ,[{fun cb_context:set_resp_data/2,  Msg}
+                               ,{fun cb_context:set_resp_status/2, 'success'}
+                               ])
+    end.
 
 maybe_flush_config(Context) ->
     case cb_context:fetch(Context, 'flush', 'false') of
@@ -344,7 +397,7 @@ on_successful_validation(Id, Context) ->
 create_config_document(Context) ->
     ConfigId = kapps_config_util:account_doc_id(?AUTH_CONFIG_CAT),
     Doc = kz_doc:set_id(cb_context:doc(Context), ConfigId),
-    crossbar_doc:handle_json_success(kz_doc:set_type(Doc, <<"account_config">>), cb_context:store(Context, flush, true)).
+    crossbar_doc:handle_json_success(kz_doc:set_type(Doc, <<"account_config">>), cb_context:store(Context, 'flush', 'true')).
 
 check_multi_factor_setting(Context) ->
     ReqData = cb_context:fetch(Context, <<"orig_req_data">>, cb_context:req_data(Context)),
@@ -420,3 +473,11 @@ read_attempt_log(?MATCH_MODB_PREFIX(Year, Month, _)=AttemptId, Context) ->
                                             )
                      ,?TYPE_CHECK_OPTION(?AUTH_ATTEMPT_TYPE)
                      ).
+
+-spec get_auth_buckets(cb_context:context()) -> kz_term:ne_binaries().
+get_auth_buckets(Context) ->
+    case cb_context:account_id(Context) of
+        'undefined' -> [];
+        AccountId ->
+            crossbar_auth:find_account_buckets(AccountId)
+    end.

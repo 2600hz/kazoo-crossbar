@@ -2,7 +2,9 @@
 
 ## About Temporal Rules Sets
 
-A temporal rule set is a collection of temporal rules that can be used in a callflow to match more that one rule. And can also be re-used.
+A temporal rule set is a collection of temporal rules that can be used in a callflow to match more that one rule and can also be re-used.
+
+For instance, one could define each holiday as a temporal rule, then create a temporal rule set with all of the holiday temporal rule IDs added. Then this temporal rule set could be used (one ID) versus needing to list all temporal rule IDs for use elsewhere.
 
 #### Schema
 
@@ -16,11 +18,11 @@ Key | Description | Type | Default | Required | Support Level
 `flags` | Flags set by external applications | `array(string())` |   | `false` | `supported`
 `name` | A friendly name for the temporal rule set | `string(1..128)` |   | `true` | `supported`
 `temporal_rules.[]` |   | `string()` |   | `false` | `supported`
-`temporal_rules` | Temporal Rules | `array(string())` |   | `false` | `supported`
+`temporal_rules` | Temporal rule IDs | `array(string())` |   | `false` | `supported`
 
 
 
-## Fetch
+## List available rule sets
 
 > GET /v2/accounts/{ACCOUNT_ID}/temporal_rules_sets
 

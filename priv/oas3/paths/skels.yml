@@ -16,24 +16,19 @@ paths:
       parameters:
         - $ref: '../oas3-parameters.yml#/auth_token_header'
         - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '../oas3-schemas.yml#/skels'
       responses:
         200:
           description: Successful operation
       summary: Add an instance of skels
       tags:
         - skels
-  /accounts/{ACCOUNT_ID}/skels/{THING}:
+  /accounts/{ACCOUNT_ID}/skels/{THING_ID}:
     delete:
-      operationId: DeleteAccountsAccountIdSkelsThing
+      operationId: DeleteAccountsAccountIdSkelsThingId
       parameters:
         - $ref: '../oas3-parameters.yml#/auth_token_header'
         - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
-        - $ref: '../oas3-parameters.yml#/THING'
+        - $ref: '../oas3-parameters.yml#/THING_ID'
       responses:
         200:
           description: Successful operation
@@ -41,11 +36,11 @@ paths:
       tags:
         - skels
     get:
-      operationId: GetAccountsAccountIdSkelsThing
+      operationId: GetAccountsAccountIdSkelsThingId
       parameters:
         - $ref: '../oas3-parameters.yml#/auth_token_header'
         - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
-        - $ref: '../oas3-parameters.yml#/THING'
+        - $ref: '../oas3-parameters.yml#/THING_ID'
       responses:
         200:
           description: Successful operation
@@ -53,16 +48,11 @@ paths:
       tags:
         - skels
     patch:
-      operationId: PatchAccountsAccountIdSkelsThing
+      operationId: PatchAccountsAccountIdSkelsThingId
       parameters:
         - $ref: '../oas3-parameters.yml#/auth_token_header'
         - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
-        - $ref: '../oas3-parameters.yml#/THING'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '../oas3-schemas.yml#/skels'
+        - $ref: '../oas3-parameters.yml#/THING_ID'
       responses:
         200:
           description: Successful operation
@@ -70,16 +60,11 @@ paths:
       tags:
         - skels
     post:
-      operationId: PostAccountsAccountIdSkelsThing
+      operationId: PostAccountsAccountIdSkelsThingId
       parameters:
         - $ref: '../oas3-parameters.yml#/auth_token_header'
         - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
-        - $ref: '../oas3-parameters.yml#/THING'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '../oas3-schemas.yml#/skels'
+        - $ref: '../oas3-parameters.yml#/THING_ID'
       responses:
         200:
           description: Successful operation

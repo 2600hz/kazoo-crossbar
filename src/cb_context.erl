@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2022, 2600Hz
+%%% @copyright (C) 2012-2023, 2600Hz
 %%% @doc Helpers for manipulating the `#cb_context{}' record.
 %%% @author James Aimonetti
 %%%
@@ -51,7 +51,7 @@
         ,auth_doc/1, set_auth_doc/2
         ,auth_token/1, set_auth_token/2
         ,auth_token_type/1, set_auth_token_type/2
-        ,client_ip/1, set_client_ip/2
+        ,client_ip/1, port/1, set_client_ip/2
         ,db_name/1, set_db_name/2
         ,device_id/1, set_device_id/2
         ,doc/1, set_doc/2, update_doc/2
@@ -76,6 +76,9 @@
         ,resp_status/1, set_resp_status/2
         ,start/1, set_start/2
         ,user_id/1, set_user_id/2
+
+        ,consumed_token_buckets/1, set_consumed_token_buckets/2, add_consumed_token_buckets/2
+        ,token_bucket_names/1, set_token_bucket_names/2, add_token_bucket_name/2
 
         ,pretty_print/1
         ,path_tokens/1
@@ -104,6 +107,7 @@
         ,validation_errors/1, set_validation_errors/2
 
         ,host_url/1, set_host_url/2
+        ,socket_url/1, set_socket_url/2
         ,set_pretty_print/2
         ,set_port/2
         ,raw_path/1, set_raw_path/2
@@ -114,6 +118,8 @@
         ,req_value/2, req_value/3
         ,accepting_charges/1, set_accepting_charges/1
         ,req_param/2, req_param/3
+        ,add_metadata_value/3, add_metadata_values/2
+        ,get_metadata/1, get_metadata/2
         ]).
 
 -include("crossbar.hrl").
@@ -141,12 +147,16 @@
                     ,account_name :: kz_term:api_ne_binary()
                     ,user_id :: kz_term:api_ne_binary()   % Will be loaded in validate stage for endpoints such as /accounts/{acct-id}/users/{user-id}/*
                     ,device_id :: kz_term:api_ne_binary()   % Will be loaded in validate stage for endpoints such as /accounts/{acct-id}/devices/{device-id}/*
+                    ,consumed_token_buckets = 0 :: non_neg_integer()
+                    ,token_bucket_names = [] :: kz_term:ne_binaries()
+
                     ,reseller_id :: kz_term:api_ne_binary()
                     ,db_name :: kz_term:api_binary() | kz_term:ne_binaries()
                     ,doc :: kz_json:api_json_term()
+                    ,metadata = [] :: kz_term:proplist()
                     ,pretty_print = 'false' :: boolean()
                     ,resp_expires = {{1999,1,1},{0,0,0}} :: kz_time:datetime()
-                    ,resp_etag :: 'automatic' | string() | kz_term:api_binary()
+                    ,resp_etag :: resp_etag()
                     ,resp_status = 'error' :: crossbar_status()
                     ,resp_error_msg :: kz_term:api_ne_binary()
                     ,resp_error_code :: kz_term:api_integer()
@@ -172,7 +182,10 @@
                     ,is_superduper_admin = 'undefined' :: kz_term:api_boolean()
                     ,is_account_admin = 'undefined' :: kz_term:api_boolean()
                     ,master_account_id = 'undefined' :: kz_term:api_ne_binary()
+                    ,socket_url = 'undefined' :: kz_term:api_ne_binary()
                     }).
+
+-type after_fun() :: fun((context()) -> context()) | 'undefined'.
 
 -define(KEY_ACCEPT_CHARGES, <<"accept_charges">>).
 
@@ -199,12 +212,16 @@
              ,setter_fun_2/0
              ,setter_fun_3/0
              ,setters/0
+             ,resp_etag/0
+             ,after_fun/0
              ]).
 
 -type setter_kv() :: setter_fun_1() |
                      {setter_fun_2(), any()} |
                      {setter_fun_3(), any(), any()}.
 -type setters() :: [setter_kv()].
+
+-type resp_etag() :: 'automatic' | kz_term:api_binary().
 
 -spec new() -> context().
 new() -> #cb_context{}.
@@ -437,6 +454,9 @@ req_param(#cb_context{query_json=JObj}, K, Default) -> kz_json:get_value(K, JObj
 -spec client_ip(context()) -> kz_term:api_ne_binary().
 client_ip(#cb_context{client_ip=IP}) -> IP.
 
+-spec port(context()) -> integer().
+port(#cb_context{port=Port}) -> Port.
+
 -spec req_id(context()) -> kz_term:ne_binary().
 req_id(#cb_context{req_id=ReqId}) -> ReqId.
 
@@ -467,7 +487,7 @@ resp_headers(#cb_context{resp_headers=RespHeaders}) -> RespHeaders.
 -spec api_version(context()) -> kz_term:ne_binary().
 api_version(#cb_context{api_version=ApiVersion}) -> ApiVersion.
 
--spec resp_etag(context()) -> 'automatic' | string() | kz_term:api_binary().
+-spec resp_etag(context()) -> resp_etag().
 resp_etag(#cb_context{resp_etag=ETag}) -> ETag.
 
 -spec resp_envelope(context()) -> kz_json:object().
@@ -564,11 +584,18 @@ setters(#cb_context{}=Context, []) -> Context;
 setters(#cb_context{}=Context, [_|_]=Setters) ->
     lists:foldl(fun setters_fold/2, Context, Setters).
 
--spec setters_fold(setter_kv(), context()) ->
-          context().
-setters_fold({F, V}, #cb_context{}=C) -> #cb_context{} = F(C, V);
-setters_fold({F, K, V}, #cb_context{}=C) -> #cb_context{} = F(C, K, V);
-setters_fold(F, #cb_context{}=C) when is_function(F, 1) -> #cb_context{} = F(C).
+-spec setters_fold(setter_kv(), context()) -> context().
+setters_fold(Setter, Context) ->
+    case setter(Setter, Context) of
+        'ok' -> Context;
+        #cb_context{}=C -> C
+    end.
+
+-spec setter(setter_kv(), context()) -> 'ok' | context().
+setter({F, V}, #cb_context{}=C) when is_function(V, 1) -> F(C, V(C));
+setter({F, V}, #cb_context{}=C) -> #cb_context{} = F(C, V);
+setter({F, K, V}, #cb_context{}=C) -> #cb_context{} = F(C, K, V);
+setter(F, #cb_context{}=C) when is_function(F, 1) -> #cb_context{} = F(C).
 
 %%------------------------------------------------------------------------------
 %% @doc Loop over a list of functions and values to validate `cb_context()'.
@@ -704,7 +731,7 @@ set_resp_expires(#cb_context{}=Context, RespExpires) ->
 set_api_version(#cb_context{}=Context, ApiVersion) ->
     Context#cb_context{api_version=kz_term:to_binary(ApiVersion)}.
 
--spec set_resp_etag(context(), kz_term:api_binary()) -> context().
+-spec set_resp_etag(context(), resp_etag()) -> context().
 set_resp_etag(#cb_context{}=Context, ETag) ->
     Context#cb_context{resp_etag=ETag}.
 
@@ -811,6 +838,13 @@ set_host_url(#cb_context{}=Context, Value) ->
 -spec host_url(context()) -> binary().
 host_url(#cb_context{host_url = Value}) -> Value.
 
+-spec set_socket_url(context(), binary()) -> context().
+set_socket_url(#cb_context{}=Context, Value) ->
+    Context#cb_context{socket_url = Value}.
+
+-spec socket_url(context()) -> binary().
+socket_url(#cb_context{socket_url = Value}) -> Value.
+
 -spec set_pretty_print(context(), boolean()) -> context().
 set_pretty_print(#cb_context{}=Context, Value) ->
     Context#cb_context{pretty_print = Value}.
@@ -838,6 +872,29 @@ set_client_ip(#cb_context{}=Context, Value) ->
 set_profile_id(#cb_context{}=Context, Value) ->
     Context#cb_context{profile_id = Value}.
 
+%% Token Bucket accessors
+
+-spec consumed_token_buckets(context()) -> non_neg_integer().
+consumed_token_buckets(#cb_context{consumed_token_buckets = ConsumedTokens}) -> ConsumedTokens.
+
+-spec set_consumed_token_buckets(context(), non_neg_integer()) -> context().
+set_consumed_token_buckets(#cb_context{}=Context, ConsumedTokens) ->
+    Context#cb_context{consumed_token_buckets = ConsumedTokens}.
+
+-spec add_consumed_token_buckets(context(), non_neg_integer()) -> context().
+add_consumed_token_buckets(#cb_context{consumed_token_buckets = Current}=Context, ConsumedTokens) ->
+    set_consumed_token_buckets(Context, Current + ConsumedTokens).
+
+-spec token_bucket_names(context()) -> kz_term:ne_binaries().
+token_bucket_names(#cb_context{token_bucket_names = BucketNames}) -> BucketNames.
+
+-spec set_token_bucket_names(context(), kz_term:ne_binaries()) -> context().
+set_token_bucket_names(#cb_context{}=Context, BucketNames) when is_list(BucketNames) ->
+    Context#cb_context{token_bucket_names = BucketNames}.
+
+-spec add_token_bucket_name(context(), kz_term:ne_binary()) -> context().
+add_token_bucket_name(#cb_context{token_bucket_names = Current}=Context, <<BucketName/binary>>) ->
+    set_token_bucket_names(Context, lists:usort([BucketName | Current])).
 
 -spec update_doc(context(), setter_kv() | setters()) -> context().
 update_doc(#cb_context{doc=Doc}=Context, Updaters)
@@ -956,8 +1013,6 @@ response(#cb_context{resp_error_code=Code
                 end,
     {'error', {ErrorCode, ErrorMsg, ErrorData}}.
 
--type after_fun() :: fun((context()) -> context()) | 'undefined'.
-
 %%------------------------------------------------------------------------------
 %% @doc Validate the request data with schema.
 %% @end
@@ -1064,7 +1119,8 @@ failed_error(Error, Context) ->
                                    ]),
     {ErrorCode, ErrorMessage, ErrorJObj} = kz_json_schema:error_to_jobj(Error, Props),
     JObj = validation_errors(Context),
-    Context#cb_context{validation_errors = kz_json:merge_jobjs(ErrorJObj, JObj)
+
+    Context#cb_context{validation_errors = kz_json:merge(ErrorJObj, JObj)
                       ,resp_error_code = ErrorCode
                       ,resp_data = kz_json:new()
                       ,resp_error_msg = ErrorMessage
@@ -1304,9 +1360,50 @@ add_doc_validation_errors(Context, ValidationErrors) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec update_successfully_validated_request(context(), kz_doc:doc()) -> context().
-update_successfully_validated_request(Context, Doc) ->
+update_successfully_validated_request(#cb_context{resp_status='error'}=Context, _Doc) ->
+    lager:info("context already contains an error, not updating to success"),
+    Context;
+update_successfully_validated_request(#cb_context{}=Context, Doc) ->
     Updates = [{fun set_req_data/2, Doc}
               ,{fun set_doc/2, Doc}
               ,{fun set_resp_status/2, 'success'}
               ],
     passed(setters(Context, Updates)).
+
+
+
+-spec get_metadata(context()) -> kz_json:object().
+get_metadata(Context) ->
+    get_metadata(Context, doc(Context)).
+
+-spec get_metadata(context(), kz_doc:doc() | kz_term:api_objects()) ->
+          kz_json:object().
+get_metadata(#cb_context{metadata=[]}, Docs) when is_list(Docs) ->
+    kz_json:new();
+get_metadata(#cb_context{metadata=Metadata}, Docs) when is_list(Docs) ->
+    kz_json:from_list(Metadata);
+get_metadata(#cb_context{metadata=Metadata}, 'undefined') ->
+    kz_json:from_list(Metadata);
+get_metadata(#cb_context{metadata=Metadata}, Doc) ->
+    ReadOnlyJObj = kz_doc:read_only(Doc),
+    lager:info("setting ~p on ~p", [Metadata, ReadOnlyJObj]),
+    kz_json:set_values(Metadata, ReadOnlyJObj).
+
+-spec add_metadata_values(context(), kz_json:json_proplist()) -> context().
+add_metadata_values(Context, Props) when is_list(Props) ->
+    lists:foldl(fun({K, V}, Ctx) -> add_metadata_value(Ctx, K, V) end
+               ,Context
+               ,Props
+               ).
+
+%% @doc add metadata for inclusion on the response envelope
+-spec add_metadata_value(context(), kz_term:ne_binary(), kz_json:api_json_term() | 'null') -> context().
+add_metadata_value(Context, _Key, 'undefined') ->
+    lager:info("not setting meta key ~s to undefined", [_Key]),
+    Context;
+add_metadata_value(#cb_context{metadata=Metadata}=Context, Key, 'null') ->
+    lager:info("removing meta key ~s", [Key]),
+    Context#cb_context{metadata = props:delete(Key, Metadata)};
+add_metadata_value(#cb_context{metadata=Metadata}=Context, Key, Value) ->
+    lager:info("setting meta ~p: ~p", [Key, Value]),
+    Context#cb_context{metadata = props:set_value(Key, Value, Metadata)}.

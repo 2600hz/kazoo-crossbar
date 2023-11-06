@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2013-2021, 2600Hz
+%%% @copyright (C) 2013-2023, 2600Hz
 %%% @doc Crossbar API for apps store.
 %%% @author Peter Defebvre
 %%%
@@ -21,6 +21,7 @@
         ,content_types_accepted/4
         ,put/2, put/3
         ,post/2, post/3, post/4
+        ,patch/2
         ,delete/2, delete/3, delete/4, delete/5
         ]).
 
@@ -30,6 +31,13 @@
 -define(SCREENSHOT, <<"screenshot">>).
 -define(BLACKLIST, <<"blacklist">>).
 -define(OVERRIDE, <<"override">>).
+
+-define(MARKETPLACE, <<"marketplace">>).
+-define(MARKET_ACTION_ENABLE, <<"enable">>).
+-define(MARKET_ACTION_DISABLE, <<"disable">>).
+-define(MARKET_ACTION_LINK, <<"link">>).
+-define(MARKET_ACTION_UNLINK, <<"unlink">>).
+-define(MARKET_ACTION_UPDATE, <<"update">>).
 
 -define(WHITELABEL_MIME_TYPES, ?IMAGE_CONTENT_TYPES ++ ?BASE64_CONTENT_TYPES ++ ?MULTIPART_CONTENT_TYPES).
 
@@ -54,6 +62,7 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.validate.apps_store">>, ?MODULE, 'validate'),
     _ = crossbar_bindings:bind(<<"*.execute.put.apps_store">>, ?MODULE, 'put'),
     _ = crossbar_bindings:bind(<<"*.execute.post.apps_store">>, ?MODULE, 'post'),
+    _ = crossbar_bindings:bind(<<"*.execute.patch.apps_store">>, ?MODULE, 'patch'),
     crossbar_bindings:bind(<<"*.execute.delete.apps_store">>, ?MODULE, 'delete').
 
 %%------------------------------------------------------------------------------
@@ -68,6 +77,8 @@ allowed_methods() ->
 -spec allowed_methods(path_token()) -> http_methods().
 allowed_methods(?BLACKLIST) ->
     [?HTTP_GET, ?HTTP_POST];
+allowed_methods(?MARKETPLACE) ->
+    [?HTTP_GET, ?HTTP_PATCH];
 allowed_methods(_AppId) ->
     [?HTTP_GET, ?HTTP_PUT, ?HTTP_POST, ?HTTP_DELETE].
 
@@ -210,7 +221,15 @@ authenticate_nouns(_Verb, _Nouns) ->
 authorize(Context) ->
     authorize_nouns(cb_context:req_verb(Context), cb_context:req_nouns(Context)).
 
--spec authorize(cb_context:context(), path_token()) -> boolean().
+-spec authorize(cb_context:context(), path_token()) ->
+          boolean() |
+          {'stop', cb_context:context()}.
+authorize(Context, ?MARKETPLACE) ->
+    case cb_context:is_superduper_admin(Context) of
+        'true' -> 'true';
+        'false' ->
+            {'stop', cb_context:add_system_error('forbidden', Context)}
+    end;
 authorize(Context, _) ->
     authorize_nouns(cb_context:req_verb(Context), cb_context:req_nouns(Context)).
 
@@ -247,6 +266,13 @@ validate(Context) ->
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, ?BLACKLIST) ->
     validate_blacklist(Context, cb_context:req_verb(Context));
+validate(Context, ?MARKETPLACE) ->
+    case cb_context:req_verb(Context) of
+        ?HTTP_GET ->
+            send_marketplace_configs(Context);
+        ?HTTP_PATCH ->
+            validate_market_action(Context, cb_context:req_value(Context, <<"action">>))
+    end;
 validate(Context, Id) ->
     validate_app_id(Context, Id, cb_context:req_verb(Context)).
 
@@ -362,6 +388,93 @@ put(Context, Id) ->
 -spec put(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 put(Context, _AppId, ?OVERRIDE) ->
     crossbar_doc:save(Context).
+
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec patch(cb_context:context(), path_token()) -> cb_context:context().
+patch(Context, ?MARKETPLACE) ->
+    patch_market_action(Context, cb_context:req_value(Context, <<"action">>)).
+
+patch_market_action(Context, ?MARKET_ACTION_ENABLE) ->
+    _ = appex_client_config:set_is_enabled('true'),
+    send_marketplace_configs(Context);
+patch_market_action(Context, ?MARKET_ACTION_DISABLE) ->
+    %% don't stop kazoo_appex to let it clean out apps when they stop
+    _ = appex_client_config:set_is_enabled('false'),
+    send_marketplace_configs(Context);
+patch_market_action(Context, ?MARKET_ACTION_LINK) ->
+    Doc = cb_context:doc(Context),
+    Settings = kz_json:get_json_value(<<"settings">>, Doc, kz_json:new()),
+    Cluster = process_update_local_settings(Settings),
+    AccessCode = kz_json:get_ne_binary_value(<<"access_code">>, Doc),
+    case appex_client_client:link_cluster(kz_json:set_value(<<"access_code">>, AccessCode, Cluster)) of
+        {'ok', RespData} ->
+            crossbar_doc:handle_datamgr_success(RespData, Context);
+        {'error', Error} ->
+            cb_context:add_system_error(500, <<"appex_passthrough_error">>, Error, Context)
+    end;
+patch_market_action(Context, ?MARKET_ACTION_UNLINK) ->
+    %% don't stop kazoo_appex to let it clean out apps when they stop
+    case appex_client_client:unlink_cluster() of
+        {'ok', _RespData} ->
+            _ = appex_client_config:set_is_enabled('false'),
+            send_marketplace_configs(Context);
+        {'error', Error} ->
+            cb_context:add_system_error(500, <<"appex_passthrough_error">>, Error, Context)
+    end;
+patch_market_action(Context, ?MARKET_ACTION_UPDATE) ->
+    update_market_settings(Context).
+
+update_market_settings(Context) ->
+    Settings = kz_json:get_json_value(<<"settings">>, cb_context:doc(Context), kz_json:new()),
+    Cluster = process_update_local_settings(Settings),
+    update_remote_market_settings(Context, Cluster).
+
+process_update_local_settings(Settings) ->
+    LocalKeys = [<<"api_url">>, <<"is_aio_cluster">>],
+    Cluster = update_local_settings(LocalKeys, Settings, kz_json:new()),
+    Name = kz_json:get_ne_binary_value(<<"name">>, Settings, 'undefined'),
+    kz_json:set_value(<<"name">>, Name, Cluster).
+
+update_local_settings([], _Settings, Acc) ->
+    Acc;
+update_local_settings([<<"api_url">> = Key | Rest], JObj, Acc) ->
+    case kz_json:get_ne_binary_value(Key, JObj) of
+        'undefined' ->
+            update_local_settings(Rest, JObj, Acc);
+        ApiUrl ->
+            _ = appex_client_config:set_api_url(ApiUrl),
+            update_local_settings(Rest, JObj, Acc)
+    end;
+update_local_settings([<<"is_aio_cluster">> = Key | Rest], JObj, Acc) ->
+    case kz_json:get_boolean_value(Key, JObj) of
+        'undefined' ->
+            update_local_settings(Rest, JObj, Acc);
+        Bool ->
+            _ = appex_client_config:set_is_aio_cluster(Bool),
+            update_local_settings(Rest, JObj, kz_json:set_value(<<"is_aio">>, Bool, Acc))
+    end;
+update_local_settings([_|Keys], JObj, Acc) ->
+    update_local_settings(Keys, JObj, Acc).
+
+update_remote_market_settings(Context, Cluster) ->
+    case appex_client_client:update_cluster(Cluster) of
+        {'ok', RespData} ->
+            crossbar_doc:handle_datamgr_success(RespData, Context);
+        {'error', Error} ->
+            cb_context:add_system_error(500, <<"appex_passthrough_error">>, Error, Context)
+    end.
+
+send_marketplace_configs(Context) ->
+    case appex_client_config:get_public_configs() of
+        {'ok', RespData} ->
+            crossbar_doc:handle_datamgr_success(RespData, Context);
+        {'error', Error} ->
+            cb_context:add_system_error(500, <<"appex_passthrough_error">>, Error, Context)
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -561,6 +674,56 @@ validate_app_whitelabel_binary(Context, AppId, ?SCREENSHOT, Number, ?HTTP_GET) -
     get_attachment(app_attachment_binary_meta(Context, AppId, {?OVERRIDE, {?SCREENSHOT, Number}}));
 validate_app_whitelabel_binary(Context, AppId, ?SCREENSHOT, Number, ?HTTP_DELETE) ->
     validate_delete_app_whitelabel_binary(Context, AppId, {?SCREENSHOT, Number}).
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec validate_market_action(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+validate_market_action(Context, ?MARKET_ACTION_ENABLE) ->
+    set_ctx_success(Context);
+validate_market_action(Context, ?MARKET_ACTION_DISABLE) ->
+    set_ctx_success(Context);
+validate_market_action(Context, ?MARKET_ACTION_LINK) ->
+    validate_market_settings(Context, <<"access_code">>);
+validate_market_action(Context, ?MARKET_ACTION_UNLINK) ->
+    set_ctx_success(Context);
+validate_market_action(Context, ?MARKET_ACTION_UPDATE) ->
+    validate_market_settings(Context);
+validate_market_action(Context, 'undefined') ->
+    Message = kz_json:from_list([{<<"message">>, <<"action is required but it is missing">>}]),
+    cb_context:add_validation_error(<<"action">>, <<"required">>, Message, Context);
+validate_market_action(Context, _BadAction) ->
+    Message = kz_json:from_list([{<<"message">>, <<"invalid action">>}]),
+    cb_context:add_system_error(400, 'bad_request', Message, Context).
+
+-spec validate_market_settings(cb_context:context()) -> cb_context:context().
+validate_market_settings(Context) ->
+    OnSuccess = fun set_ctx_success/1,
+    cb_context:validate_request_data(<<"marketplace_settings">>, Context, OnSuccess).
+
+-spec validate_market_settings(cb_context:context(), kz_json:key()) -> cb_context:context().
+validate_market_settings(Context, Key) ->
+    OnSuccess = fun(C) -> on_successful_market_settings_validation(C, Key) end,
+    cb_context:validate_request_data(<<"marketplace_settings">>, Context, OnSuccess).
+
+-spec on_successful_market_settings_validation(cb_context:context(), kz_json:key()) -> cb_context:context().
+on_successful_market_settings_validation(Context, Key) ->
+    case kz_json:get_ne_value(Key, cb_context:doc(Context)) of
+        'undefined' ->
+            Message = kz_json:from_list([{<<"message">>, <<Key/binary, " is required but it is missing">>}]),
+            cb_context:add_validation_error(Key, <<"required">>, Message, Context);
+        _ ->
+            set_ctx_success(Context)
+    end.
+
+-spec set_ctx_success(cb_context:context()) -> cb_context:context().
+set_ctx_success(Context) ->
+    cb_context:setters(Context
+                      ,[{fun cb_context:set_resp_status/2, 'success'}
+                       ,{fun cb_context:set_doc/2, kz_doc:public_fields(cb_context:req_data(Context))}
+                       ]
+                      ).
 
 %%------------------------------------------------------------------------------
 %% @doc

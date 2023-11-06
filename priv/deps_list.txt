@@ -1,4 +1,4 @@
-KAZOO 🧡s these Erlang dependencies: 
+KAZOO 🧡s these Erlang dependencies:
 
 | Dependency              | License |
 | amqp_client             | This package is licensed under the MPL 2.0. For the MPL 2.0, please see LICENSE-MPL-RabbitMQ. |
@@ -14,8 +14,15 @@ the Apache License v2 and the Mozilla Public License v1.1. |
 the Mozilla Public License 2.0 ("MPL") and the Apache License version 2 ("ASL"). For the MPL,
 please see LICENSE-MPL-RabbitMQ. For the ASL, please see LICENSE-APACHE2. |
 | eflame                  | https://github.com/slfritchie/eflame/blob/master/LICENSE |
+| egithub                 | Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/ |
 | eiconv                  | https://github.com/zotonic/eiconv/blob/master/LICENSE |
 | eini                    | https://github.com/erlcloud/eini.git/blob/master/LICENSE |
+| elvis                   | https://github.com/2600hz/erlang-elvis/blob/master/LICENSE |
+| elvis_core              |                                  Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/ |
 | elvis_mk                | https://github.com/inaka/elvis.mk.git/blob/master/LICENSE |
 | epgsql                  | https://github.com/epgsql/epgsql/blob/master/LICENSE |
 | erlang_localtime        | https://github.com/2600hz/erlang-localtime/blob/master/LICENSE |
@@ -38,6 +45,9 @@ the Apache License v2 and the Mozilla Public License v1.1. |
 | jesse                   | https://github.com/2600hz/jesse/blob/master/LICENSE |
 | jiffy                   | https://github.com/2600hz/erlang-jiffy/blob/master/LICENSE |
 | jsx                     | The MIT License |
+| katana_code             |                                  Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/ |
 | lager                   | https://github.com/2600hz/erlang-lager/blob/master/LICENSE |
 | meck                    | https://github.com/2600hz/erlang-meck/blob/master/LICENSE |
 | meta                    | https://github.com/2600hz/erlang-meta/blob/master/LICENSE |
@@ -56,3 +66,6 @@ MPL, please see LICENSE-MPL-RabbitMQ. |
 | syslog                  | https://github.com/2600hz/erlang-syslog/blob/master/LICENSE |
 | trie                    | https://github.com/2600hz/erlang-trie/blob/master/LICENSE |
 | yamerl                  | https://github.com/2600hz/erlang-yamerl/blob/master/LICENSE |
+| zipper                  | Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/ |

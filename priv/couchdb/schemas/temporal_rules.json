@@ -16,7 +16,7 @@
             "type": "string"
         },
         "days": {
-            "description": "The recurrence days for this rule",
+            "description": "The occurance day(s) of the month (1-31) for this rule",
             "items": {
                 "maximum": 31,
                 "minimum": 1,
@@ -82,6 +82,10 @@
                 "last"
             ],
             "support_level": "supported",
+            "type": "string"
+        },
+        "owner_id": {
+            "description": "KAZOO User ID of the owner of this temporal rule",
             "type": "string"
         },
         "start_date": {

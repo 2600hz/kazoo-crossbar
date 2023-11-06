@@ -6,9 +6,9 @@ TIMEZONE_JSON = $(CWD)/priv/couchdb/schemas/timezone.json
 
 DEPS_LIST_TXT = $(CWD)/priv/deps_list.txt
 
-COMPILE_MOAR = $(TIMEZONE_JSON) $(DEPS_LIST_TXT)
+COMPILE_MOAR = $(TIMEZONE_JSON)
 
-CLEAN_MOAR = clean-port-request-scheduled-schema $(DEPS_LIST_TXT)
+CLEAN_MOAR = clean-port-request-scheduled-schema
 
 all: compile $(DEPS_LIST_TXT)
 

@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2020, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -32,16 +32,18 @@
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec init() -> ok.
+-spec init() -> 'ok'.
 init() ->
-    _ = crossbar_bindings:bind(<<"*.allowed_methods.temporal_rules">>, ?MODULE, 'allowed_methods'),
-    _ = crossbar_bindings:bind(<<"*.resource_exists.temporal_rules">>, ?MODULE, 'resource_exists'),
-    _ = crossbar_bindings:bind(<<"*.validate.temporal_rules">>, ?MODULE, 'validate'),
-    _ = crossbar_bindings:bind(<<"*.execute.put.temporal_rules">>, ?MODULE, 'put'),
-    _ = crossbar_bindings:bind(<<"*.execute.post.temporal_rules">>, ?MODULE, 'post'),
-    _ = crossbar_bindings:bind(<<"*.execute.patch.temporal_rules">>, ?MODULE, 'patch'),
-    _ = crossbar_bindings:bind(<<"*.execute.delete.temporal_rules">>, ?MODULE, 'delete'),
-    ok.
+    Bindings = [{<<"*.allowed_methods.temporal_rules">>, 'allowed_methods'}
+               ,{<<"*.resource_exists.temporal_rules">>, 'resource_exists'}
+               ,{<<"*.validate.temporal_rules">>, 'validate'}
+               ,{<<"*.execute.put.temporal_rules">>, 'put'}
+               ,{<<"*.execute.post.temporal_rules">>, 'post'}
+               ,{<<"*.execute.patch.temporal_rules">>, 'patch'}
+               ,{<<"*.execute.delete.temporal_rules">>, 'delete'}
+               ],
+    cb_modules_util:bind(?MODULE, Bindings),
+    'ok'.
 
 %%------------------------------------------------------------------------------
 %% @doc This function determines the verbs that are appropriate for the
@@ -128,7 +130,7 @@ delete(Context, _) ->
 -spec create(cb_context:context()) -> cb_context:context().
 create(Context) ->
     OnSuccess = fun(C) -> on_successful_validation('undefined', C) end,
-    cb_context:validate_request_data(<<"temporal_rules">>, Context, OnSuccess).
+    cb_context:validate_request_data(kzd_temporal_rules:schema(), Context, OnSuccess).
 
 %%------------------------------------------------------------------------------
 %% @doc Load an instance from the database
@@ -136,7 +138,48 @@ create(Context) ->
 %%------------------------------------------------------------------------------
 -spec read(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
 read(Id, Context) ->
-    crossbar_doc:load(Id, Context, ?TYPE_CHECK_OPTION(<<"temporal_rule">>)).
+    Loaded = crossbar_doc:load(Id, Context, ?TYPE_CHECK_OPTION(kzd_temporal_rules:type())),
+    maybe_eval_rule(Loaded).
+
+maybe_eval_rule(Context) ->
+    maybe_eval_rule(Context, cb_context:req_value(Context, <<"timestamp">>)).
+
+maybe_eval_rule(Context, 'undefined') ->
+    Context;
+maybe_eval_rule(Context, Timestamp) when is_integer(Timestamp), Timestamp > ?UNIX_EPOCH_IN_GREGORIAN ->
+    eval_rule(Context, Timestamp, cb_context:req_value(Context, <<"timezone">>));
+maybe_eval_rule(Context, Timestamp) when is_integer(Timestamp) ->
+    lager:info("timestamp ~p does not appear to be in Gregorian seconds"),
+    cb_context:add_metadata_value(Context, <<"timestamp">>, <<"malformed">>);
+maybe_eval_rule(Context, TS) ->
+    Timestamp = kz_term:safe_cast(TS, 'undefined', fun kz_term:to_integer/1),
+    maybe_eval_rule(Context, Timestamp).
+
+eval_rule(Context, Timestamp, 'undefined') ->
+    Timezone = kzd_accounts:timezone(cb_context:account_id(Context)),
+    lager:info("using account timezone ~s", [Timezone]),
+    eval_rule(Context, Timestamp, Timezone);
+eval_rule(Context, Timestamp, Timezone) ->
+    lager:info("eval rule at ~p in ~s", [Timestamp, Timezone]),
+    RuleDoc = cb_context:doc(Context),
+
+    StartDate = kz_date:from_gregorian_seconds(kzd_temporal_rules:start_date(RuleDoc, Timestamp), Timezone),
+    EndDate = maybe_date_from_gregorian_seconds(kzd_temporal_rules:end_date(RuleDoc), Timezone),
+
+    Rule = ktr_rule:new(kz_doc:id(RuleDoc), RuleDoc, StartDate, EndDate),
+    case ktr_routes:process(Timestamp, [Rule]) of
+        'undefined' ->
+            lager:info("rule does not match for this timestamp"),
+            cb_context:add_metadata_value(Context, <<"rule_matches">>, 'false');
+        _Id ->
+            lager:info("rule matches for this timestamp"),
+            cb_context:add_metadata_value(Context, <<"rule_matches">>, 'true')
+    end.
+
+-spec maybe_date_from_gregorian_seconds(kz_time:gregorian_seconds(), kz_term:ne_binary()) ->
+          kz_time:date().
+maybe_date_from_gregorian_seconds('undefined', _TZ) -> 'undefined';
+maybe_date_from_gregorian_seconds(EndDate, TZ) -> kz_date:from_gregorian_seconds(EndDate, TZ).
 
 %%------------------------------------------------------------------------------
 %% @doc Update an existing menu document with the data provided, if it is
@@ -146,7 +189,7 @@ read(Id, Context) ->
 -spec update(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
 update(Id, Context) ->
     OnSuccess = fun(C) -> on_successful_validation(Id, C) end,
-    cb_context:validate_request_data(<<"temporal_rules">>, Context, OnSuccess).
+    cb_context:validate_request_data(kzd_temporal_rules:schema(), Context, OnSuccess).
 
 %%------------------------------------------------------------------------------
 %% @doc Update-merge an existing menu document partially with the data provided, if it is
@@ -164,11 +207,11 @@ validate_patch(Id, Context) ->
 %%------------------------------------------------------------------------------
 -spec summary(cb_context:context()) -> cb_context:context().
 summary(Context) ->
-    Options = [{'doc_type', <<"temporal_rule">>}
+    Options = [{'doc_type', kzd_temporal_rules:type()}
               ,{'mapper', crossbar_view:get_value_fun()}
               ],
-    Selector = [{'start', [{<<"doc_type">>, <<"temporal_rule">>}]}
-               ,{'end', [{<<"doc_type">>, <<"temporal_rule">>}]}
+    Selector = [{'start', [{<<"doc_type">>, kzd_temporal_rules:type()}]}
+               ,{'end', [{<<"doc_type">>, kzd_temporal_rules:type()}]}
                ],
     crossbar_view:find(Context, <<"crossbar_listings/by_type_id">>, Selector, Options).
 
@@ -178,6 +221,6 @@ summary(Context) ->
 %%------------------------------------------------------------------------------
 -spec on_successful_validation(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
 on_successful_validation('undefined', Context) ->
-    cb_context:set_doc(Context, kz_doc:set_type(cb_context:doc(Context), <<"temporal_rule">>));
+    cb_context:set_doc(Context, kz_doc:set_type(cb_context:doc(Context), kzd_temporal_rules:type()));
 on_successful_validation(Id, Context) ->
-    crossbar_doc:load_merge(Id, Context, ?TYPE_CHECK_OPTION(<<"temporal_rule">>)).
+    crossbar_doc:load_merge(Id, Context, ?TYPE_CHECK_OPTION(kzd_temporal_rules:type())).

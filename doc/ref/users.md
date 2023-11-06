@@ -10,8 +10,14 @@ Schema for a user
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
+`addresses.vcard.[].address` |   | `string()` |   | `true` |  
+`addresses.vcard.[].types.[]` |   | `string()` |   | `false` |  
+`addresses.vcard.[].types` |   | `array(string())` |   | `false` |  
+`addresses.vcard` | Addresses list to build user's vcard | `array(object())` |   | `false` |  
+`addresses` | User addresses | `object()` |   | `false` |  
 `call_failover` | The device call failover parameters, to replace the device with an extension/phone number when device is offline. | [#/definitions/call_failover](#call_failover) |   | `false` |  
-`call_forward` | The device call forward parameters | [#/definitions/call_forward](#call_forward) |   | `false` |  
+`call_forward` | Call forward settings | [#/definitions/call_forward](#call_forward) |   | `false` |  
+`call_limits` | Schema for call limits | [#/definitions/call_limits](#call_limits) |   | `false` |  
 `call_recording` | endpoint recording settings | [#/definitions/call_recording](#call_recording) |   | `false` |  
 `call_restriction` | Device level call restrictions for each available number classification | `object()` | `{}` | `false` |  
 `call_waiting` | Parameters for server-side call waiting | [#/definitions/call_waiting](#call_waiting) |   | `false` |  
@@ -41,6 +47,8 @@ Key | Description | Type | Default | Required | Support Level
 `media` | Configure audio/video/etc media options for this user | [#/definitions/endpoint.media](#endpointmedia) |   | `false` |  
 `metaflows` | The device metaflow parameters | [#/definitions/metaflows](#metaflows) |   | `false` |  
 `music_on_hold.media_id` | The ID of a media object that should be used as the music on hold | `string(0..128)` |   | `false` |  
+`music_on_hold.options.[]` |   | `string('preserve-position' | 'random-start')` |   | `false` |  
+`music_on_hold.options` | Options for playing music on hold | `array(string('preserve-position' | 'random-start'))` |   | `false` |  
 `music_on_hold` | The music on hold parameters used if not a property of the device owner | `object()` | `{}` | `false` |  
 `password` | The GUI login password | `string()` |   | `false` | `supported`
 `presence_id` | Static presence ID (used instead of SIP username) | `string()` |   | `false` | `supported`
@@ -78,18 +86,59 @@ Key | Description | Type | Default | Required | Support Level
 
 ### call_forward
 
-The device call forward parameters
+Call Forward
 
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`direct_calls_only` | Determines if the calls that are not directly sent to the device should be forwarded | `boolean()` | `false` | `false` | `supported`
-`enabled` | Determines if the call forwarding should be used | `boolean()` | `false` | `false` | `supported`
-`ignore_early_media` | The option to determine if early media from the call forwarded number should ignored | `boolean()` | `true` | `false` |  
-`keep_caller_id` | Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used | `boolean()` | `true` | `false` | `supported`
-`number` | The number to forward calls to | `string(0..35)` |   | `false` | `supported`
-`require_keypress` | Determines if the callee is prompted to press 1 to accept the call | `boolean()` | `true` | `false` | `supported`
-`substitute` | Determines if the call forwarding replaces the device | `boolean()` | `true` | `false` | `supported`
+`busy` | Call Forward Properties | `object()` |   | `false` |  
+`direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`enabled` |   | `boolean()` | `false` | `true` |  
+`ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`no_answer` | Call Forward Properties | `object()` |   | `false` |  
+`number` |   | `string(0..35)` |   | `false` |  
+`require_keypress` |   | `boolean()` | `true` | `false` |  
+`selective.direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`selective.enabled` |   | `boolean()` | `false` | `false` |  
+`selective.ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`selective.keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`selective.number` |   | `string(0..35)` |   | `false` |  
+`selective.require_keypress` |   | `boolean()` | `true` | `false` |  
+`selective.rules.[].direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`selective.rules.[].enabled` |   | `boolean()` | `false` | `false` |  
+`selective.rules.[].ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`selective.rules.[].keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`selective.rules.[].match_list_id` |   | `string()` |   | `false` |  
+`selective.rules.[].number` |   | `string(0..35)` |   | `false` |  
+`selective.rules.[].require_keypress` |   | `boolean()` | `true` | `false` |  
+`selective.rules` | Match list rules to check for call forwarding | `array(object())` |   | `false` |  
+`selective` | Conditionally check match lists to determine if call forwarding should be used | `object()` |   | `false` |  
+`substitute` | Determines if the call forwarding replaces the device | `boolean()` | `true` | `false` |  
+`unconditional` | Call Forward Properties | `object()` |   | `false` |  
+
+### call_forward_type
+
+Call Forward Properties
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`direct_calls_only` |   | `boolean()` | `false` | `false` |  
+`enabled` |   | `boolean()` | `false` | `true` |  
+`ignore_early_media` |   | `boolean()` | `true` | `false` |  
+`keep_caller_id` |   | `boolean()` | `true` | `false` |  
+`number` |   | `string(0..35)` |   | `false` |  
+`require_keypress` |   | `boolean()` | `true` | `false` |  
+
+### call_limits
+
+Schema for call limits
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`max_concurrent` | Maximum number of concurrent calls allowed per endpoint | `integer()` |   | `false` |  
 
 ### call_recording
 
@@ -113,9 +162,10 @@ Key | Description | Type | Default | Required | Support Level
 `record_on_answer` | Recording should start on answer | `boolean()` |   | `false` |  
 `record_on_bridge` | Recording should start on bridge | `boolean()` |   | `false` |  
 `record_sample_rate` | What sampling rate to use on the recording | `integer()` |   | `false` |  
+`should_announce_when_recording` | Whether or not a prompt should be played (after bridge) when the call is being recorded | `boolean()` |   | `false` |  
 `should_record_feature_calls` | Toggles whether to start a recording for calls to feature codes | `boolean()` | `true` | `false` |  
-`time_limit` | Time limit, in seconds, for the recording | `integer()` |   | `false` |  
-`url` | The URL to use when sending the recording for storage | `string()` |   | `false` |  
+`time_limit` | Time limit, in seconds, for the recording | `integer(5..10800)` |   | `false` |  
+`url` | The URL to use when sending the recording for storage | `string(6..)` |   | `false` |  
 
 ### call_recording.source
 
@@ -178,6 +228,22 @@ Key | Description | Type | Default | Required | Support Level
 `show_rate` | Whether to show the rate | `boolean()` |   | `false` |  
 `type` | Caller ID on endpoint to choose | `string('internal' | 'external' | 'emergency')` |   | `false` |  
 
+### codecs.audio
+
+A list of audio codecs the endpoint supports
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+
+### codecs.video
+
+A list of video codecs the endpoint supports
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+
 ### dialplans
 
 Permit local dialing by converting the dialed number to a routable form
@@ -195,8 +261,7 @@ Schema for endpoint media options
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`audio.codecs.[]` |   | `string('OPUS' | 'CELT@32000h' | 'G7221@32000h' | 'G7221@16000h' | 'G722' | 'speex@32000h' | 'speex@16000h' | 'PCMU' | 'PCMA' | 'G729' | 'GSM' | 'CELT@48000h' | 'CELT@64000h' | 'G722_16' | 'G722_32' | 'CELT_48' | 'CELT_64' | 'Speex' | 'speex')` |   | `false` |  
-`audio.codecs` | A list of audio codecs the endpoint supports | `array(string('OPUS' | 'CELT@32000h' | 'G7221@32000h' | 'G7221@16000h' | 'G722' | 'speex@32000h' | 'speex@16000h' | 'PCMU' | 'PCMA' | 'G729' | 'GSM' | 'CELT@48000h' | 'CELT@64000h' | 'G722_16' | 'G722_32' | 'CELT_48' | 'CELT_64' | 'Speex' | 'speex'))` |   | `false` |  
+`audio.codecs` | A list of audio codecs the endpoint supports | [#/definitions/codecs.audio](#codecsaudio) |   | `false` |  
 `audio` | The audio media parameters | `object()` | `{}` | `false` |  
 `bypass_media` | Default bypass media mode (The string type is deprecated, please use this as a boolean) | `boolean() | string('auto' | 'false' | 'true')` |   | `false` |  
 `encryption.enforce_security` | Is Encryption Enabled? | `boolean()` | `false` | `false` |  
@@ -206,9 +271,9 @@ Key | Description | Type | Default | Required | Support Level
 `fax_option` | Is T.38 Supported? | `boolean()` |   | `false` |  
 `ignore_early_media` | The option to determine if early media from the endpoint should always be ignored | `boolean()` |   | `false` |  
 `progress_timeout` | The progress timeout to apply to the endpoint (seconds) | `integer()` |   | `false` |  
-`video.codecs.[]` |   | `string('H261' | 'H263' | 'H263+' | 'H264' | 'VP8' | 'VP9')` |   | `false` |  
-`video.codecs` | A list of video codecs the endpoint supports | `array(string('H261' | 'H263' | 'H263+' | 'H264' | 'VP8' | 'VP9'))` | `[]` | `false` |  
+`video.codecs` | A list of video codecs the endpoint supports | [#/definitions/codecs.video](#codecsvideo) |   | `false` |  
 `video` | The video media parameters | `object()` | `{}` | `false` |  
+`webrtc` | If true, forces a WebRTC compatible SDP on the INVITE | `boolean()` |   | `false` |  
 
 ### formatters
 
@@ -254,7 +319,7 @@ Actions applied to a call outside of the normal callflow, initiated by the calle
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `binding_digit` | What DTMF will trigger the collection and analysis of the subsequent DTMF sequence | `string('1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' | '*' | '#')` | `*` | `false` |  
-`digit_timeout` | How long to wait between DTMF presses before processing the collected sequence (milliseconds) | `integer()` |   | `false` |  
+`digit_timeout` | How long to wait between DTMF presses before processing the collected sequence (milliseconds) | `integer(0..)` |   | `false` |  
 `listen_on` | Which leg(s) of the call to listen for DTMF | `string('both' | 'self' | 'peer')` |   | `false` |  
 `numbers./^[0-9]+$/` | A metaflow node defines a module to execute, data to provide to that module, and one or more children to branch to | [#/definitions/metaflow](#metaflow) |   | `false` |  
 `numbers` | A list of static numbers with their flows | `object()` |   | `false` |  

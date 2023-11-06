@@ -5,8 +5,19 @@
     "properties": {
         "cdr_url": {
             "description": "Optional URL to send the CDR to at the end of the call",
+            "minLength": 7,
             "pattern": "^https?://",
             "type": "string"
+        },
+        "custom_request_headers": {
+            "description": "Custom HTTP X- headers to be included on each Pivot request to the voice_url",
+            "patternProperties": {
+                "^[x|X]-": {
+                    "description": "Include a custom X- header",
+                    "type": "string"
+                }
+            },
+            "type": "object"
         },
         "debug": {
             "default": false,
@@ -54,6 +65,7 @@
         "voice_url": {
             "description": "What URL to request the initial Pivot callflow",
             "kazoo-validation": true,
+            "minLength": 7,
             "pattern": "^https?://",
             "type": "string"
         }

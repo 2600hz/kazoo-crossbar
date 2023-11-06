@@ -1,7 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "_id": "webhooks",
-    "description": "Web Hooks are subscriptions to allowed events that, when the event occurs, the event data is sent to the uri set in the Web Hook document.",
+    "description": "Web Hooks are subscriptions to allowed events that, when the event occurs, the event data is sent to the URI set in the Web Hook document.",
     "properties": {
         "custom_data": {
             "additionalProperties": {
@@ -64,11 +64,31 @@
             "support_level": "supported",
             "type": "integer"
         },
+        "security_settings": {
+            "description": "Security settings to harden webhook delivery",
+            "properties": {
+                "sha256_key": {
+                    "description": "Secret key to create a SHA256 HMAC with, so receiver can validate the webhook came from the cluster",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "uri": {
             "description": "The 3rd party URI to call out to an event",
             "format": "uri",
             "kazoo-validation": true,
+            "minLength": 1,
             "support_level": "supported",
+            "type": "string"
+        },
+        "version": {
+            "default": "v1",
+            "description": "Whether to receive the full version of the event in the webhook payload",
+            "enum": [
+                "v1",
+                "v2"
+            ],
             "type": "string"
         }
     },

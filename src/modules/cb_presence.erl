@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2013-2022, 2600Hz
+%%% @copyright (C) 2013-2023, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -43,7 +43,7 @@
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec init() -> ok.
+-spec init() -> 'ok'.
 init() ->
     Bindings = [{<<"*.allowed_methods.presence">>, 'allowed_methods'}
                ,{<<"*.authenticate.presence">>, 'authenticate'}
@@ -54,7 +54,7 @@ init() ->
                ,{<<"*.execute.post.presence">>, 'post'}
                ],
     _ = cb_modules_util:bind(?MODULE, Bindings),
-    ok.
+    'ok'.
 
 -spec authenticate(cb_context:context()) -> boolean().
 authenticate(Context) ->
@@ -259,10 +259,10 @@ validate_presence_thing(Context, _ReqNouns) ->
     crossbar_util:response_faulty_request(Context).
 
 -spec validate_presence_thing(cb_context:context(), kz_term:ne_binary(), req_nouns()) -> cb_context:context().
-validate_presence_thing(Context, _Extension, [{<<"presence">>, [Extension]}
-                                             ,{<<"accounts">>, [_AccountId]}
-                                             ]) ->
-    validate_action(search_detail(Context, Extension));
+validate_presence_thing(Context, Extension, [{<<"presence">>, [Extension]}
+                                            ,{<<"accounts">>, [_AccountId]}
+                                            ]) ->
+    validate_action(Context);
 validate_presence_thing(Context, _Extension, _ReqNouns) ->
     crossbar_util:response_faulty_request(Context).
 
@@ -298,7 +298,7 @@ load_user_devices(Context) ->
 validate_action(Context) ->
     Context1 = cb_context:validate_request_data(<<"presence.action">>, Context),
     case cb_context:resp_status(Context1) of
-        'success' -> validate_action(Context, cb_context:doc(Context1));
+        'success' -> validate_action(Context1, cb_context:doc(Context1));
         _ -> Context1
     end.
 
@@ -314,11 +314,7 @@ validate_action(Context, ReqData) ->
 validate_action(Context, _ReqData, <<"reset">>) ->
     Context;
 validate_action(Context, _ReqData, <<"set">>) ->
-    Ctx = cb_context:validate_request_data(<<"presence.state">>, Context),
-    case cb_context:resp_status(Ctx) of
-        'success' -> Context;
-        _Else -> Ctx
-    end.
+    cb_context:validate_request_data(<<"presence.state">>, Context).
 
 
 -spec post(cb_context:context()) -> cb_context:context().
@@ -372,20 +368,24 @@ publish_presence_reset(Context, PresenceId) ->
           ],
     kz_amqp_worker:cast(API, fun kapi_presence:publish_reset/1).
 
--spec publish_presence_update(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) -> 'ok'.
+-spec publish_presence_update(cb_context:context(), kz_term:api_ne_binary(), kz_term:ne_binary()) -> 'ok'.
+publish_presence_update(_Context, 'undefined', _PresenceState) -> 'ok';
 publish_presence_update(Context, PresenceId, PresenceState) ->
     Realm = cb_context:account_realm(Context),
     AccountDb = cb_context:db_name(Context),
     lager:debug("updating presence for ~s@~s to state ~s", [PresenceId, Realm, PresenceState]),
     %% persist presence setting
     Update = [{[PresenceId], presence_update_state(PresenceState)}],
-    UpdateOptions = [{'update', Update}],
+    UpdateOptions = [{'update', Update}
+                    ,{'ensure_saved', 'true'}
+                    ,{'should_create', 'true'}
+                    ],
     {'ok', _} = kz_datamgr:update_doc(AccountDb, ?MANUAL_PRESENCE_DOC, UpdateOptions),
     PresenceString = <<PresenceId/binary, "@", Realm/binary>>,
     kapps_call_command:presence(PresenceState, PresenceString, kz_term:to_hex_binary(crypto:hash('md5', PresenceString))).
 
--spec presence_update_state(kz_term:ne_binary()) -> kz_term:ne_binary() | null.
-presence_update_state(<<"terminated">>) -> null;
+-spec presence_update_state(kz_term:ne_binary()) -> kz_term:ne_binary() | 'null'.
+presence_update_state(<<"terminated">>) -> 'null';
 presence_update_state(PresenceState) -> PresenceState.
 
 -spec find_presence_id(kz_term:ne_binary() | kz_json:object()) -> kz_term:api_binary().
@@ -478,6 +478,6 @@ save_report(Context) ->
            ],
     Path = io_lib:format("/~s/accounts/~s/presence/~s", Args),
     MagicPath = kapps_util:to_magic_hash(Path),
-    HostURL = cb_context:host_url(Context),
+    HostURL = cb_context:socket_url(Context),
     URL = <<HostURL/binary, "/", MagicPath/binary>>,
     {Report, URL}.

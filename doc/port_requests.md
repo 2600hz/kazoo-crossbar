@@ -115,6 +115,21 @@ Key | Description | Type | Default | Required | Support Level
 `transfer_date` | Requested transfer date in Gregorian timestamp | `integer()` |   | `false` |
 `winning_carrier` | The name of winning carrier | `string()` |   | `false` |
 
+### comment
+
+Schema for a single comment
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`account_id` | Account ID of the commenter. | `string()` |   | `false` |
+`action_required` | Specified if an action is required by the user. | `boolean()` | `false` | `false` |
+`author` | Full name of the author | `string()` |   | `true` |
+`content` | Content of the comment | `string()` |   | `true` |
+`is_private` | Specified if this comment is private | `boolean()` | `false` | `false` |
+`timestamp` |   | `integer()` |   | `true` |
+`user_id` | User ID of the commenter | `string()` |   | `false` |
+
 
 
 </details>
@@ -463,23 +478,25 @@ curl -v -X PUT \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "id": "462da37f8be11e46161fb40bc71173a9",
-        "name": "{PORT_REQUEST_NAME}",
-        "numbers": {
-            "{PHONE_NUMBER}": {}
-        },
-        "port_state": "unconfirmed",
-        "uploads": {},
-        "_read_only": {
-            "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
-            "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
-        }
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+    "id": "462da37f8be11e46161fb40bc71173a9",
+    "name": "{PORT_REQUEST_NAME}",
+    "numbers": {
+      "{PHONE_NUMBER}": {
+      }
     },
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REVISION}",
-    "status": "success"
+    "port_state": "unconfirmed",
+    "uploads": {
+    }
+  },
+  "metadata": {
+    "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
+    "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
+  },
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 
@@ -540,26 +557,28 @@ curl -v -X GET \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "created": 63630097779,
-        "id": "{PORT_REQUEST_ID}",
-        "name": "Porting 202.555.9000",
-        "numbers": {
-            "+12025559000": {}
-        },
-        "port_state": "unconfirmed",
-        "sent": false,
-        "updated": 63630097779,
-        "uploads": {},
-        "_read_only": {
-            "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
-            "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
-        }
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+    "created": 63630097779,
+    "id": "{PORT_REQUEST_ID}",
+    "name": "Porting 202.555.9000",
+    "numbers": {
+      "+12025559000": {
+      }
     },
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REVISION}",
-    "status": "success"
+    "port_state": "unconfirmed",
+    "sent": false,
+    "updated": 63630097779,
+    "uploads": {
+    }
+  },
+  "metadata": {
+    "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
+    "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
+  },
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 </details>
@@ -582,28 +601,29 @@ curl -v -X POST \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "created": 63630097779,
-        "id": "{PORT_REQUEST_ID}",
-        "name": "{PORT_REQUEST_NAME}",
-        "numbers": {
-            "{PHONE_NUMBER}": {
-                "state": "NY"
-            }
-        },
-        "port_state": "unconfirmed",
-        "sent": false,
-        "updated": 63630104652,
-        "uploads": {},
-        "_read_only": {
-            "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
-            "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
-        }
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+    "created": 63630097779,
+    "id": "{PORT_REQUEST_ID}",
+    "name": "{PORT_REQUEST_NAME}",
+    "numbers": {
+      "{PHONE_NUMBER}": {
+        "state": "NY"
+      }
     },
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REVISION}",
-    "status": "success"
+    "port_state": "unconfirmed",
+    "sent": false,
+    "updated": 63630104652,
+    "uploads": {
+    }
+  },
+  "metadata": {
+    "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
+    "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
+  },
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 </details>
@@ -624,29 +644,30 @@ curl -v -X PATCH \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "created": 63630097779,
-        "id": "{PORT_REQUEST_ID}",
-        "name": "{PORT_REQUEST_NAME}",
-        "numbers": {
-            "{PHONE_NUMBER}": {
-                "state": "NY"
-            }
-        },
-        "port_state": "unconfirmed",
-        "sent": false,
-        "updated": 63630104652,
-        "uploads": {},
-        "your_custom_info": {
-            "carrier_port_id": "apc-8535937-gtk123",
-            "carrier_name": "ace phone co"
-        },
-        "_read_only": {
-            "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
-            "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
-        }
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+    "created": 63630097779,
+    "id": "{PORT_REQUEST_ID}",
+    "name": "{PORT_REQUEST_NAME}",
+    "numbers": {
+      "{PHONE_NUMBER}": {
+        "state": "NY"
+      }
+    },
+    "port_state": "unconfirmed",
+    "sent": false,
+    "updated": 63630104652,
+    "uploads": {
+    },
+    "your_custom_info": {
+      "carrier_port_id": "apc-8535937-gtk123",
+      "carrier_name": "ace phone co"
     }
+  },
+  "metadata": {
+    "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
+    "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
+  }
 }
 ```
 </details>
@@ -666,24 +687,24 @@ curl -v -X DELETE \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "id": "{PORT_REQUEST_ID}",
-        "name": "Porting 202.555.9000",
-        "numbers": {
-            "+12025559000": {
-                "state": "NY"
-            }
-        },
-        "port_state": "unconfirmed",
-        "_read_only": {
-            "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
-            "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
-        }
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+    "id": "{PORT_REQUEST_ID}",
+    "name": "Porting 202.555.9000",
+    "numbers": {
+      "+12025559000": {
+        "state": "NY"
+      }
     },
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REVISION}",
-    "status": "success"
+    "port_state": "unconfirmed"
+  },
+  "metadata": {
+    "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
+    "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
+  },
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 </details>
@@ -709,41 +730,41 @@ curl -v -X POST \
 
 ```json
 {
-    "auth_token": "{AUTH_TOKEN}",
-    "data": {
-        "numbers": {
-            "{PHONE_NUMBER}": {
-                "rate_center": {
-                    "name": "BALTIMORE",
-                    "city": "BALTIMORE",
-                    "state": "MD",
-                    "lata": "238",
-                    "tier": "0"
-                },
-                "losing_carrier": {
-                    "spid": "6529",
-                    "name": "T-Mobile US:6529 - SVR/2",
-                    "is_wireless": true,
-                    "account_number_required": true,
-                    "minimum_porting_interval": "1"
-                },
-                "carriers": [
-                    {
-                        "name": "bandwidth",
-                        "portability": true
-                    }
-                ]
-            }
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+    "numbers": {
+      "{PHONE_NUMBER}": {
+        "rate_center": {
+          "name": "BALTIMORE",
+          "city": "BALTIMORE",
+          "state": "MD",
+          "lata": "238",
+          "tier": "0"
         },
-        "port_state": "unconfirmed",
-        "_read_only": {
-            "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
-            "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
-        }
+        "losing_carrier": {
+          "spid": "6529",
+          "name": "T-Mobile US:6529 - SVR/2",
+          "is_wireless": true,
+          "account_number_required": true,
+          "minimum_porting_interval": "1"
+        },
+        "carriers": [
+          {
+            "name": "bandwidth",
+            "portability": true
+          }
+        ]
+      }
     },
-    "request_id": "{REQUEST_ID}",
-    "revision": "{REVISION}",
-    "status": "success"
+    "port_state": "unconfirmed"
+  },
+  "metadata": {
+    "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
+    "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
+  },
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 </details>

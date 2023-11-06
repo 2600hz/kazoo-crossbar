@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2021, 2600Hz
+%%% @copyright (C) 2012-2023, 2600Hz
 %%% @doc Fax Box API
 %%% @author Luis Azedo
 %%%
@@ -28,7 +28,7 @@
 
 -define(SMTP_EMAIL_FIELD, {<<"pvt_smtp_email_address">>, <<"custom_smtp_address">>}).
 
--define(LEAKED_FIELDS, [?SMTP_EMAIL_FIELD]).
+-define(METADATA_FIELDS, [?SMTP_EMAIL_FIELD]).
 
 %%%=============================================================================
 %%% API
@@ -147,30 +147,23 @@ validate_email_address(Context, ReqDoc, Email) ->
                                            )
     end.
 
+%% doc is already patched from the request data
 -spec validate_patch(cb_context:context()) -> cb_context:context().
 validate_patch(Context) ->
-    DocId = kz_doc:id(cb_context:doc(Context)),
-    IsValid = case kz_json:get_value(<<"custom_smtp_email_address">>, cb_context:doc(Context)) of
-                  'undefined' -> 'true';
-                  CustomEmail -> is_faxbox_email_global_unique(CustomEmail, DocId)
-              end,
-    case IsValid of
-        'true' ->
-            Context1 = crossbar_doc:load(DocId, Context, ?TYPE_CHECK_OPTION(kzd_fax_box:type())),
-            case cb_context:resp_status(Context1) of
-                'success' ->
-                    PatchJObj = cb_context:req_data(Context),
-                    ConfigsJObj = kz_json:merge_jobjs(PatchJObj, cb_context:doc(Context1)),
-                    cb_context:set_doc(Context, ConfigsJObj);
-                _Status ->
-                    Context1
-            end;
+    case is_email_unique(Context) of
+        'true' -> Context;
         'false' ->
             cb_context:add_validation_error(<<"custom_smtp_email_address">>
                                            ,<<"unique">>
                                            ,<<"email address must be unique">>
                                            ,Context
                                            )
+    end.
+
+is_email_unique(Context) ->
+    case kzd_faxbox:custom_smtp_email_address(cb_context:doc(Context)) of
+        'undefined' -> 'true';
+        CustomEmail -> is_faxbox_email_global_unique(CustomEmail, kz_doc:id(cb_context:doc(Context)))
     end.
 
 %%------------------------------------------------------------------------------
@@ -241,43 +234,33 @@ read(Id, Context, _) ->
 do_read(Id, Context, Options) ->
     ReadContext = crossbar_doc:load(Id, Context, Options),
     case cb_context:resp_status(ReadContext) of
-        'success' -> add_leaked_fields(ReadContext);
+        'success' -> add_metadata_fields(ReadContext);
         _ -> ReadContext
     end.
 
--spec leak_private_fields(kzd_faxbox:doc()) -> kz_json:object().
-leak_private_fields(Faxbox) ->
-    WithId = kz_json:set_value(<<"id">>, kz_doc:id(Faxbox), Faxbox),
-    lists:foldl(fun leak_private_field/2, WithId, ?LEAKED_FIELDS).
+-spec add_metadata_fields(cb_context:context()) -> cb_context:context().
+add_metadata_fields(Context) ->
+    lists:foldl(fun add_metadata_field/2, Context, ?METADATA_FIELDS).
 
-%% @doc leak private fields from db doc onto response data
--spec leak_private_fields(cb_context:context(), kz_json:object()) -> kz_json:object().
-leak_private_fields(Context, RespData) ->
-    Faxbox = cb_context:doc(Context),
-    FaxboxWithReadOnly = leak_private_fields(Faxbox),
-    ReadOnly = kz_doc:read_only(FaxboxWithReadOnly),
-    lager:info("resp data: ~p", [RespData]),
-    lager:info("ro: ~p", [ReadOnly]),
-    kz_doc:set_read_only(RespData, ReadOnly).
-
--spec leak_private_field(kz_term:ne_binary(), kzd_faxbox:doc()) -> kzd_faxbox:doc().
-leak_private_field(<<"pvt_", K1/binary>> = K, Acc) ->
-    case kz_json:get_value(K, Acc) of
-        'undefined' -> Acc;
-        Value -> leak_private_field_value(K1, Value, Acc)
+-spec add_metadata_field(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
+add_metadata_field(<<"pvt_", K1/binary>> = K, Context) ->
+    Doc = cb_context:doc(Context),
+    case kz_json:get_value(K, Doc) of
+        'undefined' -> Context;
+        Value -> add_metadata_field_value(K1, Value, Context)
     end;
-leak_private_field({<<PvtFieldName/binary>>, <<PublicFieldName/binary>>}, Acc) ->
-    case kz_json:get_value(PvtFieldName, Acc) of
-        'undefined' -> Acc;
-        Value -> leak_private_field_value(PublicFieldName, Value, Acc)
+add_metadata_field({<<PvtFieldName/binary>>, <<PublicFieldName/binary>>}, Context) ->
+    Doc = cb_context:doc(Context),
+    case kz_json:get_value(PvtFieldName, Doc) of
+        'undefined' -> Context;
+        Value -> add_metadata_field_value(PublicFieldName, Value, Context)
     end;
-leak_private_field(_K, Acc) -> Acc.
+add_metadata_field(_K, Context) -> Context.
 
--spec leak_private_field_value(kz_term:ne_binary(), kz_json:json_term(), kzd_faxbox:doc()) ->
-          kzd_faxbox:doc().
-leak_private_field_value(Key, Value, Acc) ->
-    lager:info("leaking ro ~s", [Key]),
-    kz_json:set_value([<<"_read_only">>, Key], Value, Acc).
+-spec add_metadata_field_value(kz_term:ne_binary(), kz_json:json_term(), cb_context:context()) ->
+          cb_context:context().
+add_metadata_field_value(Key, Value, Context) ->
+    cb_context:add_metadata_value(Context, Key, Value).
 
 %%------------------------------------------------------------------------------
 %% @doc Update an existing instance with the data provided, if it is
@@ -343,7 +326,7 @@ faxbox_listing_options() ->
 
 -spec normalize_view_results(kz_json:object(), kz_json:objects()) -> kz_json:objects().
 normalize_view_results(JObj, Acc) ->
-    [leak_private_fields(kz_json:get_json_value(<<"doc">>, JObj)) | Acc].
+    [kz_json:get_json_value(<<"doc">>, JObj) | Acc].
 
 -spec is_faxbox_email_global_unique(kz_term:ne_binary(), kz_term:ne_binary()) -> boolean().
 is_faxbox_email_global_unique(Email, FaxBoxId) ->
@@ -352,7 +335,9 @@ is_faxbox_email_global_unique(Email, FaxBoxId) ->
         {'ok', []} -> 'true';
         {'ok', [JObj]} -> kz_doc:id(JObj) =:= FaxBoxId;
         {'error', 'not_found'} -> 'true';
-        _ -> 'false'
+        _Resp ->
+            lager:info("email results not unique: ~p", [_Resp]),
+            'false'
     end.
 
 -spec save_faxbox_doc(cb_context:context(), 'create' | 'update') -> cb_context:context().
@@ -363,7 +348,7 @@ save_faxbox_doc(Context0, Action) ->
             ContextFaxDb = save_doc_to_faxdb(ContextAccount, Action),
             case cb_context:resp_status(ContextFaxDb) of
                 'success' ->
-                    add_leaked_fields(ContextAccount);
+                    add_metadata_fields(ContextAccount);
                 _ ->
                     _ = rollback_doc(ContextAccount, Action),
                     ContextFaxDb
@@ -371,12 +356,6 @@ save_faxbox_doc(Context0, Action) ->
         _ ->
             ContextAccount
     end.
-
-%% @doc add typical leaked fields to GET responses or after save
--spec add_leaked_fields(cb_context:context()) -> cb_context:context().
-add_leaked_fields(Context) ->
-    RespData = leak_private_fields(Context, cb_context:resp_data(Context)),
-    cb_context:set_resp_data(Context, RespData).
 
 -spec save_faxbox_in_account_db(cb_context:context()) -> cb_context:context().
 save_faxbox_in_account_db(Context) ->

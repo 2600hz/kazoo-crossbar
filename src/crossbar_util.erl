@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2021, 2600Hz
+%%% @copyright (C) 2010-2023, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
 %%% @author Karl Anderson
@@ -24,6 +24,7 @@
 -export([response_redirect/3
         ,response_redirect/4
         ]).
+-export([response_200/2]).
 -export([response_202/2, response_202/3]).
 -export([response_400/3
         ,response_401/1
@@ -83,6 +84,7 @@
        ).
 
 -type fails() :: 'error' | 'fatal'.
+-type success() :: 'success'.
 
 %%------------------------------------------------------------------------------
 %% @doc This function set the response status to success, and load the provided
@@ -93,6 +95,11 @@
           cb_context:context().
 response(JTerm, Context) ->
     create_response('success', 'undefined', 'undefined', JTerm, Context).
+
+-spec response_200(kz_json:json_term(), cb_context:context()) ->
+          cb_context:context().
+response_200(JTerm, Context) ->
+    create_response('success', 'undefined', 200, JTerm, Context).
 
 -spec response_202(kz_term:api_ne_binary(), cb_context:context()) ->
           cb_context:context().
@@ -147,11 +154,13 @@ response('fatal', Msg, Code, Context) ->
 %% of type fatal or error with additional data.
 %% @end
 %%------------------------------------------------------------------------------
--spec response(fails(), kz_term:api_ne_binary(), kz_term:api_integer(), kz_json:json_term(), cb_context:context()) -> cb_context:context().
+-spec response(fails() | success(), kz_term:api_ne_binary(), kz_term:api_integer(), kz_json:json_term(), cb_context:context()) -> cb_context:context().
 response('error', Msg, Code, JTerm, Context) ->
     create_response('error', Msg, Code, JTerm, Context);
 response('fatal', Msg, Code, JTerm, Context) ->
-    create_response('fatal', Msg, Code, JTerm, Context).
+    create_response('fatal', Msg, Code, JTerm, Context);
+response('success'=Status, Msg, Code, JTerm, Context) ->
+    create_response(Status, Msg, Code, JTerm, Context).
 
 %%------------------------------------------------------------------------------
 %% @doc This function loads the response vars in Context, soon it will
@@ -211,7 +220,10 @@ response_deprecated_redirect(Context, RedirectUrl) ->
 -spec response_deprecated_redirect(cb_context:context(), kz_term:ne_binary(), kz_json:object()) ->
           cb_context:context().
 response_deprecated_redirect(Context, RedirectUrl, JObj) ->
-    create_response('error', <<"deprecated">>, 301, JObj
+    create_response('error'
+                   ,<<"deprecated">>
+                   ,301
+                   ,JObj
                    ,cb_context:add_resp_header(Context, <<"Location">>, RedirectUrl)
                    ).
 
@@ -223,7 +235,10 @@ response_redirect(Context, RedirectUrl, JObj) ->
 -spec response_redirect(cb_context:context(), kz_term:ne_binary(), kz_json:object(), pos_integer()) ->
           cb_context:context().
 response_redirect(Context, RedirectUrl, JObj, Redirect) ->
-    create_response('error', <<"redirect">>, Redirect, JObj
+    create_response('error'
+                   ,<<"redirect">>
+                   ,Redirect
+                   ,JObj
                    ,cb_context:add_resp_header(Context, <<"Location">>, RedirectUrl)
                    ).
 
@@ -411,29 +426,34 @@ maybe_flush_registration_on_deleted(Realm, _OldDevice, NewDevice) ->
 move_account(?MATCH_ACCOUNT_RAW(AccountId), ToAccount=?NE_BINARY) ->
     case validate_move(AccountId, ToAccount) of
         {'error', _E}=Error -> Error;
-        {'ok', JObj, ToTree} ->
-            move_account(AccountId, JObj, ToAccount, ToTree)
+        {'ok', AccountJObj, NewTree} ->
+            move_account(AccountId, AccountJObj, ToAccount, NewTree)
     end.
 
 -spec move_account(kz_term:ne_binary(), kzd_accounts:doc(), kz_term:ne_binary(), kz_term:ne_binaries()) ->
-          {'ok', kzd_services:doc()} |
+          {'ok', kzd_accounts:doc()} |
           {'error', any()}.
-move_account(AccountId, JObj, ToAccount, ToTree) ->
-    PreviousTree = kzd_accounts:tree(JObj),
-    Updates = [{[?SERVICES_PVT_TREE], ToTree}
+move_account(AccountId, AccountJObj, ToAccount, NewTree) ->
+    PreviousTree = kzd_accounts:tree(AccountJObj),
+    Updates = [{[?SERVICES_PVT_TREE], NewTree}
               ,{[?SERVICES_PVT_TREE_PREVIOUSLY], PreviousTree}
               ,{[?SERVICES_PVT_MODIFIED], kz_time:now_s()}
               ],
 
     %%FIXME: do something about setting pvt_auth_*_id
     case kzd_accounts:update(AccountId, Updates) of
-        {'error', _E}=Error -> Error;
-        {'ok', _AccountDoc} ->
-            lager:info("moved account ~s (~s)", [AccountId, kz_doc:revision(_AccountDoc)]),
+        {'error', _E}=Error ->
+            lager:info("failed to update account ~s tree: ~p", [AccountId, _E]),
+            Error;
+        {'ok', AccountDoc} ->
+            lager:info("moved account ~s (~s)", [AccountId, kz_doc:revision(AccountDoc)]),
             NewResellerId = kz_services_reseller:get_id(ToAccount),
-            {'ok', _} = move_descendants(AccountId, ToTree, NewResellerId),
-            Services = kazoo_services_maintenance:update_tree(AccountId, ToTree, NewResellerId),
-            {'ok', kz_services:services_jobj(Services)}
+            lager:info("account ~s has new reseller ~s", [AccountId, NewResellerId]),
+            {'ok', _} = move_descendants(AccountId, NewTree, NewResellerId),
+            lager:info("moved descendants of ~s", [AccountId]),
+            _Services = kazoo_services_maintenance:update_tree(AccountId, NewTree, NewResellerId),
+            lager:info("updating sevices tree for ~s", [AccountId]),
+            {'ok', AccountDoc}
     end.
 
 %%------------------------------------------------------------------------------
@@ -444,13 +464,25 @@ move_account(AccountId, JObj, ToAccount, ToTree) ->
           {'error', kz_datamgr:data_error() | 'forbidden'} |
           {'ok', kzd_accounts:doc(), kz_term:ne_binaries()}.
 validate_move(AccountId, ToAccount) ->
-    case kzd_accounts:fetch(AccountId) of
-        {'error', _E}=Error -> Error;
-        {'ok', JObj} ->
-            ToTree = get_tree(ToAccount) ++ [ToAccount],
-            case lists:member(AccountId, ToTree) of
-                'true' -> {'error', 'forbidden'};
-                'false' -> {'ok', JObj, ToTree}
+    case {kzd_accounts:fetch(AccountId), kzd_accounts:fetch(ToAccount)} of
+        {{'error', _E}=Error, _} ->
+            lager:info("failed to fetch account ~s: ~p", [AccountId, _E]),
+            Error;
+        {{'ok', _AccountJObj}, {'error', 'not_found'}} ->
+            lager:info("to account ~s not found", [ToAccount]),
+            {'error', 'not_found'};
+        {{'ok', _AccountJObj}, {'error', _E}} ->
+            lager:info("failed to load to account ~s: ~p", [ToAccount, _E]),
+            {'error', 'forbidden'};
+        {{'ok', AccountJObj}, {'ok', ToAccountJObj}} ->
+            NewTree = kzd_accounts:tree(ToAccountJObj) ++ [ToAccount],
+            case lists:member(AccountId, NewTree) of
+                'true' ->
+                    lager:info("account ~s is already under account ~s tree: ~p", [AccountId, ToAccount, NewTree]),
+                    {'error', 'forbidden'};
+                'false' ->
+                    lager:info("updating account ~s tree to be under account ~s", [AccountId, ToAccount]),
+                    {'ok', AccountJObj, NewTree}
             end
     end.
 
@@ -598,6 +630,7 @@ populate_resp(JObj, 'undefined', _UserId) -> JObj;
 populate_resp(JObj, AccountId, UserId) ->
     Language = get_language(AccountId, UserId),
     UserInfo = get_user_info(AccountId, UserId),
+
     Props = props:filter_undefined(
               [{<<"apps">>, load_apps(AccountId, UserId, Language)}
               ,{<<"language">>, Language}
@@ -846,7 +879,7 @@ apply_response_map_item({Key, ExistingKey}, J, JObj) ->
     kz_json:set_value(Key, kz_json:get_value(ExistingKey, JObj), J).
 
 -spec get_path(cowboy_req:req() | kz_term:ne_binary(), kz_term:ne_binary()) -> kz_term:ne_binary().
-get_path(<<_/binary>> = RawPath, Relative) ->
+get_path(<<RawPath/binary>>, Relative) ->
     kz_http_util:resolve_uri(RawPath, Relative);
 get_path(Req, Relative) ->
     get_path(cowboy_req:path(Req), Relative).
@@ -1124,11 +1157,11 @@ maybe_update_descendants_count(AccountId, NewCount) ->
 
 -spec maybe_update_descendants_count(kz_term:ne_binary(), integer(), integer()) -> 'ok'.
 maybe_update_descendants_count(AccountId, _, Try) when Try =< 0 ->
-    io:format("too many attempts to update descendants count for ~s~n", [AccountId]);
+    lager:warning("too many attempts to update descendants count for ~s~n", [AccountId]);
 maybe_update_descendants_count(AccountId, NewCount, Try) ->
     case kzd_accounts:fetch(AccountId) of
         {'error', _E} ->
-            io:format("could not load account ~s: ~p~n", [AccountId, _E]);
+            lager:info("could not load account ~s: ~p~n", [AccountId, _E]);
         {'ok', AccountJObj} ->
             maybe_update_descendants_count(AccountId, AccountJObj, NewCount, Try)
     end.

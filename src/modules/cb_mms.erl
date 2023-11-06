@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2021, 2600Hz
+%%% @copyright (C) 2012-2023, 2600Hz
 %%% @doc
 %%% @author Luis Azedo
 %%%
@@ -219,6 +219,7 @@ create_request(Context) ->
           ,{<<"Custom-Vars">>, kz_json:from_list(CCVs)}
           ,{<<"Route-Type">>, Type}
           ,{<<"Event-Category">>, <<"mms">>}
+          ,{<<"Msg-ID">>, cb_context:req_id(Context)}
           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
     cb_context:set_doc(Context, kz_json:set_values(KVs, Payload)).
@@ -300,7 +301,7 @@ get_default_caller_id(Context, <<"onnet">>, OwnerId) ->
 -spec body_or_attachment(cb_context:context()) -> cb_context:context().
 body_or_attachment(Context) ->
     case cb_context:req_files(Context) =:= []
-        andalso kzd_mms:body(cb_context:doc(Context)) =:= 'undefined'
+        andalso kz_term:is_empty(kzd_mms:body(cb_context:doc(Context)))
     of
         'true' ->
             Property = <<"body">>,
@@ -312,9 +313,10 @@ body_or_attachment(Context) ->
 
 -spec body_is_mime_encoded(cb_context:context()) -> cb_context:context().
 body_is_mime_encoded(Context) ->
-    case kzd_mms:body(cb_context:doc(Context)) of
-        'undefined' -> Context;
-        Body ->
+    Body = kzd_mms:body(cb_context:doc(Context)),
+    case kz_term:is_empty(Body) of
+        'true' -> Context;
+        'false' ->
             try mimemail:decode(Body) of
                 {_Type, _SubType, _Headers, _Parameters, _Body} ->
                     KVs = [{<<"Body">>, Body}

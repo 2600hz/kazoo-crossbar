@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2021, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @author Kevin
 %%% @doc Endpoint for screenpops
 %%% @end
@@ -37,7 +37,8 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.execute.put.screenpops">>, ?MODULE, 'put'),
     _ = crossbar_bindings:bind(<<"*.execute.post.screenpops">>, ?MODULE, 'post'),
     _ = crossbar_bindings:bind(<<"*.execute.patch.screenpops">>, ?MODULE, 'patch'),
-    _ = crossbar_bindings:bind(<<"*.execute.delete.screenpops">>, ?MODULE, 'delete').
+    _ = crossbar_bindings:bind(<<"*.execute.delete.screenpops">>, ?MODULE, 'delete'),
+    'ok'.
 
 %%------------------------------------------------------------------------------
 %% @doc Given the path tokens related to this module, what HTTP methods are
@@ -144,6 +145,22 @@ delete(Context, _ScreenpopId) ->
 %%------------------------------------------------------------------------------
 -spec load_summary(cb_context:context()) -> cb_context:context().
 load_summary(Context) ->
+    case cb_context:req_nouns(Context) of
+        [{<<"screenpops">>, []}, {<<"users">>, [UserId]} |_] ->
+            user_summary(Context, UserId);
+        [{<<"screenpops">>, []}, {<<"accounts">>, [_AccountId]} |_] ->
+            lager:debug("getting account summary"),
+            account_summary(Context, cb_context:account_id(Context));
+        _Nouns ->
+            lager:debug("unexpected nouns: ~p", [_Nouns]),
+            crossbar_util:response_faulty_request(Context)
+    end.
+
+-spec account_summary(cb_context:context(), kz_term:api_ne_binary()) -> cb_context:context().
+account_summary(Context, 'undefined') ->
+    Message = kz_json:from_list([{<<"message">>, <<"account ID is required in url">>}]),
+    cb_context:add_validation_error(<<"account_id">>, <<"required">>, Message, Context);
+account_summary(Context, _AccountId) ->
     Selector = [{'start', [{<<"doc_type">>, kzd_screenpops:type()}]}
                ,{'end', [{<<"doc_type">>, kzd_screenpops:type()}]}
                ],
@@ -155,6 +172,30 @@ load_summary(Context) ->
                       ,Selector
                       ,Options
                       ).
+
+-spec user_summary(cb_context:context(), kz_term:api_ne_binary()) -> cb_context:context().
+user_summary(Context, UserId) ->
+    Selector = [{'start', [{<<"doc_type">>, kzd_screenpops:type()}]}
+               ,{'end', [{<<"doc_type">>, kzd_screenpops:type()}]}
+               ],
+    Options = [{'mapper', fun (JObjs) -> normalize_user_summary(UserId, JObjs) end}
+              ,{'doc_type', kzd_screenpops:type()}
+              ],
+    crossbar_view:find(Context
+                      ,<<"crossbar_listings/by_type_id">>
+                      ,Selector
+                      ,Options
+                      ).
+
+normalize_user_summary(UserId, SPs) ->
+    lists:filter(fun(Screenpop) ->
+                         AllowAll = kzd_screenpops:permissions_all_users(kz_json:get_json_value([<<"value">>], Screenpop)),
+                         AllowList = kzd_screenpops:permissions_allow(kz_json:get_json_value([<<"value">>], Screenpop)),
+                         DenyList = kzd_screenpops:permissions_deny(kz_json:get_json_value([<<"value">>], Screenpop)),
+                         (AllowAll
+                          orelse lists:member(UserId, AllowList))
+                             andalso not lists:member(UserId, DenyList)
+                 end, SPs).
 
 -spec load_entry(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
 load_entry(DocId, Context) ->

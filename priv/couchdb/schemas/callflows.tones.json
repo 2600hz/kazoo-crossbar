@@ -10,39 +10,7 @@
         "tones": {
             "description": "list of tones to play to caller",
             "items": {
-                "properties": {
-                    "duration_off": {
-                        "description": "duration, in milliseconds, for tone to be off",
-                        "type": "integer"
-                    },
-                    "duration_on": {
-                        "description": "duration, in milliseconds, for the tone to be on",
-                        "type": "integer"
-                    },
-                    "frequencies": {
-                        "description": "list of Frequencies to play",
-                        "items": {
-                            "description": "Frequency, in Hz, to play",
-                            "type": "integer"
-                        },
-                        "minItems": 1,
-                        "type": "array"
-                    },
-                    "repeat": {
-                        "description": "How many times to loop the tones",
-                        "type": "integer"
-                    },
-                    "volume": {
-                        "description": "Volume, in dB. 0 = max, negative = quieter",
-                        "maximum": 0,
-                        "type": "integer"
-                    }
-                },
-                "required": [
-                    "frequencies",
-                    "duration_off",
-                    "duration_on"
-                ],
+                "$ref": "tone",
                 "type": "object"
             },
             "type": "array"
