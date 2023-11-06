@@ -528,7 +528,10 @@ handle_read_result(TaskId, OrigContext, ReadContext) ->
                                ,{fun cb_context:set_resp_data/2, kz_json:new()}
                                ,{fun cb_context:add_metadata_values/2, kz_json:to_proplist(TaskJObj)}
                                ]
-                              )
+                              );
+        ErrorResp ->
+            lager:info("task fetching failed: ~p", [ErrorResp]),
+            cb_context:add_system_error('datastore_fault', ErrorResp, ReadContext)
     end.
 
 read_attachment(TaskId, Context, AccountId) ->

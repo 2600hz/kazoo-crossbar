@@ -144,7 +144,7 @@ resource_exists(_, Path) ->
 
 -spec validate_resource(cb_context:context()) -> cb_context:context().
 validate_resource(Context) ->
-    Context.
+    validate_resource(Context, cb_context:auth_account_id(Context)).
 
 -spec validate_resource(cb_context:context(), path_token()) -> cb_context:context().
 validate_resource(Context, AccountId) ->
@@ -165,11 +165,7 @@ validate_resource(Context, AccountId, _Path) ->
 -spec validate(cb_context:context()) ->
           cb_context:context().
 validate(Context) ->
-    validate_accounts(Context, cb_context:req_verb(Context)).
-
--spec validate_accounts(cb_context:context(), http_method()) -> cb_context:context().
-validate_accounts(Context, ?HTTP_PUT) ->
-    validate_request('undefined', prepare_context('undefined', Context)).
+    validate(Context, cb_context:auth_account_id(Context)).
 
 -spec validate(cb_context:context(), path_token()) ->
           cb_context:context().
@@ -186,7 +182,7 @@ validate_account(Context, AccountId, ?HTTP_POST) ->
 validate_account(Context, AccountId, ?HTTP_PATCH) ->
     validate_patch_request(AccountId, prepare_context(AccountId, Context));
 validate_account(Context, AccountId, ?HTTP_DELETE) ->
-    validate_delete_request(AccountId, prepare_context(AccountId, Context)).
+    validate_delete_request(AccountId, cb_context:auth_account_id(Context), prepare_context(AccountId, Context)).
 
 -spec validate(cb_context:context(), path_token(), kz_term:ne_binary()) ->
           cb_context:context().
@@ -249,15 +245,7 @@ validate_account_path(Context, AccountId, ?MOVE, ?HTTP_POST) ->
                                            ,Context
                                            );
         ToAccount ->
-            case validate_move(kapps_config:get_ne_binary(?ACCOUNTS_CONFIG_CAT, <<"allow_move">>, <<"superduper_admin">>)
-                              ,Context
-                              ,AccountId
-                              ,ToAccount
-                              )
-            of
-                'true' -> cb_context:set_resp_status(Context, 'success');
-                'false' -> cb_context:add_system_error('forbidden', Context)
-            end
+            maybe_move_account(Context, AccountId, ToAccount)
     end;
 validate_account_path(Context, AccountId, ?TREE, ?HTTP_GET) ->
     load_account_tree(Context, AccountId).
@@ -266,6 +254,17 @@ validate_account_path(Context, AccountId, ?TREE, ?HTTP_GET) ->
 add_pvt_api_key(Context) ->
     JObj = cb_context:doc(Context),
     cb_context:set_doc(Context, kzd_accounts:add_pvt_api_key(JObj)).
+
+maybe_move_account(Context, AccountId, ToAccountId) ->
+    MoveType = kapps_config:get_ne_binary(?ACCOUNTS_CONFIG_CAT, <<"allow_move">>, <<"superduper_admin">>),
+    case validate_move(Context, AccountId, ToAccountId, MoveType) of
+        'true' ->
+            lager:debug("request for move type ~s is valid", [MoveType]),
+            cb_context:set_resp_status(Context, 'success');
+        'false' ->
+            lager:info("invalid request for move type ~s", [MoveType]),
+            cb_context:add_system_error('forbidden', Context)
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -298,10 +297,7 @@ update_provisioner_account(Context) ->
 
 -spec post(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 post(Context, AccountId, ?MOVE) ->
-    case cb_context:resp_status(Context) of
-        'success' -> move_account(Context, AccountId);
-        _Status -> Context
-    end.
+    move_account(Context, AccountId).
 
 -spec patch(cb_context:context(), path_token()) -> cb_context:context().
 patch(Context, AccountId) ->
@@ -404,6 +400,11 @@ delete(Context, Account) ->
                        ,Context
                        ,Errors
                        );
+        {'error', 'unauthorized'} ->
+            Msg = kz_json:from_list([{<<"message">>, <<"deleting account is forbidden">>}
+                                    ,{<<"cause">>, AccountId}
+                                    ]),
+            cb_context:add_system_error(403, 'forbidden', Msg, Context);
         {'error', Error} ->
             lager:info("error deleting account: ~p", [Error]),
             crossbar_doc:handle_datamgr_errors(Error, Account, Context)
@@ -440,12 +441,11 @@ create_apps_store_doc(AccountId) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec validate_move(kz_term:ne_binary(), cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) -> boolean().
-validate_move(<<"superduper_admin">>, Context, _, _) ->
+-spec validate_move(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) -> boolean().
+validate_move(Context, _AccountId, _ToAccountId, <<"superduper_admin">>) ->
     lager:debug("using superduper_admin flag to allow move account"),
-    AuthId = kz_json:get_value(<<"account_id">>, cb_context:auth_doc(Context)),
-    kzd_accounts:is_superduper_admin(AuthId);
-validate_move(<<"tree">>, Context, MoveAccount, ToAccount) ->
+    cb_context:is_superduper_admin(Context);
+validate_move(Context, MoveAccount, ToAccount, <<"tree">>) ->
     lager:debug("using tree to allow move account"),
     AuthId = kz_doc:account_id(cb_context:auth_doc(Context)),
     MoveTree = crossbar_util:get_tree(MoveAccount),
@@ -460,7 +460,7 @@ validate_move(<<"tree">>, Context, MoveAccount, ToAccount) ->
                    ,MoveTree
                    ),
     lists:member(AuthId, L);
-validate_move(_Type, _, _, _) ->
+validate_move(_, _, _, _Type) ->
     lager:error("unknown move type ~p", [_Type]),
     'false'.
 
@@ -471,12 +471,18 @@ validate_move(_Type, _, _, _) ->
 -spec move_account(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 move_account(Context, AccountId) ->
     Data = cb_context:req_data(Context),
-    ToAccount = kz_json:get_binary_value(<<"to">>, Data),
-    case crossbar_util:move_account(AccountId, ToAccount) of
-        {'error', 'forbidden'} -> cb_context:add_system_error('forbidden', Context);
-        {'error', _E} -> cb_context:add_system_error('datastore_fault', Context);
-        {'ok', _} ->
-            load_account(AccountId, prepare_context(AccountId, Context))
+    ToAccountId = kz_json:get_binary_value(<<"to">>, Data),
+
+    case crossbar_util:move_account(AccountId, ToAccountId) of
+        {'error', 'forbidden'} ->
+            lager:info("forbidden from moving ~s under ~s", [AccountId, ToAccountId]),
+            cb_context:add_system_error('forbidden', Context);
+        {'error', E} ->
+            lager:info("error moving ~s under ~s: ~p", [AccountId, ToAccountId, E]),
+            crossbar_doc:handle_datamgr_errors(E, AccountId, Context);
+        {'ok', AccountDoc} ->
+            lager:info("moved account ~s under ~s", [AccountId, ToAccountId]),
+            crossbar_doc:handle_datamgr_success(AccountDoc, Context)
     end.
 
 %%------------------------------------------------------------------------------
@@ -527,11 +533,7 @@ maybe_add_pvt_fields(AccountId, AccountJObj) -> %% Existing account (update)
 get_parent_id_from_req(Context) ->
     case props:get_value(<<"accounts">>, cb_context:req_nouns(Context)) of
         [ParentId] -> ParentId;
-        _Nouns ->
-            case cb_context:auth_doc(Context) of
-                'undefined' -> 'undefined';
-                AuthDoc -> kz_json:get_ne_binary_value(<<"account_id">>, AuthDoc)
-            end
+        _Params -> cb_context:auth_account_id(Context)
     end.
 
 -spec extra_validation(cb_context:context()) -> cb_context:context().
@@ -539,10 +541,7 @@ extra_validation(Context) ->
     Extra = [fun maybe_import_enabled/1
             ,fun disallow_direct_clients/1
             ],
-    lists:foldl(fun(F, C) -> F(C) end
-               ,Context
-               ,Extra
-               ).
+    cb_context:setters(Context, Extra).
 
 -spec disallow_direct_clients(cb_context:context()) -> cb_context:context().
 disallow_direct_clients(Context) ->
@@ -606,8 +605,14 @@ maybe_import_enabled(Context, Doc, 'false') ->
 %% @doc Load an account document from the database
 %% @end
 %%------------------------------------------------------------------------------
--spec validate_delete_request(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
-validate_delete_request(AccountId, Context) ->
+-spec validate_delete_request(kz_term:ne_binary(), kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
+validate_delete_request(AuthAccountId, AuthAccountId, Context) ->
+    lager:debug("preventing auth account_id ~s to delete its own account", [AuthAccountId]),
+    Msg = kz_json:from_list([{<<"message">>, <<"deleting your own account is forbidden">>}
+                            ,{<<"cause">>, AuthAccountId}
+                            ]),
+    cb_context:add_system_error(403, 'forbidden', Msg, Context);
+validate_delete_request(AccountId, _AuthAccountId, Context) ->
     case kapps_util:account_has_descendants(AccountId) of
         'true' ->  cb_context:add_system_error('account_has_descendants', Context);
         'false' ->
@@ -897,11 +902,11 @@ format_account_tree_results(Context, JObjs) ->
 %% for this account
 %% @end
 %%------------------------------------------------------------------------------
--spec load_account_db(cb_context:context(), kz_term:ne_binary() | kz_term:ne_binaries()) ->
+-spec load_account_db(cb_context:context(), kz_term:api_ne_binary() | kz_term:ne_binaries()) ->
           cb_context:context().
 load_account_db(Context, [AccountId|_]) ->
     load_account_db(Context, AccountId);
-load_account_db(Context, AccountId) when is_binary(AccountId) ->
+load_account_db(Context, <<AccountId/binary>>) ->
     case kzd_accounts:fetch(AccountId) of
         {'ok', JObj} ->
             lager:debug("account ~s db exists", [AccountId]),
@@ -917,7 +922,11 @@ load_account_db(Context, AccountId) when is_binary(AccountId) ->
             cb_context:add_system_error('bad_identifier', Msg, Context);
         {'error', _R} ->
             crossbar_util:response_db_fatal(Context)
-    end.
+    end;
+load_account_db(Context, 'undefined') ->
+    lager:info("no account id to load"),
+    cb_context:add_system_error('faulty_request', Context).
+
 
 %%------------------------------------------------------------------------------
 %% @doc This function will create a new account and corresponding database

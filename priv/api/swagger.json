@@ -34,6 +34,48 @@
             ],
             "type": "object"
         },
+        "account_config.auth.password": {
+            "description": "Schema for auth.password account_config",
+            "properties": {
+                "should_enforce_strength": {
+                    "default": false,
+                    "description": "auth password should_enforce_strength",
+                    "type": "boolean"
+                },
+                "should_prevent_reuse": {
+                    "default": false,
+                    "description": "auth password should_prevent_reuse",
+                    "type": "boolean"
+                },
+                "strength_regexes": {
+                    "default": {
+                        "digit": {
+                            "message": "at least one digit is required",
+                            "regex": "[0-9]"
+                        },
+                        "lower_case": {
+                            "message": "at least one lower case character is required",
+                            "regex": "[a-z]"
+                        },
+                        "minimum_length": {
+                            "message": "minimum password length is 10 characters",
+                            "regex": "^.{10,}$"
+                        },
+                        "special": {
+                            "message": "at least one special character is required",
+                            "regex": "[-_.,<>!?@#$%^&*=+(){}[\\]/\\\\|;:'\"]"
+                        },
+                        "upper_case": {
+                            "message": "at least one upper case character is required",
+                            "regex": "[A-Z]"
+                        }
+                    },
+                    "description": "auth password strength_regexes",
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        },
         "account_config.call_command": {
             "description": "Schema for call_command account_config",
             "properties": {
@@ -337,7 +379,7 @@
                             "scopes": [
                                 "crossbar"
                             ],
-                            "token_auth_expiry_s": "infinity"
+                            "token_auth_expiry_s": 3600
                         },
                         "cb_ip_auth": {
                             "enabled": true,
@@ -364,6 +406,9 @@
                             "$ref": "#/definitions/auth_module_config"
                         },
                         "cb_auth": {
+                            "$ref": "#/definitions/auth_module_config"
+                        },
+                        "cb_conference_auth": {
                             "$ref": "#/definitions/auth_module_config"
                         },
                         "cb_ip_auth": {
@@ -393,6 +438,22 @@
                     "default": false,
                     "description": "crossbar.sms api e164 convert to",
                     "type": "boolean"
+                }
+            },
+            "type": "object"
+        },
+        "account_config.default": {
+            "description": "Schema for default account_config",
+            "properties": {
+                "max_upload_size": {
+                    "default": 20,
+                    "description": "maximum upload file size (megabytes)",
+                    "type": "integer"
+                },
+                "smtp_max_msg_size": {
+                    "default": 20,
+                    "description": "maximum smpt message size (megabytes)",
+                    "type": "integer"
                 }
             },
             "type": "object"
@@ -663,6 +724,14 @@
         "accounts": {
             "description": "Accounts represent tenants or customers on the system. Each account represents an individual dataset or sandbox that only one tenant can access. The data set is architecturally independent from other tenants.",
             "properties": {
+                "addresses": {
+                    "$ref": "#/definitions/addresses",
+                    "description": "Account addresses"
+                },
+                "announcement": {
+                    "description": "The announcement will be pop up when use log in to this account",
+                    "type": "string"
+                },
                 "blacklists": {
                     "description": "A list blacklist ids that apply to the account",
                     "items": {
@@ -675,7 +744,9 @@
                     "$ref": "#/definitions/call_failover"
                 },
                 "call_forward": {
-                    "$ref": "#/definitions/call_forward"
+                    "$ref": "#/definitions/call_forward",
+                    "description": "Call forward settings",
+                    "kz:skip_subproperty_builder": true
                 },
                 "call_limits": {
                     "$ref": "#/definitions/call_limits"
@@ -948,6 +1019,87 @@
             ],
             "type": "object"
         },
+        "addresses": {
+            "description": "Account, user or device addresses",
+            "properties": {
+                "emergency": {
+                    "description": "Emergency address",
+                    "properties": {
+                        "additional_information": {
+                            "description": "Additional location information. Example: Room 543",
+                            "type": "string"
+                        },
+                        "country": {
+                            "description": "The country is identified by the two-letter ISO 3166 code. Example: US",
+                            "type": "string"
+                        },
+                        "county": {
+                            "description": "County, parish, gun (JP), district (IN). Example: King's County",
+                            "type": "string"
+                        },
+                        "floor": {
+                            "description": "Floor. Example: 4",
+                            "type": "integer"
+                        },
+                        "house_number": {
+                            "description": "House number, numeric part only. Example: 123",
+                            "type": "integer"
+                        },
+                        "house_number_suffix": {
+                            "description": "House number suffix. Example: A, 1/2",
+                            "type": "string"
+                        },
+                        "locality": {
+                            "description": "City, township, shi (JP). Example: New York",
+                            "type": "string"
+                        },
+                        "location_identifier": {
+                            "description": "United States unique 10-digit number known as an E911 location identifier (ELIN)",
+                            "type": "integer"
+                        },
+                        "name": {
+                            "description": "Name (residence, business or office occupant). Example: Joe's Barbershop",
+                            "type": "string"
+                        },
+                        "postal_code": {
+                            "description": "Postal code. Example: 10027-0401",
+                            "type": "string"
+                        },
+                        "region": {
+                            "description": "National subdivisions (state, region, province, prefecture). Example: New York",
+                            "type": "string"
+                        },
+                        "street": {
+                            "description": "Primary road or street. Example: Broadway",
+                            "type": "string"
+                        },
+                        "street_direction": {
+                            "description": "Leading street direction. Example: N, W",
+                            "type": "string"
+                        },
+                        "street_suffix": {
+                            "description": "Trailing street suffix. Example: SW",
+                            "type": "string"
+                        },
+                        "street_type": {
+                            "description": "Street type. Example: Avenue, Platz, Street",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "country",
+                        "house_number",
+                        "locality",
+                        "name",
+                        "postal_code",
+                        "region",
+                        "street"
+                    ],
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        },
         "allotments": {
             "description": "Create buckets of minutes per time-period",
             "type": "object"
@@ -1097,6 +1249,170 @@
                     "type": "array"
                 }
             },
+            "type": "object"
+        },
+        "application_blocklist": {
+            "description": "List of blocked apps for the account which queries for API endpoint applications",
+            "properties": {
+                "app_id": {
+                    "description": "ID of the application that has been blocklisted",
+                    "type": "string"
+                },
+                "app_type": {
+                    "description": "Application type either monster-ui or commland or some other type",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "application_entitlement": {
+            "description": "List of entitlements related to query accounts for endpoint cb_applications",
+            "oneOf": [
+                {
+                    "properties": {
+                        "type": {
+                            "description": "Type of entitlement granted or users with the entitlement",
+                            "enum": [
+                                "all",
+                                "admins"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "type"
+                    ]
+                },
+                {
+                    "properties": {
+                        "type": {
+                            "description": "Type of entitlement granted or users with the entitlement",
+                            "enum": [
+                                "specific"
+                            ],
+                            "type": "string"
+                        },
+                        "users": {
+                            "default": [],
+                            "description": "Specific User IDs granting access to the app",
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "required": [
+                        "type"
+                    ]
+                }
+            ],
+            "properties": {
+                "app_id": {
+                    "description": "Id of the application that has been entitled",
+                    "type": "string"
+                },
+                "app_type": {
+                    "description": "Application type either monster-ui or commland or some other type of wrap",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "applications": {
+            "description": "UI application metadata schema",
+            "properties": {
+                "api_url": {
+                    "description": "Optional API URL that application can use. default to Kazoo Crossbar API",
+                    "format": "uri",
+                    "minLength": 7,
+                    "type": "string"
+                },
+                "author": {
+                    "description": "Name of app publisher",
+                    "maxLength": 64,
+                    "minLength": 2,
+                    "type": "string"
+                },
+                "i18n": {
+                    "$ref": "#/definitions/app_i18n",
+                    "type": "object"
+                },
+                "icon": {
+                    "description": "Name of application icon",
+                    "type": "string"
+                },
+                "license": {
+                    "description": "Application license",
+                    "type": "string"
+                },
+                "masqueradable": {
+                    "default": true,
+                    "description": "Whether an application is masqueradable or not",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "Application name",
+                    "maxLength": 64,
+                    "minLength": 3,
+                    "type": "string"
+                },
+                "phase": {
+                    "description": "Application test phase",
+                    "enum": [
+                        "alpha",
+                        "beta",
+                        "gold"
+                    ],
+                    "type": "string"
+                },
+                "price": {
+                    "description": "Application price",
+                    "minimum": 0,
+                    "type": "number"
+                },
+                "published": {
+                    "default": true,
+                    "description": "Indicated if the app is published",
+                    "type": "boolean"
+                },
+                "screenshots": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "source_url": {
+                    "description": "an URL which indicates where the UI must load the application source files",
+                    "format": "uri",
+                    "type": "string"
+                },
+                "tags": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "type": {
+                    "description": "Type of application that can be used, for example commland_ui, monster_ui",
+                    "maxLength": 64,
+                    "minLength": 2,
+                    "type": "string"
+                },
+                "urls": {
+                    "type": "object"
+                },
+                "version": {
+                    "description": "Application version",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "author",
+                "license",
+                "name",
+                "version",
+                "type"
+            ],
             "type": "object"
         },
         "audit_logs": {
@@ -1339,44 +1655,242 @@
             "type": "object"
         },
         "call_forward": {
-            "description": "The device call forward parameters",
+            "description": "Call Forward",
             "properties": {
+                "busy": {
+                    "$ref": "#/definitions/call_forward_type",
+                    "type": "object"
+                },
                 "direct_calls_only": {
                     "default": false,
-                    "description": "Determines if the calls that are not directly sent to the device should be forwarded",
                     "type": "boolean"
                 },
                 "enabled": {
                     "default": false,
-                    "description": "Determines if the call forwarding should be used",
                     "type": "boolean"
                 },
                 "ignore_early_media": {
                     "default": true,
-                    "description": "The option to determine if early media from the call forwarded number should ignored",
                     "type": "boolean"
                 },
                 "keep_caller_id": {
                     "default": true,
-                    "description": "Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used",
                     "type": "boolean"
                 },
+                "no_answer": {
+                    "$ref": "#/definitions/call_forward_type",
+                    "type": "object"
+                },
                 "number": {
-                    "description": "The number to forward calls to",
                     "maxLength": 35,
                     "type": "string"
                 },
                 "require_keypress": {
                     "default": true,
-                    "description": "Determines if the callee is prompted to press 1 to accept the call",
                     "type": "boolean"
+                },
+                "selective": {
+                    "additionalProperties": false,
+                    "description": "Conditionally check match lists to determine if call forwarding should be used",
+                    "properties": {
+                        "direct_calls_only": {
+                            "default": false,
+                            "type": "boolean"
+                        },
+                        "enabled": {
+                            "default": false,
+                            "type": "boolean"
+                        },
+                        "ignore_early_media": {
+                            "default": true,
+                            "type": "boolean"
+                        },
+                        "keep_caller_id": {
+                            "default": true,
+                            "type": "boolean"
+                        },
+                        "number": {
+                            "maxLength": 35,
+                            "type": "string"
+                        },
+                        "require_keypress": {
+                            "default": true,
+                            "type": "boolean"
+                        },
+                        "rules": {
+                            "description": "Match list rules to check for call forwarding",
+                            "items": {
+                                "additionalProperties": false,
+                                "properties": {
+                                    "direct_calls_only": {
+                                        "default": false,
+                                        "type": "boolean"
+                                    },
+                                    "enabled": {
+                                        "default": false,
+                                        "type": "boolean"
+                                    },
+                                    "ignore_early_media": {
+                                        "default": true,
+                                        "type": "boolean"
+                                    },
+                                    "keep_caller_id": {
+                                        "default": true,
+                                        "type": "boolean"
+                                    },
+                                    "match_list_id": {
+                                        "type": "string"
+                                    },
+                                    "number": {
+                                        "maxLength": 35,
+                                        "type": "string"
+                                    },
+                                    "require_keypress": {
+                                        "default": true,
+                                        "type": "boolean"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "type": "object"
                 },
                 "substitute": {
                     "default": true,
                     "description": "Determines if the call forwarding replaces the device",
                     "type": "boolean"
+                },
+                "unconditional": {
+                    "$ref": "#/definitions/call_forward_type",
+                    "type": "object"
                 }
             },
+            "required": [
+                "enabled"
+            ],
+            "type": "object"
+        },
+        "call_forward_type": {
+            "description": "Call Forward Properties",
+            "properties": {
+                "direct_calls_only": {
+                    "default": false,
+                    "type": "boolean"
+                },
+                "enabled": {
+                    "default": false,
+                    "type": "boolean"
+                },
+                "ignore_early_media": {
+                    "default": true,
+                    "type": "boolean"
+                },
+                "keep_caller_id": {
+                    "default": true,
+                    "type": "boolean"
+                },
+                "number": {
+                    "maxLength": 35,
+                    "type": "string"
+                },
+                "require_keypress": {
+                    "default": true,
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "enabled"
+            ],
+            "type": "object"
+        },
+        "call_forward_types": {
+            "properties": {
+                "busy": {
+                    "$ref": "#/definitions/call_forward_type",
+                    "type": "object"
+                },
+                "no_answer": {
+                    "$ref": "#/definitions/call_forward_type",
+                    "type": "object"
+                },
+                "selective": {
+                    "additionalProperties": false,
+                    "description": "Conditionally check match lists to determine if call forwarding should be used",
+                    "properties": {
+                        "direct_calls_only": {
+                            "default": false,
+                            "type": "boolean"
+                        },
+                        "enabled": {
+                            "default": false,
+                            "type": "boolean"
+                        },
+                        "ignore_early_media": {
+                            "default": true,
+                            "type": "boolean"
+                        },
+                        "keep_caller_id": {
+                            "default": true,
+                            "type": "boolean"
+                        },
+                        "number": {
+                            "maxLength": 35,
+                            "type": "string"
+                        },
+                        "require_keypress": {
+                            "default": true,
+                            "type": "boolean"
+                        },
+                        "rules": {
+                            "description": "Match list rules to check for call forwarding",
+                            "items": {
+                                "additionalProperties": false,
+                                "properties": {
+                                    "direct_calls_only": {
+                                        "default": false,
+                                        "type": "boolean"
+                                    },
+                                    "enabled": {
+                                        "default": false,
+                                        "type": "boolean"
+                                    },
+                                    "ignore_early_media": {
+                                        "default": true,
+                                        "type": "boolean"
+                                    },
+                                    "keep_caller_id": {
+                                        "default": true,
+                                        "type": "boolean"
+                                    },
+                                    "match_list_id": {
+                                        "type": "string"
+                                    },
+                                    "number": {
+                                        "maxLength": 35,
+                                        "type": "string"
+                                    },
+                                    "require_keypress": {
+                                        "default": true,
+                                        "type": "boolean"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "type": "object"
+                },
+                "unconditional": {
+                    "$ref": "#/definitions/call_forward_type",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "enabled"
+            ],
             "type": "object"
         },
         "call_limits": {
@@ -2387,6 +2901,11 @@
                     ],
                     "type": "string"
                 },
+                "menu_retries": {
+                    "default": 3,
+                    "description": "If the action is menu, how many retries to get a correct menu selection",
+                    "type": "integer"
+                },
                 "skip_module": {
                     "description": "When set to true this callflow action is skipped, advancing to the wildcard branch (if any)",
                     "type": "boolean"
@@ -2824,6 +3343,10 @@
                     ],
                     "type": "string"
                 },
+                "fail_on_single_reject": {
+                    "description": "If any leg rejects the call, cancel all other legs",
+                    "type": "boolean"
+                },
                 "id": {
                     "description": "Device ID",
                     "type": "string"
@@ -2945,6 +3468,11 @@
                     "description": "How long to ring the callee",
                     "type": "integer"
                 },
+                "caller_greeting": {
+                    "default": "",
+                    "description": "Greeting played to caller to inform her/him about name/purpose recording",
+                    "type": "string"
+                },
                 "caller_id_name": {
                     "default": "Doorman",
                     "description": "Custom Caller ID Name to denote the doorman is calling",
@@ -2956,10 +3484,11 @@
                 },
                 "origin": {
                     "default": "callflow : cf_doorman",
-                    "description": "Read-only setting if the call is recorded"
+                    "description": "Read-only setting if the call is recorded",
+                    "type": "string"
                 },
                 "recording_limit": {
-                    "default": 8,
+                    "default": 4,
                     "description": "The caller's recording limit for name and reason for calling",
                     "type": "integer"
                 },
@@ -3222,6 +3751,10 @@
                     "description": "ID of the group",
                     "type": "string"
                 },
+                "group_name": {
+                    "description": "group name",
+                    "type": "string"
+                },
                 "hard_stop_after_successful_group": {
                     "description": "should hard stop on successful bridge",
                     "type": "boolean"
@@ -3229,6 +3762,10 @@
                 "id": {
                     "description": "Group ID",
                     "type": "string"
+                },
+                "ignore_early_media": {
+                    "description": "ignore early media",
+                    "type": "boolean"
                 },
                 "ignore_forward": {
                     "default": true,
@@ -3253,6 +3790,15 @@
                         "internal": {
                             "description": "Ring tone for calls from external sources",
                             "type": "string"
+                        }
+                    },
+                    "type": "object"
+                },
+                "sca": {
+                    "properties": {
+                        "enabled": {
+                            "description": "is sca enabled",
+                            "type": "boolean"
                         }
                     },
                     "type": "object"
@@ -3735,8 +4281,17 @@
             "type": "object"
         },
         "callflows.offnet": {
-            "description": "Validator for the offnet callflow data object",
+            "description": "Validator for the deprecated offnet callflow data object",
             "properties": {
+                "addresses": {
+                    "properties": {
+                        "emergency": {
+                            "description": "Emergency address to use for PIDF+LO if the carrier supports it",
+                            "type": "object"
+                        }
+                    },
+                    "type": "object"
+                },
                 "bypass_e164": {
                     "description": "Use the original requested number instead of normalizing to E164",
                     "type": "boolean"
@@ -4217,6 +4772,10 @@
                     "description": "Label to include in the origin of call recording",
                     "type": "string"
                 },
+                "media_id": {
+                    "description": "Doc ID of the created recording - if unspecified, KAZOO will generate one",
+                    "type": "string"
+                },
                 "media_name": {
                     "description": "the name of media",
                     "type": "string"
@@ -4291,14 +4850,49 @@
                     ],
                     "type": "string"
                 },
+                "media_id": {
+                    "description": "Doc ID of the created recording - if unspecified, KAZOO will generate one",
+                    "type": "string"
+                },
+                "media_name": {
+                    "description": "the name of media",
+                    "type": "string"
+                },
                 "method": {
                     "default": "put",
-                    "description": "What HTTP method to use when sending the recording",
+                    "description": "HTTP verb to use when sending the recording to the supplied URL",
                     "enum": [
                         "put",
                         "post"
                     ],
                     "type": "string"
+                },
+                "origin": {
+                    "description": "How the recording was started",
+                    "type": "string"
+                },
+                "record_min_sec": {
+                    "description": "The minimum length, in seconds, the recording must be to be considered successful. Otherwise it is deleted",
+                    "type": "integer"
+                },
+                "record_on_answer": {
+                    "default": false,
+                    "description": "Whether to delay the recording until the channel is answered",
+                    "type": "boolean"
+                },
+                "record_on_bridge": {
+                    "default": false,
+                    "description": "Whether to delay the recording until the channel is bridged",
+                    "type": "boolean"
+                },
+                "record_sample_rate": {
+                    "description": "What sampling rate to use on the recording",
+                    "type": "integer"
+                },
+                "should_follow_transfer": {
+                    "default": true,
+                    "description": "If true, the recording will continue after a transfer on the active leg",
+                    "type": "boolean"
                 },
                 "skip_module": {
                     "description": "When set to true this callflow action is skipped, advancing to the wildcard branch (if any)",
@@ -4314,7 +4908,7 @@
                 "url": {
                     "description": "The URL to use when sending the recording for storage",
                     "format": "uri",
-                    "minLength": 7,
+                    "minLength": 5,
                     "type": "string"
                 }
             },
@@ -4323,6 +4917,15 @@
         "callflows.resources": {
             "description": "Validator for the resources callflow data object",
             "properties": {
+                "addresses": {
+                    "properties": {
+                        "emergency": {
+                            "description": "Emergency address",
+                            "type": "object"
+                        }
+                    },
+                    "type": "object"
+                },
                 "bypass_e164": {
                     "description": "Use the original requested number instead of normalizing to E164",
                     "type": "boolean"
@@ -4519,8 +5122,16 @@
                     "minLength": 1,
                     "type": "string"
                 },
+                "group_name": {
+                    "description": "group name",
+                    "type": "string"
+                },
                 "hard_stop_after_successful_group": {
                     "description": "should hard stop on successful bridge",
+                    "type": "boolean"
+                },
+                "ignore_early_media": {
+                    "description": "ignore early media",
                     "type": "boolean"
                 },
                 "ignore_forward": {
@@ -4547,6 +5158,15 @@
                         "internal": {
                             "description": "Ring tone for calls from external sources",
                             "type": "string"
+                        }
+                    },
+                    "type": "object"
+                },
+                "sca": {
+                    "properties": {
+                        "enabled": {
+                            "description": "is sca enabled",
+                            "type": "boolean"
                         }
                     },
                     "type": "object"
@@ -4852,7 +5472,6 @@
                     "type": "boolean"
                 },
                 "timezone": {
-                    "$ref": "#/definitions/timezone",
                     "description": "Timezone to use when processing temporal rules",
                     "type": "string"
                 }
@@ -6441,48 +7060,17 @@
             "description": "A device be it a SIP phone or landline number",
             "properties": {
                 "addresses": {
-                    "description": "List of addresses for device",
-                    "properties": {
-                        "emergency": {
-                            "description": "Emergency address for device",
-                            "properties": {
-                                "caller_name": {
-                                    "type": "string"
-                                },
-                                "extended_address": {
-                                    "type": "string"
-                                },
-                                "locality": {
-                                    "type": "string"
-                                },
-                                "postal_code": {
-                                    "type": "string"
-                                },
-                                "region": {
-                                    "type": "string"
-                                },
-                                "street_address": {
-                                    "type": "string"
-                                }
-                            },
-                            "required": [
-                                "caller_name",
-                                "extended_address",
-                                "locality",
-                                "postal_code",
-                                "region",
-                                "street_address"
-                            ],
-                            "type": "object"
-                        }
-                    },
+                    "$ref": "#/definitions/addresses",
+                    "description": "Device addresses",
                     "type": "object"
                 },
                 "call_failover": {
                     "$ref": "#/definitions/call_failover"
                 },
                 "call_forward": {
-                    "$ref": "#/definitions/call_forward"
+                    "$ref": "#/definitions/call_forward",
+                    "description": "Call forward settings",
+                    "kz:skip_subproperty_builder": true
                 },
                 "call_limits": {
                     "$ref": "#/definitions/call_limits"
@@ -8258,57 +8846,93 @@
         "list_entries": {
             "description": "Schema for a match list entries",
             "properties": {
-                "capture_group_key": {
-                    "description": "The number which is used to select this entry, length should be same as `capture_group_length`",
+                "contacts": {
+                    "default": [],
+                    "items": {
+                        "description": "Contacts to save",
+                        "properties": {
+                            "contact": {
+                                "description": "The phone number or email associated with the contact",
+                                "type": "string"
+                            },
+                            "contact_type": {
+                                "description": "The type of contact this is",
+                                "enum": [
+                                    "phone_number",
+                                    "email",
+                                    "sms"
+                                ],
+                                "type": "string"
+                            },
+                            "created": {
+                                "description": "The Gregorian timestamp this element was added to the contact array",
+                                "type": "integer"
+                            },
+                            "default": {
+                                "description": "If this is the default for this contact type",
+                                "type": "boolean"
+                            },
+                            "description": {
+                                "description": "The description of the contact",
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "description": {
+                    "description": "A description of the list entity",
                     "type": "string"
                 },
-                "capture_group_length": {
-                    "description": "Length of the numbers in the list entries for which it used to select desire Caller ID",
-                    "type": "integer"
-                },
-                "displayname": {
-                    "description": "Display name",
-                    "maxLength": 128,
-                    "minLength": 1,
-                    "type": "string"
-                },
-                "firstname": {
-                    "description": "A friendly firstname",
-                    "maxLength": 128,
-                    "minLength": 1,
-                    "type": "string"
-                },
-                "lastname": {
-                    "description": "A friendly lastname",
-                    "maxLength": 128,
-                    "minLength": 1,
-                    "type": "string"
+                "history": {
+                    "default": [],
+                    "items": {
+                        "description": "The contacts Schema",
+                        "properties": {
+                            "contact": {
+                                "title": "The contact that was used",
+                                "type": "object"
+                            },
+                            "notes": {
+                                "description": "Notes from the communication",
+                                "type": "string"
+                            },
+                            "timestamp": {
+                                "title": "The gregorian timestamp",
+                                "type": "integer"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "type": "array"
                 },
                 "list_id": {
-                    "description": "List id",
+                    "description": "The document id of the list document this list entry belongs to",
                     "type": "string"
                 },
-                "number": {
-                    "description": "Phone number",
+                "name": {
+                    "description": "The name of the list entity",
                     "type": "string"
                 },
-                "pattern": {
-                    "description": "Match pattern",
-                    "type": "string"
-                },
-                "profile": {
-                    "$ref": "#/definitions/profile",
+                "organization": {
                     "default": {},
-                    "description": "Profile data",
+                    "description": "The organization this entity belongs to",
+                    "properties": {
+                        "name": {
+                            "description": "The name of the organization",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "name"
+                    ],
                     "type": "object"
-                },
-                "type": {
-                    "maxLength": 128,
-                    "minLength": 1,
-                    "type": "string"
                 }
             },
             "required": [
+                "name",
+                "contacts",
                 "list_id"
             ],
             "type": "object"
@@ -8330,6 +8954,10 @@
                 },
                 "org": {
                     "description": "Full legal name of the organization",
+                    "type": "string"
+                },
+                "owner_id": {
+                    "description": "UserId owner of the list",
                     "type": "string"
                 }
             },
@@ -8423,6 +9051,92 @@
             },
             "required": [
                 "media_id"
+            ],
+            "type": "object"
+        },
+        "marketplace_settings": {
+            "description": "2600Hz Marketplace Connector settings",
+            "properties": {
+                "access_code": {
+                    "description": "Access Code from Marketplace Portal during cluster link request",
+                    "type": "string"
+                },
+                "settings": {
+                    "properties": {
+                        "api_url": {
+                            "description": "Crossbar API URL to be used to serve UI applications",
+                            "type": "string"
+                        },
+                        "is_aio_cluster": {
+                            "description": "Indicates all Kazoo VM nodes are running same list of Kazoo Apps",
+                            "type": "boolean"
+                        },
+                        "name": {
+                            "description": "A friendly name for cluster",
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        },
+        "match_lists": {
+            "description": "Match lists - define a set of rules for matching against call properties, callflows, etc",
+            "properties": {
+                "name": {
+                    "description": "Friendly name for the match list",
+                    "type": "string"
+                },
+                "owner_id": {
+                    "description": "KAZOO User ID of the owner of this match list",
+                    "type": "string"
+                },
+                "rules": {
+                    "description": "Evaluated rules to determine if the match list has matched",
+                    "items": {
+                        "$ref": "#/definitions/match_lists.rule",
+                        "type": "object"
+                    },
+                    "type": "array"
+                }
+            },
+            "required": [
+                "rules"
+            ],
+            "type": "object"
+        },
+        "match_lists.rule": {
+            "description": "Match list rule - express the logic of a match",
+            "properties": {
+                "name": {
+                    "description": "Friendly name of the rule",
+                    "maxLength": 255,
+                    "minLength": 3,
+                    "type": "string"
+                },
+                "regex": {
+                    "description": "Regular expression to match with when type=regex",
+                    "type": "string"
+                },
+                "target": {
+                    "description": "The target field to match against - context-dependent",
+                    "type": "string"
+                },
+                "temporal_route_id": {
+                    "description": "When type=temporal_route, set this to the ID of the temporal route (or route set) to use"
+                },
+                "type": {
+                    "enum": [
+                        "regex",
+                        "temporal_route"
+                    ],
+                    "type": "string"
+                }
+            },
+            "required": [
+                "name",
+                "type"
             ],
             "type": "object"
         },
@@ -9412,7 +10126,6 @@
             "properties": {
                 "body": {
                     "description": "mime encoded mms message",
-                    "minLength": 1,
                     "type": "string"
                 },
                 "from": {
@@ -10116,6 +10829,168 @@
             },
             "type": "object"
         },
+        "pushes": {
+            "description": "Generic endpoint's push notifications",
+            "properties": {
+                "alert": {
+                    "description": "Alert parameters",
+                    "properties": {
+                        "body": {
+                            "description": "The body of the notification",
+                            "type": "string"
+                        },
+                        "body_key": {
+                            "description": "The key for a localized notification body",
+                            "type": "string"
+                        },
+                        "body_params": {
+                            "description": "The array of values to replace placeholders in the localized body",
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        },
+                        "subtitle": {
+                            "description": "The subtitle of the notification",
+                            "type": "string"
+                        },
+                        "title": {
+                            "description": "The title of the notification",
+                            "type": "string"
+                        },
+                        "title_key": {
+                            "description": "The key for a localized notification title",
+                            "type": "string"
+                        },
+                        "title_params": {
+                            "description": "The array of values to replace placeholders in the localized title",
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "type": "object"
+                },
+                "apns": {
+                    "description": "APNs parameters",
+                    "properties": {
+                        "alert": {
+                            "properties": {
+                                "subtitle_key": {
+                                    "description": "The key for a localized notification subtitle",
+                                    "type": "string"
+                                },
+                                "subtitle_params": {
+                                    "description": "The array of values to replace placeholders in the localized subtitle",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                }
+                            },
+                            "type": "object"
+                        },
+                        "push_type": {
+                            "description": "The type of push notification",
+                            "enum": [
+                                "alert",
+                                "background",
+                                "complication",
+                                "fileprovider",
+                                "location",
+                                "mdm",
+                                "voip"
+                            ],
+                            "type": "string"
+                        },
+                        "thread_id": {
+                            "description": "The app-specific identifier for grouping related notifications",
+                            "type": "string"
+                        },
+                        "topic": {
+                            "description": "The topic for the notification",
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                },
+                "badge": {
+                    "description": "The value to set the home screen app icon badge to. `0` removes the badge",
+                    "type": "integer"
+                },
+                "call_id": {
+                    "description": "(Legacy) The call ID for a call notification",
+                    "minLength": 1,
+                    "type": "string"
+                },
+                "category": {
+                    "description": "The app-specific type of notification, which corresponds to a pre-registered `UNNotificationCategory` on iOS or an intent filter launched on click on Android",
+                    "type": "string"
+                },
+                "collapse_id": {
+                    "description": "Coalesce multiple notifications matching the same ID into one",
+                    "type": "string"
+                },
+                "content_available": {
+                    "description": "Specify `true` to deliver the notification as a silent background update on iOS",
+                    "type": "boolean"
+                },
+                "content_mutable": {
+                    "description": "Specify `true` to allow a notification service app extension on iOS to modify the notification's content before delivery",
+                    "type": "boolean"
+                },
+                "data": {
+                    "description": "The custom data to include in the notification",
+                    "type": "object"
+                },
+                "fcm": {
+                    "android": {
+                        "description": "FCM Android parameters",
+                        "properties": {
+                            "channel_id": {
+                                "description": "The pre-registered notification channel to associate the notification with",
+                                "type": "string"
+                            },
+                            "color": {
+                                "description": "The color, expressed in `#rrggbb` format, of the notification",
+                                "type": "string"
+                            },
+                            "icon": {
+                                "description": "The name of a drawable resource to use as the notification's icon",
+                                "type": "string"
+                            },
+                            "tag": {
+                                "description": "Replace existing notifications in the notification drawer that have the same tag",
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "description": "FCM parameters",
+                    "type": "object"
+                },
+                "priority": {
+                    "default": "high",
+                    "description": "The priority of the notification",
+                    "enum": [
+                        "low",
+                        "normal",
+                        "high"
+                    ],
+                    "type": "string"
+                },
+                "sound": {
+                    "description": "The name of a sound file to play when the device receives the notification",
+                    "type": "string"
+                },
+                "ttl": {
+                    "description": "The duration (in seconds) for which notification delivery should be retried if it fails",
+                    "type": "integer"
+                }
+            },
+            "type": "object"
+        },
         "queue_update": {
             "description": "Schema for queue update request",
             "properties": {
@@ -10651,7 +11526,7 @@
                             }
                         }
                     ],
-                    "description": "A property list of C hannel Vars",
+                    "description": "A property list of Channel Vars",
                     "type": "object"
                 },
                 "custom_sip_headers": {
@@ -10959,13 +11834,16 @@
                                         "type": "string"
                                     },
                                     {
-                                        "format": "ipv4"
+                                        "format": "ipv4",
+                                        "type": "string"
                                     },
                                     {
-                                        "format": "ipv6"
+                                        "format": "ipv6",
+                                        "type": "string"
                                     }
                                 ],
-                                "description": "This resource gateway authentication realm"
+                                "description": "This resource gateway authentication realm",
+                                "type": "string"
                             },
                             "route": {
                                 "description": "A statically configured SIP URI to route all call to",
@@ -10979,13 +11857,16 @@
                                         "type": "string"
                                     },
                                     {
-                                        "format": "ipv4"
+                                        "format": "ipv4",
+                                        "type": "string"
                                     },
                                     {
-                                        "format": "ipv6"
+                                        "format": "ipv6",
+                                        "type": "string"
                                     }
                                 ],
-                                "description": "This resource gateway server"
+                                "description": "This resource gateway server",
+                                "type": "string"
                             },
                             "skype_interface": {
                                 "description": "The name of the Skype interface to route the call over",
@@ -11058,6 +11939,10 @@
                         "type": "string"
                     },
                     "type": "array"
+                },
+                "supports_pidflo": {
+                    "description": "Whether or not the resource supports multi-part PIDF+LO INVITEs for calls",
+                    "type": "boolean"
                 },
                 "weight_cost": {
                     "default": 50,
@@ -11936,23 +12821,6 @@
                 },
                 "types": {
                     "description": "The document types to store with this plan",
-                    "properties": {
-                        "call_recording": {
-                            "$ref": "#/definitions/storage.plan.database.document"
-                        },
-                        "fax": {
-                            "$ref": "#/definitions/storage.plan.database.document"
-                        },
-                        "function": {
-                            "$ref": "#/definitions/storage.plan.database.document"
-                        },
-                        "mailbox_message": {
-                            "$ref": "#/definitions/storage.plan.database.document"
-                        },
-                        "media": {
-                            "$ref": "#/definitions/storage.plan.database.document"
-                        }
-                    },
                     "type": "object"
                 }
             },
@@ -12174,6 +13042,11 @@
                     "description": "appex_client http_timeout_s",
                     "type": "integer"
                 },
+                "is_aio_cluster": {
+                    "default": false,
+                    "description": "appex_client is_aio_cluster",
+                    "type": "boolean"
+                },
                 "marketplace_url": {
                     "description": "appex_client marketplace_url",
                     "type": "string"
@@ -12232,6 +13105,48 @@
                     "default": 30,
                     "description": "auth totp_period_s",
                     "type": "integer"
+                }
+            },
+            "type": "object"
+        },
+        "system_config.auth.password": {
+            "description": "Schema for auth.password system_config",
+            "properties": {
+                "should_enforce_strength": {
+                    "default": false,
+                    "description": "auth password should_enforce_strength",
+                    "type": "boolean"
+                },
+                "should_prevent_reuse": {
+                    "default": false,
+                    "description": "auth password should_prevent_reuse",
+                    "type": "boolean"
+                },
+                "strength_regexes": {
+                    "default": {
+                        "digit": {
+                            "message": "at least one digit is required",
+                            "regex": "[0-9]"
+                        },
+                        "lower_case": {
+                            "message": "at least one lower case character is required",
+                            "regex": "[a-z]"
+                        },
+                        "minimum_length": {
+                            "message": "minimum password length is 10 characters",
+                            "regex": "^.{10,}$"
+                        },
+                        "special": {
+                            "message": "at least one special character is required",
+                            "regex": "[-_.,<>!?@#$%^&*=+(){}[\\]/\\\\|;:'\"]"
+                        },
+                        "upper_case": {
+                            "message": "at least one upper case character is required",
+                            "regex": "[A-Z]"
+                        }
+                    },
+                    "description": "auth password strength_regexes",
+                    "type": "object"
                 }
             },
             "type": "object"
@@ -13430,10 +14345,6 @@
                     },
                     "type": "array"
                 },
-                "deb_download_url": {
-                    "description": "crossbar deb_download_url",
-                    "type": "string"
-                },
                 "default_allow_anonymous_quickcalls": {
                     "default": true,
                     "description": "crossbar default allow anonymous quickcalls",
@@ -13449,6 +14360,11 @@
                     "description": "crossbar desktop_auth_tokens",
                     "type": "integer"
                 },
+                "display_dependency_list": {
+                    "default": true,
+                    "description": "When toggled to false, the Erlang dependency list will not be displayed when accessing the root API URL",
+                    "type": "boolean"
+                },
                 "ensure_valid_schema": {
                     "default": true,
                     "description": "crossbar ensure valid schema",
@@ -13459,6 +14375,11 @@
                     "description": "timeout (in milliseconds) when no data is being sent",
                     "type": "integer"
                 },
+                "include_auth_token": {
+                    "default": true,
+                    "description": "crossbar include_auth_token",
+                    "type": "boolean"
+                },
                 "ip": {
                     "description": "crossbar ip",
                     "type": "string"
@@ -13468,10 +14389,6 @@
                     "description": "crossbar load_view_chunk_size",
                     "minimum": 1,
                     "type": "integer"
-                },
-                "mac_dowload_url": {
-                    "description": "crossbar mac_dowload_url",
-                    "type": "string"
                 },
                 "magic_path_patterns": {
                     "default": [
@@ -13567,10 +14484,6 @@
                     },
                     "type": "array"
                 },
-                "rpm_download_url": {
-                    "description": "crossbar rpm_download_url",
-                    "type": "string"
-                },
                 "schema_strict_validation": {
                     "default": false,
                     "description": "crossbar schema strict validation",
@@ -13636,10 +14549,6 @@
                     "default": 35,
                     "description": "crossbar user auth tokens",
                     "type": "integer"
-                },
-                "windows_dowload_url": {
-                    "description": "crossbar windows_dowload_url",
-                    "type": "string"
                 },
                 "workers": {
                     "default": 100,
@@ -13789,7 +14698,7 @@
                             "scopes": [
                                 "crossbar"
                             ],
-                            "token_auth_expiry_s": "infinity"
+                            "token_auth_expiry_s": 3600
                         },
                         "cb_ip_auth": {
                             "enabled": true,
@@ -13816,6 +14725,9 @@
                             "$ref": "#/definitions/auth_module_config"
                         },
                         "cb_auth": {
+                            "$ref": "#/definitions/auth_module_config"
+                        },
+                        "cb_conference_auth": {
                             "$ref": "#/definitions/auth_module_config"
                         },
                         "cb_ip_auth": {
@@ -13848,6 +14760,11 @@
                         "sha"
                     ],
                     "type": "string"
+                },
+                "lock_account_on_failed_attempts": {
+                    "default": false,
+                    "description": "crossbar auth lock_account_on_failed_attempts",
+                    "type": "boolean"
                 },
                 "log_failed_attempts": {
                     "default": false,
@@ -14355,6 +15272,22 @@
                 "performance": {
                     "description": "datamgr performance",
                     "type": "object"
+                }
+            },
+            "type": "object"
+        },
+        "system_config.default": {
+            "description": "Schema for default system_config",
+            "properties": {
+                "max_upload_size": {
+                    "default": 20,
+                    "description": "maximum upload file size (mega byte)",
+                    "type": "integer"
+                },
+                "smtp_max_msg_size": {
+                    "default": 20,
+                    "description": "maximum smpt message size (mega byte)",
+                    "type": "integer"
                 }
             },
             "type": "object"
@@ -15961,6 +16894,11 @@
                     "description": "kazoo_endpoint.mobile create sip endpoint",
                     "type": "boolean"
                 },
+                "custom_sip_headers": {
+                    "default": {},
+                    "description": "kazoo_endpoint mobile custom_sip_headers",
+                    "type": "object"
+                },
                 "custom_sip_interface": {
                     "description": "kazoo_endpoint.mobile custom sip interface",
                     "type": "string"
@@ -16099,6 +17037,11 @@
                             }
                         }
                     }
+                },
+                "should_validate_dns": {
+                    "default": true,
+                    "description": "kazoo_web should_validate_dns",
+                    "type": "boolean"
                 }
             },
             "type": "object"
@@ -17195,43 +18138,79 @@
                     "type": "array"
                 },
                 "classifiers": {
-                    "default": {
-                        "caribbean": {
+                    "default": [
+                        {
                             "friendly_name": "Caribbean",
+                            "name": "caribbean",
                             "pretty_print": "SS(###) ###-####",
                             "regex": "^\\+?1((?:684|264|268|242|246|441|284|345|767|809|829|849|473|671|876|664|670|787|939|869|758|784|721|868|649|340)\\d{7})$"
                         },
-                        "did_us": {
+                        {
                             "friendly_name": "US DID",
+                            "name": "did_us",
                             "pretty_print": "SS(###) ###-####",
                             "regex": "^(\\+?1)?([2-9][0-9]{2}[2-9][0-9]{6})$"
                         },
-                        "emergency": {
+                        {
                             "emergency": true,
                             "friendly_name": "Emergency Dispatcher",
+                            "name": "emergency",
                             "regex": "^(911|922|933|988|833|811|711|999)$"
                         },
-                        "international": {
+                        {
                             "friendly_name": "International",
+                            "name": "international",
                             "regex": "^\\+([2-9]\\d{7,})$"
                         },
-                        "toll_us": {
+                        {
                             "friendly_name": "US Toll",
+                            "name": "toll_us",
                             "pretty_print": "SS(###) ###-####",
                             "regex": "^\\+1(900\\d{7})$"
                         },
-                        "tollfree_us": {
+                        {
                             "friendly_name": "US Tollfree",
+                            "name": "tollfree_us",
                             "pretty_print": "SS(###) ###-####",
                             "regex": "^\\+1((?:800|88\\d|877|866|855|844|833|822)\\d{7})$"
                         },
-                        "unknown": {
+                        {
                             "friendly_name": "Unknown",
+                            "name": "unknown",
                             "regex": "^(.*)$"
                         }
-                    },
+                    ],
                     "description": "regular expressions & billing names for numbers",
-                    "type": "object"
+                    "items": {
+                        "properties": {
+                            "emergency": {
+                                "description": "Does this classifier match emergency numbers",
+                                "type": "boolean"
+                            },
+                            "friendly_name": {
+                                "description": "Friendly name for the classifier",
+                                "type": "string"
+                            },
+                            "name": {
+                                "description": "name of classifier for use as a reference elsewhere in KAZOO to this configured classifier",
+                                "type": "string"
+                            },
+                            "pretty_print": {
+                                "description": "Formatting string for pretty-printing numbers matching the classifier",
+                                "type": "string"
+                            },
+                            "regex": {
+                                "description": "Regular expression to match a number to this classifier",
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "name",
+                            "regex"
+                        ],
+                        "type": "object"
+                    },
+                    "type": "array"
                 },
                 "converters": {
                     "default": [
@@ -19695,7 +20674,7 @@
                     "type": "string"
                 },
                 "days": {
-                    "description": "The recurrence days for this rule",
+                    "description": "The occurance day(s) of the month (1-31) for this rule",
                     "items": {
                         "maximum": 31,
                         "minimum": 1,
@@ -19756,6 +20735,10 @@
                     ],
                     "type": "string"
                 },
+                "owner_id": {
+                    "description": "KAZOO User ID of the owner of this temporal rule",
+                    "type": "string"
+                },
                 "start_date": {
                     "default": 62586115200,
                     "description": "The date that any recurrence should be calculated as starting on",
@@ -19814,7 +20797,7 @@
                     "type": "string"
                 },
                 "temporal_rules": {
-                    "description": "Temporal Rules",
+                    "description": "Temporal rule IDs",
                     "items": {
                         "type": "string"
                     },
@@ -20813,11 +21796,45 @@
         "users": {
             "description": "Schema for a user",
             "properties": {
+                "addresses": {
+                    "allOf": [
+                        {
+                            "$ref": "addresses"
+                        }
+                    ],
+                    "description": "User addresses",
+                    "properties": {
+                        "vcard": {
+                            "description": "Addresses list to build user's vcard",
+                            "items": {
+                                "properties": {
+                                    "address": {
+                                        "type": "string"
+                                    },
+                                    "types": {
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "type": "array"
+                                    }
+                                },
+                                "required": [
+                                    "address"
+                                ],
+                                "type": "object"
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "type": "object"
+                },
                 "call_failover": {
                     "$ref": "#/definitions/call_failover"
                 },
                 "call_forward": {
-                    "$ref": "#/definitions/call_forward"
+                    "$ref": "#/definitions/call_forward",
+                    "description": "Call forward settings",
+                    "kz:skip_subproperty_builder": true
                 },
                 "call_limits": {
                     "$ref": "#/definitions/call_limits"
@@ -21653,6 +22670,11 @@
                     "minLength": 1,
                     "type": "string"
                 },
+                "open_in_browser": {
+                    "default": false,
+                    "description": "Whether a website should be opened in browser",
+                    "type": "boolean"
+                },
                 "users": {
                     "default": [],
                     "description": "A list users who are assigned the website",
@@ -21678,6 +22700,34 @@
         "whitelabel": {
             "description": "Whitelabel settings",
             "properties": {
+                "commland": {
+                    "description": "Properties related to commland",
+                    "properties": {
+                        "downloads": {
+                            "description": "The URLs of commland downloads related to the account",
+                            "properties": {
+                                "deb": {
+                                    "description": "Commland debian download URL for the account",
+                                    "type": "string"
+                                },
+                                "mac": {
+                                    "description": "Commland mac download URL for the account",
+                                    "type": "string"
+                                },
+                                "rpm": {
+                                    "description": "Commland rpm download URL for the account",
+                                    "type": "string"
+                                },
+                                "windows": {
+                                    "description": "Commland windows download URL for the account",
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "type": "object"
+                },
                 "company_name": {
                     "description": "The company name to display to users",
                     "type": "string"
@@ -21803,6 +22853,16 @@
             "required": true,
             "type": "string"
         },
+        "ADDRESS_ID": {
+            "description": "request ADDRESS_ID parameter",
+            "in": "path",
+            "maxLength": 32,
+            "minLength": 32,
+            "name": "ADDRESS_ID",
+            "pattern": "^[0-9a-f]+$",
+            "required": true,
+            "type": "string"
+        },
         "ALERT_ID": {
             "description": "request ALERT_ID parameter",
             "in": "path",
@@ -21828,6 +22888,16 @@
             "in": "path",
             "name": "APP_SCREENSHOT_INDEX",
             "pattern": "^[0-9]+$",
+            "required": true,
+            "type": "string"
+        },
+        "APP_TYPE": {
+            "description": "request APP_TYPE parameter",
+            "in": "path",
+            "maxLength": 32,
+            "minLength": 32,
+            "name": "APP_TYPE",
+            "pattern": "^[0-9a-f]+$",
             "required": true,
             "type": "string"
         },
@@ -21906,6 +22976,16 @@
             "description": "request CALL_ID parameter",
             "in": "path",
             "name": "CALL_ID",
+            "required": true,
+            "type": "string"
+        },
+        "CARD_ID": {
+            "description": "request CARD_ID parameter",
+            "in": "path",
+            "maxLength": 32,
+            "minLength": 32,
+            "name": "CARD_ID",
+            "pattern": "^[0-9a-f]+$",
             "required": true,
             "type": "string"
         },
@@ -22164,6 +23244,16 @@
             "required": true,
             "type": "string"
         },
+        "MATCH_LIST_ID": {
+            "description": "request MATCH_LIST_ID parameter",
+            "in": "path",
+            "maxLength": 32,
+            "minLength": 32,
+            "name": "MATCH_LIST_ID",
+            "pattern": "^[0-9a-f]+$",
+            "required": true,
+            "type": "string"
+        },
         "MEDIA_ID": {
             "description": "request MEDIA_ID parameter",
             "in": "path",
@@ -22375,6 +23465,16 @@
             "required": true,
             "type": "string"
         },
+        "SCREENSHOT_ID": {
+            "description": "request SCREENSHOT_ID parameter",
+            "in": "path",
+            "maxLength": 32,
+            "minLength": 32,
+            "name": "SCREENSHOT_ID",
+            "pattern": "^[0-9a-f]+$",
+            "required": true,
+            "type": "string"
+        },
         "SELECTOR_NAME": {
             "description": "request SELECTOR_NAME parameter",
             "in": "path",
@@ -22456,6 +23556,16 @@
             "maxLength": 32,
             "minLength": 32,
             "name": "TEMPORAL_RULE_SET",
+            "pattern": "^[0-9a-f]+$",
+            "required": true,
+            "type": "string"
+        },
+        "THING_ID": {
+            "description": "request THING_ID parameter",
+            "in": "path",
+            "maxLength": 32,
+            "minLength": 32,
+            "name": "THING_ID",
             "pattern": "^[0-9a-f]+$",
             "required": true,
             "type": "string"
@@ -22845,6 +23955,603 @@
                     },
                     {
                         "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/application/{APP_ID}": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "patch": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "applications",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/applications"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "put": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "applications",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/applications"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/application/{APP_ID}/icon": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "applications",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/applications"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/application/{APP_ID}/screenshots": {
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "applications",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/applications"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/application/{APP_ID}/screenshots/{SCREENSHOT_ID}": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/SCREENSHOT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/SCREENSHOT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}/blocklists": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}/entitlements": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}/{APP_ID}": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}/{APP_ID}/block": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "applications",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/applications"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "put": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "applications",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/applications"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}/{APP_ID}/entitlement": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "applications",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/applications"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "put": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "applications",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/applications"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}/{APP_ID}/icon": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/applications/{APP_TYPE}/{APP_ID}/screenshots/{SCREENSHOT_ID}": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/APP_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/SCREENSHOT_ID"
                     }
                 ],
                 "responses": {
@@ -23433,6 +25140,268 @@
                     },
                     {
                         "$ref": "#/parameters/BLACKLIST_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/braintree/addresses": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "put": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/braintree/addresses/{ADDRESS_ID}": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/ADDRESS_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/ADDRESS_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/ADDRESS_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/braintree/cards": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "put": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/braintree/cards/{CARD_ID}": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/CARD_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/CARD_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/CARD_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/braintree/client_token": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/braintree/customer": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/braintree/transactions": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/braintree/transactions/{TRANSACTION_ID}": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/TRANSACTION_ID"
                     }
                 ],
                 "responses": {
@@ -24475,6 +26444,23 @@
                 }
             }
         },
+        "/accounts/{ACCOUNT_ID}/configs": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
         "/accounts/{ACCOUNT_ID}/configs/{CONFIG_ID}": {
             "delete": {
                 "parameters": [
@@ -24697,6 +26683,112 @@
                     },
                     {
                         "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/crud": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "put": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/crud/{THING_ID}": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/THING_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/THING_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "patch": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/THING_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/THING_ID"
                     }
                 ],
                 "responses": {
@@ -25829,6 +27921,68 @@
                 }
             }
         },
+        "/accounts/{ACCOUNT_ID}/getstream": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "patch": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "put": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
         "/accounts/{ACCOUNT_ID}/getstream/connect": {
             "put": {
                 "parameters": [
@@ -26727,6 +28881,128 @@
                     },
                     {
                         "$ref": "#/parameters/LIST_ENTRY_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/match_lists": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "put": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "match_lists",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/match_lists"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/match_lists/{MATCH_LIST_ID}": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/MATCH_LIST_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/MATCH_LIST_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "patch": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/MATCH_LIST_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "match_lists",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/match_lists"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/MATCH_LIST_ID"
                     }
                 ],
                 "responses": {
@@ -28773,6 +31049,23 @@
                 }
             }
         },
+        "/accounts/{ACCOUNT_ID}/properly": {
+            "put": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
         "/accounts/{ACCOUNT_ID}/quickroutes": {
             "get": {
                 "parameters": [
@@ -29955,6 +32248,38 @@
                 }
             }
         },
+        "/accounts/{ACCOUNT_ID}/security/login_lock": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
         "/accounts/{ACCOUNT_ID}/services": {
             "get": {
                 "parameters": [
@@ -30320,6 +32645,112 @@
                     },
                     {
                         "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/skels": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "put": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/skels/{THING_ID}": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/THING_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/THING_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "patch": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/THING_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/THING_ID"
                     }
                 ],
                 "responses": {
@@ -32507,6 +34938,37 @@
                     },
                     {
                         "$ref": "#/parameters/WORD_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/{ENDPOINT_TYPE}/{ENDPOINT_ID}/pushes": {
+            "put": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "pushes",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pushes"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/ENDPOINT_TYPE"
+                    },
+                    {
+                        "$ref": "#/parameters/ENDPOINT_ID"
                     }
                 ],
                 "responses": {

@@ -112,21 +112,43 @@ authenticate_nouns(_, _) ->
 %%------------------------------------------------------------------------------
 -spec validate(cb_context:context()) -> cb_context:context().
 validate(Context) ->
-    case consume_tokens(Context) of
-        {'false', Context1} ->
-            cb_context:add_system_error('too_many_requests', Context1);
+    TokenCost = cb_modules_util:token_cost(Context, ?CONFERENCE_AUTH_TOKENS),
+    case cb_modules_util:consume_tokens_until(Context, TokenCost) of
         {'true', Context1} ->
-            OnSuccess = fun(C) -> validate_conference_auth(C) end,
-            cb_context:validate_request_data(<<"conference_auth">>, Context1, OnSuccess)
+            AuthFun = fun(ContextNotLocked) ->
+                              OnSuccess = fun(C) -> validate_conference_auth(C) end,
+                              cb_context:validate_request_data(<<"conference_auth">>, ContextNotLocked, OnSuccess)
+                      end,
+            maybe_validate_auth_attempts(Context1, TokenCost, AuthFun);
+        {'false', Context1} ->
+            cb_context:add_system_error('too_many_requests', Context1)
     end.
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, ConferenceId) ->
-    case consume_tokens(Context) of
-        {'false', Context1} ->
-            cb_context:add_system_error('too_many_requests', Context1);
+    TokenCost = cb_modules_util:token_cost(Context, ?CONFERENCE_AUTH_TOKENS),
+    case cb_modules_util:consume_tokens_until(Context, TokenCost) of
         {'true', Context1} ->
-            validate_link(Context1, ConferenceId)
+            AuthFun = fun(ContextNotLocked) -> validate_link(ContextNotLocked, ConferenceId) end,
+            maybe_validate_auth_attempts(Context1, TokenCost, AuthFun);
+        {'false', Context1} ->
+            cb_context:add_system_error('too_many_requests', Context1)
+    end.
+
+-spec maybe_validate_auth_attempts(cb_context:context(), non_neg_integer(), fun((cb_context:context()) -> cb_context:context())) ->
+          cb_context:context().
+maybe_validate_auth_attempts(Context, TokenCost, AuthFun) ->
+    AuthBuckets = crossbar_auth:get_auth_account_info(Context),
+    case crossbar_auth:is_account_locked(Context, AuthBuckets) of
+        {'true', Context1} ->
+            Context1;
+        {'false', ContextNotLocked} ->
+            Context1 = AuthFun(ContextNotLocked),
+            case cb_context:resp_error_code(Context1) of
+                401 ->
+                    crossbar_auth:maybe_lock_account(Context1, AuthBuckets, TokenCost);
+                _Other -> Context1
+            end
     end.
 
 %%------------------------------------------------------------------------------
@@ -144,15 +166,6 @@ put(Context, _ConferenceId) ->
 %%%=============================================================================
 %%% Internal functions
 %%%=============================================================================
-
-%%------------------------------------------------------------------------------
-%% @doc
-%% @end
-%%------------------------------------------------------------------------------
--spec consume_tokens(cb_context:context()) -> {boolean(), cb_context:context()}.
-consume_tokens(Context) ->
-    TokenCost = cb_modules_util:token_cost(Context, ?CONFERENCE_AUTH_TOKENS),
-    cb_modules_util:consume_tokens_until(Context, TokenCost).
 
 %%------------------------------------------------------------------------------
 %% @doc

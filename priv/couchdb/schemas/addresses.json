@@ -1,0 +1,83 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "_id": "addresses",
+    "description": "Account, user or device addresses",
+    "properties": {
+        "emergency": {
+            "description": "Emergency address",
+            "properties": {
+                "additional_information": {
+                    "description": "Additional location information. Example: Room 543",
+                    "type": "string"
+                },
+                "country": {
+                    "description": "The country is identified by the two-letter ISO 3166 code. Example: US",
+                    "type": "string"
+                },
+                "county": {
+                    "description": "County, parish, gun (JP), district (IN). Example: King's County",
+                    "type": "string"
+                },
+                "floor": {
+                    "description": "Floor. Example: 4",
+                    "type": "integer"
+                },
+                "house_number": {
+                    "description": "House number, numeric part only. Example: 123",
+                    "type": "integer"
+                },
+                "house_number_suffix": {
+                    "description": "House number suffix. Example: A, 1/2",
+                    "type": "string"
+                },
+                "locality": {
+                    "description": "City, township, shi (JP). Example: New York",
+                    "type": "string"
+                },
+                "location_identifier": {
+                    "description": "United States unique 10-digit number known as an E911 location identifier (ELIN)",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "Name (residence, business or office occupant). Example: Joe's Barbershop",
+                    "type": "string"
+                },
+                "postal_code": {
+                    "description": "Postal code. Example: 10027-0401",
+                    "type": "string"
+                },
+                "region": {
+                    "description": "National subdivisions (state, region, province, prefecture). Example: New York",
+                    "type": "string"
+                },
+                "street": {
+                    "description": "Primary road or street. Example: Broadway",
+                    "type": "string"
+                },
+                "street_direction": {
+                    "description": "Leading street direction. Example: N, W",
+                    "type": "string"
+                },
+                "street_suffix": {
+                    "description": "Trailing street suffix. Example: SW",
+                    "type": "string"
+                },
+                "street_type": {
+                    "description": "Street type. Example: Avenue, Platz, Street",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "country",
+                "house_number",
+                "locality",
+                "name",
+                "postal_code",
+                "region",
+                "street"
+            ],
+            "type": "object"
+        }
+    },
+    "type": "object"
+}

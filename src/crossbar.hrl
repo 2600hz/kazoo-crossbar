@@ -9,6 +9,7 @@
 
 -define(APP, 'crossbar').
 -define(APP_NAME, <<"crossbar">>).
+-define(CROSSBAR_AUTH_BUCKET, <<"crossbar_auth_bucket">>).
 -define(APP_VERSION, <<"4.0.0">>).
 -define(CONFIG_CAT, ?APP_NAME).
 -define(AUTH_CONFIG_CAT, <<(?CONFIG_CAT)/binary, ".auth">>).
@@ -130,4 +131,6 @@
 -define(TYPE_CHECK_OPTION_ANY, ?TYPE_CHECK_OPTION(<<"any">>)).
 
 -define(CROSSBAR_HRL, 'true').
+
+-define(DEFAULT_CONFIG_ID, <<"default">>).
 -endif.

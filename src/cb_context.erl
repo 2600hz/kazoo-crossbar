@@ -107,6 +107,7 @@
         ,validation_errors/1, set_validation_errors/2
 
         ,host_url/1, set_host_url/2
+        ,socket_url/1, set_socket_url/2
         ,set_pretty_print/2
         ,set_port/2
         ,raw_path/1, set_raw_path/2
@@ -155,7 +156,7 @@
                     ,metadata = [] :: kz_term:proplist()
                     ,pretty_print = 'false' :: boolean()
                     ,resp_expires = {{1999,1,1},{0,0,0}} :: kz_time:datetime()
-                    ,resp_etag :: 'automatic' | string() | kz_term:api_binary()
+                    ,resp_etag :: resp_etag()
                     ,resp_status = 'error' :: crossbar_status()
                     ,resp_error_msg :: kz_term:api_ne_binary()
                     ,resp_error_code :: kz_term:api_integer()
@@ -181,7 +182,10 @@
                     ,is_superduper_admin = 'undefined' :: kz_term:api_boolean()
                     ,is_account_admin = 'undefined' :: kz_term:api_boolean()
                     ,master_account_id = 'undefined' :: kz_term:api_ne_binary()
+                    ,socket_url = 'undefined' :: kz_term:api_ne_binary()
                     }).
+
+-type after_fun() :: fun((context()) -> context()) | 'undefined'.
 
 -define(KEY_ACCEPT_CHARGES, <<"accept_charges">>).
 
@@ -208,12 +212,16 @@
              ,setter_fun_2/0
              ,setter_fun_3/0
              ,setters/0
+             ,resp_etag/0
+             ,after_fun/0
              ]).
 
 -type setter_kv() :: setter_fun_1() |
                      {setter_fun_2(), any()} |
                      {setter_fun_3(), any(), any()}.
 -type setters() :: [setter_kv()].
+
+-type resp_etag() :: 'automatic' | kz_term:api_binary().
 
 -spec new() -> context().
 new() -> #cb_context{}.
@@ -479,7 +487,7 @@ resp_headers(#cb_context{resp_headers=RespHeaders}) -> RespHeaders.
 -spec api_version(context()) -> kz_term:ne_binary().
 api_version(#cb_context{api_version=ApiVersion}) -> ApiVersion.
 
--spec resp_etag(context()) -> 'automatic' | string() | kz_term:api_binary().
+-spec resp_etag(context()) -> resp_etag().
 resp_etag(#cb_context{resp_etag=ETag}) -> ETag.
 
 -spec resp_envelope(context()) -> kz_json:object().
@@ -576,11 +584,18 @@ setters(#cb_context{}=Context, []) -> Context;
 setters(#cb_context{}=Context, [_|_]=Setters) ->
     lists:foldl(fun setters_fold/2, Context, Setters).
 
--spec setters_fold(setter_kv(), context()) ->
-          context().
-setters_fold({F, V}, #cb_context{}=C) -> #cb_context{} = F(C, V);
-setters_fold({F, K, V}, #cb_context{}=C) -> #cb_context{} = F(C, K, V);
-setters_fold(F, #cb_context{}=C) when is_function(F, 1) -> #cb_context{} = F(C).
+-spec setters_fold(setter_kv(), context()) -> context().
+setters_fold(Setter, Context) ->
+    case setter(Setter, Context) of
+        'ok' -> Context;
+        #cb_context{}=C -> C
+    end.
+
+-spec setter(setter_kv(), context()) -> 'ok' | context().
+setter({F, V}, #cb_context{}=C) when is_function(V, 1) -> F(C, V(C));
+setter({F, V}, #cb_context{}=C) -> #cb_context{} = F(C, V);
+setter({F, K, V}, #cb_context{}=C) -> #cb_context{} = F(C, K, V);
+setter(F, #cb_context{}=C) when is_function(F, 1) -> #cb_context{} = F(C).
 
 %%------------------------------------------------------------------------------
 %% @doc Loop over a list of functions and values to validate `cb_context()'.
@@ -716,7 +731,7 @@ set_resp_expires(#cb_context{}=Context, RespExpires) ->
 set_api_version(#cb_context{}=Context, ApiVersion) ->
     Context#cb_context{api_version=kz_term:to_binary(ApiVersion)}.
 
--spec set_resp_etag(context(), kz_term:api_binary()) -> context().
+-spec set_resp_etag(context(), resp_etag()) -> context().
 set_resp_etag(#cb_context{}=Context, ETag) ->
     Context#cb_context{resp_etag=ETag}.
 
@@ -822,6 +837,13 @@ set_host_url(#cb_context{}=Context, Value) ->
 
 -spec host_url(context()) -> binary().
 host_url(#cb_context{host_url = Value}) -> Value.
+
+-spec set_socket_url(context(), binary()) -> context().
+set_socket_url(#cb_context{}=Context, Value) ->
+    Context#cb_context{socket_url = Value}.
+
+-spec socket_url(context()) -> binary().
+socket_url(#cb_context{socket_url = Value}) -> Value.
 
 -spec set_pretty_print(context(), boolean()) -> context().
 set_pretty_print(#cb_context{}=Context, Value) ->
@@ -990,8 +1012,6 @@ response(#cb_context{resp_error_code=Code
                     {_, _} -> DataJObj
                 end,
     {'error', {ErrorCode, ErrorMsg, ErrorData}}.
-
--type after_fun() :: fun((context()) -> context()) | 'undefined'.
 
 %%------------------------------------------------------------------------------
 %% @doc Validate the request data with schema.
@@ -1345,12 +1365,17 @@ add_doc_validation_errors(Context, ValidationErrors) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec update_successfully_validated_request(context(), kz_doc:doc()) -> context().
-update_successfully_validated_request(Context, Doc) ->
+update_successfully_validated_request(#cb_context{resp_status='error'}=Context, _Doc) ->
+    lager:info("context already contains an error, not updating to success"),
+    Context;
+update_successfully_validated_request(#cb_context{}=Context, Doc) ->
     Updates = [{fun set_req_data/2, Doc}
               ,{fun set_doc/2, Doc}
               ,{fun set_resp_status/2, 'success'}
               ],
     passed(setters(Context, Updates)).
+
+
 
 -spec get_metadata(context()) -> kz_json:object().
 get_metadata(Context) ->

@@ -93,6 +93,7 @@ rest_init(Req, Opts) ->
     Setters = [{fun cb_context:set_req_id/2, get_request_id(Req)}
               ,{fun cb_context:set_req_headers/2, cowboy_req:headers(Req)}
               ,{fun host_url/2, Req}
+              ,{fun socket_url/2, Req}
               ,{fun cb_context:set_port/2, kz_term:to_integer(cowboy_req:port(Req))}
               ,{fun cb_context:set_raw_path/2, kz_term:to_binary(Path)}
               ,{fun cb_context:set_raw_qs/2, kz_term:to_binary(cowboy_req:qs(Req))}
@@ -136,11 +137,22 @@ rest_init(Req, Opts) ->
     end.
 
 -spec host_url(cb_context:context(), cowboy_req:req()) -> cb_context:context().
-host_url(Context, Req) ->
-    URI = kz_term:to_binary(cowboy_req:uri(Req)),
-    {Scheme, Location, _Path, _Query, _Frag} = kz_http_util:urlsplit(URI),
-    Value = list_to_binary([Scheme, "://", kz_http_util:location_host(Location)]),
+host_url(Context, #{scheme := Scheme, host := Host}) ->
+    Value = list_to_binary([Scheme, "://", kz_http_util:location_host(Host)]),
     cb_context:set_host_url(Context, Value).
+
+-spec socket_url(cb_context:context(), cowboy_req:req()) -> cb_context:context().
+socket_url(Context, Req) ->
+    {IP, Port} = cowboy_req:sock(Req),
+    Value = list_to_binary([socket_scheme(Req), "://", kz_term:to_binary(inet:ntoa(IP)), ":", kz_term:to_binary(Port)]),
+    cb_context:set_socket_url(Context, Value).
+
+-spec socket_scheme(cowboy_req:req()) -> kz_term:ne_binary().
+socket_scheme(Req) ->
+    case cowboy_req:sock_secure(Req) of
+        'true' -> <<"https">>;
+        'false' -> <<"http">>
+    end.
 
 -spec req_nouns(cb_context:context()) -> cb_context:context().
 req_nouns(Context) ->
@@ -489,16 +501,18 @@ malformed_request(Req, Context, _ReqVerb) ->
             Context1 = validate_account_resource(Context, AccountArgs),
             case api_util:succeeded(Context1) of
                 'true' -> {'false', Req, Context1};
-                'false' -> api_util:stop(Req, Context1)
+                'false' ->
+                    return_invalid_credentials(Req, Context1)
             end;
         [<<>> | _] ->
-            Error = kz_json:from_list([{<<"message">>, <<"missing account_id">>}]),
-            api_util:stop(Req, cb_context:add_system_error(404, <<"bad identifier">>, Error, Context));
+            return_invalid_credentials(Req, Context);
         [_Other | _] ->
-            Msg = kz_term:to_binary(io_lib:format("invalid account_id '~s'", [_Other])),
-            Error = kz_json:from_list([{<<"message">>, Msg}]),
-            api_util:stop(Req, cb_context:add_system_error(404, <<"bad identifier">>, Error, Context))
+            return_invalid_credentials(Req, Context)
     end.
+
+return_invalid_credentials(Req, Context) ->
+    Error = kz_json:from_list([{<<"message">>, <<"invalid credentials">>}]),
+    api_util:stop(Req, cb_context:add_system_error(401, <<"invalid credentials">>, Error, Context)).
 
 -spec validate_account_resource(cb_context:context(), path_tokens()) ->
           cb_context:context().
@@ -1270,14 +1284,33 @@ generate_etag(Req0, Context0) ->
     {Req1, Context1} = crossbar_bindings:fold(Event, {Req0, Context0}),
     case cb_context:resp_etag(Context1) of
         'automatic' ->
-            {Content, _} = api_util:create_resp_content(Req1, Context1),
-            Tag = kz_term:to_hex_binary(crypto:hash('md5', Content)),
-            {list_to_binary([$", Tag, $"]), Req1, cb_context:set_resp_etag(Context1, Tag)};
+            Envelope = filter_envelope_validator_keys(
+                         api_util:create_resp_envelope(Context1)
+                        ),
+            Tag = kz_term:to_hex_binary(crypto:hash('md5', kz_json:encode(Envelope))),
+            %% `"W/"` is a weak etag, which means that the resp is not
+            %% byte-for-byte identical.
+            %% See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag#directives
+            {<<"W/\"", Tag/binary, $">>, Req1, cb_context:set_resp_etag(Context1, Tag)};
         'undefined' ->
-            {'undefined', Req1, cb_context:set_resp_etag(Context1, 'undefined')};
+            {'undefined', Req1, Context1};
         Tag ->
-            {list_to_binary([$", Tag, $"]), Req1, cb_context:set_resp_etag(Context1, Tag)}
+            {<<$", Tag/binary, $">>, Req1, Context1}
     end.
+
+%%------------------------------------------------------------------------------
+%% @doc Filter out keys that are not needed for etag generation from a response
+%% envelope.
+%% @end
+%%------------------------------------------------------------------------------
+-spec filter_envelope_validator_keys(kz_json:object()) -> kz_json:object().
+filter_envelope_validator_keys(Envelope) ->
+    kz_json:delete_keys([<<"auth_token">>
+                        ,<<"node">>
+                        ,<<"request_id">>
+                        ,<<"timestamp">>
+                        ,<<"tokens">>
+                        ], Envelope).
 
 -spec expires(cowboy_req:req(), cb_context:context()) ->
           {calendar:datetime(), cowboy_req:req(), cb_context:context()}.

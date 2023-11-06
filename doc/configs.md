@@ -26,6 +26,30 @@ will be deleted.
 
 #### Fetch
 
+> GET /v2/accounts/{ACCOUNT_ID}/configs
+
+```shell
+curl -v -X GET \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/configs
+```
+
+```json
+{
+  "data": {
+    "smtp_max_msg_size": 20,
+    "max_upload_size": 20,
+    "id": "configs_default"
+  },
+  "timestamp": "{TIMESTAMP}",
+  "version": "{VERSION}",
+  "node": "{NODE_ID}",
+  "request_id": "{REQUEST_ID}",
+  "status": "success",
+  "auth_token": "{AUTH_TOKEN}"
+}
+```
+
 > GET /v2/accounts/{ACCOUNT_ID}/configs/{CONFIG_ID}
 
 ```shell

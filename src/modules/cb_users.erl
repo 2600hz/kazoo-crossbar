@@ -26,7 +26,7 @@
         ,validate/1, validate/2, validate/3
         ,put/1
         ,post/2, post/3
-        ,delete/2 ,delete/3
+        ,delete/2, delete/3
         ,patch/2
         ]).
 
@@ -180,10 +180,12 @@ authorize_users(_Nouns, _Verb) -> 'false'.
 validate_resource(Context) -> Context.
 
 -spec validate_resource(cb_context:context(), path_token()) -> cb_context:context().
-validate_resource(Context, UserId) -> validate_user_id(UserId, Context).
+validate_resource(Context, UserId) ->
+    validate_user_id(UserId, Context).
 
 -spec validate_resource(cb_context:context(), path_token(), path_token()) -> cb_context:context().
-validate_resource(Context, UserId, _Token) -> validate_user_id(UserId, Context).
+validate_resource(Context, UserId, _Token) ->
+    validate_user_id(UserId, Context).
 
 -spec validate_resource(cb_context:context(), path_token(), path_token(), path_token()) -> cb_context:context().
 validate_resource(Context, UserId, _Token1, _Token2) -> validate_user_id(UserId, Context).
@@ -249,7 +251,9 @@ validate_users(Context, ?HTTP_PUT) ->
 validate_user(Context, UserId, ?HTTP_GET) ->
     load_user(UserId, Context);
 validate_user(Context, UserId, ?HTTP_POST) ->
-    validate_request(UserId, Context);
+    UserJObj = kzd_users:maybe_migrate_user_addresses(cb_context:req_data(Context)),
+    Context1 = load_user(UserId, cb_context:set_req_data(Context, UserJObj)),
+    validate_request(UserId, Context1);
 validate_user(Context, UserId, ?HTTP_DELETE) ->
     validate_delete(Context, UserId);
 validate_user(Context, UserId, ?HTTP_PATCH) ->
@@ -724,7 +728,15 @@ load_users_summary(Context) ->
 load_user(UserId, Context) ->
     Context1 = crossbar_doc:load(UserId, Context, ?TYPE_CHECK_OPTION(kzd_users:type())),
     case cb_context:resp_status(Context1) of
-        'success' -> add_has_avatar(Context1);
+        'success' ->
+            %% Migrate old-format vcard addresses (pre KZOO-310) to new format addresses object
+            UserJObj = kzd_users:maybe_migrate_user_addresses(cb_context:doc(Context1)),
+            Context2 = cb_context:setters(Context1
+                                         ,[{fun cb_context:set_doc/2, UserJObj}
+                                          ,{fun cb_context:set_resp_data/2, kz_doc:public_fields(UserJObj)}
+                                          ]
+                                         ),
+            add_has_avatar(Context2);
         _ -> Context1
     end.
 
@@ -796,12 +808,14 @@ load_user_objects_options(UserId, ObjectTypes) ->
     ].
 
 %%------------------------------------------------------------------------------
-%% @doc Validate an update request.
+%% @doc Validate PATCH request.
 %% @end
 %%------------------------------------------------------------------------------
 -spec validate_patch(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
 validate_patch(UserId, Context) ->
-    crossbar_doc:patch_and_validate(UserId, Context, fun validate_request/2).
+    UserJObj = kzd_users:maybe_migrate_user_addresses(cb_context:req_data(Context)),
+    Context1 = load_user(UserId, cb_context:set_req_data(Context, UserJObj)),
+    crossbar_doc:patch_and_validate_doc(UserId, Context1, fun validate_request/2).
 
 %%------------------------------------------------------------------------------
 %% @doc Validate the request JObj passes all validation checks and add / alter

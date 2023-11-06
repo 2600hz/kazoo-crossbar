@@ -15,6 +15,7 @@
 -export([load/2, load/3
         ,load_merge/2, load_merge/3, load_merge/4
         ,patch_and_validate/3, patch_and_validate/4
+        ,patch_and_validate_doc/3
         ,load_attachment/4, load_docs/2
         ,save/1, save/2, save/3
         ,update/3, update/4, update/5
@@ -240,6 +241,7 @@ handle_successful_load(Context, JObj, 'false', _) ->
                ),
     cb_context:store(handle_datamgr_success(JObj, Context), 'db_doc', JObj).
 
+
 %% @equiv load_merge(DocId, cb_context:doc(Context), Context, [])
 
 -spec load_merge(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
@@ -294,6 +296,11 @@ patch_and_validate(Id, Context, ValidateFun, LoadOptions) ->
     Context1 = load(Id, Context, LoadOptions),
     patch_and_validate_doc(Id, Context1, ValidateFun, cb_context:resp_status(Context1)).
 
+-spec patch_and_validate_doc(kz_term:ne_binary(), cb_context:context(), validate_fun()) ->
+          cb_context:context().
+patch_and_validate_doc(Id, Context, ValidateFun) ->
+    patch_and_validate_doc(Id, Context, ValidateFun, cb_context:resp_status(Context)).
+
 -spec patch_and_validate_doc(kz_term:ne_binary(), cb_context:context(), validate_fun(), crossbar_status()) ->
           cb_context:context().
 patch_and_validate_doc(Id, Context, ValidateFun, 'success') ->
@@ -301,7 +308,7 @@ patch_and_validate_doc(Id, Context, ValidateFun, 'success') ->
     Context1 = cb_context:set_req_data(Context, PatchedJObj),
     ValidateFun(Id, Context1);
 patch_and_validate_doc(Id, Context, ValidateFun, _RespStatus) ->
-    %% FIXME: Why calling ValidateFun when load is failed?
+    %% FIXME: Why calling ValidateFun when load has failed?
     ValidateFun(Id, Context).
 
 -spec patch_the_doc(kz_json:object(), kz_json:object()) -> kz_json:object().
@@ -706,15 +713,10 @@ delete_attachment(DocId, AName, Context) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec rev_to_etag(kz_json:object() | kz_json:objects() | kz_term:ne_binary()) ->
-          'automatic' | kz_term:api_string().
-rev_to_etag([_|_])-> 'automatic';
-rev_to_etag([]) -> 'undefined';
-rev_to_etag(Rev) when is_binary(Rev) -> kz_term:to_list(Rev);
-rev_to_etag(JObj) ->
-    case kz_doc:revision(JObj) of
-        'undefined' -> 'undefined';
-        Rev -> kz_term:to_list(Rev)
-    end.
+          cb_context:resp_etag().
+rev_to_etag(JObjs) when is_list(JObjs) -> 'automatic';
+rev_to_etag(Rev) when is_binary(Rev) -> Rev;
+rev_to_etag(JObj) -> kz_doc:revision(JObj).
 
 -spec handle_datamgr_success(kz_json:json_term(), cb_context:context()) -> cb_context:context().
 handle_datamgr_success([], Context) ->
@@ -737,7 +739,7 @@ handle_thing_success(Thing, Context) ->
                       ,[{fun cb_context:set_doc/2, Thing}
                        ,{fun cb_context:set_resp_status/2, 'success'}
                        ,{fun cb_context:set_resp_data/2, Thing}
-                       ,{fun cb_context:set_resp_etag/2, 'undefined'}
+                       ,{fun cb_context:set_resp_etag/2, 'automatic'}
                        ]).
 
 -spec handle_json_success(kz_json:object() | kz_json:objects(), cb_context:context()) ->

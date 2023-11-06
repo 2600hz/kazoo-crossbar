@@ -315,10 +315,10 @@ base_classified_number(_Context, Number) ->
     ].
 
 -spec classified_number(cb_context:context(), path_token(), kz_term:api_binary()) -> cb_context:context().
-classified_number(Context, Number, Classifier) ->
-    ClassifierJObj = kz_json:get_value(Classifier, knm_converters:available_classifiers()),
+classified_number(Context, Number, ClassifierName) ->
+    ClassifierJObj = kz_json:find_value(<<"name">>, ClassifierName, knm_converters:available_classifiers()),
     BaseData = base_classified_number(Context, Number),
-    RespData = kz_json:set_values([{<<"name">>, Classifier}
+    RespData = kz_json:set_values([{<<"name">>, ClassifierName}
                                   | BaseData
                                   ]
                                  ,ClassifierJObj

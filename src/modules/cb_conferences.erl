@@ -633,12 +633,19 @@ exec_dial_endpoints(Context, ConferenceId, Data, ToDial) ->
     Zone = zone(ConferenceId, TargetCallId),
     case kz_amqp_worker:call(Command
                             ,fun(P) -> kapi_conference:publish_dial(Zone, P) end
-                            ,fun kapi_conference:dial_resp_v/1
+                            ,fun dial_resp/1
                             ,(Timeout * ?MILLISECONDS_IN_SECOND) * length(ToDial)
                             )
     of
         {'ok', Resp} ->
-            kz_json:normalize(kz_api:remove_defaults(Resp));
+            case kz_api:event_name(Resp) of
+                <<"error">> ->
+                    kz_json:from_list([{<<"status">>, <<"error">>}
+                                      ,{<<"message">>, kz_json:get_ne_binary_value(<<"Error-Message">>, Resp, <<"unknown error">>)}
+                                      ]);
+                <<"command">> ->
+                    kz_json:normalize(kz_api:remove_defaults(Resp))
+            end;
         {'error', 'timeout'} ->
             kz_json:from_list([{<<"status">>, <<"error">>}
                               ,{<<"message">>, <<"timed out trying to dial endpoints">>}
@@ -649,6 +656,10 @@ exec_dial_endpoints(Context, ConferenceId, Data, ToDial) ->
                               ,{<<"message">>, <<"conference dial failed to find a media server">>}
                               ])
     end.
+
+dial_resp(JObj) ->
+    kapi_conference:dial_resp_v(JObj)
+        orelse kapi_conference:conference_error_v(JObj).
 
 -spec zone(kz_term:ne_binary(), kz_term:api_ne_binary()) -> kz_term:ne_binary().
 zone(ConferenceId, 'undefined') ->

@@ -15,6 +15,11 @@
         ,allowed_apps/2
         ]).
 -export([allowed_app/2]).
+-export([allowed_applications/2
+        ,allowed_applications/3
+        ,allowed_application/3
+        ,allowed_application/4
+        ]).
 -export([load_default_apps/0
         ,load_default_app/1
         ,ensure_master_account_id/2
@@ -28,7 +33,7 @@
 
 -define(CB_APPS_STORE_LIST, <<"apps_store/crossbar_listing">>).
 
--type apps_map() :: #{kz_term:ne_binary() := kz_json:object()}.
+-type apps_map() :: #{AppId::kz_term:ne_binary() => AppDoc::kz_json:object() | boolean()}.
 -type apps() :: kz_json:objects() | apps_map().
 
 %%------------------------------------------------------------------------------
@@ -83,17 +88,344 @@ ret_allowed_apps(_AppId, AppJObj, Acc) ->
         'true' ->
             lager:debug("allowing access to ~s due to ~s"
                        ,[kzd_app:name(AppJObj)
-                        ,kz_json:get_value(<<"authority">>, AppJObj, <<"unknown">>)
+                        ,kz_json:get_value(<<"authority">>, AppJObj, <<"default">>)
                         ]
                        ),
             [AppJObj | Acc];
         'false' ->
             lager:debug("disallowing access to ~s due to ~s"
                        ,[kzd_app:name(AppJObj)
-                        ,kz_json:get_value(<<"authority">>, AppJObj, <<"unknown">>)
+                        ,kz_json:get_value(<<"authority">>, AppJObj, <<"default">>)
                         ]
                        ),
             [AppJObj | Acc]
+    end.
+
+-spec allowed_applications(kz_term:ne_binary(), kz_term:api_ne_binary()) -> kz_json:objects().
+allowed_applications(AppType, AccountId) ->
+    allowed_applications(AppType, AccountId, 'undefined').
+
+-spec allowed_applications(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:api_ne_binary()) -> kz_json:objects().
+allowed_applications(AppType, AccountId, UserId) ->
+    Routines = [fun load_applications_from_master/4
+               ,fun merge_reseller_applications_to_master/4
+               ,fun apply_blocklists/4
+               ,fun apply_service_plan_to_applications/4
+               ,fun apply_application_entitlements/4
+               ],
+    Apps = lists:foldl(fun(F, AppsMap) -> F(AppType, AccountId, UserId, AppsMap) end, #{}, Routines),
+    maps:fold(fun ret_allowed_applications/3, [], Apps).
+
+-spec allowed_application(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:api_ne_binary()) ->
+          {'ok', kz_json:object()} |
+          {'error', any()}.
+allowed_application(AppType, AppId, AccountId) ->
+    allowed_application(AppType, AppId, AccountId, 'undefined').
+
+-spec allowed_application(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:api_ne_binary()) ->
+          {'ok', kz_json:object()} |
+          {'error', any()}.
+allowed_application(AppType, AppId, AccountId, UserId) ->
+    {'ok', MasterAccountId} = kapps_util:get_master_account_id(),
+    MasterApp = load_application_from_db(MasterAccountId, AppType, AppId, <<"master">>),
+
+    Routines = [fun apply_blocklists/4
+               ,fun apply_service_plan_to_applications/4
+               ,fun apply_application_entitlements/4
+               ],
+    case merge_reseller_application_to_master(AppType, AppId, AccountId, MasterApp) of
+        {'error', _}=Error ->
+            Error;
+        {'ok', Acc} ->
+            Apps = lists:foldl(fun(F, AppsMap) -> F(AppType, AccountId, UserId, AppsMap) end, Acc, Routines),
+            case maps:fold(fun ret_allowed_applications/3, [], Apps) of
+                [] ->
+                    {'error', 'not_found'};
+                [App|_] ->
+                    {'ok', App}
+            end
+    end.
+
+-spec ret_allowed_applications(kz_term:ne_binary(), kz_json:object(), kz_json:objects()) -> kz_json:objects().
+ret_allowed_applications(_AppId, AppJObj, Acc) ->
+    %% unlike ret_allowed_apps, this actually filters out the app that is not published
+    case kzd_applications:published(AppJObj) of
+        'true' ->
+            lager:debug("allowing access to ~s due to ~s"
+                       ,[kzd_applications:name(AppJObj)
+                        ,kzd_applications:pvt_authority(AppJObj)
+                        ]
+                       ),
+            [AppJObj | Acc];
+        'false' ->
+            lager:debug("disallowing access to ~s due to ~s"
+                       ,[kzd_applications:name(AppJObj)
+                        ,kzd_applications:pvt_authority(AppJObj)
+                        ]
+                       ),
+            [AppJObj | Acc]
+    end.
+
+-spec load_applications_from_master(kz_term:ne_binary(), kz_term:ne_binary()
+                                   ,kz_term:api_ne_binary(), apps_map()
+                                   ) -> apps_map().
+load_applications_from_master(AppType, _AccountId, _UserId, _Acc) ->
+    {'ok', MasterAccountId} = kapps_util:get_master_account_id(),
+    load_applications_from_db(MasterAccountId, AppType, <<"master">>).
+
+-spec merge_reseller_applications_to_master(kz_term:ne_binary(), kz_term:ne_binary()
+                                           ,kz_term:api_ne_binary(), apps_map()
+                                           ) -> apps_map().
+merge_reseller_applications_to_master(AppType, AccountId, _UserId, MasterAcc) ->
+    ResellerId = kz_services_reseller:get_id(AccountId),
+    case kapps_util:get_master_account_id() of
+        {'ok', ResellerId} -> MasterAcc;
+        {'ok', AccountId} -> MasterAcc;
+        _ ->
+            ResellerApps = load_applications_from_db(ResellerId, AppType, <<"reseller">>),
+            maps:fold(fun merge_reseller_to_master_fold/3, MasterAcc, ResellerApps)
+    end.
+
+-spec merge_reseller_application_to_master(kz_term:ne_binary(), kz_term:ne_binary(),kz_term:ne_binary()
+                                          ,{'ok', kz_json:object()} | {'error', any()}
+                                          ) -> {'ok', apps_map()} | {'error', any()}.
+merge_reseller_application_to_master(AppType, AppId, AccountId, MasterApp) ->
+    ResellerId = kz_services_reseller:get_id(AccountId),
+    case kapps_util:get_master_account_id() of
+        {'ok', ResellerId} -> maybe_merge_reseller_to_master(AppId, MasterApp, {'error', 'no_merge'});
+        {'ok', AccountId} -> maybe_merge_reseller_to_master(AppId, MasterApp, {'error', 'no_merge'});
+        _ ->
+            ResellerApp = load_application_from_db(ResellerId, AppType, AppId, <<"reseller">>),
+            maybe_merge_reseller_to_master(AppId, MasterApp, ResellerApp)
+    end.
+
+-spec merge_reseller_to_master_fold(kz_term:ne_binary(), apps_map(), apps_map()) ->
+          apps_map().
+merge_reseller_to_master_fold(AppId, ResellerApp, Acc) ->
+    case maps:get(AppId, Acc, 'undefined') of
+        'undefined' ->
+            maps:put(AppId, ResellerApp, Acc);
+        MasterApp ->
+            maps:put(AppId, merge_reseller_to_master(ResellerApp, MasterApp), Acc)
+    end.
+
+-spec maybe_merge_reseller_to_master(kz_term:ne_binary()
+                                    ,{'ok', kz_json:object()} | {'error', any()}
+                                    ,{'ok', kz_json:object()} | {'error', any()}
+                                    ) -> {'ok', apps_map()} | {'error', any()}.
+maybe_merge_reseller_to_master(_, {'error', _}=Error, {'error', _}) ->
+    Error;
+maybe_merge_reseller_to_master(AppId, {'ok', MasterApp}, {'error', _}) ->
+    {'ok', #{AppId => MasterApp}};
+maybe_merge_reseller_to_master(AppId, {'error', _}, {'ok', ResellerApp}) ->
+    {'ok', #{AppId => ResellerApp}};
+maybe_merge_reseller_to_master(AppId, {'ok', MasterApp}, {'ok', ResellerApp}) ->
+    {'ok', #{AppId => merge_reseller_to_master(ResellerApp, MasterApp)}}.
+
+-spec merge_reseller_to_master(kz_json:object(), kz_json:object()) -> kz_json:object().
+merge_reseller_to_master(ResellerApp, MasterApp) ->
+    Published = kzd_applications:published(MasterApp, 'true'),
+    kzd_applications:set_published(kz_json:merge(MasterApp, ResellerApp), Published).
+
+-spec load_applications_from_db(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) -> apps_map().
+load_applications_from_db(AccountId, AppType, Source) ->
+    ViewOptions = [{'startkey', [AppType]}
+                  ,{'endkey', [AppType, kz_term:high_unicode_value()]}
+                  ,'include_docs'
+                  ],
+
+    case kz_datamgr:get_results(AccountId, <<"application/crossbar_listing">>, ViewOptions) of
+        {'ok', JObjs} ->
+            maps:from_list(
+              [{kz_doc:id(JObj)
+               ,track_attachments(kz_json:get_json_value(<<"doc">>, JObj), Source)
+               }
+               || JObj <- JObjs
+              ]
+             );
+        {'error', _Reason} ->
+            lager:error("failed to lookup apps in ~s: ~p", [AccountId, _Reason]),
+            #{}
+    end.
+
+%% saving current attachments to temprory key, so when the doc get
+%% merged with reseller we can find out where the attachment is coming from.
+-spec track_attachments(kz_json:object(), kz_term:ne_binary()) -> kz_json:object().
+track_attachments(JObj, Source) ->
+    Prop = [{<<"_id">>, kz_doc:id(JObj)}
+           ,{<<"pvt_account_db">>, kz_doc:account_db(JObj)}
+           ,{<<"_attachments">>, kz_doc:attachments(JObj)}
+           ],
+    kz_json:set_value([<<"pvt_app_attachments">>, Source]
+                     ,kz_json:from_list(Prop)
+                     ,JObj
+                     ).
+
+-spec load_application_from_db(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) ->
+          {'ok', kz_json:object()} |
+          {'error', any()}.
+load_application_from_db(AccountId, AppType, AppId, Source) ->
+    case kz_datamgr:open_doc(AccountId, AppId) of
+        {'ok', JObj} ->
+            case kzd_applications:type(JObj) of
+                AppType ->
+                    {'ok', track_attachments(JObj, Source)};
+                _Other ->
+                    lager:error("expected type ~s for app ~s in account ~s but got ~s"
+                               ,[AppType, AppId, AccountId, _Other]
+                               ),
+                    {'error', {'mismatch_app_type', _Other}}
+            end;
+        {'error', 'not_found'}=Error ->
+            lager:debug("app ~s not found in account ~s", [AppId, AccountId]),
+            Error;
+        {'error', _Reason}=Error ->
+            lager:error("failed to lookup app ~s in ~s: ~p", [AppId, AccountId, _Reason]),
+            Error
+    end.
+
+-spec apply_blocklists(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:api_ne_binary(), apps_map()) ->
+          apps_map().
+apply_blocklists(_AppType, _AccountId, _UserId, Acc) when map_size(Acc) =:= 0 ->
+    Acc;
+apply_blocklists(AppType, AccountId, _UserId, Acc) ->
+    LoadOptions = [{'startkey', [AppType]}
+                  ,{'endkey', [AppType, kz_term:high_unicode_value()]}
+                  ],
+    BlocklistApps = load_blocklists(kz_services_reseller:get_id(AccountId), LoadOptions),
+    Fun = fun(AppId, _, AccIn)->
+                  case maps:get(AppId, AccIn, 'undefined') of
+                      'undefined' ->
+                          AccIn;
+                      AppJObj ->
+                          Setters = [{fun kzd_applications:set_published/2, 'false'}
+                                    ,{fun kzd_applications:set_pvt_authority/2, <<"blocklist">>}
+                                    ],
+                          maps:put(AppId, kz_doc:setters(AppJObj, Setters), AccIn)
+                  end
+          end,
+    maps:fold(Fun, Acc, BlocklistApps).
+
+-spec load_blocklists(kz_term:api_ne_binary(), kz_term:proplist()) -> apps_map().
+load_blocklists('undefined',  _) ->
+    lager:debug("cannot load blocklists, account has no reseller", []),
+    #{};
+load_blocklists(ResellerId, LoadOptions) ->
+    case kz_datamgr:get_results(ResellerId, <<"application/blocklists">>, LoadOptions) of
+        {'ok', JObjs} ->
+            maps:from_list(
+              [{kzd_application_blocklist:app_id(kz_json:get_value(<<"value">>, JObj)), 'true'}
+               || JObj <- JObjs
+              ]
+             );
+        {'error', _Reason} ->
+            lager:error("failed to lookup blocklists in ~s: ~p", [ResellerId, _Reason]),
+            #{}
+    end.
+
+-spec apply_service_plan_to_applications(kz_term:ne_binary(), kz_term:ne_binary()
+                                        ,kz_term:api_ne_binary(), apps_map()
+                                        ) -> apps_map().
+apply_service_plan_to_applications(_AppType, _AccountId, _UserId, Acc) when map_size(Acc) =:= 0 ->
+    Acc;
+apply_service_plan_to_applications(_AppType, AccountId, _UserId, Acc) ->
+    ServicesApps = get_services_apps(AccountId),
+    kz_json:foldl(apply_plan_to_application_fun(), Acc, ServicesApps).
+
+-spec apply_plan_to_application_fun() ->
+          fun((kz_term:ne_binary(), kz_json:object(), apps_map()) -> apps_map()).
+apply_plan_to_application_fun() ->
+    fun(AppId, ServicesAppJObj, Acc) ->
+            AppJObj = maps:get(AppId, Acc, 'undefined'),
+            case kz_json:get_ne_binary_value([AppId, <<"publish">>], ServicesAppJObj, 'undefined') of
+                'undefined' ->
+                    Acc;
+                <<"block">> when AppJObj =/= 'undefined' ->
+                    Setters = [{fun kzd_applications:set_published/2, 'false'}
+                              ,{fun kzd_applications:set_pvt_authority/2, <<"service_plan">>}
+                              ],
+                    maps:put(AppId, kz_doc:setters(AppJObj, Setters), Acc);
+                <<"allow">> when AppJObj =/= 'undefined' ->
+                    Setters = [{fun kzd_applications:set_published/2, 'true'}
+                              ,{fun kzd_applications:set_pvt_authority/2, <<"service_plan">>}
+                              ],
+                    maps:put(AppId, kz_doc:setters(AppJObj, Setters), Acc);
+                _ ->
+                    Acc
+            end
+    end.
+
+-spec apply_application_entitlements(kz_term:ne_binary(), kz_term:ne_binary()
+                                    ,kz_term:api_ne_binary(), apps_map()
+                                    ) -> apps_map().
+apply_application_entitlements(AppType, AccountId, UserId, Acc) ->
+    LoadOptions = [{'startkey', [AppType]}
+                  ,{'endkey', [AppType, kz_term:high_unicode_value()]}
+                  ],
+    Entitlements = load_entitlements(AccountId, LoadOptions),
+    Fun = fun (AppId, AppJObj, AccIn) ->
+                  JObj = apply_entitlements(AccountId, UserId, Entitlements, AppId, AppJObj),
+                  maps:put(AppId, JObj, AccIn)
+          end,
+    maps:fold(Fun, #{}, Acc).
+
+-spec apply_entitlements(kz_term:ne_binary(), kz_term:api_ne_binary(), apps_map(), kz_term:ne_binary(), kz_json:object()) ->
+          kz_json:object().
+apply_entitlements(AccountId, UserId, Entitlements, AppId, AppJObj) ->
+    case kzd_applications:published(AppJObj, 'true') of
+        'false' ->
+            %% app is not published or is blocked
+            AppJObj;
+        'true' ->
+            Entitlement = maps:get(AppId, Entitlements, 'undefined'),
+            apply_entitlement(AccountId, UserId, AppJObj, Entitlement)
+    end.
+
+-spec apply_entitlement(kz_term:ne_binary(), kz_term:api_ne_binary(), kz_json:object(), kz_json:object()) ->
+          kz_json:object().
+apply_entitlement(_, _, AppJObj, 'undefined') ->
+    %% no entitlement means the app is not active for this account
+    %% keep this pvt_authority in sync with `cb_applications:should_allow_admin_app_listing/2'
+    Setters = [{fun kzd_applications:set_published/2, 'false'}
+              ,{fun kzd_applications:set_pvt_authority/2, <<"entitlement">>}
+              ],
+    kz_doc:setters(AppJObj, Setters);
+apply_entitlement(AccountId, UserId, AppJObj, Entitlement) ->
+    EntitleType = kzd_application_entitlement:type(Entitlement),
+    %% keep this pvt_authority in sync with `cb_applications:should_allow_admin_app_listing/2'
+    Setters = [{fun kzd_applications:set_published/2, is_entitled(AccountId, UserId, Entitlement, EntitleType)}
+              ,{fun kzd_applications:set_pvt_authority/2, <<"entitlement">>}
+              ],
+    kz_doc:setters(AppJObj, Setters).
+
+-spec is_entitled(kz_term:ne_binary(), kz_term:api_ne_binary(), kz_json:object(), kz_term:api_ne_binary()) ->
+          boolean().
+is_entitled(_AccountId, _UserId, _Entitlement, <<"all">>) ->
+    'true';
+is_entitled(_, 'undefined', _, _) ->
+    %% if not 'all' then user id is required to determine the entitlement status
+    'false';
+is_entitled(AccountId, UserId, _Entitlement, <<"admins">>) ->
+    kzd_users:is_account_admin(AccountId, UserId);
+is_entitled(_AccountId, UserId, Entitlement, <<"specific">>) ->
+    Users = kzd_application_entitlement:users(Entitlement, []),
+    lists:member(UserId, Users);
+is_entitled(_, _, _, _) ->
+    %% bad configuration, dont show the app
+    'false'.
+
+-spec load_entitlements(kz_term:ne_binary(), kz_term:proplist()) -> apps_map().
+load_entitlements(AccountId, ViewOptions) ->
+    case kz_datamgr:get_results(AccountId, <<"application/entitlements">>, ['include_docs' | ViewOptions]) of
+        {'ok', JObjs} ->
+            maps:from_list(
+              [{kzd_application_entitlement:app_id(kz_json:get_value(<<"doc">>, JObj)), kz_json:get_value(<<"doc">>, JObj)}
+               || JObj <- JObjs
+              ]
+             );
+        {'error', _Reason} ->
+            lager:error("failed to lookup apps in ~s: ~p", [AccountId, _Reason]),
+            #{}
     end.
 
 %%------------------------------------------------------------------------------
@@ -406,7 +738,7 @@ set_account(Account, JObj) ->
             Corrected
     end.
 
-%%------------------------------------------------------------------------------
+%%--1----------------------------------------------------------------------------
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
@@ -470,30 +802,39 @@ merge_attachment_wise(AppJObj, NewAppJObj, Type, NewDocId, NewAccountDb, NewAtta
 find_attachment(_, 'undefined') ->
     {'error', 'not_found'};
 find_attachment(JObj, AttachmentName) ->
-    Paths = [[<<"pvt_app_attachments">>, <<"app_whitelabel">>]
-            ,[<<"pvt_app_attachments">>, <<"service_plan">>]
-            ,[<<"pvt_app_attachments">>, <<"master">>]
-            ],
-    find_attachment(JObj, AttachmentName, Paths).
+    %% order of finding attachment key is important
+    %% for example reseller can override master
+    Keys = [<<"reseller">> %% only application
+           ,<<"app_whitelabel">> %% only app
+           ,<<"service_plan">> %% only app
+           ,<<"master">> %% both application and app
+           ],
+    find_attachment(JObj, AttachmentName, Keys).
 
--spec find_attachment(kz_json:object(), kz_term:api_ne_binary(), kz_json:paths()) ->
+-spec find_attachment(kz_json:object(), kz_term:api_ne_binary(), kz_json:keys()) ->
           kz_either:either('not_found'
                           ,{AttachmentName::kz_term:ne_binary(), AttachmentsObject::kz_json:object()}
                           ).
-find_attachment(_, _, []) ->
-    {'error', 'not_found'};
-find_attachment(JObj, AttachmentName, [Path | Paths]) ->
-    case kz_term:is_empty(kz_json:get_ne_json_value(Path ++ [<<"_attachments">>, AttachmentName], JObj)) of
+find_attachment(JObj, AttachmentName, []) ->
+    %% if app doc is opened via crossbar_doc:load_doc
+    case kz_doc:attachment(JObj, AttachmentName) of
+        'undefined' ->
+            {'error', 'not_found'};
+        _AttObj ->
+            {'ok', {AttachmentName, JObj}}
+    end;
+find_attachment(JObj, AttachmentName, [Key | Keys]) ->
+    %% if the app doc is opened via allowed_app(s)/allowed_application(s)
+    Path = [<<"pvt_app_attachments">>, Key, <<"_attachments">>, AttachmentName],
+    case kz_term:is_empty(kz_json:get_ne_json_value(Path, JObj)) of
         'true' ->
-            find_attachment(JObj, AttachmentName, Paths);
+            find_attachment(JObj, AttachmentName, Keys);
         'false' ->
             {'ok', {AttachmentName
-                   ,kz_json:get_json_value(Path, JObj)
+                   ,kz_json:get_json_value([<<"pvt_app_attachments">>, Key], JObj)
                    }
             }
     end.
-
-
 
 %%------------------------------------------------------------------------------
 %% @doc

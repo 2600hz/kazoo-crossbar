@@ -19,7 +19,7 @@
             "type": "string"
         },
         "temporal_rules": {
-            "description": "Temporal Rules",
+            "description": "Temporal rule IDs",
             "items": {
                 "type": "string"
             },

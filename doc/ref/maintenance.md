@@ -30,6 +30,7 @@
 | `init_apps/1` | `(AppsPath)` | |
 | `init_apps/2` | `(AppsPath,AppUrl)` | |
 | `migrate/0` |  | |
+| `migrate/1` | `(_AccountDbs)` | |
 | `move_account/2` | `(Account,ToAccount)` | |
 | `promote_account/1` | `(AccountId)` | |
 | `refresh/0` |  | |
@@ -53,3 +54,4 @@
 | `stop_module/1` | `(Module)` | |
 | `update_schema/1` | `(Schema)` | |
 | `update_schemas/0` |  | |
+| `wait_for_prechecks/0` |  | |

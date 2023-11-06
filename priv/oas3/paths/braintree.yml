@@ -1,0 +1,181 @@
+paths:
+  /accounts/{ACCOUNT_ID}/braintree/addresses:
+    get:
+      operationId: GetAccountsAccountIdBraintreeAddresses
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Get addresses of braintree
+      tags:
+        - braintree
+    put:
+      operationId: PutAccountsAccountIdBraintreeAddresses
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Add an instance of braintree
+      tags:
+        - braintree
+  /accounts/{ACCOUNT_ID}/braintree/addresses/{ADDRESS_ID}:
+    delete:
+      operationId: DeleteAccountsAccountIdBraintreeAddressesAddressId
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../oas3-parameters.yml#/ADDRESS_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Delete an instance of braintree
+      tags:
+        - braintree
+    get:
+      operationId: GetAccountsAccountIdBraintreeAddressesAddressId
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../oas3-parameters.yml#/ADDRESS_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Get a braintree by ID
+      tags:
+        - braintree
+    post:
+      operationId: PostAccountsAccountIdBraintreeAddressesAddressId
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../oas3-parameters.yml#/ADDRESS_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Update an instance of braintree
+      tags:
+        - braintree
+  /accounts/{ACCOUNT_ID}/braintree/cards:
+    get:
+      operationId: GetAccountsAccountIdBraintreeCards
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Get cards of braintree
+      tags:
+        - braintree
+    put:
+      operationId: PutAccountsAccountIdBraintreeCards
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Add an instance of braintree
+      tags:
+        - braintree
+  /accounts/{ACCOUNT_ID}/braintree/cards/{CARD_ID}:
+    delete:
+      operationId: DeleteAccountsAccountIdBraintreeCardsCardId
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../oas3-parameters.yml#/CARD_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Delete an instance of braintree
+      tags:
+        - braintree
+    get:
+      operationId: GetAccountsAccountIdBraintreeCardsCardId
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../oas3-parameters.yml#/CARD_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Get a braintree by ID
+      tags:
+        - braintree
+    post:
+      operationId: PostAccountsAccountIdBraintreeCardsCardId
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../oas3-parameters.yml#/CARD_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Update an instance of braintree
+      tags:
+        - braintree
+  /accounts/{ACCOUNT_ID}/braintree/client_token:
+    get:
+      operationId: GetAccountsAccountIdBraintreeClientToken
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Get client_token of braintree
+      tags:
+        - braintree
+  /accounts/{ACCOUNT_ID}/braintree/customer:
+    get:
+      operationId: GetAccountsAccountIdBraintreeCustomer
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Get customer of braintree
+      tags:
+        - braintree
+    post:
+      operationId: PostAccountsAccountIdBraintreeCustomer
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Update an instance of braintree
+      tags:
+        - braintree
+  /accounts/{ACCOUNT_ID}/braintree/transactions:
+    get:
+      operationId: GetAccountsAccountIdBraintreeTransactions
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Get transactions of braintree
+      tags:
+        - braintree
+  /accounts/{ACCOUNT_ID}/braintree/transactions/{TRANSACTION_ID}:
+    get:
+      operationId: GetAccountsAccountIdBraintreeTransactionsTransactionId
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../oas3-parameters.yml#/TRANSACTION_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Get a braintree by ID
+      tags:
+        - braintree
