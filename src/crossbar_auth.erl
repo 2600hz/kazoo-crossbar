@@ -49,7 +49,7 @@
           ,{<<"cb_api_auth">>, ?DEFAULT_METHOD_CONFIG('false')}
           ,{<<"cb_auth">>, ?DEFAULT_METHOD_CONFIG('false')}
           ,{<<"cb_ip_auth">>, ?DEFAULT_METHOD_CONFIG('false')}
-          ,{<<"cb_conference_auth">>, ?DEFAULT_METHOD_CONFIG('false', <<"infinity">>)}
+          ,{<<"cb_conference_auth">>, ?DEFAULT_METHOD_CONFIG('false', ?SECONDS_IN_YEAR)}
           ]
          )
        ).

@@ -379,7 +379,7 @@
                             "scopes": [
                                 "crossbar"
                             ],
-                            "token_auth_expiry_s": "infinity"
+                            "token_auth_expiry_s": 31540000
                         },
                         "cb_ip_auth": {
                             "enabled": true,
@@ -406,6 +406,9 @@
                             "$ref": "#/definitions/auth_module_config"
                         },
                         "cb_auth": {
+                            "$ref": "#/definitions/auth_module_config"
+                        },
+                        "cb_conference_auth": {
                             "$ref": "#/definitions/auth_module_config"
                         },
                         "cb_ip_auth": {
@@ -15164,7 +15167,7 @@
                             "scopes": [
                                 "crossbar"
                             ],
-                            "token_auth_expiry_s": "infinity"
+                            "token_auth_expiry_s": 31540000
                         },
                         "cb_ip_auth": {
                             "enabled": true,
@@ -15191,6 +15194,9 @@
                             "$ref": "#/definitions/auth_module_config"
                         },
                         "cb_auth": {
+                            "$ref": "#/definitions/auth_module_config"
+                        },
+                        "cb_conference_auth": {
                             "$ref": "#/definitions/auth_module_config"
                         },
                         "cb_ip_auth": {
