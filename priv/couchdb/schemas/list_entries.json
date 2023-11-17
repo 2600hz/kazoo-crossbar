@@ -3,6 +3,14 @@
     "_id": "list_entries",
     "description": "Schema for a match list entries",
     "properties": {
+        "capture_group_key": {
+            "description": "The number which is used to select this entry, length should be same as `capture_group_length`",
+            "type": "string"
+        },
+        "capture_group_length": {
+            "description": "Length of the numbers in the list entries for which it used to select desire Caller ID",
+            "type": "integer"
+        },
         "contacts": {
             "default": [],
             "items": {
@@ -42,6 +50,18 @@
             "description": "A description of the list entity",
             "type": "string"
         },
+        "displayname": {
+            "description": "Display name",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+        },
+        "firstname": {
+            "description": "A friendly firstname",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+        },
         "history": {
             "default": [],
             "items": {
@@ -64,12 +84,22 @@
             },
             "type": "array"
         },
+        "lastname": {
+            "description": "A friendly lastname",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+        },
         "list_id": {
             "description": "The document id of the list document this list entry belongs to",
             "type": "string"
         },
         "name": {
             "description": "The name of the list entity",
+            "type": "string"
+        },
+        "number": {
+            "description": "Phone number",
             "type": "string"
         },
         "organization": {
@@ -85,6 +115,21 @@
                 "name"
             ],
             "type": "object"
+        },
+        "pattern": {
+            "description": "Match pattern",
+            "type": "string"
+        },
+        "profile": {
+            "$ref": "profile",
+            "default": {},
+            "description": "Profile data",
+            "type": "object"
+        },
+        "type": {
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
         }
     },
     "required": [

@@ -36,6 +36,7 @@
 -define(PHOTO, <<"photo">>).
 -define(TYPE_LIST, <<"list">>).
 -define(TYPE_LIST_ENTRY, <<"list_entry">>).
+
 %%%=============================================================================
 %%% API
 %%%=============================================================================
@@ -205,27 +206,73 @@ validate(Context, ListId, ?ENTRIES, EntryId, ?VCARD) ->
 
 -spec get_lists_unowned(cb_context:context())-> cb_context:context().
 get_lists_unowned(Context) ->
-    Options = [{'mapper', fun normalize_lists_unowned/2}
+    Options = [{'mapper', fun normalize_lists_unowned/3}
               ,'include_docs'
               ],
     crossbar_view:load(Context, ?CB_LIST, Options).
 
--spec normalize_lists_unowned(kz_json:object(), kz_json:objects()) -> kz_json:objects().
-normalize_lists_unowned(JObj, Acc) ->
+-spec normalize_lists_unowned(cb_context:context(), kz_json:object(), kz_json:objects()) -> kz_json:objects().
+normalize_lists_unowned(Context, JObj, Acc) ->
     case kz_json:is_defined([<<"doc">>, <<"owner_id">>], JObj) of
-        'true' ->
-            Acc;
+        'true' -> Acc;
         'false' ->
-            [kz_json:get_value(<<"value">>, JObj)| Acc]
+            get_entries_by_list(Context, JObj, Acc)
     end.
+
+-spec get_entries_by_list(cb_context:context(), kz_json:object(), kz_json:objects()) -> kz_json:objects().
+get_entries_by_list(Context, JObj, Acc) ->
+    format_list_entries(JObj, Acc
+                       ,kz_datamgr:get_results(cb_context:account_id(Context)
+                                              ,<<"lists/entries">>
+                                              ,[{'key', kz_doc:id(JObj)}
+                                               ,'include_docs'
+                                               ]
+                                              )
+                       ).
+
+format_list_entries(JObj, Acc, {'ok', []}) ->
+    lager:info("no entries in ~s", [kz_doc:id(JObj)]),
+    Values = [{<<"entries">>, []},
+              {<<"list">>, kz_json:get_value(<<"value">>, JObj)}
+             ],
+    NewJObj = kz_json:from_list(Values),
+    [NewJObj| Acc];
+format_list_entries(JObj, Acc, {'ok', Entries}) ->
+    Contacts = lists:foldl(fun add_entry/2
+                          ,[]
+                          ,Entries
+                          ),
+    Values = [{<<"entries">>, Contacts},
+              {<<"list">>, kz_json:get_value(<<"value">>, JObj)}
+             ],
+    NewJObj = kz_json:from_list(Values),
+    [NewJObj| Acc];
+format_list_entries(JObj, Acc, {'error', _Reason}= _Error) ->
+    lager:warning("failed to load entry documents for list ~s: ~p", [kz_doc:id(JObj), _Reason]),
+    Values = [{<<"entries">>, []},
+              {<<"list">>, kz_json:get_value(<<"value">>, JObj)}
+             ],
+    NewJObj = kz_json:from_list(Values),
+    [NewJObj| Acc].
+
+add_entry(ViewResult, AccE) ->
+    Entry = kz_json:get_json_value(<<"doc">>, ViewResult),
+    Values = [{<<"contacts">>, kzd_list_entries:contacts(Entry)}
+             ,{<<"name">>, kzd_list_entries:name(Entry)}
+             ],
+    [kz_json:from_list(Values) | AccE].
 
 -spec get_lists_owned(cb_context:context(), kz_term:api_ne_binary())-> cb_context:context().
 get_lists_owned(Context, UserId) ->
     Options = [{'key', [UserId, ?TYPE_LIST]}
-              ,{'mapper', crossbar_view:get_doc_fun()}
+              ,{'mapper', fun normalize_lists_owned/3}
               ,'include_docs'
               ],
     crossbar_view:load(Context, ?CROSSBAR_LISTING_BY_OWNER_ID_TYPE, Options).
+
+-spec normalize_lists_owned(cb_context:context(), kz_json:object(), kz_json:objects()) -> kz_json:objects().
+normalize_lists_owned(Context, JObj, Acc) ->
+    get_entries_by_list(Context, JObj, Acc).
 
 -spec validate_req(http_method(), cb_context:context(), path_tokens()) -> cb_context:context().
 validate_req(?HTTP_GET, Context, []) ->
@@ -290,13 +337,14 @@ validate_req(?HTTP_GET, Context, [_ListId, ?ENTRIES, EntryId, ?VCARD]) ->
     JObj = cb_context:doc(Context1),
     JProfile = kz_json:get_json_value(<<"profile">>, JObj),
     JObj1 = kz_json:merge_jobjs(JObj, JProfile),
-    JObj2 = kz_json:set_values(props:filter_empty([{<<"first_name">>, kz_json:get_value(<<"firstname">>, JObj1)}
-                                                  ,{<<"last_name">>, kz_json:get_value(<<"lastname">>, JObj1)}
-                                                  ,{<<"middle_name">>, kz_json:get_value(<<"middlename">>, JObj1)}
-                                                  ,{<<"nicknames">>, [kz_json:get_value(<<"displayname">>, JObj1)]}
-                                                  ])
-                              ,JObj1
-                              ),
+    JObj2 = kz_json:set_values(
+              props:filter_empty([{<<"first_name">>, kz_json:get_value(<<"firstname">>, JObj1)}
+                                 ,{<<"last_name">>, kz_json:get_value(<<"lastname">>, JObj1)}
+                                 ,{<<"middle_name">>, kz_json:get_value(<<"middlename">>, JObj1)}
+                                 ,{<<"nicknames">>, [kz_json:get_value(<<"displayname">>, JObj1)]}
+                                 ])
+             ,JObj1
+             ),
     JObj3 = set_org(JObj2, Context1),
     JObj4 = set_photo(JObj3, Context1),
     RespData = kzd_users:to_vcard(JObj4),
