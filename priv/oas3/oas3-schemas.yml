@@ -3450,6 +3450,9 @@
     'default_ringback_timeout':
       'description': 'How long, in milliseconds, before ringing back'
       'type': integer
+    'force_presence_user':
+      'description': force presence user to *3xxx
+      'type': boolean
     'max_slot_number':
       'description': |-
         Continue past this module if the selected slot number exceeds this number. Used to restrict the max number of auto-generated slot numbers
