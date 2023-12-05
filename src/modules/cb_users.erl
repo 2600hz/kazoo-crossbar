@@ -35,6 +35,7 @@
 -define(LIST_BY_PRESENCE_ID, <<"devices/listing_by_presence_id">>).
 -define(CROSSBAR_LISTING_BY_OWNER_ID, <<"crossbar_listings/by_ownerid">>).
 -define(CROSSBAR_LISTING_BY_OWNER_ID_TYPE, <<"crossbar_listings/by_ownerid_type">>).
+-define(LIST_MAILBOX, <<"vmboxes/listing_by_mailbox">>).
 
 -define(VCARD, <<"vcard">>).
 -define(PHOTO, <<"photo">>).
@@ -251,9 +252,10 @@ validate_users(Context, ?HTTP_PUT) ->
 validate_user(Context, UserId, ?HTTP_GET) ->
     load_user(UserId, Context);
 validate_user(Context, UserId, ?HTTP_POST) ->
-    UserJObj = kzd_users:maybe_migrate_user_addresses(cb_context:req_data(Context)),
-    Context1 = load_user(UserId, cb_context:set_req_data(Context, UserJObj)),
-    validate_request(UserId, Context1);
+    case kz_datamgr:open_cache_doc(cb_context:db_name(Context), UserId) of
+        {'ok', UserJObj} -> validate_change(Context, UserJObj, UserId);
+        {'error', Error} -> cb_context:add_system_error(Error, Context)
+    end;
 validate_user(Context, UserId, ?HTTP_DELETE) ->
     validate_delete(Context, UserId);
 validate_user(Context, UserId, ?HTTP_PATCH) ->
@@ -284,6 +286,46 @@ validate_delete(Context, UserId) ->
     Context1 = cb_context:validate_request_data(<<"users_delete">>, Context),
     ObjectTypes = cb_context:req_value(Context, <<"object_types">>),
     maybe_load_user_objects(UserId, load_user(UserId, Context1), ObjectTypes).
+
+-spec validate_change(cb_context:context(), kz_json:object(), kz_term:ne_binary()) -> cb_context:context().
+validate_change(Context, UserJObj, UserId) ->
+    Data = cb_context:req_data(Context),
+    case kz_json:get_value(<<"presence_id">>, kz_json:diff(Data, UserJObj), 'undefined') of
+        'undefined' ->
+            UserJObj = kzd_users:maybe_migrate_user_addresses(cb_context:req_data(Context)),
+            Context1 = load_user(UserId, cb_context:set_req_data(Context, UserJObj)),
+            validate_request(UserId, Context1);
+        PresenceId  ->
+            validate_presence_uniqueness(Context, UserId, PresenceId)
+    end.
+
+-spec validate_presence_uniqueness(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) -> cb_context:context().
+validate_presence_uniqueness(Context, UserId, PresenceId) ->
+    case kz_datamgr:get_results(cb_context:db_name(Context), ?LIST_MAILBOX , []) of
+        {'ok', []} ->
+            UserJObj = kzd_users:maybe_migrate_user_addresses(cb_context:req_data(Context)),
+            Context1 = load_user(UserId, cb_context:set_req_data(Context, UserJObj)),
+            validate_request(UserId, Context1);
+        {'ok', Boxes} ->
+            check_uniqueness(Context, UserId, Boxes, PresenceId);
+        {'error', Error} ->
+            lager:debug("failed to load listing_by_mailbox view: ~p", [Error]),
+            cb_context:add_system_error(Error, <<"Error while loading presence">>, Context)
+    end.
+
+-spec check_uniqueness(cb_context:context(), kz_term:ne_binary(), list(), kz_term:ne_binary()) -> cb_context:context().
+check_uniqueness(Context, UserId, [], _) ->
+    UserJObj = kzd_users:maybe_migrate_user_addresses(cb_context:req_data(Context)),
+    Context1 = load_user(UserId, cb_context:set_req_data(Context, UserJObj)),
+    validate_request(UserId, Context1);
+check_uniqueness(Context, UserId, [Box|Boxes], Presense) ->
+    case kz_json:get_value(<<"key">>, Box) of
+        'undefined' -> check_uniqueness(Context, UserId, Boxes, Presense);
+        Presense    ->
+            Msg = kz_json:from_list([{<<"message">>, <<"Invalid mailbox number, alias or already exists">>}]),
+            cb_context:add_validation_error(<<"mailbox">>, <<"unique">>, Msg, Context);
+        _Else       -> check_uniqueness(Context, UserId, Boxes, Presense)
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc
