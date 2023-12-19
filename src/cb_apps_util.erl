@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2023, 2600Hz
+%%% @copyright (C) 2012-2024, 2600Hz
 %%% @doc
 %%% @author Peter Defebvre
 %%%
@@ -69,6 +69,7 @@ allowed_apps(_AccountId, _UserId, DefaultApps) when map_size(DefaultApps) =:= 0 
     [];
 allowed_apps(AccountId, UserId, DefaultApps) ->
     Routines = [fun allowed_service_plan/3
+               ,fun maybe_remove_kappex_apps/3
                ,fun apps_whitelabel_override/3
                ,fun allowed_apps_store_doc/3
                ,fun allowed_whitelabel_doc/3
@@ -109,6 +110,7 @@ allowed_applications(AppType, AccountId) ->
 allowed_applications(AppType, AccountId, UserId) ->
     Routines = [fun load_applications_from_master/4
                ,fun merge_reseller_applications_to_master/4
+               ,fun maybe_remove_kappex_apps/4
                ,fun apply_blocklists/4
                ,fun apply_service_plan_to_applications/4
                ,fun apply_application_entitlements/4
@@ -849,3 +851,89 @@ app_whitelabel_doc_id_to_app_id(<<"app_whitelabel-", AppId/binary>>) ->
     AppId;
 app_whitelabel_doc_id_to_app_id(Other) ->
     Other.
+
+%%------------------------------------------------------------------------------
+%% @doc Check apps and if they are from Marketplace check if their apps are running.
+%%
+%% This will make sure the Marketplace apps which are currently  not running
+%% will not be listed in available apps and makes MUI or Commland App loaders
+%% only show current running apps.
+%% @end
+%%------------------------------------------------------------------------------
+-spec maybe_remove_kappex_apps(kz_term:ne_binary(), kz_term:api_ne_binary(), apps_map()) -> apps_map().
+maybe_remove_kappex_apps(_AccountId, _UserId, AppsMap) ->
+    Kapps = get_kapps(),
+    maps:fold(fun (AppId, AppJObj, AppsMapAcc) ->
+                      %% `from_kappex' is set by UI wrapper in metadata doc on app startup
+                      IsFromKappex = kz_json:is_true(<<"from_kappex">>, AppJObj),
+                      case should_remove_kappex_app(Kapps, AppJObj, IsFromKappex) of
+                          'true' ->
+                              AppsMapAcc;
+                          'false' ->
+                              AppsMapAcc#{AppId => AppJObj}
+                      end
+              end
+             ,#{}
+             ,AppsMap
+             ).
+
+%%------------------------------------------------------------------------------
+%% @doc Check apps and if they are from Marketplace check if their apps are running.
+%%
+%% Equivalent to `maybe_remove_kappex_apps(AccountId, UserId, AppsMap)'
+%% @end
+%%------------------------------------------------------------------------------
+-spec maybe_remove_kappex_apps(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:api_ne_binary(), apps_map()) -> apps_map().
+maybe_remove_kappex_apps(_AppType, AccountId, UserId, AppsMap) ->
+    maybe_remove_kappex_apps(AccountId, UserId, AppsMap).
+
+%%------------------------------------------------------------------------------
+%% @doc Get a list of all running app across the whole cluster.
+%% @end
+%%------------------------------------------------------------------------------
+-spec get_kapps() -> kz_term:ne_binaries().
+get_kapps() ->
+    ZoneProperties = [kz_json:values(ZoneNode) || ZoneNode <- kz_json:values(kz_nodes:status_to_json())],
+    NodeProperties = [kz_json:values(NodeType) || NodeType <- lists:append(ZoneProperties)],
+    RunningKapps = [kz_json:get_list_value(<<"kapps">>, Node, [])
+                    || Node <- lists:append(NodeProperties)
+                   ],
+    lists:usort(lists:append(RunningKapps)).
+
+-spec should_remove_kappex_app(kz_term:ne_binaries(), kz_json:object(), boolean()) -> boolean().
+should_remove_kappex_app(Kapps, AppJObj, 'true') ->
+    KappexName = get_app_kappex_name(AppJObj),
+    not lists:member(KappexName, Kapps);
+should_remove_kappex_app(_Kapps, _AppJObj, 'false') ->
+    'false'.
+
+%%------------------------------------------------------------------------------
+%% @doc Get OTP name of the app from kappex_name field in metadata or make
+%% name it in case metadata is old and does not have that field.
+%% @end
+%%------------------------------------------------------------------------------
+-spec get_app_kappex_name(kz_json:object()) -> kz_term:ne_binary().
+get_app_kappex_name(AppJObj) ->
+    %% `kappex_name' is set by UI wrapper in metadata doc on app startup
+    case kz_json:get_ne_binary_value(<<"kappex_name">>, AppJObj) of
+        'undefined' ->
+            kappexify_appname(AppJObj);
+        KappexName ->
+            KappexName
+    end.
+
+%%------------------------------------------------------------------------------
+%% @doc Convert the UI app name to valid OTP and appex app name .
+%%
+%% Appex UI apps are prefix either with `commland_' or `monsterui_'.
+%% @end
+%%------------------------------------------------------------------------------
+-spec kappexify_appname(kz_json:object()) -> kz_term:ne_binary().
+kappexify_appname(AppJObj) ->
+    Name = binary:replace(kzd_applications:name(AppJObj, <<>>), <<"-">>, <<"_">>, ['global']),
+    case kzd_applications:type(AppJObj) of
+        <<"commland_ui">> ->
+            <<"commland_", Name/binary>>;
+        _ ->
+            <<"monsterui_", Name/binary>>
+    end.
