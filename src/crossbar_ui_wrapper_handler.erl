@@ -33,7 +33,7 @@ init(Req, HandlerOpts) ->
     PathInfo = [Token || Token <- cowboy_req:path_info(Req),
                          kz_term:is_ne_binary(Token)
                ],
-    case get_app_name(PathInfo) of
+    case get_app_module(PathInfo) of
         'undefined' ->
             not_found(Req, HandlerOpts);
         {Module, NewPathInfo} ->
@@ -42,7 +42,7 @@ init(Req, HandlerOpts) ->
 
 -spec upgrade(cowboy_req:req(), cowboy_middleware:env(), any(), any()) -> {'ok', cowboy_req:req(), cowboy_middleware:env()}.
 upgrade(Req, Env, _Handler, HandlerOpts) ->
-    Module = proplists:get_value('module', HandlerOpts),
+    Module = props:get_value('module', HandlerOpts),
     NewEnv = maps:put('handler', Module, Env),
     cowboy_rest:upgrade(Req, NewEnv, Module, HandlerOpts).
 
@@ -58,7 +58,7 @@ route_path_match() ->
     Path = string:trim(route_path(), 'both', "/"),
     <<"/", Path/binary, "/[...]">>.
 
-get_app_name([AppName, Path | File]) ->
+get_app_module([AppName, Path | File]) ->
     try
         Mod = kz_term:to_atom(<<AppName/binary, "_cb_router">>),
         {Mod, kz_module:is_exported(Mod, 'init', 2)}
@@ -71,7 +71,7 @@ get_app_name([AppName, Path | File]) ->
         _:_ ->
             'undefined'
     end;
-get_app_name(_) ->
+get_app_module(_) ->
     'undefined'.
 
 -spec not_found(cowboy_req:req(), State) -> {'ok', cowboy_req:req(), State}.
