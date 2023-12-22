@@ -18211,6 +18211,11 @@
       'format': uri
       'type': string
       'x-support_level': supported
+    'dkim_selector':
+      'description': |-
+        This is the selector that the receiving server should use to look up the DNS record
+      'type': string
+      'x-support_level': supported
     'domain':
       'description': |-
         This is the whitelabeled domain that users will be entering to reach the UI
