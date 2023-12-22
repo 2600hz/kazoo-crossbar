@@ -18,6 +18,7 @@ Key | Description | Type | Default | Required | Support Level
 `commland` | Properties related to commland | `object()` |   | `false` |  
 `company_name` | The company name to display to users | `string()` |   | `false` | `supported`
 `conference_public_domain` | This is the whitelabeled domain that conference participants can use to reach the conference through webphone | `string()` |   | `false` | `supported`
+`dkim_selector` | This is the selector that the receiving server should use to look up the DNS record | `string()` |   | `false` | `supported`
 `domain` | This is the whitelabeled domain that users will be entering to reach the UI | `string()` |   | `false` | `supported`
 `fake_api_url` | This is a whitelabeled API URL, primarily used by the developer application | `string()` |   | `false` | `beta`
 `hide_credits` | When checked this hides the credits | `boolean()` | `false` | `false` | `beta`
@@ -87,6 +88,36 @@ curl -v -X DELETE \
 curl -v -X GET \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/{WHITELABEL_DOMAIN}
+```
+
+## Fetch
+
+> GET /v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
+
+```shell
+curl -v -X GET \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
+```
+
+## Change
+
+> POST /v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
+
+```shell
+curl -v -X POST \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
+```
+
+## Remove
+
+> DELETE /v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
+
+```shell
+curl -v -X DELETE \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
 ```
 
 ## Fetch

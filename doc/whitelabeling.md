@@ -10,14 +10,15 @@ Whitelabel settings
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`commland.downloads.deb` | Commland debian download URL for the account | `string()` |   | `false` |  
-`commland.downloads.mac` | Commland mac download URL for the account | `string()` |   | `false` |  
-`commland.downloads.rpm` | Commland rpm download URL for the account | `string()` |   | `false` |  
-`commland.downloads.windows` | Commland windows download URL for the account | `string()` |   | `false` |  
-`commland.downloads` | The URLs of commland downloads related to the account | `object()` |   | `false` |  
-`commland` | Properties related to commland | `object()` |   | `false` |  
+`commland.downloads.deb` | Commland debian download URL for the account | `string()` |   | `false` |
+`commland.downloads.mac` | Commland mac download URL for the account | `string()` |   | `false` |
+`commland.downloads.rpm` | Commland rpm download URL for the account | `string()` |   | `false` |
+`commland.downloads.windows` | Commland windows download URL for the account | `string()` |   | `false` |
+`commland.downloads` | The URLs of commland downloads related to the account | `object()` |   | `false` |
+`commland` | Properties related to commland | `object()` |   | `false` |
 `company_name` | The company name to display to users | `string()` |   | `false` | `supported`
 `conference_public_domain` | This is the whitelabeled domain that conference participants can use to reach the conference through webphone | `string()` |   | `false` | `supported`
+`dkim_selector` | This is the selector that the receiving server should use to look up the DNS record | `string()` |   | `false` | `supported`
 `domain` | This is the whitelabeled domain that users will be entering to reach the UI | `string()` |   | `false` | `supported`
 `fake_api_url` | This is a whitelabeled API URL, primarily used by the developer application | `string()` |   | `false` | `beta`
 `hide_credits` | When checked this hides the credits | `boolean()` | `false` | `false` | `beta`
@@ -26,7 +27,7 @@ Key | Description | Type | Default | Required | Support Level
 `inbound_trunks_price` | The price to show for inbound trunks, this is currently only for display purposes | `string()` |   | `false` | `beta`
 `nav.help` | The URL to use when the help link is clicked | `string()` |   | `false` | `supported`
 `nav.learn_more` | The URL to use when the 'Learn More!' link is clicked | `string()` |   | `false` | `supported`
-`nav` | Properties related to navigation in the UI | `object()` |   | `false` |  
+`nav` | Properties related to navigation in the UI | `object()` |   | `false` |
 `outbound_trunks_price` | The price to show for outbound trunks, this is currently only for display purposes | `string()` |   | `false` | `beta`
 `port.authority` | The account ID to be used for administrating port requests | `string()` |   | `false` | `supported`
 `port.features` | The URL to use when the features link is clicked | `string()` |   | `false` | `supported`
@@ -34,7 +35,7 @@ Key | Description | Type | Default | Required | Support Level
 `port.resporg` | The URL to use when the resporg link is clicked | `string()` |   | `false` | `supported`
 `port.support_email` | The support email address to display to the user | `string()` |   | `false` | `supported`
 `port.terms` | The URL to use when the terms and conditions link is clicked | `string()` |   | `false` | `supported`
-`port` | Parameters related to white-labeling port requests | `object()` |   | `false` |  
+`port` | Parameters related to white-labeling port requests | `object()` |   | `false` |
 `twoway_trunks_price` | The price to show for twoway trunks, this is currently only for display purposes | `string()` |   | `false` | `beta`
 
 
@@ -396,3 +397,73 @@ This returns the icon image file.
 Or domain specific:
 
 > GET /v2/accounts/{ACCOUNT_ID}/whitelabel/{domain}/icon
+
+## Uploading the PEM file for DKIM Signing
+
+DKIM (DomainKeys Identified Mail) lets domain owners "sign" emails from their domain. This allows receiving email servers to verify that the email came from the domain it purports to, by fetching the public key from a DNS TXT record and verifying the signature.
+
+### DKIM DNS TXT record
+
+The `name` of a DKIM entry follows the format of `[selector]._domainkey.[domain]` where `selector` is what you enter for the `dkim_selector` in the whitelabel document. `domain` is, your domain name set in the whitelabel document as well.
+
+The content of the TXT record looks like `v=DKIM1; p=[public key]`. `v` is `DKIM1` and `p` is the public key that is the complement to the private key uploaded here.
+
+Read [RFC6376](https://datatracker.ietf.org/doc/html/rfc6376/) for more on DKIM.
+
+### Uploading the DKIM private key
+
+> POST /v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
+
+```shell
+curl -v -X POST \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -H 'Content-Type: application/x-pem-file' \
+    --data-binary "@/local/path/to/pvt_file.pem" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
+```
+
+The file should be a plaintext PEM file (like what's generated from `openssl genrsa -out private-key.pem 1024` or similar).
+
+!!!note Once the PEM file is uploaded successfully, it will not be fetchable via API again.
+
+Subsequent POSTs to upload another PEM file will cause the existing PEM file to not be available (so most recently uploaded PEM file is the actively used one).
+
+Once the PEM file is uploaded successfully, you can provide a friendly name for the file, using below POST request.
+
+```shell
+curl -v -X POST \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d '{"data": {"name":"mypemfile"} }' \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
+```
+
+## Fetch DKIM PEM file information
+
+This returns ONLY the friendly name (`name`) of the PEM file.
+
+> GET /v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
+
+Assuming your PEM file name is "mypemfile", you should receive a payload similar to:
+
+```json
+{
+  "auth_token": "{AUTH_TOKEN}",
+  "data": [
+    {
+      "name": "mypemfile"
+    }
+    "..."
+  ],
+  "timestamp": "{TIMESTAMP}",
+  "version": "{VERSION}",
+  "node": "{NODE_HASH}",
+  "request_id": "{REQUEST_ID}",
+  "status": "success"
+}
+```
+
+## Remove DKIM PEM file information
+
+This removes the PEM file.
+
+> DELETE /v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
