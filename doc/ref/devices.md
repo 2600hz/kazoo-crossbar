@@ -47,6 +47,7 @@ Key | Description | Type | Default | Required | Support Level
 `name` | A friendly name for the device | `string(1..128)` |   | `true` | `supported`
 `outbound_flags` | List of flags (features) this device requires when making outbound calls | `array(string()) | object()` |   | `false` |  
 `owner_id` | The ID of the user object that 'owns' the device | `string(32)` |   | `false` |  
+`presence_aliases` | Presence Aliases | [#/definitions/presence_aliases](#presence_aliases) |   | `false` |  
 `presence_id` | Static presence ID (used instead of SIP username) | `string()` |   | `false` | `supported`
 `provision.check_sync_event` | Value to use in Event header for device reload/reboot | `string()` |   | `false` |  
 `provision.check_sync_reboot` | Value to append to 'check-sync' event if phone should reboot after reloading settings | `string()` | `reboot=true` | `false` |  
@@ -384,6 +385,14 @@ Key | Description | Type | Default | Required | Support Level
 `numbers` | A list of static numbers with their flows | `object()` |   | `false` |  
 `patterns./.+/` | A metaflow node defines a module to execute, data to provide to that module, and one or more children to branch to | [#/definitions/metaflow](#metaflow) |   | `false` |  
 `patterns` | A list of patterns with their flows | `object()` |   | `false` |  
+
+### presence_aliases
+
+Endpoint Presence Aliases
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
 
 ### timezone
 
