@@ -10321,6 +10321,11 @@
     'marketplace_url':
       'description': appex_client marketplace_url
       'type': string
+    'ui_wrapper_route_path':
+      'default': ui
+      'description': |-
+        Route path to use for Crossbar Appex UI wrapper, this will add a new route to Crossbar router specifically to serve UI assets files.
+      'type': string
     'use_tcp':
       'default': false
       'description': appex_client use_tcp for dns query

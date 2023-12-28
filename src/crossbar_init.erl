@@ -31,12 +31,17 @@
 -type dispatch_rules() :: {'persistent_term', 'crossbar_dispatch'}. % cowboy_router:dispatch_rules()
 
 -spec crossbar_routes() -> cowboy_router:routes().
-crossbar_routes() -> [{'_', paths_list()}].
+crossbar_routes() ->
+    [{'_', paths_list()}].
 
 -spec paths_list() -> [route_path()].
 paths_list() ->
-    %% api first, customs then default catch all path
-    [api_path()] ++ custom_paths() ++ [default_path()].
+    %% api first, ui_wrapper, customs then default catch all path
+    [api_path(), ui_wrapper_path()] ++ kz_term:uniq_list(custom_paths()) ++ [default_path()].
+
+-spec ui_wrapper_path() -> route_path().
+ui_wrapper_path() ->
+    {crossbar_ui_wrapper_handler:route_path_match(), 'crossbar_ui_wrapper_handler', []}.
 
 -spec default_path() -> route_path().
 default_path() ->
@@ -69,6 +74,7 @@ try_get_custom_path(CustomHandlerMod, Acc) ->
         'true' ->
             do_try_get_custom_path(kz_term:to_atom(CustomHandlerMod), Acc);
         'false' ->
+            lager:debug("unabled to get custom paths from ~s: route_paths/0 is not exported", [CustomHandlerMod]),
             Acc
     end.
 
