@@ -5794,6 +5794,9 @@
       'maxLength': 32
       'minLength': 32
       'type': string
+    'presence_aliases':
+      '$ref': '#/presence_aliases'
+      'description': Presence Aliases
     'presence_id':
       'description': Static presence ID (used instead of SIP username)
       'type': string
@@ -8469,6 +8472,29 @@
   'required':
     - state
   'type': object
+'presence_aliases':
+  'description': Endpoint Presence Aliases
+  'oneOf':
+    - 'additionalProperties': false
+      'properties':
+        'monitoring':
+          'items':
+            'minLength': 1
+            'type': string
+          'type': array
+          'uniqueItems': true
+        'publishing':
+          'items':
+            'minLength': 1
+            'type': string
+          'type': array
+          'uniqueItems': true
+      'type': object
+    - 'items':
+        'minLength': 1
+        'type': string
+      'type': array
+      'uniqueItems': true
 'profile':
   'description': Defines user extended properties
   'properties':
@@ -17556,6 +17582,9 @@
       'description': The GUI login password
       'type': string
       'x-support_level': supported
+    'presence_aliases':
+      '$ref': '#/presence_aliases'
+      'description': Presence Aliases
     'presence_id':
       'description': Static presence ID (used instead of SIP username)
       'type': string

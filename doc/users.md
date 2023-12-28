@@ -53,6 +53,7 @@ Key | Description | Type | Default | Required | Support Level
 `music_on_hold.options` | Options for playing music on hold | `array(string('preserve-position' | 'random-start'))` |   | `false` |  
 `music_on_hold` | The music on hold parameters used if not a property of the device owner | `object()` | `{}` | `false` |  
 `password` | The GUI login password | `string()` |   | `false` | `supported`
+`presence_aliases` | Presence Aliases | [#/definitions/presence_aliases](#presence_aliases) |   | `false` |  
 `presence_id` | Static presence ID (used instead of SIP username) | `string()` |   | `false` | `supported`
 `priv_level` | The privilege level of the user | `string('user' | 'admin')` | `user` | `false` | `supported`
 `profile` | User's profile data | [#/definitions/profile](#profile) |   | `false` |  
@@ -341,6 +342,14 @@ Key | Description | Type | Default | Required | Support Level
 `number` | Number for callback notifications about new messages | `string()` |   | `false` |  
 `schedule` | Schedules interval between callbacks | `array(integer())` |   | `false` |  
 `timeout_s` | How long will system wait for answer to callback | `integer()` |   | `false` |  
+
+### presence_aliases
+
+Endpoint Presence Aliases
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
 
 ### profile
 

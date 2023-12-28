@@ -1,0 +1,37 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "_id": "presence_aliases",
+    "description": "Endpoint Presence Aliases",
+    "oneOf": [
+        {
+            "additionalProperties": false,
+            "properties": {
+                "monitoring": {
+                    "items": {
+                        "minLength": 1,
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                },
+                "publishing": {
+                    "items": {
+                        "minLength": 1,
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                }
+            },
+            "type": "object"
+        },
+        {
+            "items": {
+                "minLength": 1,
+                "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+        }
+    ]
+}

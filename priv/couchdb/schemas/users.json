@@ -226,6 +226,10 @@
             "support_level": "supported",
             "type": "string"
         },
+        "presence_aliases": {
+            "$ref": "presence_aliases",
+            "description": "Presence Aliases"
+        },
         "presence_id": {
             "description": "Static presence ID (used instead of SIP username)",
             "support_level": "supported",
