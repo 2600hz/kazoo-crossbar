@@ -368,16 +368,6 @@
     'minLength': 32
     'pattern': '^[0-9a-f]+$'
     'type': string
-'LIST_ENTRY_ID':
-  'description': request LIST_ENTRY_ID parameter
-  'in': path
-  'name': LIST_ENTRY_ID
-  'required': true
-  'schema':
-    'maxLength': 32
-    'minLength': 32
-    'pattern': '^[0-9a-f]+$'
-    'type': string
 'LIST_ID':
   'description': request LIST_ID parameter
   'in': path
