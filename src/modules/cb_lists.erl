@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2024, 2600Hz
 %%% @doc Match list module
 %%% Handle client requests for match list documents, api v2
 %%%
@@ -15,44 +15,49 @@
 -module(cb_lists).
 
 -export([init/0
-        ,allowed_methods/0, allowed_methods/1, allowed_methods/2, allowed_methods/3, allowed_methods/4
-        ,resource_exists/0, resource_exists/1, resource_exists/2, resource_exists/3, resource_exists/4
-        ,content_types_provided/1, content_types_provided/2, content_types_provided/3, content_types_provided/4, content_types_provided/5
-        ,validate/1, validate/2, validate/3, validate/4, validate/5
-        ,delete/2, delete/3, delete/4
-        ,save/1, save/2, save/3, save/4, save/5
+        ,authorize/1, authorize/2
+        ,allowed_methods/0, allowed_methods/1
+        ,resource_exists/0, resource_exists/1
+        ,content_types_provided/1, content_types_provided/2
+        ,validate/1, validate/2
+        ,put/1
+        ,post/2
+        ,patch/2
+        ,delete/2
         ]).
 
 -include("crossbar.hrl").
 
--define(CB_LIST, <<"lists/crossbar_listing">>).
--define(ENTRIES_VIEW, <<"lists/entries">>).
--define(ENTRIES, <<"entries">>).
--define(VCARD, <<"vcard">>).
--define(PHOTO, <<"photo">>).
--define(TYPE_LIST, <<"list">>).
--define(TYPE_LIST_ENTRY, <<"list_entry">>).
+-define(CROSSBAR_LISTING_BY_OWNER_ID_TYPE, <<"contacts/listing_by_owner">>).
+
 %%%=============================================================================
 %%% API
 %%%=============================================================================
 
 %%------------------------------------------------------------------------------
-%% @doc
+%% @doc Initializes the bindings this module will respond to.
 %% @end
 %%------------------------------------------------------------------------------
--spec init() -> any().
+-spec init() -> 'ok'.
 init() ->
-    [crossbar_bindings:bind(Binding, ?MODULE, F)
-     || {Binding, F} <- [{<<"*.allowed_methods.lists">>, 'allowed_methods'}
-                        ,{<<"*.resource_exists.lists">>, 'resource_exists'}
-                        ,{<<"*.content_types_provided.lists">>, 'content_types_provided'}
-                        ,{<<"*.validate.lists">>, 'validate'}
-                        ,{<<"*.execute.put.lists">>, 'save'}
-                        ,{<<"*.execute.post.lists">>, 'save'}
-                        ,{<<"*.execute.patch.lists">>, 'save'}
-                        ,{<<"*.execute.delete.lists">>, 'delete'}
-                        ]
-    ].
+    Bindings = [{<<"*.allowed_methods.lists">>, 'allowed_methods'}
+               ,{<<"*.resource_exists.lists">>, 'resource_exists'}
+               ,{<<"*.content_types_provided.lists">>, 'content_types_provided'}
+               ,{<<"*.validate.lists">>, 'validate'}
+               ,{<<"*.execute.put.lists">>, 'put'}
+               ,{<<"*.execute.post.lists">>, 'post'}
+               ,{<<"*.execute.patch.lists">>, 'patch'}
+               ,{<<"*.execute.delete.lists">>, 'delete'}
+               ,{<<"*.authorize.lists">>, 'authorize'}
+               ],
+    cb_modules_util:bind(?MODULE, Bindings),
+    'ok'.
+
+%%------------------------------------------------------------------------------
+%% @doc Given the path tokens related to this module, what HTTP methods are
+%% going to be responded to.
+%% @end
+%%------------------------------------------------------------------------------
 
 -spec allowed_methods() -> http_methods().
 allowed_methods() ->
@@ -62,34 +67,90 @@ allowed_methods() ->
 allowed_methods(_ListId) ->
     [?HTTP_GET, ?HTTP_POST, ?HTTP_PATCH, ?HTTP_DELETE].
 
--spec allowed_methods(path_token(), path_token()) -> http_methods().
-allowed_methods(_ListId, ?ENTRIES) ->
-    [?HTTP_GET, ?HTTP_PUT, ?HTTP_DELETE].
-
--spec allowed_methods(path_token(), path_token(), path_token()) -> http_methods().
-allowed_methods(_ListId, ?ENTRIES, _ListEntryId) ->
-    [?HTTP_GET, ?HTTP_POST, ?HTTP_PATCH, ?HTTP_DELETE].
-
--spec allowed_methods(path_token(), path_token(), path_token(), path_token()) -> http_methods().
-allowed_methods(_ListId, ?ENTRIES, _ListEntryId, ?VCARD) ->
-    [?HTTP_GET];
-allowed_methods(_ListId, ?ENTRIES, _ListEntryId, ?PHOTO) ->
-    [?HTTP_POST].
+%%------------------------------------------------------------------------------
+%% @doc Does the path point to a valid resource.
+%% For example:
+%%
+%% ```
+%%    /lists => []
+%%    /lists/foo => [<<"foo">>]
+%%    /lists/foo/bar => [<<"foo">>, <<"bar">>]
+%% '''
+%% @end
+%%------------------------------------------------------------------------------
 
 -spec resource_exists() -> 'true'.
 resource_exists() -> 'true'.
 
 -spec resource_exists(path_token()) -> 'true'.
-resource_exists(_ListId) -> 'true'.
+resource_exists(_IdOrTag) -> 'true'.
 
--spec resource_exists(path_token(), path_token()) -> 'true'.
-resource_exists(_ListId, ?ENTRIES) -> 'true'.
+%%------------------------------------------------------------------------------
+%% @doc Authorizes the incoming request, returning true if the requestor is
+%% allowed to access the resource, or false if not.
+%% @end
+%%------------------------------------------------------------------------------
+-spec authorize(cb_context:context()) ->
+          'true' | {'stop', cb_context:context()}.
+authorize(Context) ->
+    case is_admin(Context) of
+        'true' -> 'true';
+        'false' -> maybe_authorize_user_level_req(Context)
+    end.
 
--spec resource_exists(path_token(), path_token(), path_token()) -> 'true'.
-resource_exists(_ListId, ?ENTRIES, _EntryId) -> 'true'.
+-spec authorize(cb_context:context(), path_token()) ->
+          'true' | {'stop', cb_context:context()}.
+authorize(Context, _IdOrTag) ->
+    case is_admin(Context) of
+        'true' -> 'true';
+        'false' -> maybe_authorize_user_level_req(Context)
+    end.
 
--spec resource_exists(path_token(), path_token(), path_token(), path_token()) -> 'true'.
-resource_exists(_ListId, ?ENTRIES, _EntryId, ?VCARD) -> 'true'.
+-spec is_admin(cb_context:context()) -> boolean().
+is_admin(Context) ->
+    cb_context:is_account_admin(Context)
+        orelse cb_context:is_superduper_admin(Context).
+
+-spec maybe_authorize_user_level_req(cb_context:context()) -> 'true' | {'stop', cb_context:context()}.
+maybe_authorize_user_level_req(Context) ->
+    case is_user_level_req(Context) of
+        {'true', UserId} ->
+            authorize_user_level_req(Context, UserId);
+        'false' ->
+            authorize_account_level_req(Context, cb_context:req_verb(Context))
+    end.
+
+-spec is_user_level_req(cb_context:context()) -> {'true', kz_term:ne_binary()} | 'false'.
+is_user_level_req(Context) ->
+    case cb_context:req_nouns(Context) of
+        [_lists, {<<"users">>, [UserId]} |_] ->
+            {'true', UserId};
+        _Nouns ->
+            'false'
+    end.
+
+-spec authorize_user_level_req(cb_context:context(), kz_term:api_ne_binary()) ->
+          'true' | {'stop', cb_context:context()}.
+authorize_user_level_req(Context, UserId) ->
+    case cb_context:auth_user_id(Context) =:=  UserId of
+        'true' -> 'true';
+        'false' ->
+            Msg = <<"auth token user and requested user doesn't match">>,
+            {'stop', cb_context:add_system_error(403, 'forbidden', Msg, Context)}
+    end.
+
+-spec authorize_account_level_req(cb_context:context(), path_token()) ->
+          'true' | {'stop', cb_context:context()}.
+authorize_account_level_req(_Context, ?HTTP_GET) ->
+    'true';
+authorize_account_level_req(Context, _ReqVerb) ->
+    Msg = <<"only admins have permissions for this operation">>,
+    {'stop', cb_context:add_system_error(403, 'forbidden', Msg, Context)}.
+
+%%------------------------------------------------------------------------------
+%% @doc Add content types accepted and provided by this module
+%% @end
+%%------------------------------------------------------------------------------
 
 -spec content_types_provided(cb_context:context()) ->
           cb_context:context().
@@ -101,197 +162,234 @@ content_types_provided(Context) ->
 content_types_provided(Context, _) ->
     Context.
 
--spec content_types_provided(cb_context:context(), path_token(), path_token()) ->
-          cb_context:context().
-content_types_provided(Context, _, _) ->
-    Context.
-
--spec content_types_provided(cb_context:context(), path_token(), path_token(), path_token()) ->
-          cb_context:context().
-content_types_provided(Context, _, _, _) ->
-    Context.
-
--spec content_types_provided(cb_context:context(), path_token(), path_token(), path_token(), path_token()) ->
-          cb_context:context().
-content_types_provided(Context, _, ?ENTRIES, _, ?VCARD) ->
-    cb_context:set_content_types_provided(Context
-                                         ,[{'to_binary'
-                                           ,[{<<"text">>, <<"x-vcard">>}
-                                            ,{<<"text">>, <<"directory">>}
-                                            ]
-                                           }
-                                          ]
-                                         ).
+%%------------------------------------------------------------------------------
+%% @doc Check the request (request body, query string params, path tokens, etc)
+%% and load necessary information.
+%% /lists might load a list of contact objects
+%% /lists/123 might load the contact object 123
+%% Generally, use crossbar_doc to manipulate the cb_context{} record
+%% @end
+%%------------------------------------------------------------------------------
 
 -spec validate(cb_context:context()) -> cb_context:context().
 validate(Context) ->
-    validate_req(cb_context:req_verb(Context), Context, []).
+    validate_request(Context, cb_context:req_verb(Context)).
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
-validate(Context, ListId) ->
-    validate_req(cb_context:req_verb(Context), Context, [ListId]).
-
--spec validate(cb_context:context(), path_token(), path_token()) -> cb_context:context().
-validate(Context, ListId, ?ENTRIES) ->
-    validate_req(cb_context:req_verb(Context), Context, [ListId, ?ENTRIES]).
-
--spec validate(cb_context:context(), path_token(), path_token(), path_token()) -> cb_context:context().
-validate(Context, ListId, ?ENTRIES, EntryId) ->
-    validate_req(cb_context:req_verb(Context), Context, [ListId, ?ENTRIES, EntryId]).
-
--spec validate(cb_context:context(), path_token(), path_token(), path_token(), path_token()) -> cb_context:context().
-validate(Context, ListId, ?ENTRIES, EntryId, ?VCARD) ->
-    validate_req(cb_context:req_verb(Context), Context, [ListId, ?ENTRIES, EntryId, ?VCARD]).
-
--spec validate_req(http_method(), cb_context:context(), path_tokens()) -> cb_context:context().
-validate_req(?HTTP_GET, Context, []) ->
-    crossbar_view:load(Context, ?CB_LIST, [{'mapper', crossbar_view:get_value_fun()}]);
-validate_req(?HTTP_PUT, Context, []) ->
-    validate_doc('undefined', ?TYPE_LIST, Context);
-
-validate_req(?HTTP_GET, Context, [ListId]) ->
-    crossbar_doc:load(ListId, Context, ?TYPE_CHECK_OPTION(?TYPE_LIST));
-validate_req(?HTTP_DELETE, Context, [ListId]) ->
-    Options = [{'key', ListId}
-              ,{'should_paginate', 'false'}
-              ,{'unchunkable', 'true'}
-              ],
-    crossbar_view:load(Context, ?ENTRIES_VIEW, Options);
-validate_req(?HTTP_POST, Context, [ListId]) ->
-    validate_doc(ListId, ?TYPE_LIST, Context);
-validate_req(?HTTP_PATCH, Context, [ListId] = Path) ->
-    crossbar_doc:patch_and_validate(ListId, Context, fun(_Id, C) -> validate_req(?HTTP_POST, C, Path) end);
-
-validate_req(?HTTP_GET, Context, [ListId, ?ENTRIES]) ->
-    %% FIXME: why this doesn't normalize the db result??
-    Options = [{'key', ListId}
-              ,{'should_paginate', 'false'}
-              ,{'unchunkable', 'true'}
-              ],
-    crossbar_view:load(Context, ?ENTRIES_VIEW, Options);
-validate_req(?HTTP_PUT, Context, [ListId, ?ENTRIES]) ->
-    ReqData = kz_json:set_values([{<<"list_id">>, ListId}], cb_context:req_data(Context)),
-    validate_doc('undefined', ?TYPE_LIST_ENTRY, cb_context:set_req_data(Context, ReqData));
-validate_req(?HTTP_DELETE, Context, [ListId, ?ENTRIES]) ->
-    Options = [{'key', ListId}
-              ,{'should_paginate', 'false'}
-              ,{'unchunkable', 'true'}
-              ],
-    crossbar_view:load(Context, ?ENTRIES_VIEW, Options);
-
-validate_req(?HTTP_GET, Context, [_ListId, ?ENTRIES, EntryId]) ->
-    crossbar_doc:load(EntryId, Context, ?TYPE_CHECK_OPTION(?TYPE_LIST_ENTRY));
-validate_req(?HTTP_DELETE, Context, [_ListId, ?ENTRIES, EntryId]) ->
-    crossbar_doc:load(EntryId, Context, ?TYPE_CHECK_OPTION(?TYPE_LIST_ENTRY));
-validate_req(?HTTP_POST, Context, [_ListId, ?ENTRIES, EntryId]) ->
-    validate_doc(EntryId, ?TYPE_LIST_ENTRY, Context);
-validate_req(?HTTP_PATCH, Context, [_ListId, ?ENTRIES, EntryId] = Path) ->
-    crossbar_doc:patch_and_validate(EntryId, Context, fun(_Id, C) -> validate_req(?HTTP_POST, C, Path) end);
-
-validate_req(?HTTP_GET, Context, [_ListId, ?ENTRIES, EntryId, ?VCARD]) ->
-    Context1 = crossbar_doc:load(EntryId, Context, ?TYPE_CHECK_OPTION(?TYPE_LIST_ENTRY)),
-    JObj = cb_context:doc(Context1),
-    JProfile = kz_json:get_json_value(<<"profile">>, JObj),
-    JObj1 = kz_json:merge_jobjs(JObj, JProfile),
-    JObj2 = kz_json:set_values(props:filter_empty([{<<"first_name">>, kz_json:get_value(<<"firstname">>, JObj1)}
-                                                  ,{<<"last_name">>, kz_json:get_value(<<"lastname">>, JObj1)}
-                                                  ,{<<"middle_name">>, kz_json:get_value(<<"middlename">>, JObj1)}
-                                                  ,{<<"nicknames">>, [kz_json:get_value(<<"displayname">>, JObj1)]}
-                                                  ])
-                              ,JObj1
-                              ),
-    JObj3 = set_org(JObj2, Context1),
-    JObj4 = set_photo(JObj3, Context1),
-    RespData = kzd_users:to_vcard(JObj4),
-    cb_context:set_resp_data(Context1, [RespData, "\n"]).
-
--spec validate_doc(kz_term:api_binary(), kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
-validate_doc(Id, Type, Context) ->
-    OnSuccess = fun(C) -> on_successfull_validation(Id, Type, C) end,
-    cb_context:validate_request_data(type_schema_name(Type), Context, OnSuccess).
-
--spec delete(cb_context:context(), path_token()) -> cb_context:context().
-delete(Context, ListId) ->
-    _ = delete(Context, ListId, ?ENTRIES),
-    Context1 = crossbar_doc:load(ListId, Context, ?TYPE_CHECK_OPTION(?TYPE_LIST_ENTRY)),
-    case cb_context:resp_status(Context1) of
-        'success' ->
-            crossbar_doc:delete(Context1);
-        _ ->
-            Context1
+validate(Context, PathToken) ->
+    case is_tag_based_req(PathToken) of
+        'true' ->
+            validate_tag_based_request(Context, PathToken, cb_context:req_verb(Context));
+        'false' ->
+            validate_request(Context, PathToken, cb_context:req_verb(Context))
     end.
 
--spec delete(cb_context:context(), path_token(), path_token()) -> cb_context:context().
-delete(Context, _ListId, ?ENTRIES) ->
-    Docs = [kz_doc:id(Entry) || Entry <- cb_context:doc(Context)],
-    AccountDb = kzs_util:format_account_db(cb_context:db_name(Context)),
-    %% do we need 'soft' delete as in crossbar_doc?
-    _ = kz_datamgr:del_docs(AccountDb, Docs),
-    cb_context:set_resp_status(Context, 'success').
+-spec validate_request(cb_context:context(), path_token()) ->
+          cb_context:context().
+validate_request(Context, ?HTTP_GET) ->
+    load(Context);
+validate_request(Context, ?HTTP_PUT) ->
+    create(Context).
 
--spec delete(cb_context:context(), path_token(), path_token(), path_token()) -> cb_context:context().
-delete(Context, _ListId, ?ENTRIES, _EntryId) ->
-    crossbar_doc:delete(Context).
+-spec validate_request(cb_context:context(), path_token(), path_token()) ->
+          cb_context:context().
+validate_request(Context, Id, ?HTTP_GET) ->
+    load_contact(Context, Id);
+validate_request(Context, Id, ?HTTP_POST) ->
+    validate_post(Id, Context);
+validate_request(Context, Id, ?HTTP_PATCH) ->
+    validate_patch(load_contact(Context, Id), Id);
+validate_request(Context, Id, ?HTTP_DELETE) ->
+    load_contact(Context, Id).
 
--spec save(cb_context:context()) -> cb_context:context().
-save(Context) ->
+-spec is_tag_based_req(path_token()) -> boolean().
+is_tag_based_req(PathToken) ->
+    case binary:match(PathToken, <<"tag-">>) of
+        'nomatch' -> 'false';
+        {0, _} -> 'true';
+        _ -> 'false'
+    end.
+
+-spec validate_tag_based_request(cb_context:context(), path_token(), path_token()) ->
+          cb_context:context().
+validate_tag_based_request(Context, PathToken, ?HTTP_GET) ->
+    load_tag_based_contacts(Context, PathToken).
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec put(cb_context:context()) -> cb_context:context().
+put(Context) ->
     crossbar_doc:save(Context).
 
--spec save(cb_context:context(), path_token()) -> cb_context:context().
-save(Context, _) ->
-    save(Context).
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec post(cb_context:context(), path_token()) -> cb_context:context().
+post(Context, _ListId) ->
+    crossbar_doc:save(Context).
 
--spec save(cb_context:context(), path_token(), path_token()) -> cb_context:context().
-save(Context, _, ?ENTRIES) ->
-    save(Context).
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec patch(cb_context:context(), path_token()) -> cb_context:context().
+patch(Context, _ListId) ->
+    crossbar_doc:save(Context).
 
--spec save(cb_context:context(), path_token(), path_token(), path_token()) -> cb_context:context().
-save(Context, _, ?ENTRIES, _) ->
-    save(Context).
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
 
--spec save(cb_context:context(), path_token(), path_token(), path_token(), path_token()) -> cb_context:context().
-save(Context, _, ?ENTRIES, EntryId, ?PHOTO) ->
-    %% May be move code from cb_users to crossbar_doc?
-    cb_users:post(Context, EntryId, ?PHOTO).
+-spec delete(cb_context:context(), path_token()) -> cb_context:context().
+delete(Context, _Id) ->
+    crossbar_doc:delete(Context).
 
--spec type_schema_name(kz_term:ne_binary()) -> kz_term:ne_binary().
-type_schema_name(?TYPE_LIST) -> <<"lists">>;
-type_schema_name(?TYPE_LIST_ENTRY) -> <<"list_entries">>.
+%%------------------------------------------------------------------------------
+%% @doc loads contacts user level and account level
+%% @end
+%%------------------------------------------------------------------------------
+-spec load(cb_context:context()) ->
+          cb_context:context().
+load(Context) ->
+    Keys = case cb_context:user_id(Context) of
+               'undefined' -> [];
+               UserId -> [UserId]
+           end,
+    Options = [{'keys', ['null'|Keys]}
+              ,{'mapper', crossbar_view:get_value_fun()}
+              ,{'doc_type', kzd_contacts:type()}
+              ],
+    crossbar_view:load(Context, ?CROSSBAR_LISTING_BY_OWNER_ID_TYPE, Options).
 
--spec on_successfull_validation(kz_term:api_binary(), kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
-on_successfull_validation('undefined', Type, Context) ->
-    Doc = kz_json:set_values([{<<"pvt_type">>, Type}], cb_context:doc(Context)),
-    cb_context:set_doc(Context, Doc);
-on_successfull_validation(Id, Type, Context) ->
-    crossbar_doc:load_merge(Id, Context, ?TYPE_CHECK_OPTION(Type)).
+%%------------------------------------------------------------------------------
+%% @doc Load an instance from the database
+%% @end
+%%------------------------------------------------------------------------------
+-spec load_contact(cb_context:context(), path_token()) -> cb_context:context().
+load_contact(Context, Id) ->
+    check_owner(crossbar_doc:load(Id, Context, ?TYPE_CHECK_OPTION(kzd_contacts:type()))).
 
--spec set_org(kz_json:object(), cb_context:context()) -> kz_json:object().
-set_org(JObj, Context) ->
-    ListId = kz_json:get_value(<<"list_id">>, JObj),
-    Context1 = crossbar_doc:load(ListId, Context, ?TYPE_CHECK_OPTION(?TYPE_LIST_ENTRY)),
-    set_org(JObj, Context1, cb_context:resp_status(Context1), ListId).
+-spec check_owner(cb_context:context()) -> cb_context:context().
+check_owner(Context) ->
+    case cb_context:user_id(Context) =:= kzd_contacts:owner_id(cb_context:doc(Context)) of
+        'true' ->
+            Context;
+        'false' ->
+            Message = kz_json:from_list([{<<"message">>, <<"request userid token and contact owner_id doesn't match">>}]),
+            cb_context:add_validation_error(<<"owner_id">>, <<"missmatch">>, Message, Context)
+    end.
+%%------------------------------------------------------------------------------
+%% @doc Load instances from the database where tag is matched
+%% @end
+%%------------------------------------------------------------------------------
+-spec load_tag_based_contacts(cb_context:context(), kz_term:ne_binary()) ->
+          cb_context:context().
+load_tag_based_contacts(Context, <<"tag-", Tag/binary>>) ->
+    Keys = case cb_context:user_id(Context) of
+               'undefined' -> [];
+               UserId -> [UserId]
+           end,
+    Options = [{'keys', ['null'|Keys]}
+              ,{'mapper', fun(JObjs) -> filter_tags(Tag, JObjs) end}
+              ,{'doc_type', kzd_contacts:type()}
+              ],
+    crossbar_view:load(Context, ?CROSSBAR_LISTING_BY_OWNER_ID_TYPE, Options).
 
--spec set_org(kz_json:object(), cb_context:context(), crossbar_status(), kz_term:ne_binary()) -> kz_json:object().
-set_org(JObj, Context, 'success', _) ->
-    case kz_json:get_value(<<"org">>, cb_context:doc(Context)) of
-        'undefined' -> JObj;
-        Val -> kz_json:set_value(<<"org">>, Val, JObj)
-    end;
-set_org(JObj, _, _, ListId) ->
-    lager:debug("failed to load list ~p while loading list entry ~p",
-                [ListId, kz_json:get_value(<<"id">>, JObj)]
-               ),
-    JObj.
+filter_tags(Tag, JObjs) ->
+    lists:filtermap(fun(Contact) ->
+                            Value = kz_json:get_value(<<"value">>, Contact),
+                            case lists:member(Tag , kzd_contacts:tags(Value, [])) of
+                                'true' ->
+                                    {'true', Value};
+                                'false' ->
+                                    'false'
+                            end
+                    end,
+                    JObjs
+                   ).
 
--spec set_photo(kz_json:object(), cb_context:context()) -> kz_json:object().
-set_photo(JObj, Context) ->
-    %% This code is copied from cb_users. May be move it to crossbar_doc?
-    DocId = kz_json:get_value(<<"_id">>, cb_context:doc(Context)),
-    Attach = crossbar_doc:load_attachment(DocId, ?PHOTO, ?TYPE_CHECK_OPTION(?TYPE_LIST_ENTRY), Context),
-    case cb_context:resp_status(Attach) of
-        'error' -> JObj;
-        'success' ->
-            Data = cb_context:resp_data(Attach),
-            CT = kz_doc:attachment_content_type(cb_context:doc(Context), ?PHOTO),
-            kz_json:set_value(?PHOTO, kz_json:from_list([{CT, Data}]), JObj)
+%%------------------------------------------------------------------------------
+%% @doc Create a new instance with the data provided, if it is valid
+%% @end
+%%------------------------------------------------------------------------------
+-spec create(cb_context:context()) -> cb_context:context().
+create(Context) ->
+    OnSuccess = fun(C) -> on_successful_validation('undefined', C) end,
+    cb_context:validate_request_data(kzd_contacts:schema(), Context, OnSuccess).
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec validate_post(kz_term:ne_binary(), cb_context:context()) ->
+          cb_context:context().
+validate_post(Id, Context) ->
+    OnSuccess = fun(C) -> on_successful_validation(Id, C) end,
+    cb_context:validate_request_data(kzd_contacts:schema(), Context, OnSuccess).
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec validate_patch(cb_context:context(), kz_term:api_binary()) -> cb_context:context().
+validate_patch(Context, Id) ->
+    crossbar_doc:patch_and_validate(Id, Context, fun validate_post/2).
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec on_successful_validation(kz_term:api_binary(), cb_context:context()) ->
+          cb_context:context().
+on_successful_validation('undefined', Context) ->
+    Props = props:filter_undefined([{<<"pvt_type">>, kzd_contacts:type()}
+                                   ,{<<"pvt_owner_id">>, cb_context:user_id(Context)}
+                                   ]),
+    validate_contacts_data(cb_context:set_doc(Context
+                                             ,kz_json:set_values(Props, cb_context:doc(Context))
+                                             ));
+
+on_successful_validation(Id, Context) ->
+    Context1 = load_contact(Context, Id),
+    case 'success' =:= cb_context:resp_status(Context1) of
+        'false' -> Context1;
+        'true' ->
+            validate_contacts_data(crossbar_doc:load_merge(Id
+                                                          ,Context
+                                                          ,?TYPE_CHECK_OPTION(kzd_contacts:type())
+                                                          ))
+    end.
+
+-spec validate_contacts_data(cb_context:context()) -> cb_context:context().
+validate_contacts_data(Context) ->
+    case is_contact_type_primary_unique(Context) of
+        'true' -> Context;
+        'false' ->
+            Message = kz_json:from_list([{<<"message">>, <<"more than one primary contact for a contact type">>}]),
+            cb_context:add_validation_error(<<"contacts">>, <<"primary">>, Message, Context)
+    end.
+
+-spec is_contact_type_primary_unique(cb_context:context()) -> boolean().
+is_contact_type_primary_unique(Context) ->
+    ContactsArray = kzd_contacts:contacts(cb_context:doc(Context)),
+    [{Status, _}] = lists:foldl(fun check_primary_unique/2
+                               ,[{'true', []}]
+                               ,ContactsArray
+                               ),
+    Status.
+
+check_primary_unique(_Contact, [{'false', _PrimaryTypes}]=Acc) ->
+    Acc;
+check_primary_unique(Contact, [{_Status, PrimaryTypes}]=Acc) ->
+    ContactType = kzd_contacts:get_type_contact(Contact),
+    case {kzd_contacts:is_primary_contact(Contact)
+         ,lists:member(ContactType, PrimaryTypes)}
+    of
+        {'true', 'true'} -> [{'false', PrimaryTypes}];
+        {'true', 'false'} -> [{'true', [ContactType|PrimaryTypes]}];
+        _ -> Acc
     end.
