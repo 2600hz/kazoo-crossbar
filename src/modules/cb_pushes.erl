@@ -33,6 +33,7 @@
                                      ,{?KZ_ACCOUNTS_DB, _AccountId}
                                      ]).
 -define(IS_VALID_API(API), API =:= <<"users">>; API =:= <<"devices">>).
+-define(PUSH_TYPE, <<"custom_push">>).
 
 -type to_push_payload_options() :: [%% list of {WORD, REPLACE} pairs. Replaces every occurrence of WORD
                                     %% with REPLACE within fields' words.
@@ -165,14 +166,10 @@ push_payload_to_amqp_payload(ReqData) ->
     Options = [{'explicit_replaces', ExplicitReplaces}
               ,{'convert_nested_keys', 'true'}
               ],
-    case kz_json:is_defined(<<"data">>, ReqData) of
-        'true' ->
-            %% "data" (data.data) is a user-defined field, therefore, its value should not be normalized.
-            {'value', Data, RD} = kz_json:take_value(<<"data">>, ReqData),
-            kz_json:set_value(<<"Data">>, Data, to_push_payload(RD, Options));
-        'false' ->
-            to_push_payload(ReqData, Options)
-    end.
+
+    {'value', ClientData, RD} = kz_json:take_value(<<"data">>, ReqData, kz_json:new()),
+    %% "ClientData" (data.data) is a user-defined field, therefore do not normalize
+    kz_json:set_value(<<"Data">>, add_push_type(ClientData), to_push_payload(RD, Options)).
 
 %%------------------------------------------------------------------------------
 %% @doc Handle pusher's response to pushes requests.
@@ -271,3 +268,7 @@ maybe_ucfirst(Word, Options) ->
         Explicit -> Explicit
     end.
 %% }
+
+-spec add_push_type(kz_json:object()) -> kz_json:object().
+add_push_type(DataJObj) ->
+    kz_json:set_value(<<"Push-Type">>, ?PUSH_TYPE, DataJObj).
