@@ -183,17 +183,18 @@ create_number(Job, AccountId, AuthAccountId, CarrierModule, DID) ->
             lager:debug("need charges accepted to create number ~s for account ~s", [DID, AccountId]),
             update_with_failure(Job, DID, [{DID, 'accept_charges'}])
     catch
-        ?STACKTRACE(E, _R, ST)
-        kz_log:log_stacktrace(ST),
-        lager:debug("exception creating number ~s for account ~s: ~s: ~p"
-                   ,[DID, AccountId, E, _R]),
-        update_status(kz_json:set_value([<<"errors">>, DID]
-                                       ,kz_json:from_list([{<<"reason">>, kz_term:to_binary(E)}])
-                                       ,Job
-                                       )
-                     ,<<"running">>
-                     )
-        end.
+        E:_R:ST ->
+            kz_log:log_stacktrace(ST),
+            lager:debug("exception creating number ~s for account ~s: ~s: ~p"
+                       ,[DID, AccountId, E, _R]
+                       ),
+            update_status(kz_json:set_value([<<"errors">>, DID]
+                                           ,kz_json:from_list([{<<"reason">>, kz_term:to_binary(E)}])
+                                           ,Job
+                                           )
+                         ,<<"running">>
+                         )
+    end.
 
 -spec update_with_failure(kz_json:object(), kz_term:ne_binary(), knm_errors:proplist()) ->
           kz_json:object().
