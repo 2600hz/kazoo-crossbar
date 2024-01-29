@@ -10,12 +10,12 @@ Whitelabel settings
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`commland.downloads.deb` | Commland debian download URL for the account | `string()` |   | `false` |
-`commland.downloads.mac` | Commland mac download URL for the account | `string()` |   | `false` |
-`commland.downloads.rpm` | Commland rpm download URL for the account | `string()` |   | `false` |
-`commland.downloads.windows` | Commland windows download URL for the account | `string()` |   | `false` |
-`commland.downloads` | The URLs of commland downloads related to the account | `object()` |   | `false` |
-`commland` | Properties related to commland | `object()` |   | `false` |
+`commland.downloads.deb` | Commland debian download URL for the account | `string()` |   | `false` |  
+`commland.downloads.mac` | Commland mac download URL for the account | `string()` |   | `false` |  
+`commland.downloads.rpm` | Commland rpm download URL for the account | `string()` |   | `false` |  
+`commland.downloads.windows` | Commland windows download URL for the account | `string()` |   | `false` |  
+`commland.downloads` | The URLs of commland downloads related to the account | `object()` |   | `false` |  
+`commland` | Properties related to commland | `object()` |   | `false` |  
 `company_name` | The company name to display to users | `string()` |   | `false` | `supported`
 `conference_public_domain` | This is the whitelabeled domain that conference participants can use to reach the conference through webphone | `string()` |   | `false` | `supported`
 `dkim_selector` | This is the selector that the receiving server should use to look up the DNS record | `string()` |   | `false` | `supported`
@@ -27,7 +27,7 @@ Key | Description | Type | Default | Required | Support Level
 `inbound_trunks_price` | The price to show for inbound trunks, this is currently only for display purposes | `string()` |   | `false` | `beta`
 `nav.help` | The URL to use when the help link is clicked | `string()` |   | `false` | `supported`
 `nav.learn_more` | The URL to use when the 'Learn More!' link is clicked | `string()` |   | `false` | `supported`
-`nav` | Properties related to navigation in the UI | `object()` |   | `false` |
+`nav` | Properties related to navigation in the UI | `object()` |   | `false` |  
 `outbound_trunks_price` | The price to show for outbound trunks, this is currently only for display purposes | `string()` |   | `false` | `beta`
 `port.authority` | The account ID to be used for administrating port requests | `string()` |   | `false` | `supported`
 `port.features` | The URL to use when the features link is clicked | `string()` |   | `false` | `supported`
@@ -35,7 +35,7 @@ Key | Description | Type | Default | Required | Support Level
 `port.resporg` | The URL to use when the resporg link is clicked | `string()` |   | `false` | `supported`
 `port.support_email` | The support email address to display to the user | `string()` |   | `false` | `supported`
 `port.terms` | The URL to use when the terms and conditions link is clicked | `string()` |   | `false` | `supported`
-`port` | Parameters related to white-labeling port requests | `object()` |   | `false` |
+`port` | Parameters related to white-labeling port requests | `object()` |   | `false` |  
 `twoway_trunks_price` | The price to show for twoway trunks, this is currently only for display purposes | `string()` |   | `false` | `beta`
 
 
@@ -464,6 +464,6 @@ Assuming your PEM file name is "mypemfile", you should receive a payload similar
 
 ## Remove DKIM PEM file information
 
-This removes the PEM file.
+This removes the PEM file. DKIM signing will no longer be available until a new private key is uploaded.
 
 > DELETE /v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
