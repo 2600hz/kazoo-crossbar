@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2024, 2600Hz
 %%% @doc User auth module
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -359,13 +359,13 @@ maybe_include_claims(Context) ->
             cb_context:set_doc(Context, DocWithClaims)
     end.
 
--spec maybe_fetch_scopes(cb_context:context()) -> kz_term:api_ne_binaries().
+-spec maybe_fetch_scopes(cb_context:context()) -> kz_term:api_binaries().
 maybe_fetch_scopes(Context) ->
     AccountId = kz_json:get_ne_binary_value(<<"account_id">>, cb_context:doc(Context)),
     OwnerId = kz_json:get_ne_binary_value(<<"owner_id">>, cb_context:doc(Context)),
     case kzd_users:fetch(AccountId, OwnerId) of
         {'ok', Doc} ->
-            kzd_users:scope_restrictions(Doc);
+            kzd_users:scope_restrictions(Doc, []) ++ kzd_users:pvt_scopes(Doc, []);
         _Error -> 'undefined'
     end.
 

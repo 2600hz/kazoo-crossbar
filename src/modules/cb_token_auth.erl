@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2024, 2600Hz
 %%% @doc Token auth module
 %%% This is a simple auth mechanism, once the user has acquired an
 %%% auth token this module will allow access.  This module should be
@@ -231,7 +231,7 @@ validate_auth_token(Context, <<AuthToken/binary>>) ->
 is_account_expired(Context, JObj) ->
     AccountId = kz_json:get_ne_binary_value(<<"account_id">>, JObj),
     case kzd_accounts:is_expired(AccountId) of
-        'false' -> check_as(Context, JObj);
+        'false' -> maybe_validate_scopes(Context, JObj);
         {'true', Expired} ->
             _ = kz_process:spawn(fun crossbar_util:maybe_disable_account/1, [AccountId]),
             Cause =
@@ -301,3 +301,32 @@ maybe_add_is_admins(<<AuthAccountId/binary>>, 'undefined') ->
     [{fun cb_context:set_is_superduper_admin/2, cb_context:is_superduper_admin(AuthAccountId)}];
 maybe_add_is_admins(_, _) ->
     [].
+
+-spec maybe_validate_scopes(cb_context:context(), kz_json:object()) ->
+          {boolean(), cb_context:context()} |
+          {'stop', cb_context:context()}.
+maybe_validate_scopes(Context, JObj) ->
+    case kz_auth_claims:scope(JObj) of
+        'undefined' ->
+            check_as(Context, JObj);
+        Scopes ->
+            case maybe_validate_scope(Context, kz_auth_scope:to_list(Scopes)) of
+                'true' ->
+                    check_as(Context, JObj);
+                {'false', {Code, Error, Msg}} ->
+                    {'stop', cb_context:add_system_error(Code, Error, Msg, Context)}
+            end
+    end.
+
+-spec maybe_validate_scope(cb_context:context(), kz_term:api_binaries()) ->
+          boolean() | {boolean(), {integer(), atom(), kz_term:ne_binary()}}.
+maybe_validate_scope(_Context, []) -> 'true';
+maybe_validate_scope(Context, [<<"fetch-exclusive">>|Scopes]) ->
+    case cb_context:method(Context) =:= ?HTTP_GET of
+        'true' ->
+            maybe_validate_scope(Context, Scopes);
+        'false' ->
+            {'false', {405, 'invalid_method', <<"user granted for only read access">>}}
+    end;
+maybe_validate_scope(Context, [_Scope|Scopes]) ->
+    maybe_validate_scope(Context, Scopes).
