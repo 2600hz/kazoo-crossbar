@@ -306,27 +306,27 @@ maybe_add_is_admins(_, _) ->
           {boolean(), cb_context:context()} |
           {'stop', cb_context:context()}.
 maybe_validate_scopes(Context, JObj) ->
-    case kz_auth_claims:scope(JObj) of
-        'undefined' ->
+    ExpandedScopes = kz_auth_scope:to_list(kz_auth_claims:scope(JObj, [])),
+    case maybe_deny_access(Context, ExpandedScopes) of
+        'false' ->
             check_as(Context, JObj);
-        Scopes ->
-            case maybe_validate_scope(Context, kz_auth_scope:to_list(Scopes)) of
-                'true' ->
-                    check_as(Context, JObj);
-                {'false', {Code, Error, Msg}} ->
-                    {'stop', cb_context:add_system_error(Code, Error, Msg, Context)}
-            end
+        {'true', ContextError} ->
+            {'stop', ContextError}
     end.
 
--spec maybe_validate_scope(cb_context:context(), kz_term:api_binaries()) ->
-          boolean() | {boolean(), {integer(), atom(), kz_term:ne_binary()}}.
-maybe_validate_scope(_Context, []) -> 'true';
-maybe_validate_scope(Context, [<<"fetch-exclusive">>|Scopes]) ->
+-spec maybe_deny_access(cb_context:context(), [kz_term:ne_binary() | kz_term:ne_binaries()]) ->
+          boolean() | {boolean(), cb_context:context()}.
+maybe_deny_access(_Context, []) -> 'false';
+maybe_deny_access(Context, [<<"fetch-exclusive">>|Scopes]) ->
     case cb_context:method(Context) =:= ?HTTP_GET of
         'true' ->
-            maybe_validate_scope(Context, Scopes);
+            maybe_deny_access(Context, Scopes);
         'false' ->
-            {'false', {405, 'invalid_method', <<"user granted for only read access">>}}
+            {'true', cb_context:add_system_error(405
+                                                ,'invalid_method'
+                                                ,<<"user granted for only read access">>
+                                                ,Context
+                                                )}
     end;
-maybe_validate_scope(Context, [_Scope|Scopes]) ->
-    maybe_validate_scope(Context, Scopes).
+maybe_deny_access(Context, [_Scope|Scopes]) ->
+    maybe_deny_access(Context, Scopes).
