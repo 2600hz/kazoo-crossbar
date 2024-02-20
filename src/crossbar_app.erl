@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2023, 2600Hz
+%%% @copyright (C) 2010-2024, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
 %%%
@@ -52,7 +52,6 @@ stop(_State) ->
 %%------------------------------------------------------------------------------
 -spec declare_exchanges() -> 'ok'.
 declare_exchanges() ->
-    _ = kapi_money:declare_exchanges(),
     _ = kapi_conference:declare_exchanges(),
     _ = kapi_notifications:declare_exchanges(),
     _ = kapi_presence:declare_exchanges(),
