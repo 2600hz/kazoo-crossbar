@@ -12,7 +12,7 @@
                              kazoo_templates,kazoo_temporal_routes,
                              kazoo_token_buckets,kazoo_transactions,
                              kazoo_voicemail,kazoo_web,kazoo_yodb,kernel,
-                             lager,nklib,ssl,stdlib,tools,xmerl]},
+                             lager,nklib,public_key,ssl,stdlib,tools,xmerl]},
               {description,"Crossbar - REST Interface to the stars"},
               {env,[{is_kazoo_app,true}]},
               {mod,{crossbar_app,[]}},

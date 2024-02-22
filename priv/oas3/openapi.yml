@@ -704,6 +704,8 @@
       paths/websockets.yml#/paths/~1accounts~1{ACCOUNT_ID}~1websockets~1{SOCKET_ID}
   '/accounts/{ACCOUNT_ID}/whitelabel':
     '$ref': 'paths/whitelabel.yml#/paths/~1accounts~1{ACCOUNT_ID}~1whitelabel'
+  '/accounts/{ACCOUNT_ID}/whitelabel/dkim_key':
+    '$ref': 'paths/whitelabel.yml#/paths/~1accounts~1{ACCOUNT_ID}~1whitelabel~1dkim_key'
   '/accounts/{ACCOUNT_ID}/whitelabel/domains':
     '$ref': 'paths/whitelabel.yml#/paths/~1accounts~1{ACCOUNT_ID}~1whitelabel~1domains'
   '/accounts/{ACCOUNT_ID}/whitelabel/icon':
