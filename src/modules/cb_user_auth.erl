@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2024, 2600Hz
 %%% @doc User auth module
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -531,8 +531,11 @@ maybe_account_is_enabled(Context, Account) ->
             cb_context:add_validation_error(<<"account">>, <<"disabled">>, Cause, Context)
     end.
 
--spec load_sha1_results(cb_context:context(), kz_json:objects() | kz_json:object(), kz_term:ne_binary())->
+-spec load_sha1_results(cb_context:context(), kz_json:objects(), kz_term:ne_binary())->
           cb_context:context().
+load_sha1_results(Context, [JObj], _Account)->
+    lager:debug("found SHA1 credentials belong to user ~s", [kz_doc:id(JObj)]),
+    set_credentials_doc(Context, kz_json:get_value(<<"value">>, JObj));
 load_sha1_results(Context, [JObj|_], _Account)->
     lager:debug("found more that one user with SHA1 creds, using ~s", [kz_doc:id(JObj)]),
     set_credentials_doc(Context, kz_json:get_value(<<"value">>, JObj));
@@ -540,13 +543,13 @@ load_sha1_results(Context, [], Account)->
     Reason = io_lib:format("failed to find a user with SHA1 creds, request from IP address: ~s", [cb_context:client_ip(Context)]),
     lager:warning("~s", [Reason]),
     crossbar_auth:log_failed_auth(?MODULE, <<"credentials">>, kz_term:to_binary(Reason), Context, Account),
-    cb_context:add_system_error('invalid_credentials', Context);
-load_sha1_results(Context, JObj, _Account)->
-    lager:debug("found SHA1 credentials belong to user ~s", [kz_doc:id(JObj)]),
-    set_credentials_doc(Context, kz_json:get_value(<<"value">>, JObj)).
+    cb_context:add_system_error('invalid_credentials', Context).
 
--spec load_md5_results(cb_context:context(), kz_json:objects() | kz_json:object(), kz_term:ne_binary()) ->
+-spec load_md5_results(cb_context:context(), kz_json:objects(), kz_term:ne_binary()) ->
           cb_context:context().
+load_md5_results(Context, [JObj], _Account) ->
+    lager:debug("found MD5 credentials belong to user ~s", [kz_doc:id(JObj)]),
+    set_credentials_doc(Context, kz_json:get_value(<<"value">>, JObj));
 load_md5_results(Context, [JObj|_], _Account) ->
     lager:debug("found more that one user with MD5 creds, using ~s", [kz_doc:id(JObj)]),
     set_credentials_doc(Context, kz_json:get_value(<<"value">>, JObj));
@@ -554,10 +557,7 @@ load_md5_results(Context, [], Account) ->
     Reason = io_lib:format("failed to find a user with MD5 creds, request from IP address: ~s", [cb_context:client_ip(Context)]),
     lager:warning("~s", [Reason]),
     crossbar_auth:log_failed_auth(?MODULE, <<"credentials">>, kz_term:to_binary(Reason), Context, Account),
-    cb_context:add_system_error('invalid_credentials', Context);
-load_md5_results(Context, JObj, _Account) ->
-    lager:debug("found MD5 credentials belong to user ~s", [kz_doc:id(JObj)]),
-    set_credentials_doc(Context, kz_json:get_value(<<"value">>, JObj)).
+    cb_context:add_system_error('invalid_credentials', Context).
 
 -spec set_credentials_doc(cb_context:context(), kz_json:object()) -> cb_context:context().
 set_credentials_doc(Context, JObj) ->
