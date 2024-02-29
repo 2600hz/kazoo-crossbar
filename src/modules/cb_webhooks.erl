@@ -639,16 +639,15 @@ reenable_hooks(Context, [AccountId, ?DESCENDANTS]) ->
 
 -spec send_reenable_req(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) ->
           kz_amqp_worker:request_return().
-send_reenable_req(Context, AccountId, Action) ->
-    Req = [{<<"Type">>, kzd_webhooks:type()}
-          ,{<<"Action">>, Action}
-          ,{<<"Account-ID">>, AccountId}
+send_reenable_req(Context, AccountId, Target) ->
+    Req = [{<<"Account-ID">>, AccountId}
+          ,{<<"Target">>, Target}
           ,{<<"Msg-ID">>, cb_context:req_id(Context)}
           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
     kz_amqp_worker:call(Req
-                       ,fun kapi_conf:publish_doc_type_update/1
-                       ,fun kz_term:always_true/1
+                       ,fun kapi_webhooks:publish_reenable_req/1
+                       ,fun kapi_webhooks:reenable_resp_v/1
                        ).
 
 -spec handle_resp(cb_context:context(), kz_amqp_worker:request_return()) ->
