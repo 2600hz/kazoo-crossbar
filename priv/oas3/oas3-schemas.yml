@@ -10499,6 +10499,11 @@
       'default': 100
       'description': blackhole acceptors
       'type': integer
+    'allowed_doc_types':
+      'description': Doc types that are allowed when binding for object events.
+      'items':
+        'type': string
+      'type': array
     'autoload_modules':
       'default':
         - bh_token_auth
@@ -10541,6 +10546,13 @@
       'default': true
       'description': blackhole compress_response_body
       'type': boolean
+    'extra_doc_modb_types':
+      'default': []
+      'description': |-
+        Extra types of docs that are stored in an MODb. These doc types are keyed differently when binding for object events.
+      'items':
+        'type': string
+      'type': array
     'ip':
       'description': blackhole ip
       'type': string
