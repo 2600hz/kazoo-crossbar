@@ -10548,7 +10548,8 @@
       'type': boolean
     'extra_doc_modb_types':
       'default': []
-      'description': Extra types of docs that are stored in an MODb. These doc types are keyed differently when binding for object events.
+      'description': |-
+        Extra types of docs that are stored in an MODb. These doc types are keyed differently when binding for object events.
       'items':
         'type': string
       'type': array
