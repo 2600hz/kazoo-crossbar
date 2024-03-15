@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2023, 2600Hz
+%%% @copyright (C) 2010-2024, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
 %%% @author Karl Anderson
@@ -447,13 +447,31 @@ move_account(AccountId, AccountJObj, ToAccount, NewTree) ->
             Error;
         {'ok', AccountDoc} ->
             lager:info("moved account ~s (~s)", [AccountId, kz_doc:revision(AccountDoc)]),
-            NewResellerId = kz_services_reseller:get_id(ToAccount),
+
+            NewResellerId = get_new_reseller_id(ToAccount),
+            DescendantsNewResellerId = get_descendants_new_reseller_id(AccountId, NewResellerId),
+
             lager:info("account ~s has new reseller ~s", [AccountId, NewResellerId]),
-            {'ok', _} = move_descendants(AccountId, NewTree, NewResellerId),
+            {'ok', _} = move_descendants(AccountId, NewTree, DescendantsNewResellerId),
             lager:info("moved descendants of ~s", [AccountId]),
             _Services = kazoo_services_maintenance:update_tree(AccountId, NewTree, NewResellerId),
             lager:info("updating sevices tree for ~s", [AccountId]),
             {'ok', AccountDoc}
+    end.
+
+-spec get_new_reseller_id(kz_term:ne_binary()) -> kz_term:api_ne_binary().
+get_new_reseller_id(ToAccountId) ->
+    case kz_services_reseller:is_reseller(ToAccountId) of
+        'true' -> ToAccountId;
+        'false' -> kz_services_reseller:get_id(ToAccountId)
+    end.
+
+-spec get_descendants_new_reseller_id(kz_term:ne_binary(), kz_term:ne_binary()) ->
+          kz_term:ne_binary().
+get_descendants_new_reseller_id(AccountId, NewResellerId) ->
+    case kz_services_reseller:is_reseller(AccountId) of
+        'true' -> AccountId;
+        'false' -> NewResellerId
     end.
 
 %%------------------------------------------------------------------------------
