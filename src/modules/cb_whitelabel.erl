@@ -18,9 +18,9 @@
         ,authorize/2, authorize/3
         ,validate/1, validate/2, validate/3
         ,content_types_provided/2, content_types_provided/3
-        ,content_types_accepted/2
+        ,content_types_accepted/2, content_types_accepted/3
         ,put/1
-        ,post/1, post/2
+        ,post/1, post/2, post/3
         ,delete/1, delete/2
 
         ,acceptable_content_types/0
@@ -104,11 +104,11 @@ allowed_methods(_WhitelabelDomain) ->
 
 -spec allowed_methods(path_token(), path_token()) -> http_methods().
 allowed_methods(_WhitelabelDomain, ?LOGO_REQ) ->
-    [?HTTP_GET];
+    [?HTTP_GET, ?HTTP_POST];
 allowed_methods(_WhitelabelDomain, ?ICON_REQ) ->
-    [?HTTP_GET];
+    [?HTTP_GET, ?HTTP_POST];
 allowed_methods(_WhitelabelDomain, ?WELCOME_REQ) ->
-    [?HTTP_GET].
+    [?HTTP_GET, ?HTTP_POST].
 
 %%------------------------------------------------------------------------------
 %% @doc This function determines if the provided list of Nouns are valid.
@@ -233,26 +233,31 @@ set_content_type_provided(Context, JObj) ->
 
 -spec content_types_accepted(cb_context:context(), path_token()) -> cb_context:context().
 content_types_accepted(Context, AttachType) ->
-    content_types_accepted(Context, AttachType, cb_context:req_verb(Context)).
+    content_types_accepted_for_attachments(Context, AttachType, cb_context:req_verb(Context)).
 
--spec content_types_accepted(cb_context:context(), path_token(), http_method()) ->
+-spec content_types_accepted_for_attachments(cb_context:context(), path_token(), http_method()) ->
           cb_context:context().
-content_types_accepted(Context, ?LOGO_REQ, ?HTTP_POST) ->
+content_types_accepted_for_attachments(Context, ?LOGO_REQ, ?HTTP_POST) ->
     CTA = [{'from_binary', ?WHITELABEL_MIME_TYPES}],
     cb_context:set_content_types_accepted(Context, CTA);
-content_types_accepted(Context, ?ICON_REQ, ?HTTP_POST) ->
+content_types_accepted_for_attachments(Context, ?ICON_REQ, ?HTTP_POST) ->
     CTA = [{'from_binary', ?WHITELABEL_ICON_MIME_TYPES}],
     cb_context:set_content_types_accepted(Context, CTA);
-content_types_accepted(Context, ?WELCOME_REQ, ?HTTP_POST) ->
+content_types_accepted_for_attachments(Context, ?WELCOME_REQ, ?HTTP_POST) ->
     CTA = [{'from_binary', ?WHITELABEL_WELCOME_MIME_TYPES}],
     cb_context:set_content_types_accepted(Context, CTA);
-content_types_accepted(Context, ?DKIM_KEY_REQ, ?HTTP_POST) ->
+content_types_accepted_for_attachments(Context, ?DKIM_KEY_REQ, ?HTTP_POST) ->
     CTA = [{'from_binary', ?DKIM_PEM_CONTENT_TYPES}
           ,{'from_json', ?JSON_CONTENT_TYPES}
           ],
     cb_context:set_content_types_accepted(Context, CTA);
-content_types_accepted(Context, _AttachType, _Verb) ->
+content_types_accepted_for_attachments(Context, _AttachType, _Verb) ->
     Context.
+
+-spec content_types_accepted(cb_context:context(), path_token(), path_token()) ->
+          cb_context:context().
+content_types_accepted(Context, _Domain, AttachType) ->
+    content_types_accepted_for_attachments(Context, AttachType, cb_context:req_verb(Context)).
 
 %%------------------------------------------------------------------------------
 %% @doc This function determines if the parameters and content are correct
@@ -626,7 +631,11 @@ validate(Context, Domain, AttachType) ->
     validate_domain_attachment(Context, Domain, AttachType, cb_context:req_verb(Context)).
 
 validate_domain_attachment(Context, Domain, AttachType, ?HTTP_GET) ->
-    find_whitelabel_binary(Context, Domain, AttachType).
+    find_whitelabel_binary(Context, Domain, AttachType);
+
+validate_domain_attachment(Context, Domain, AttachType, ?HTTP_POST) ->
+    Context1 = find_whitelabel_from_domain(Context, Domain),
+    validate_attachment_post(Context1, AttachType, cb_context:req_files(Context1)).
 
 -spec put(cb_context:context()) -> cb_context:context().
 put(Context) ->
@@ -647,6 +656,10 @@ post(Context, ?DKIM_KEY_REQ) ->
     update_whitelabel_binary(?DKIM_KEY_REQ, ?WHITELABEL_ID, Context);
 post(Context, ?DOMAINS_REQ) ->
     cb_context:set_resp_status(Context, 'success').
+
+-spec post(cb_context:context(), path_token(), path_token()) -> cb_context:context().
+post(Context, _Domain, AttachType) ->
+    post(Context, AttachType).
 
 -spec delete(cb_context:context()) -> cb_context:context().
 delete(Context) ->
