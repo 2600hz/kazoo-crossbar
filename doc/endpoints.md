@@ -2,7 +2,7 @@
 
 When you see references to `endpoints` in KAZOO, it is typically something that exists outside of KAZOO that KAZOO wishes to send calls (or messages) to.
 
-Concretely, an `endpoint` typically refers to a `device`, but can also mean a `user`, `group`, or even `account` (and is extendable to other entities.
+Concretely, an `endpoint` typically refers to a `device`, but can also mean a `user`, `group`, or even `account` (and extendable to other entities).
 
 In practice, each type of endpoint has rules that govern how call legs are generated; some are shared rules and some are specific to the endpoint type.
 

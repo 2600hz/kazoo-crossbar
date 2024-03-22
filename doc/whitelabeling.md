@@ -50,17 +50,48 @@ curl -v -X PUT \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel
 ```
 
+```json
+{
+    "data": {
+        "company_name": "My VoIP Reseller Company",
+        "domain": "mydomain.com",
+        "hide_credits": false,
+        "hide_powered": false,
+        "hide_registration": false,
+        "id": "whitelabel"
+    },
+    "status": "success"
+}
+```
+
 You may fetch the whitelabel with GET:
 
 > GET /v2/accounts/{ACCOUNT_ID}/whitelabel
+
+```shell
+curl -v -X GET \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel
+```
+
+Response is same as create API.
 
 Delete it:
 
 > DELETE /v2/accounts/{ACCOUNT_ID}/whitelabel
 
+```shell
+curl -v -X DELETE \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel
+```
+
+Response is same as create API.
+
 Or modify it:
 
 > POST /v2/accounts/{ACCOUNT_ID}/whitelabel
+
 ```shell
 curl -v -X POST \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
@@ -68,11 +99,13 @@ curl -v -X POST \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel
 ```
 
+Request and Response are same as create API.
+
 ## Fetch Domains
 
 > GET /v2/accounts/{ACCOUNT_ID}/whitelabel/domains
 
-When you white label Kazoo's services, DNS settings are needed to make sure your hostname maps appropriate for the various DNS entries (CNAM, A, NAPTR, etc). If the system admin has configured their settings on the backend, you can query Crossbar to show you what your settings should map to.
+When you whitelabel Kazoo's services, DNS settings are needed to make sure your hostname maps appropriate for the various DNS entries (CNAM, A, NAPTR, etc). If the system admin has configured their settings on the backend, you can query Crossbar to show you what your settings should map to.
 
 You have two options on the request for what domain to use:
 
@@ -203,7 +236,8 @@ Similar to the GET, you can include a `domain=` parameter in the request to test
                  ],
                  "expected": [
                      "166.78.105.67"
-                 ]
+                 ],
+                 "name": "Secondary Proxy"
              },
              "us-east.r1.244.com": {
                  "actual": [
@@ -211,7 +245,8 @@ Similar to the GET, you can include a `domain=` parameter in the request to test
                  ],
                  "expected": [
                      "8.36.70.3"
-                 ]
+                 ],
+                 "name": "Primary Proxy"
              },
              "us-west.r1.244.com": {
                  "actual": [
@@ -219,7 +254,8 @@ Similar to the GET, you can include a `domain=` parameter in the request to test
                  ],
                  "expected": [
                      "8.30.173.3"
-                 ]
+                 ],
+                 "name": "Tertiary Proxy"
              }
          },
          "CNAM": {
@@ -227,13 +263,15 @@ Similar to the GET, you can include a `domain=` parameter in the request to test
                  "actual": [],
                  "expected": [
                      "api.zswitch.net"
-                 ]
+                 ],
+                 "name": "API"
              },
              "portal.r1.244.com": {
                  "actual": [],
                  "expected": [
                      "ui.zswitch.net"
-                 ]
+                 ],
+                 "name": "Web GUI"
              }
          },
          "MX": {},
@@ -242,19 +280,22 @@ Similar to the GET, you can include a `domain=` parameter in the request to test
                  "actual": [],
                  "expected": [
                      "10 100 \"S\" \"SIP+D2U\" \"\" _sip._udp.proxy-central.r1.244.com."
-                 ]
+                 ],
+                 "name": "Central NAPTR"
              },
              "proxy-east.r1.244.com": {
                  "actual": [],
                  "expected": [
                      "10 100 \"S\" \"SIP+D2U\" \"\" _sip._udp.proxy-east.r1.244.com."
-                 ]
+                 ],
+                 "name": "East NAPTR"
              },
              "proxy-west.r1.244.com": {
                  "actual": [],
                  "expected": [
                      "10 100 \"S\" \"SIP+D2U\" \"\" _sip._udp.proxy-west.r1.244.com."
-                 ]
+                 ],
+                 "name": "West NAPTR"
              }
          },
          "SRV": {
@@ -264,7 +305,8 @@ Similar to the GET, you can include a `domain=` parameter in the request to test
                      "10 10 7000 us-east.r1.244.com.",
                      "15 15 7000 us-central.r1.244.com.",
                      "20 20 7000 us-west.r1.244.com."
-                 ]
+                 ],
+                 "name": "East SRV"
              }
          },
          "TXT": {}
@@ -309,7 +351,7 @@ curl -v -X POST \
     http://{SERVER}:8000/v2/whitelabel/domains
 ```
 
-Where `{DOMAINS_OBJECT}` is the JSON. If you look at the [default domains fixture](https://github.com/2600hz/kazoo/branch/master/core/kazoo_documents/priv/fixtures/domains.json) for a good base JSON object to modify to your needs.
+Where `{DOMAINS_OBJECT}` is the JSON. If you look at the [default domains fixture](https://github.com/2600hz/kazoo-core/blob/master/kazoo_documents/priv/fixtures/domains.json) for a good base JSON object to modify to your needs.
 
 If you receive a 400 when POSTing with a response like:
 
@@ -343,16 +385,17 @@ curl -v -X POST \
     --data-binary "@/local/path/to/logo.png" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/logo
 ```
+
 To tie the logo to a specific domain, rather than the account, use:
 
-> POST /v2/accounts/{ACCOUNT_ID}/whitelabel/{domain}/logo
+> POST /v2/whitelabel/{domain}/logo
 
 ```shell
 curl -v -X POST \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     -H 'Content-Type: image/png' \
     --data-binary "@/local/path/to/logo.png" \
-    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/mydomain.com/logo
+    http://{SERVER}:8000/v2/whitelabel/mydomain.com/logo
 ```
 
 ## Fetch Custom Logo
@@ -363,7 +406,7 @@ This returns the logo image file data.
 
 Or domain specific:
 
-> GET /v2/accounts/{ACCOUNT_ID}/whitelabel/{domain}/logo
+> GET /v2/whitelabel/{domain}/logo
 
 ## Uploading a Custom Icon
 
@@ -376,26 +419,62 @@ curl -v -X POST \
     --data-binary "@/local/path/to/icon.png" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/icon
 ```
+
 To tie the icon to a specific domain, rather than the account, use:
 
-> POST /v2/accounts/{ACCOUNT_ID}/whitelabel/{domain}/icon
+> POST /v2/whitelabel/{domain}/icon
 
 ```shell
 curl -v -X POST \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     -H 'Content-Type: image/png' \
     --data-binary "@/local/path/to/icon.png" \
-    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/mydomain.com/icon
+    http://{SERVER}:8000/v2/whitelabel/mydomain.com/icon
 ```
 
 ## Fetch Custom Icon
+
 This returns the icon image file.
 
 > GET /v2/accounts/{ACCOUNT_ID}/whitelabel/icon
 
 Or domain specific:
 
-> GET /v2/accounts/{ACCOUNT_ID}/whitelabel/{domain}/icon
+> GET /v2/whitelabel/{domain}/icon
+
+## Uploading a Custom Welcome
+
+> POST /v2/accounts/{ACCOUNT_ID}/whitelabel/welcome
+
+```shell
+curl -v -X POST \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -H 'Content-Type: text/html' \
+    --data-binary "@/local/path/to/welcome.html" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/welcome
+```
+
+To tie the welcome to a specific domain, rather than the account, use:
+
+> POST /v2/whitelabel/{domain}/welcome
+
+```shell
+curl -v -X POST \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -H 'Content-Type: text/html' \
+    --data-binary "@/local/path/to/welcome.html" \
+    http://{SERVER}:8000/v2/whitelabel/mydomain.com/welcome
+```
+
+## Fetch Custom Welcome
+
+This returns the welcome html file.
+
+> GET /v2/accounts/{ACCOUNT_ID}/whitelabel/welcome
+
+Or domain specific:
+
+> GET /v2/whitelabel/{domain}/welcome
 
 ## Configure an Email address for an Account
 

@@ -6,10 +6,12 @@
         "^\\w+$": {
             "properties": {
                 "amount": {
+                    "description": "Time in seconds, which can be consumed",
                     "minimum": 0,
                     "type": "integer"
                 },
                 "cycle": {
+                    "description": "On the basis to reset consumed allotments counter",
                     "enum": [
                         "minutely",
                         "hourly",
@@ -20,20 +22,24 @@
                     "type": "string"
                 },
                 "group_consume": {
+                    "description": "Other allotments which will be summed, when calculating rest of allotments time on authorization",
                     "items": {
                         "type": "string"
                     },
                     "type": "array"
                 },
                 "increment": {
+                    "description": "Step (in seconds) of incrementing counter",
                     "minimum": 1,
                     "type": "integer"
                 },
                 "minimum": {
+                    "description": "Minimum amount added to counter",
                     "minimum": 0,
                     "type": "integer"
                 },
                 "no_consume_time": {
+                    "description": "If call duration is less or equal of this time (in seconds), then no allotment consumed",
                     "minimum": 0,
                     "type": "integer"
                 }

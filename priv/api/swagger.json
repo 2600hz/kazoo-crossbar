@@ -35112,6 +35112,32 @@
                         "description": "request succeeded"
                     }
                 }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "whitelabel",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/whitelabel"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/WHITELABEL_DOMAIN"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
             }
         },
         "/accounts/{ACCOUNT_ID}/whitelabel/{WHITELABEL_DOMAIN}/logo": {
@@ -35132,11 +35158,63 @@
                         "description": "request succeeded"
                     }
                 }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "whitelabel",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/whitelabel"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/WHITELABEL_DOMAIN"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
             }
         },
         "/accounts/{ACCOUNT_ID}/whitelabel/{WHITELABEL_DOMAIN}/welcome": {
             "get": {
                 "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/WHITELABEL_DOMAIN"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "whitelabel",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/whitelabel"
+                        }
+                    },
                     {
                         "$ref": "#/parameters/auth_token_header"
                     },

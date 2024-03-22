@@ -14,22 +14,31 @@ IP addresses assigned to the account
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`ips.[]` |   | `string()|string()` |   |   |  
-`ips` | List of IP addresses | `array()` |   | `false` |  
+`ips.[]` |   | `string()` |   |   |  
+`ips` | List of IP addresses | `array(string())` |   | `false` |  
 
-
+IP addresses can be either ipv4 or ipv6.
 
 ## Fetch
 
 > GET /v2/accounts/{ACCOUNT_ID}/ips
-
-This can take an optional query string parameter `zone` to filter the results.
 
 ```shell
 curl -v -X GET \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/ips
 ```
+
+
+### Query String Options
+
+This request can take two optional query string parameters:
+
+Key | Description | Type
+--- | ----------- | ----
+`zone` | filter the results by Zone | `string()`
+`quantity` | limit the number of results. Default quantity is 1 | `integer()`
+
 
 ```json
 {
@@ -61,7 +70,27 @@ curl -v -X POST \
 {
     "auth_token": "{AUTH_TOKEN}",
     "data": {
-        "ips": ["1.2.3.4", "5.6.7.8"]
+        "success": {
+            "1.2.3.4": {
+                "assigned_to": "{ACCOUNT_ID}",
+                "host": "proxy1.us-east.myswitch.com",
+                "id": "1.2.3.4",
+                "ip": "1.2.3.4",
+                "status": "assigned",
+                "type": "dedicated_ip",
+                "zone": "us-east"
+            },
+            "5.6.7.8": {
+                "assigned_to": "{ACCOUNT_ID}",
+                "host": "proxy1.us-west.myswitch.com",
+                "id": "5.6.7.8",
+                "ip": "5.6.7.8",
+                "status": "assigned",
+                "type": "dedicated_ip",
+                "zone": "us-west"
+            }
+        },
+        "error": {}
     },
     "request_id": "{REQUEST_ID}",
     "revision": "{REVISION}",
@@ -76,6 +105,7 @@ curl -v -X POST \
 ```shell
 curl -v -X DELETE \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d '{"data": {"ips" :["1.2.3.4", "5.6.7.8"]}}' \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/ips
 ```
 
@@ -83,7 +113,25 @@ curl -v -X DELETE \
 {
     "auth_token": "{AUTH_TOKEN}",
     "data": {
-        "ips": ["1.2.3.4", "5.6.7.8"]
+        "success": {
+            "1.2.3.4": {
+                "host": "proxy1.us-east.myswitch.com",
+                "id": "1.2.3.4",
+                "ip": "1.2.3.4",
+                "status": "available",
+                "type": "dedicated_ip",
+                "zone": "us-east"
+            },
+            "5.6.7.8": {
+                "host": "proxy1.us-west.myswitch.com",
+                "id": "5.6.7.8",
+                "ip": "5.6.7.8",
+                "status": "available",
+                "type": "dedicated_ip",
+                "zone": "us-west"
+            }
+        },
+        "error": {}
     },
     "request_id": "{REQUEST_ID}",
     "revision": "{REVISION}",
@@ -105,12 +153,17 @@ curl -v -X DELETE \
 {
     "auth_token": "{AUTH_TOKEN}",
     "data": {
-        "host": "proxy1.us-east.myswitch.com",
-        "id": "1.2.3.4",
-        "ip": "{IP_ADDRESS}",
-        "status": "available",
-        "type": "dedicated_ip",
-        "zone": "us-east"
+        "success": {
+            "{IP_ADDRESS}": {
+                "host": "proxy1.us-east.myswitch.com",
+                "id": "{IP_ADDRESS}",
+                "ip": "{IP_ADDRESS}",
+                "status": "available",
+                "type": "dedicated_ip",
+                "zone": "us-east"
+            }
+        },
+        "error": {}
     },
     "request_id": "{REQUEST_ID}",
     "revision": "{REVISION}",
@@ -161,13 +214,18 @@ curl -v -X POST \
 {
     "auth_token": "{AUTH_TOKEN}",
     "data": {
-        "assigned_to": "{ACCOUNT_ID}",
-        "host": "proxy1.us-east.myswitch.com",
-        "id": "{IP_ADDRESS}",
-        "ip": "{IP_ADDRESS}",
-        "status": "assigned",
-        "type": "dedicated_ip",
-        "zone": "us-east"
+        "success": {
+            "{IP_ADDRESS}": {
+                "assigned_to": "{ACCOUNT_ID}",
+                "host": "proxy1.us-east.myswitch.com",
+                "id": "{IP_ADDRESS}",
+                "ip": "{IP_ADDRESS}",
+                "status": "assigned",
+                "type": "dedicated_ip",
+                "zone": "us-east"
+            }
+        },
+        "error": {}
     },
     "request_id":"{REQUEST_ID}",
     "revision":"{REVISION}",
@@ -262,7 +320,7 @@ Key | Description | Type | Default | Required
 `{ZONE}` | The Kazoo zone this proxy is assigned  | `string()` |   | `true`
 `{HOST}` | The Hostname associated with the IP | `string()` | | `true`
 
-Once you've added IPs to the system, you can assign those to different customer accounts to proxy their calls through using the below Crossbar APIs.
+Once you've added IPs to the system, you can assign those to different customer accounts to proxy their calls through using the above Crossbar APIs.
 
 ## Via API
 
@@ -275,5 +333,5 @@ Once you've added IPs to the system, you can assign those to different customer 
 curl -v -X PUT \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     -d '{"data":{"ip":"1.2.3.4", "zone":"us-east", "host":"proxy1.us-east.myswitch.com"}}'
-    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/ips
+    http://{SERVER}:8000/v2/ips
 ```

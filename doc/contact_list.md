@@ -1,10 +1,12 @@
 ### Contact List
 
+Contact List represents the basic contact information including name and number (internal and external).
+
 #### About Contact List
 
-#### Schema
+This contains the contact information of Featurecodes configured for `call_forward`, `hotdesk`, `park` etc. and Numbers and Extensions configured in `menu`, `conference`, `directory` etc. in Kazoo system.
 
-
+Please note that if `Hide from Contact List` is enabled for a number/extension, it will be excluded from the Contact List.
 
 #### Fetch
 
