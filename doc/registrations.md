@@ -19,7 +19,7 @@ curl -v -X DELETE \
      "auth_token": "{AUTH_TOKEN}",
      "data": "ok",
      "request_id": "{REQUEST_ID}",
-     "revision": "{REVISION}",
+     "version": "{VERSION}",
      "status": "success"
 }
 ```
@@ -50,8 +50,6 @@ curl -v -X GET \
           "expires": 257,
           "from_host": "{ACCOUNT_REALM}",
           "from_user": "{SIP_USERNAME}",
-          "network_ip": "undefined",
-          "network_port": "undefined",
           "original_contact": "sip:{SIP_USERNAME}@{IP.AD.DR.ESS}:{PORT}...",
           "owner_id": "{USER_ID}",
           "proxy_ip": "{KAMAILIO_IP}",
@@ -66,7 +64,7 @@ curl -v -X GET \
       ],
       "page_size": 1,
       "request_id": "{REQUEST_ID}",
-      "revision": "{REVISION}",
+      "version": "{VERSION}",
       "status": "success"
 }
 ```
@@ -86,7 +84,7 @@ curl -v -X DELETE \
      "auth_token": "{AUTH_TOKEN}",
      "data": "ok",
      "request_id": "{REQUEST_ID}",
-     "revision": "{REVISION}",
+     "version": "{VERSION}",
      "status": "success"
 }
 ```
@@ -108,7 +106,7 @@ curl -v -X GET \
          "count": 4
      },
      "request_id": "{REQUEST_ID}",
-     "revision": "{REVISION}",
+     "version": "{VERSION}",
      "status": "success"
 }
 ```
