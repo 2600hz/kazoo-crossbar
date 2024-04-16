@@ -722,6 +722,9 @@ curl -v -X POST \
 
 ## Get Locality Information For A Collection Of Numbers
 
+# PhoneBook
+Phonebook is an external service that "abstract" carrier number inventory and the sysadmin need to provide and configure it for this API endpoint to work.
+
 > POST /v2/accounts/{ACCOUNT_ID}/phone_numbers/locality
 
 ```shell
