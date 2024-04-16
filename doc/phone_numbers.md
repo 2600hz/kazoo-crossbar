@@ -250,7 +250,7 @@ curl -v -X GET \
                     ]
             },
             "+14152338397": {
-                "state":"in_service",
+                "state":"reserved",
                 "features": [
                     "local"
                 ],
@@ -431,8 +431,10 @@ curl -v -X GET \
         "features": [
             "local"
         ],
+        "my_own_fields": {
+        },
         "used_by": "callflow",
-        "state": "in_service"
+        "state": "reversed"
     },
   "request_id": "{REQUEST_ID}",
   "revision": "{REVISION}",
@@ -576,7 +578,7 @@ curl -v -X PATCH \
 Adds a number to the database, returning its properties.
 
 !!! note
-    Set field `"create_with_state"` in payload to your desired number state (defaults to `"reserved"`).
+    Set field `"create_with_state"` in payload to your desired number state (defaults to `"in_service"`).
 
 !!! note
     Payload is optional.
@@ -695,7 +697,7 @@ This API checks if the numbers are still available for purchase.
 A status of `"error"` may be due to:
 
 * Number not being handled by carrier `knm_other`
-* `phonebook` being unresponsive
+* `PhoneBook` being unresponsive
 
 ```shell
 curl -v -X POST \
@@ -812,6 +814,7 @@ curl -v -X POST \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {},
     "data": "Unable to acquire numbers missing carrier url",
     "error": "500",
     "message": "init failed",
@@ -883,36 +886,68 @@ curl -v -X DELETE \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {},
     "data": {
         "success": {
-            "{PHONE_NUMBER1": {
-                "_read_only": {
-                    "created": 63628473168,
-                    "modified": 63628473168,
-                    "state": "available"
-                },
+            "{PHONE_NUMBER1}": {
                 "id": "{PHONE_NUMBER1}",
-                "state": "available"
+                "features": [
+                    "local"
+                ],
+                "state": "available",
+                "_read_only": {
+                    "modified": 63880454152,
+                    "id": "{PHONE_NUMBER1}",
+                    "features": {
+                        "settings": {},
+                        "available": [
+                            "force_outbound",
+                            "prepend",
+                            "ringback"
+                        ]
+                    },
+                    "created": 63880145085,
+                    "carrier_module": "local"
+                }
             },
             "{PHONE_NUMBER2}": {
-                "_read_only": {
-                    "created": 63628473168,
-                    "modified": 63628473168,
-                    "state": "available"
-                },
                 "id": "{PHONE_NUMBER2}",
-                "state": "available"
+                "state": "available",
+                "_read_only": {
+                    "modified": 63880454152,
+                    "id": "{PHONE_NUMBER2}",
+                    "features": {
+                        "settings": {},
+                        "available": [
+                            "force_outbound",
+                            "prepend",
+                            "ringback"
+                        ]
+                    },
+                    "created": 63880369851,
+                    "carrier_module": "bandwidth2"
+                }
             },
             "{PHONE_NUMBER3}": {
-                "_read_only": {
-                    "created": 63628473168,
-                    "modified": 63628473168,
-                    "state": "available"
-                },
                 "id": "{PHONE_NUMBER3}",
-                "state": "available"
+                "state": "available",
+                "_read_only": {
+                    "modified": 63880454152,
+                    "id": "{PHONE_NUMBER3}",
+                    "features": {
+                        "settings": {},
+                        "available": [
+                            "force_outbound",
+                            "prepend",
+                            "ringback"
+                        ]
+                    },
+                    "created": 63880369851,
+                    "carrier_module": "bandwidth2"
+                }
             }
-        }
+        },
+        "error": []
     },
     "request_id": "{REQUEST_ID}",
     "revision": "{REVISION}",
@@ -935,36 +970,82 @@ curl -v -X DELETE \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {},
     "data": {
         "success": {
-            "{PHONE_NUMBER1": {
-                "_read_only": {
-                    "created": 63628473168,
-                    "modified": 63628473168,
-                    "state": "deleted"
-                },
+            "{PHONE_NUMBER1}": {
+                "myfield": 1337,
                 "id": "{PHONE_NUMBER1}",
-                "state": "deleted"
+                "state": "deleted",
+                "_read_only": {
+                    "modified": 63880454928,
+                    "id": "{PHONE_NUMBER1}",
+                    "features": {
+                        "settings": {},
+                        "available": [
+                            "carrier_name",
+                            "cnam",
+                            "e911",
+                            "force_outbound",
+                            "inbound_cnam",
+                            "outbound_cnam",
+                            "port",
+                            "prepend",
+                            "ringback"
+                        ]
+                    },
+                    "created": 63880369851,
+                    "carrier_module": "bandwidth2"
+                }
             },
             "{PHONE_NUMBER2}": {
-                "_read_only": {
-                    "created": 63628473168,
-                    "modified": 63628473168,
-                    "state": "deleted"
-                },
+                "my_global_field": 12345,
                 "id": "{PHONE_NUMBER2}",
-                "state": "deleted"
+                "features": [
+                    "local"
+                ],
+                "state": "deleted",
+                "_read_only": {
+                    "modified": 63880454928,
+                    "id": "{PHONE_NUMBER2}",
+                    "features": {
+                        "settings": {},
+                        "available": [
+                            "carrier_name",
+                            "force_outbound",
+                            "prepend",
+                            "ringback"
+                        ]
+                    },
+                    "created": 63880383793,
+                    "carrier_module": "local"
+                }
             },
             "{PHONE_NUMBER3}": {
-                "_read_only": {
-                    "created": 63628473168,
-                    "modified": 63628473168,
-                    "state": "deleted"
-                },
+                "my_global_field": 12345,
                 "id": "{PHONE_NUMBER3}",
-                "state": "deleted"
+                "features": [
+                    "local"
+                ],
+                "state": "deleted",
+                "_read_only": {
+                    "modified": 63880454928,
+                    "id": "{PHONE_NUMBER3}",
+                    "features": {
+                        "settings": {},
+                        "available": [
+                            "carrier_name",
+                            "force_outbound",
+                            "prepend",
+                            "ringback"
+                        ]
+                    },
+                    "created": 63880383793,
+                    "carrier_module": "local"
+                }
             }
-        }
+        },
+        "error": []
     },
     "request_id": "{REQUEST_ID}",
     "revision": "{REVISION}",
@@ -1123,7 +1204,7 @@ curl -v -X PATCH \
 
 ## Add a list of numbers to the database
 
-Note: set field `"create_with_state"` in payload to your desired number state (defaults to `"reserved"`).
+Note: set field `"create_with_state"` in payload to your desired number state (defaults to `"in_service"`).
 
 > PUT /v2/accounts/{ACCOUNT_ID}/phone_numbers/collection
 
@@ -1363,40 +1444,8 @@ curl -v -X POST \
 ```json
 {
   "auth_token": "{AUTH_TOKEN}",
-  "data": {
-    "cnam": {
-      "display_name": "My Main Num2",
-      "inbound_lookup": true
-    },
-    "features": [
-      "inbound_cnam",
-      "outbound_cnam"
-    ],
-    "id": "+15554445563",
-    "state": "in_service",
-    "ui_metadata": {
-      "origin": "common",
-      "ui": "monster-ui",
-      "version": "3.23"
-    },
-    "used_by": "callflow"
-  },
-  "metadata": {
-    "created": 63635220353,
-    "features": [
-      "inbound_cnam",
-      "outbound_cnam"
-    ],
-    "features_available": [
-      "cnam",
-      "e911",
-      "port",
-      "prepend"
-    ],
-    "modified": 63635220353,
-    "state": "in_service",
-    "used_by": "callflow"
-  },
+  "metadata": {},
+  "data": {},
   "request_id": "{REQUEST_ID}",
   "revision": "{REVISION}",
   "status": "success"
@@ -1607,15 +1656,28 @@ curl -v -X PUT \
 ```json
 {
   "auth_token": "{AUTH_TOKEN}",
-  "data": {
-    "id": "{PHONE_NUMBER}",
-    "state": "in_service"
-  },
   "metadata": {
-    "created": 63628027112,
-    "modified": 63628027112,
-    "state": "in_service"
-  },
+        "modified": 63880482878,
+        "id": "{PHONE_NUMBER}",
+        "features": {
+            "settings": {},
+            "available": [
+                "carrier_name",
+                "force_outbound",
+                "prepend",
+                "ringback"
+            ]
+        },
+        "created": 63880482866,
+        "carrier_module": "local"
+    },
+    "data": {
+        "id": "{PHONE_NUMBER}",
+        "features": [
+            "local"
+        ],
+        "state": "in_service"
+    },
   "request_id": "{REQUEST_ID}",
   "revision": "{REVISION}",
   "status": "success"
@@ -1704,27 +1766,55 @@ curl -v -X PUT \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {},
     "data": {
         "success": {
-            "{PHONE_NUMBER1}": {
-                "_read_only": {
-                    "created": 63628542222,
-                    "modified": 63628542222,
-                    "state": "in_service"
-                },
+            "+14167775544": {
                 "id": "{PHONE_NUMBER1}",
-                "state": "in_service"
-            },
-            "{PHONE_NUMBER2}": {
+                "features": [
+                    "local"
+                ],
+                "state": "in_service",
                 "_read_only": {
-                    "created": 63628542222,
-                    "modified": 63628542222,
-                    "state": "in_service"
-                },
+                    "modified": 63880498842,
+                    "id": "{PHONE_NUMBER1}",
+                    "features": {
+                        "settings": {},
+                        "available": [
+                            "carrier_name",
+                            "force_outbound",
+                            "prepend",
+                            "ringback"
+                        ]
+                    },
+                    "created": 63880498566,
+                    "carrier_module": "local"
+                }
+            },
+            "+14167775555": {
                 "id": "{PHONE_NUMBER2}",
-                "state": "in_service"
+                "features": [
+                    "local"
+                ],
+                "state": "in_service",
+                "_read_only": {
+                    "modified": 63880498842,
+                    "id": "{PHONE_NUMBER2}",
+                    "features": {
+                        "settings": {},
+                        "available": [
+                            "carrier_name",
+                            "force_outbound",
+                            "prepend",
+                            "ringback"
+                        ]
+                    },
+                    "created": 63880498566,
+                    "carrier_module": "local"
+                }
             }
-        }
+        },
+        "error": []
     },
     "request_id": "{REQUEST_ID}",
     "revision": "{REVISION}",
