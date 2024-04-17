@@ -8180,6 +8180,7 @@
         - reserved
       'type': string
     'e911':
+      'description': E911 information for the current phone number
       'properties':
         'activated_time':
           'description': The time stamp e911 was provisioned
@@ -8224,6 +8225,7 @@
           'description': |-
             A list of email addresses to receive notification when this number places an emergency call
           'items':
+            'description': Email address
             'format': email
             'type': string
           'type': array
@@ -8286,6 +8288,7 @@
         'comments':
           'description': An array of comments
           'items':
+            'description': Comment
             'type': string
           'type': array
         'customer_contact':
