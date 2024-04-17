@@ -38,7 +38,7 @@ Key | Description | Type | Default | Required | Support Level
 `e911.region` | The region (state) where the number is in service | `string(2)` |   | `true` |  
 `e911.status` | The e911 provisioning system status for this service address | `string('INVALID' \| 'GEOCODED' \| 'PROVISIONED' \| 'REMOVED' \| 'ERROR')` |   | `false` |  
 `e911.street_address` | The street address where the number is in service | `string()` |   | `true` |  
-`e911` |   | `object()` |   | `false` |  
+`e911` | E911 information for the current phone number | `object()` |   | `false` |  
 `porting.billing_account_id` | The account id the losing carrier has on file | `string()` |   | `false` |  
 `porting.billing_extended_address` | The suit/floor/apt. address the losing carrier has on file | `string()` |   | `false` |  
 `porting.billing_locality` | The locality (city) the losing carrier has on file | `string()` |   | `false` |  
