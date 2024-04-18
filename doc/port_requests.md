@@ -213,6 +213,7 @@ curl -v -X GET \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {},
     "data": [
         {
             "account_id": "{ACCOUNT_ID}",
@@ -222,6 +223,13 @@ curl -v -X GET \
             "numbers": {
                 "{PHONE_NUMBER}": {}
             },
+            "_read_only": {
+              "account_id": "{ACCOUNT_ID}",
+              "account_name": "{ACCOUNT_NAME}",
+              "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
+              "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
+            },
+            "comments": [],
             "port_state": "canceled",
             "sent": false,
             "updated": 63630120578,
@@ -261,6 +269,7 @@ curl -v -X GET \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {},
     "data": [
         {
             "account_id": "{ACCOUNT_ID}",
@@ -271,8 +280,15 @@ curl -v -X GET \
                     "created": 63630097779,
                     "id": "462da37f8be11e46161fb40bc71173a9",
                     "name": "Porting 202.555.9000",
+                    "comments": [],
                     "numbers": {
                         "+12025559000": {}
+                    },
+                    "_read_only": {
+                      "account_id": "{ACCOUNT_ID}",
+                      "account_name": "{ACCOUNT_NAME}",
+                      "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
+                      "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
                     },
                     "port_state": "unconfirmed",
                     "sent": false,
@@ -334,11 +350,13 @@ curl -v -X GET \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {},
     "data": [
         {
             "id": "{PORT_REQUEST_ID}",
             "transition": {
                 "authorization": {
+                    "reason": "this was approved by Jane Doe",
                     "account": {
                         "id": "{AUTH_ACCOUNT_ID}",
                         "name": "{AUTH_ACCOUNT_NAME}"
@@ -346,7 +364,8 @@ curl -v -X GET \
                     "user": {
                         "id": "0d46906ff1eb36bff4d09b5b32fc14be",
                         "first_name": "John",
-                        "last_name": "Doe"
+                        "last_name": "Doe",
+                        "full_name": "John Doe"
                     }
                 },
                 "reason": "this was approved by Jane Doe",
@@ -391,6 +410,11 @@ curl -v -X GET \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {
+      "id": "{PORT_REQUEST_ID}",
+      "created": 63663500760,
+      "updated": 63664993901
+    },
     "data": [
         {
             "authorization": {
@@ -401,7 +425,8 @@ curl -v -X GET \
                 "user": {
                     "id": "0d46906ff1eb36bff4d09b5b32fc14be",
                     "first_name": "John",
-                    "last_name": "Doe"
+                    "last_name": "Doe",
+                    "full_name": "John Doe"
                 }
             },
             "timestamp": 63663993575,
@@ -479,20 +504,33 @@ curl -v -X PUT \
 ```json
 {
   "auth_token": "{AUTH_TOKEN}",
-  "data": {
-    "id": "462da37f8be11e46161fb40bc71173a9",
-    "name": "{PORT_REQUEST_NAME}",
-    "numbers": {
-      "{PHONE_NUMBER}": {
-      }
-    },
-    "port_state": "unconfirmed",
-    "uploads": {
-    }
-  },
   "metadata": {
-    "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
-    "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
+        "id": "{PORT_REQUEST_ID}",
+        "created": 63880626267,
+        "modified": 63880626267,
+        "account_id": "{ACCOUNT_ID}",
+        "account_name": "{ACCOUNT_NAME}",
+        "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
+        "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
+  },
+  "data": {
+        "numbers": {
+            "{PHONE_NUMBER}": {}
+        },
+        "name": "{PORT_REQUEST_NAME}",
+        "comments": [],
+        "id": "{PORT_REQUEST_ID}",
+        "_read_only": {
+            "account_id": "{ACCOUNT_ID}",
+            "account_name": "{ACCOUNT_NAME}",
+            "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
+            "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
+        },
+        "sent": false,
+        "port_state": "unconfirmed",
+        "uploads": {},
+        "updated": 63880626267,
+        "created": 63880626267
   },
   "request_id": "{REQUEST_ID}",
   "revision": "{REVISION}",
@@ -505,6 +543,7 @@ curl -v -X PUT \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {},
     "data": {
         "{PHONE_NUMBER}": {
             "type": {
@@ -525,6 +564,7 @@ curl -v -X PUT \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {},
     "data": {
         "{PHONE_NUMBER}": {
             "type": {
@@ -566,6 +606,13 @@ curl -v -X GET \
       "+12025559000": {
       }
     },
+    "_read_only": {
+      "account_id": "{ACCOUNT_ID}",
+      "account_name": "{ACCOUNT_NAME}",
+      "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
+      "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
+    },
+    "comments": [],
     "port_state": "unconfirmed",
     "sent": false,
     "updated": 63630097779,
@@ -573,6 +620,8 @@ curl -v -X GET \
     }
   },
   "metadata": {
+    "account_id": "{ACCOUNT_ID}",
+    "account_name": "{ACCOUNT_NAME}",
     "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
     "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
   },
@@ -602,8 +651,12 @@ curl -v -X POST \
 ```json
 {
   "auth_token": "{AUTH_TOKEN}",
-  "data": {
+  "metadata": {
+    "id": "{PORT_REQUEST_ID}",
     "created": 63630097779,
+    "modified": 63630104652
+  },  
+  "data": {
     "id": "{PORT_REQUEST_ID}",
     "name": "{PORT_REQUEST_NAME}",
     "numbers": {
@@ -611,15 +664,19 @@ curl -v -X POST \
         "state": "NY"
       }
     },
+    "comments": [],
+    "_read_only": {
+      "account_id": "{ACCOUNT_ID}",
+      "account_name": "{ACCOUNT_NAME}",
+      "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
+      "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"      
+    },
     "port_state": "unconfirmed",
     "sent": false,
     "updated": 63630104652,
+    "created": 63630097779,
     "uploads": {
     }
-  },
-  "metadata": {
-    "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
-    "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
   },
   "request_id": "{REQUEST_ID}",
   "revision": "{REVISION}",
@@ -635,7 +692,7 @@ curl -v -X POST \
 ```shell
 curl -v -X PATCH \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
-    -d '{"data":{"your_custom_info":{"carrier_port_id": "apc-8535937-gtk123", "carrier_name": "ace phone co"}}' \
+    -d '{"data":{"your_custom_info":{"carrier_port_id": "apc-8535937-gtk123", "carrier_name": "ace phone co"}}}' \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/port_requests/{PORT_REQUEST_ID}
 ```
 
@@ -645,8 +702,12 @@ curl -v -X PATCH \
 ```json
 {
   "auth_token": "{AUTH_TOKEN}",
-  "data": {
+  "metadata": {
+    "id": "{PORT_REQUEST_ID}",
     "created": 63630097779,
+    "modified": 63630104652
+  },
+  "data": {
     "id": "{PORT_REQUEST_ID}",
     "name": "{PORT_REQUEST_NAME}",
     "numbers": {
@@ -654,9 +715,17 @@ curl -v -X PATCH \
         "state": "NY"
       }
     },
+    "comments": [],
+    "_read_only": {
+      "account_id": "{ACCOUNT_ID}",
+      "account_name": "{ACCOUNT_NAME}",
+      "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
+      "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"      
+    },
     "port_state": "unconfirmed",
     "sent": false,
     "updated": 63630104652,
+    "created": 63630097779,
     "uploads": {
     },
     "your_custom_info": {
@@ -664,10 +733,9 @@ curl -v -X PATCH \
       "carrier_name": "ace phone co"
     }
   },
-  "metadata": {
-    "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
-    "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
-  }
+  "request_id": "{REQUEST_ID}",
+  "revision": "{REVISION}",
+  "status": "success"
 }
 ```
 </details>
@@ -688,19 +756,21 @@ curl -v -X DELETE \
 ```json
 {
   "auth_token": "{AUTH_TOKEN}",
+  "metadata": {
+    "id": "{PORT_REQUEST_ID}",
+    "created": 63630097779,
+    "modified": 63630104652,
+    "deleted": true
+  },
   "data": {
     "id": "{PORT_REQUEST_ID}",
     "name": "Porting 202.555.9000",
+    "comments": [],
     "numbers": {
       "+12025559000": {
         "state": "NY"
       }
-    },
-    "port_state": "unconfirmed"
-  },
-  "metadata": {
-    "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
-    "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"
+    }
   },
   "request_id": "{REQUEST_ID}",
   "revision": "{REVISION}",
@@ -787,6 +857,11 @@ curl -v -X GET \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {
+        "id": "{PORT_REQUEST_ID}",
+        "created": 63880664096,
+        "modified": 63880665140
+    },
     "data": {
         "file.pdf": {
             "content_type": "application/pdf",
@@ -818,17 +893,31 @@ curl -v -X PUT \
     --data-binary @/path/to/file.pdf \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/port_requests/{PORT_REQUEST_ID}/attachments?filename={ATTACHMENT_ID}
 ```
+<details>
+<summary><strong>Sample response</strong></summary>
 
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
-    "data": {},
+    "metadata": {
+        "id": "{PORT_REQUEST_ID}",
+        "created": 63880664096,
+        "modified": 63880664678
+    },    
+    "data": {
+        "numbers": {
+            "{PHONE_NUMBER_ON_PORT_REQUEST}": {}
+        },
+        "name": "{PORT_REQUEST_NAME}",
+        "comments": [],
+        "id": "{PORT_REQUEST_ID}"
+    },
     "request_id": "{REQUEST_ID}",
     "revision": "{REVISION}",
     "status": "success"
 }
 ```
-
+</details>
 
 ### Get an attachment from a port request
 
@@ -856,16 +945,31 @@ curl -v -X POST \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/port_requests/{PORT_REQUEST_ID}/attachments/{ATTACHMENT_ID}
 ```
 
+<details>
+<summary><strong>Sample response</strong></summary>
+
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
-    "data": {},
+    "metadata": {
+        "id": "{PORT_REQUEST_ID}",
+        "created": 63880664096,
+        "modified": 63880664865
+    },    
+    "data": {
+        "numbers": {
+            "{PHONE_NUMBER_ON_PORT_REQUEST}": {}
+        },
+        "name": "{PORT_REQUEST_NAME}",
+        "comments": [],
+        "id": "{PORT_REQUEST_ID}"
+    },
     "request_id": "{REQUEST_ID}",
     "revision": "{REVISION}",
     "status": "success"
 }
 ```
-
+</details>
 
 ### Delete an attachment on a port request
 
@@ -877,16 +981,22 @@ curl -v -X DELETE \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/port_requests/{PORT_REQUEST_ID}/attachments/{ATTACHMENT_ID}
 ```
 
+<details>
+<summary><strong>Sample response</strong></summary>
+
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {
+        "deleted": true
+    },
     "data": {},
     "request_id": "{REQUEST_ID}",
     "revision": "{REVISION}",
     "status": "success"
 }
 ```
-
+</details>
 
 ## Updating a port request status
 
@@ -915,6 +1025,11 @@ curl -v -X PATCH \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {
+        "id": "{PORT_REQUEST_ID}",
+        "created": 63630107130,
+        "modified": 63630120443
+    }, 
     "data": {
         "created": 63630107130,
         "id": "{PORT_REQUEST_ID}",
@@ -922,6 +1037,13 @@ curl -v -X PATCH \
         "numbers": {
             "+12025559000": {}
         },
+        "_read_only": {
+          "account_id": "{ACCOUNT_ID}",
+          "account_name": "{ACCOUNT_NAME}",
+          "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
+          "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"      
+        },
+        "comments": [],
         "port_state": "submitted",
         "sent": false,
         "updated": 63630120443,
@@ -943,6 +1065,11 @@ curl -v -X PATCH \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {
+        "id": "{PORT_REQUEST_ID}",
+        "created": 63880664096,
+        "modified": 63880670722
+    },
     "data": {
         "activation_charges": 10.0,
         "number_services": {
@@ -978,6 +1105,11 @@ curl -v -X PATCH \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {
+        "id": "{PORT_REQUEST_ID}",
+        "created": 63880664096,
+        "modified": 63880670722
+    }, 
     "data": {
         "created": 63630107130,
         "id": "{PORT_REQUEST_ID}",
@@ -985,9 +1117,16 @@ curl -v -X PATCH \
         "numbers": {
             "+12025559000": {}
         },
+        "_read_only": {
+          "account_id": "{ACCOUNT_ID}",
+          "account_name": "{ACCOUNT_NAME}",
+          "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
+          "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"      
+        },
+        "comments": [],
         "port_state": "pending",
         "sent": false,
-        "updated": 63630120502,
+        "updated": 63880670722,
         "uploads": {
             "file.pdf": {
                 "content_type": "application/pdf",
@@ -1006,6 +1145,11 @@ curl -v -X PATCH \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {
+        "id": "{PORT_REQUEST_ID}",
+        "created": 63880664096,
+        "modified": 63880670722
+    }, 
     "data": {
         "port_state": {
             "enum": {
@@ -1046,21 +1190,33 @@ curl -v -X PATCH \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {
+        "id": "{PORT_REQUEST_ID}",
+        "created": 63880664096,
+        "modified": 63880670722
+    }, 
     "data": {
         "created": 63630107130,
         "id": "{PORT_REQUEST_ID}",
         "name": "Porting 202.555.9000",
+        "schedule_on": {
+            "timezone": "America/Los_Angeles",
+            "date_time": "2024-06-24 12:00"
+        },
+        "scheduled_date": 63886474800,
         "numbers": {
             "+12025559000": {}
         },
-        "port_state": "scheduled",
-        "schedule_on": {
-            "date_time": "2017-06-24 12:00",
-            "timezone": "America/Los_Angeles"
+        "_read_only": {
+          "account_id": "{ACCOUNT_ID}",
+          "account_name": "{ACCOUNT_NAME}",
+          "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
+          "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"      
         },
-        "scheduled_date": 63658292400,
+        "comments": [],
+        "port_state": "scheduled",
         "sent": false,
-        "updated": 63630120528,
+        "updated": 63630120443,
         "uploads": {
             "file.pdf": {
                 "content_type": "application/pdf",
@@ -1092,16 +1248,36 @@ curl -v -X PATCH \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {
+        "id": "{PORT_REQUEST_ID}",
+        "created": 63880664096,
+        "modified": 63630107130
+    }, 
     "data": {
         "created": 63630107130,
         "id": "{PORT_REQUEST_ID}",
         "name": "Porting 202.555.9000",
+        "schedule_on": {
+            "timezone": "America/Los_Angeles",
+            "date_time": "2024-06-24 12:00"
+        },
+        "scheduled_date": 63886474800,
         "numbers": {
             "+12025559000": {}
         },
+        "_read_only": {
+          "account_id": "{ACCOUNT_ID}",
+          "account_name": "{ACCOUNT_NAME}",
+          "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
+          "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}",
+          "ported_numbers": {
+                "+14167775590": {}
+            }
+        },
+        "comments": [],
         "port_state": "completed",
         "sent": false,
-        "updated": 63630120570,
+        "updated": 63630120443,
         "uploads": {
             "file.pdf": {
                 "content_type": "application/pdf",
@@ -1133,16 +1309,28 @@ curl -v -X PATCH \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {
+        "id": "{PORT_REQUEST_ID}",
+        "created": 63880664096,
+        "modified": 63880710850
+    },
     "data": {
-        "created": 63630107130,
+        "created": 63880664096,
         "id": "{PORT_REQUEST_ID}",
         "name": "Porting 202.555.9000",
         "numbers": {
             "+12025559000": {}
         },
+        "_read_only": {
+          "account_id": "{ACCOUNT_ID}",
+          "account_name": "{ACCOUNT_NAME}",
+          "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
+          "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"      
+        },
+        "comments": [],
         "port_state": "rejected",
         "sent": false,
-        "updated": 63630120570,
+        "updated": 63880710850,
         "uploads": {
             "file.pdf": {
                 "content_type": "application/pdf",
@@ -1174,16 +1362,28 @@ curl -v -X PATCH \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {
+        "id": "{PORT_REQUEST_ID}",
+        "created": 63880664096,
+        "modified": 63880710850
+    },
     "data": {
-        "created": 63630107130,
+        "created": 63880664096,
         "id": "{PORT_REQUEST_ID}",
         "name": "Porting 202.555.9000",
         "numbers": {
             "+12025559000": {}
         },
+        "comments": [],
+        "_read_only": {
+          "account_id": "{ACCOUNT_ID}",
+          "account_name": "{ACCOUNT_NAME}",
+          "port_authority": "{PORT_AUTHORITY_ACCOUNT_ID}",
+          "port_authority_name": "{PORT_AUTHORITY_ACCOUNT_NAME}"      
+        },
         "port_state": "canceled",
         "sent": false,
-        "updated": 63630120578,
+        "updated": 63880710850,
         "uploads": {
             "file.pdf": {
                 "content_type": "application/pdf",
