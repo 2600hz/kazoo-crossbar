@@ -28,17 +28,21 @@ Key | Description | Type | Default | Required | Support Level
 `cnam` |   | `object()` |   | `false` |  
 `create_with_state` | The state to create numbers in | `string('aging' | 'available' | 'deleted' | 'discovery' | 'in_service' | 'port_in' | 'port_out' | 'released' | 'reserved')` |   | `false` |  
 `e911.activated_time` | The time stamp e911 was provisioned | `string()` |   | `false` |  
+`e911.callback_cid_number` | 10-digit DID used as caller ID to PSAP, overrides CID | `string(10)` |   | `false` |  
 `e911.caller_name` | The name that will show to emergency services | `string(3..)` |   | `false` |  
-`e911.extended_address` | The suit/floor/apt. address where the number is in service | `string()` |   | `false` |  
-`e911.latitude` | The e911 provisioning system calculated service address latitude | `string()` |   | `false` |  
-`e911.legacy_data.house_number` | The name that will show to emergency services | `string()` |   | `false` |  
+`e911.country` | The country is identified by the two-letter ISO 3166 code. Example: US | `string(2)` |   | `false` |  
+`e911.delivery_method` | How the emergency call is routed by the destination handler (not applicable to all providers) | `string('direct' | 'three_way' | 'security_desk')` |   | `false` |  
+`e911.extended_address` | The suite/floor/apt. address where the number is in service | `string()` |   | `false` |  
+`e911.latitude` | The geo-position of a location, north or south of the equator, using WGS84 formatting | `string(0..11)` |   | `false` |  
+`e911.legacy_data.house_number` | House number, numeric part only. Example: 123 | `string()` |   | `false` |  
 `e911.legacy_data.predirectional` | The name that will show to emergency services | `string()` |   | `false` |  
 `e911.legacy_data.streetname` | The name that will show to emergency services | `string()` |   | `false` |  
 `e911.legacy_data.suite` | The name that will show to emergency services | `string()` |   | `false` |  
 `e911.legacy_data` | Legacy E911 information | `object()` |   | `false` |  
 `e911.locality` | The locality (city) where the number is in service | `string()` |   | `true` |  
 `e911.location_id` | The e911 provisioning system internal id for this service address | `string()` |   | `false` |  
-`e911.longitude` | The e911 provisioning system calculated service address longitude | `string()` |   | `false` |  
+`e911.location_identifier` | United States unique 10-digit number known as an E911 location identifier (ELIN) | `integer()` |   | `false` |  
+`e911.longitude` | The geo-position of a location, east or west of the prime meridian, using WGS84 formatting | `string(0..11)` |   | `false` |  
 `e911.notification_contact_emails.[]` |   | `string()` |   | `false` |  
 `e911.notification_contact_emails` | A list of email addresses to receive notification when this number places an emergency call | `array(string())` | `[]` | `false` |  
 `e911.plus_four` | The extended zip/postal code where the number is in service | `string()` |   | `false` |  
@@ -1528,7 +1532,9 @@ curl -v -X PUT \
 
 ## E911
 
-> POST /v2/accounts/{ACCOUNT_ID}/phone_numbers/collection/activate
+Add an emergency address to a phone number (and enable the e911 feature).
+
+> POST /v2/accounts/{ACCOUNT_ID}/phone_numbers/{NUMBER}
 
 With a sample payload like below:
 ```json

@@ -10,12 +10,27 @@
                     "description": "Additional location information. Example: Room 543",
                     "type": "string"
                 },
+                "callback_cid_number": {
+                    "description": "10-digit DID used as caller ID to PSAP, overrides CID",
+                    "maxLength": 10,
+                    "minLength": 10,
+                    "type": "string"
+                },
                 "country": {
                     "description": "The country is identified by the two-letter ISO 3166 code. Example: US",
                     "type": "string"
                 },
                 "county": {
                     "description": "County, parish, gun (JP), district (IN). Example: King's County",
+                    "type": "string"
+                },
+                "delivery_method": {
+                    "description": "How the emergency call is routed by the destination handler (not applicable to all providers)",
+                    "enum": [
+                        "direct",
+                        "three_way",
+                        "security_desk"
+                    ],
                     "type": "string"
                 },
                 "floor": {
@@ -30,6 +45,11 @@
                     "description": "House number suffix. Example: A, 1/2",
                     "type": "string"
                 },
+                "latitude": {
+                    "description": "The geo-position of a location, north or south of the equator, using WGS84 formatting",
+                    "maxLength": 11,
+                    "type": "string"
+                },
                 "locality": {
                     "description": "City, township, shi (JP). Example: New York",
                     "type": "string"
@@ -37,6 +57,11 @@
                 "location_identifier": {
                     "description": "United States unique 10-digit number known as an E911 location identifier (ELIN)",
                     "type": "integer"
+                },
+                "longitude": {
+                    "description": "The geo-position of a location, east or west of the prime meridian, using WGS84 formatting",
+                    "maxLength": 11,
+                    "type": "string"
                 },
                 "name": {
                     "description": "Name (residence, business or office occupant). Example: Joe's Barbershop",
