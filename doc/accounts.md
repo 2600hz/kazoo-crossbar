@@ -741,11 +741,13 @@ curl -v -X PUT \
 
 ## Move an account
 
-An account can only be moved by a "superduper_admin" or  if enabled by anyone above the desired account.
+An account can only be moved by a "superduper_admin" or if enabled by anyone above the desired account.
 
-**NOTE**: Kazoo does NOT support moving accounts between reseller accounts.
+!!! note
+    Kazoo does NOT support moving accounts between reseller accounts.
+    You can enable that feature by editing the document `crossbar.accounts` in your `system_config` database and set the value to `tree`.
 
-You can enable that feature by editing the document `crossbar.accounts` in your `system_config` database and set the value to `tree`.
+The result of a successful `move` will have `{ACCOUNT_ID}` as a child of the `to` account ID passed in the request data.
 
 Key | Value | Description
 --- | ----- | -----------
