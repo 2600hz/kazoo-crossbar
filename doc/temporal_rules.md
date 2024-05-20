@@ -71,7 +71,7 @@ A recurring holiday for labor day (First Monday of September) is created, it sho
 ```shell
 curl -v -X PUT \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
-    -d '{"data":{"name":"Labor Day","cycle":"yearly","interval":1,"month":9,"type":"main_holidays","ordinal":"first","wdays":["monday"],"exclude":["20220905"]}}'
+    -d '{"data":{"name":"Labor Day","cycle":"yearly","interval":1,"month":9,"type":"main_holidays","ordinal":"first","wdays":["monday"],"exclude":["20220905"]}}' \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/temporal_rules
 ```
 ```json
@@ -85,6 +85,11 @@ curl -v -X PUT \
         "remaining": 100
     },
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {
+      "id": "{TEMPORAL_RULE_ID}",
+      "created": "63777703824",
+      "modified": "63777703824"
+    },
     "data": {
         "name": "Labor Day",
         "cycle": "yearly",
@@ -119,14 +124,19 @@ curl -v -X GET \
    "status":"success",
    "request_id":"{REQUEST_ID}",
    "revision":"{REVISION}",
+   "metadata": {},
    "data":[
       {
          "id":"{TEMPORAL_RULE_ID}",
-         "name":"Business Hours"
+         "name":"Business Hours",
+         "flags": [],
+         "features": []
       },
       {
          "id":"{TEMPORAL_RULE_ID}",
-         "name":"Holiday"
+         "name":"Holiday",
+         "flags": [],
+         "features": []
       }
    ]
 }
@@ -139,7 +149,7 @@ curl -v -X GET \
 ```shell
 curl -v -X PUT \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
-    -d '{"data":{"time_window_start":0,"time_window_stop":86400,"days":[25],"name":"Christmas","cycle":"yearly","start_date":62586115200,"month":12,"ordinal":"every","interval":1}}'
+    -d '{"data":{"time_window_start":0,"time_window_stop":86400,"days":[25],"name":"Christmas","cycle":"yearly","start_date":62586115200,"month":12,"ordinal":"every","interval":1}}' \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/temporal_rules
 ```
 ```json
@@ -148,6 +158,11 @@ curl -v -X PUT \
    "status":"success",
    "request_id":"{REQUEST_ID}",
    "revision":"{REVISION}",
+   "metadata": {
+     "id": "{TEMPORAL_RULE_ID}",
+     "created": "63777790224",
+     "modified": "63777790224"
+   },
    "data":{
       "time_window_start":0,
       "time_window_stop":86400,
@@ -187,6 +202,16 @@ For instance, fetching a rule that matches on [Tau Day](https://tauday.com/) wit
 ```
 ```json
 {
+  "auth_token":"{AUTH_TOKEN}",
+  "status":"success",
+  "request_id":"{REQUEST_ID}",
+  "revision":"{REVISION}",
+  "metadata": {
+    "id": "{TEMPORAL_RULE_ID}",
+    "created": 63849751700,
+    "modified": 63849751700,
+    "rule_matches": false
+  },
   "data": {
     "custom": "value",
     "cycle": "yearly",
@@ -199,15 +224,7 @@ For instance, fetching a rule that matches on [Tau Day](https://tauday.com/) wit
     "name": "Tau Day",
     "ordinal": "every",
     "start_date": 62586115200
-  },
-  "metadata": {
-    "created": 63849751700,
-    "id": "{TEMPORAL_RULE_ID}",
-    "modified": 63849751700,
-    "rule_matches": false
-  },
-  "revision": "{REVISION}",
-  "status": "success"
+  }
 }
 ```
 
@@ -218,6 +235,7 @@ For instance, fetching a rule that matches on [Tau Day](https://tauday.com/) wit
 ```shell
 curl -v -X POST \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d '{"data": "MODIFIED_FIELD_DATA"}' \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/temporal_rules/{TEMPORAL_RULE_ID}
 ```
 
@@ -228,6 +246,7 @@ curl -v -X POST \
 ```shell
 curl -v -X PATCH \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d '{"data": "NEW_FIELD_DATA"}' \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/temporal_rules/{TEMPORAL_RULE_ID}
 ```
 
