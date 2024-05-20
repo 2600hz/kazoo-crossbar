@@ -102,10 +102,12 @@ curl -v -X GET \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {},
     "data": [
         {
             "id": "3a63acc3694ba189947235ae4727941b",
             "name": "VMBox 0",
+            "flags": [],
             "mailbox": "3000",
             "owner_id": "f1d98a5df729f95cd208ee9430e3b21b",
             "messages": 4
@@ -134,6 +136,11 @@ curl -v -X PUT \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {
+        "id": "3a63acc3694ba189947235ae4727941b",
+        "created": 63883426366,
+        "modified": 63883426366
+    },
     "data": {
         "name": "VMBox 0",
         "require_pin": true,
@@ -148,9 +155,22 @@ curl -v -X PUT \
         "save_after_notify": false,
         "skip_greeting": false,
         "skip_instructions": false,
+        "media": {},
+        "after_forward_action": "save",
+        "aliases": [],
+        "announcement_only": false,
+        "envelope_type": "default",
+        "include_message_on_notify": true,
+        "include_transcription_on_notify": true,
+        "is_voicemail_ff_rw_enabled": false,
+        "media_extension": "mp3",
+        "oldest_message_first": false,
+        "seek_duration_ms": 10000,
+        "skip_envelope": false,
+        "transcribe": false,
+        "vm_message_forward_type": "only_forward",
         "id": "3a63acc3694ba189947235ae4727941b",
-        "owner_id": "f1d98a5df729f95cd208ee9430e3b21b",
-        "media": {}
+        "owner_id": "f1d98a5df729f95cd208ee9430e3b21b"
     },
     "revision": "{REVISION}",
     "request_id": "{REQUEST_ID}",
@@ -173,6 +193,11 @@ curl -v -X GET \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {
+        "id": "3a63acc3694ba189947235ae4727941b",
+        "created": 63883426366,
+        "modified": 63883426366
+    },
     "data": {
         "name": "VMBox 0",
         "require_pin": true,
@@ -188,6 +213,19 @@ curl -v -X GET \
         "skip_greeting": false,
         "skip_instructions": false,
         "id": "3a63acc3694ba189947235ae4727941b",
+        "after_forward_action": "save",
+        "aliases": [],
+        "announcement_only": false,
+        "envelope_type": "default",
+        "include_message_on_notify": true,
+        "include_transcription_on_notify": true,
+        "is_voicemail_ff_rw_enabled": false,
+        "media_extension": "mp3",
+        "oldest_message_first": false,
+        "seek_duration_ms": 10000,
+        "skip_envelope": false,
+        "transcribe": false,
+        "vm_message_forward_type": "only_forward",
         "owner_id": "f1d98a5df729f95cd208ee9430e3b21b",
         "media": {}
     },
@@ -214,6 +252,11 @@ curl -v -X POST \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {
+        "id": "3a63acc3694ba189947235ae4727941b",
+        "created": 63883426366,
+        "modified": 63883427077
+    },
     "data": {
         "name": "VMBox 0",
         "require_pin": true,
@@ -229,6 +272,19 @@ curl -v -X POST \
         "skip_greeting": false,
         "skip_instructions": false,
         "id": "3a63acc3694ba189947235ae4727941b",
+        "after_forward_action": "save",
+        "aliases": [],
+        "announcement_only": false,
+        "envelope_type": "default",
+        "include_message_on_notify": true,
+        "include_transcription_on_notify": true,
+        "is_voicemail_ff_rw_enabled": false,
+        "media_extension": "mp3",
+        "oldest_message_first": false,
+        "seek_duration_ms": 10000,
+        "skip_envelope": false,
+        "transcribe": false,
+        "vm_message_forward_type": "only_forward",
         "owner_id": "f1d98a5df729f95cd208ee9430e3b21b",
         "media": {}
     },
@@ -254,6 +310,11 @@ curl -v -X PATCH \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {
+        "id": "3a63acc3694ba189947235ae4727941b",
+        "created": 63883426366,
+        "modified": 63883427077
+    },
     "data": {
         "name": "VMBox 0",
         "require_pin": true,
@@ -269,6 +330,19 @@ curl -v -X PATCH \
         "skip_greeting": false,
         "skip_instructions": false,
         "id": "3a63acc3694ba189947235ae4727941b",
+        "after_forward_action": "save",
+        "aliases": [],
+        "announcement_only": false,
+        "envelope_type": "default",
+        "include_message_on_notify": true,
+        "include_transcription_on_notify": true,
+        "is_voicemail_ff_rw_enabled": false,
+        "media_extension": "mp3",
+        "oldest_message_first": false,
+        "seek_duration_ms": 10000,
+        "skip_envelope": false,
+        "transcribe": false,
+        "vm_message_forward_type": "only_forward",
         "owner_id": "f1d98a5df729f95cd208ee9430e3b21b",
         "media": {},
         "some_key": "some_value"
@@ -294,6 +368,12 @@ curl -v -X DELETE \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
+    "metadata": {
+        "id": "3a63acc3694ba189947235ae4727941b",
+        "created": 63883426366,
+        "modified": 63883427342,
+        "deleted": true
+    },
     "data": {
         "name": "VMBox 0",
         "require_pin": true,
@@ -308,9 +388,23 @@ curl -v -X DELETE \
         "save_after_notify": false,
         "skip_greeting": false,
         "skip_instructions": false,
+        "vm_message_forward_type": "only_forward",
+        "transcribe": false,
+        "some_key": "some_value",
+        "skip_envelope": false,
+        "seek_duration_ms": 10000,
+        "oldest_message_first": false,
+        "media_extension": "mp3",
+        "media": {},
+        "is_voicemail_ff_rw_enabled": false,
+        "include_transcription_on_notify": true,
+        "include_message_on_notify": true,
+        "envelope_type": "default",
+        "announcement_only": false,
+        "aliases": [],
+        "after_forward_action": "save",
         "id": "3a63acc3694ba189947235ae4727941b",
-        "owner_id": "f1d98a5df729f95cd208ee9430e3b21b",
-        "media": {}
+        "owner_id": "f1d98a5df729f95cd208ee9430e3b21b"
     },
     "revision": "{REVISION}",
     "request_id": "{REQUEST_ID}",
