@@ -16,7 +16,7 @@
             "type": "string"
         },
         "days": {
-            "description": "The occurance day(s) of the month (1-31) for this rule",
+            "description": "The occurrence day(s) of the month (1-31) for this rule",
             "items": {
                 "maximum": 31,
                 "minimum": 1,

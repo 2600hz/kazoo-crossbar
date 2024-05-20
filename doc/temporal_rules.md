@@ -13,7 +13,7 @@ Schema for a temporal rules
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `cycle` | The recurrence cycle for this rule | `string('date' | 'daily' | 'weekly' | 'monthly' | 'yearly')` |   | `true` | `supported`
-`days` | The occurance day(s) of the month (1-31) for this rule | `array(integer(1..31))` |   | `false` | `supported`
+`days` | The occurrence day(s) of the month (1-31) for this rule | `array(integer(1..31))` |   | `false` | `supported`
 `enabled` | Whether the rule is enabled | `boolean()` |   | `false` |  
 `end_date` | The date that any recurrence should be calculated as ending on | `integer()` |   | `false` | `supported`
 `exclude.[]` |   | `string()` |   | `false` |  
