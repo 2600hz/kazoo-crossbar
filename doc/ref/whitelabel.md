@@ -18,7 +18,6 @@ Key | Description | Type | Default | Required | Support Level
 `commland` | Properties related to commland | `object()` |   | `false` |  
 `company_name` | The company name to display to users | `string()` |   | `false` | `supported`
 `conference_public_domain` | This is the whitelabeled domain that conference participants can use to reach the conference through webphone | `string()` |   | `false` | `supported`
-`dkim_selector` | This is the selector that the receiving server should use to look up the DNS record | `string()` |   | `false` | `supported`
 `domain` | This is the whitelabeled domain that users will be entering to reach the UI | `string()` |   | `false` | `supported`
 `fake_api_url` | This is a whitelabeled API URL, primarily used by the developer application | `string()` |   | `false` | `beta`
 `hide_credits` | When checked this hides the credits | `boolean()` | `false` | `false` | `beta`
@@ -92,32 +91,22 @@ curl -v -X GET \
 
 ## Fetch
 
-> GET /v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
+> GET /v2/accounts/{ACCOUNT_ID}/whitelabel/emails
 
 ```shell
 curl -v -X GET \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
-    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/emails
 ```
 
-## Change
+## Create
 
-> POST /v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
-
-```shell
-curl -v -X POST \
-    -H "X-Auth-Token: {AUTH_TOKEN}" \
-    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
-```
-
-## Remove
-
-> DELETE /v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
+> PUT /v2/accounts/{ACCOUNT_ID}/whitelabel/emails
 
 ```shell
-curl -v -X DELETE \
+curl -v -X PUT \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
-    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/emails
 ```
 
 ## Fetch
@@ -202,6 +191,36 @@ curl -v -X POST \
 
 ## Fetch
 
+> GET /v2/accounts/{ACCOUNT_ID}/whitelabel/emails/{EMAIL_ID}
+
+```shell
+curl -v -X GET \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/emails/{EMAIL_ID}
+```
+
+## Change
+
+> POST /v2/accounts/{ACCOUNT_ID}/whitelabel/emails/{EMAIL_ID}
+
+```shell
+curl -v -X POST \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/emails/{EMAIL_ID}
+```
+
+## Remove
+
+> DELETE /v2/accounts/{ACCOUNT_ID}/whitelabel/emails/{EMAIL_ID}
+
+```shell
+curl -v -X DELETE \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/emails/{EMAIL_ID}
+```
+
+## Fetch
+
 > GET /v2/accounts/{ACCOUNT_ID}/whitelabel/{WHITELABEL_DOMAIN}/welcome
 
 ```shell
@@ -228,5 +247,15 @@ curl -v -X GET \
 curl -v -X GET \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/{WHITELABEL_DOMAIN}/logo
+```
+
+## Change
+
+> POST /v2/accounts/{ACCOUNT_ID}/whitelabel/emails/{EMAIL_ID}/verify
+
+```shell
+curl -v -X POST \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/emails/{EMAIL_ID}/verify
 ```
 

@@ -6204,6 +6204,32 @@
     'TXT':
       'description': TXT records
       'type': object
+'emails':
+  'description': Schema for an email address
+  'properties':
+    'dkim_selector':
+      'description': |-
+        This is the selector that the receiving server should use to look up the DNS record
+      'type': string
+    'email':
+      'description': The email address of the user
+      'format': email
+      'type': string
+  'required':
+    - email
+  'type': object
+'emails_claim':
+  'description': Schema to request verification of an email address
+  'properties':
+    'code':
+      'description': The verification code number sent to the email address
+      'maxLength': 4
+      'minLength': 4
+      'type': string
+      'x-support_level': supported
+  'required':
+    - code
+  'type': object
 'endpoint.media':
   'description': Schema for endpoint media options
   'properties':
@@ -18149,11 +18175,6 @@
       'description': |-
         This is the whitelabeled domain that conference participants can use to reach the conference through webphone
       'format': uri
-      'type': string
-      'x-support_level': supported
-    'dkim_selector':
-      'description': |-
-        This is the selector that the receiving server should use to look up the DNS record
       'type': string
       'x-support_level': supported
     'domain':
