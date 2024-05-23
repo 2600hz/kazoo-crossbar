@@ -12,16 +12,16 @@
 -module(cb_whitelabel).
 
 -export([init/0
-        ,allowed_methods/0, allowed_methods/1, allowed_methods/2
-        ,resource_exists/0, resource_exists/1, resource_exists/2
+        ,allowed_methods/0, allowed_methods/1, allowed_methods/2, allowed_methods/3
+        ,resource_exists/0, resource_exists/1, resource_exists/2, resource_exists/3
         ,authenticate/2, authenticate/3
         ,authorize/2, authorize/3
-        ,validate/1, validate/2, validate/3
-        ,content_types_provided/2, content_types_provided/3
-        ,content_types_accepted/2
-        ,put/1
-        ,post/1, post/2
-        ,delete/1, delete/2
+        ,validate/1, validate/2, validate/3, validate/4
+        ,content_types_provided/2, content_types_provided/3, content_types_provided/4
+        ,content_types_accepted/2, content_types_accepted/3
+        ,put/1, put/2
+        ,post/1, post/2, post/3, post/4
+        ,delete/1, delete/3
 
         ,acceptable_content_types/0
         ,find_whitelabel_from_domain/2
@@ -34,7 +34,14 @@
 -define(ICON_REQ, <<"icon">>).
 -define(DOMAINS_REQ, <<"domains">>).
 -define(WELCOME_REQ, <<"welcome">>).
--define(DKIM_KEY_REQ, <<"dkim_key">>).
+
+-define(EMAILS_REQ, <<"emails">>).
+-define(VERIFY, <<"verify">>).
+-define(EMAIL_PVT_TYPE, kzd_emails:type()).
+-define(DKIM_PEM_FILE_NAME, kzd_emails:dkim_filename()).
+
+%% Views
+-define(CB_LIST, <<"emails/crossbar_listing">>).
 
 -define(WHITELABEL_MIME_TYPES, ?IMAGE_CONTENT_TYPES ++ ?BASE64_CONTENT_TYPES).
 
@@ -97,8 +104,8 @@ allowed_methods(?WELCOME_REQ) ->
     [?HTTP_GET, ?HTTP_POST];
 allowed_methods(?DOMAINS_REQ) ->
     [?HTTP_GET, ?HTTP_POST];
-allowed_methods(?DKIM_KEY_REQ) ->
-    [?HTTP_GET, ?HTTP_POST, ?HTTP_DELETE];
+allowed_methods(?EMAILS_REQ) ->
+    [?HTTP_GET, ?HTTP_PUT];
 allowed_methods(_WhitelabelDomain) ->
     [?HTTP_GET].
 
@@ -108,7 +115,13 @@ allowed_methods(_WhitelabelDomain, ?LOGO_REQ) ->
 allowed_methods(_WhitelabelDomain, ?ICON_REQ) ->
     [?HTTP_GET];
 allowed_methods(_WhitelabelDomain, ?WELCOME_REQ) ->
-    [?HTTP_GET].
+    [?HTTP_GET];
+allowed_methods(?EMAILS_REQ, _EmailId) ->
+    [?HTTP_GET, ?HTTP_POST, ?HTTP_DELETE].
+
+-spec allowed_methods(path_token(), path_token(), path_token()) -> http_methods().
+allowed_methods(?EMAILS_REQ, _EmailId, ?VERIFY) ->
+    [?HTTP_POST].
 
 %%------------------------------------------------------------------------------
 %% @doc This function determines if the provided list of Nouns are valid.
@@ -124,13 +137,17 @@ resource_exists(?LOGO_REQ) -> 'true';
 resource_exists(?ICON_REQ) -> 'true';
 resource_exists(?WELCOME_REQ) -> 'true';
 resource_exists(?DOMAINS_REQ) -> 'true';
-resource_exists(?DKIM_KEY_REQ) -> 'true';
+resource_exists(?EMAILS_REQ) -> 'true';
 resource_exists(_) -> 'true'.
 
 -spec resource_exists(path_token(), path_token()) -> 'true'.
 resource_exists(_, ?LOGO_REQ) -> 'true';
 resource_exists(_, ?WELCOME_REQ) -> 'true';
-resource_exists(_, ?ICON_REQ) -> 'true'.
+resource_exists(_, ?ICON_REQ) -> 'true';
+resource_exists(?EMAILS_REQ, _) -> 'true'.
+
+-spec resource_exists(path_token(), path_token(), path_token()) -> 'true'.
+resource_exists(?EMAILS_REQ, _, ?VERIFY) -> 'true'.
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -149,6 +166,8 @@ authorize(Context, _Domain, ?LOGO_REQ) ->
 authorize(Context, _Domain, ?ICON_REQ) ->
     cb_context:req_verb(Context) =:= ?HTTP_GET;
 authorize(Context, _Domain, ?WELCOME_REQ) ->
+    cb_context:req_verb(Context) =:= ?HTTP_GET;
+authorize(Context, ?EMAILS_REQ, _Email) ->
     cb_context:req_verb(Context) =:= ?HTTP_GET.
 
 %%------------------------------------------------------------------------------
@@ -231,27 +250,42 @@ set_content_type_provided(Context, JObj) ->
     [Type, SubType] = binary:split(CT, <<"/">>),
     cb_context:set_content_types_provided(Context, [{'to_binary', [{Type, SubType, []}]}]).
 
+-spec content_types_provided(cb_context:context(), path_token(), path_token(), path_token()) ->
+          cb_context:context().
+content_types_provided(Context, _ReqType, _Id, _Req) ->
+    Context.
+
 -spec content_types_accepted(cb_context:context(), path_token()) -> cb_context:context().
 content_types_accepted(Context, AttachType) ->
-    content_types_accepted(Context, AttachType, cb_context:req_verb(Context)).
+    content_types_accepted_for_upload(Context, AttachType, cb_context:req_verb(Context)).
 
--spec content_types_accepted(cb_context:context(), path_token(), http_method()) ->
+-spec content_types_accepted_for_upload(cb_context:context(), path_token(), http_method()) ->
           cb_context:context().
-content_types_accepted(Context, ?LOGO_REQ, ?HTTP_POST) ->
+content_types_accepted_for_upload(Context, ?LOGO_REQ, ?HTTP_POST) ->
     CTA = [{'from_binary', ?WHITELABEL_MIME_TYPES}],
     cb_context:set_content_types_accepted(Context, CTA);
-content_types_accepted(Context, ?ICON_REQ, ?HTTP_POST) ->
+content_types_accepted_for_upload(Context, ?ICON_REQ, ?HTTP_POST) ->
     CTA = [{'from_binary', ?WHITELABEL_ICON_MIME_TYPES}],
     cb_context:set_content_types_accepted(Context, CTA);
-content_types_accepted(Context, ?WELCOME_REQ, ?HTTP_POST) ->
+content_types_accepted_for_upload(Context, ?WELCOME_REQ, ?HTTP_POST) ->
     CTA = [{'from_binary', ?WHITELABEL_WELCOME_MIME_TYPES}],
     cb_context:set_content_types_accepted(Context, CTA);
-content_types_accepted(Context, ?DKIM_KEY_REQ, ?HTTP_POST) ->
+content_types_accepted_for_upload(Context, _AttachType, _Verb) ->
+    Context.
+
+-spec content_types_accepted(cb_context:context(), path_token(), path_token()) ->
+          cb_context:context().
+content_types_accepted(Context, AttachType, Id) ->
+    content_types_accepted_for_upload(Context, AttachType, Id, cb_context:req_verb(Context)).
+
+-spec content_types_accepted_for_upload(cb_context:context(), path_token(), path_token(), http_method()) ->
+          cb_context:context().
+content_types_accepted_for_upload(Context, ?EMAILS_REQ, _EmailId, ?HTTP_POST) ->
     CTA = [{'from_binary', ?DKIM_PEM_CONTENT_TYPES}
           ,{'from_json', ?JSON_CONTENT_TYPES}
           ],
     cb_context:set_content_types_accepted(Context, CTA);
-content_types_accepted(Context, _AttachType, _Verb) ->
+content_types_accepted_for_upload(Context, _AttachType, _Id, _Verb) ->
     Context.
 
 %%------------------------------------------------------------------------------
@@ -283,12 +317,22 @@ validate(Context, ?ICON_REQ) ->
     validate_attachment(Context, ?ICON_REQ, cb_context:req_verb(Context));
 validate(Context, ?WELCOME_REQ) ->
     validate_attachment(Context, ?WELCOME_REQ, cb_context:req_verb(Context));
-validate(Context, ?DKIM_KEY_REQ) ->
-    validate_attachment(Context, ?DKIM_KEY_REQ, cb_context:req_verb(Context));
+validate(Context, ?EMAILS_REQ) ->
+    validate_emails(Context, cb_context:req_verb(Context));
 validate(Context, ?DOMAINS_REQ) ->
     validate_domains(Context, cb_context:req_verb(Context));
 validate(Context, Domain) ->
     validate_domain(Context, Domain, cb_context:req_verb(Context)).
+
+-spec validate(cb_context:context(), path_token(), path_token()) -> cb_context:context().
+validate(Context, ?EMAILS_REQ, EmailID) ->
+    validate_email(Context, EmailID, cb_context:req_verb(Context));
+validate(Context, Domain, AttachType) ->
+    validate_domain_attachment(Context, Domain, AttachType, cb_context:req_verb(Context)).
+
+-spec validate(cb_context:context(), path_token(), path_token(), path_token()) -> cb_context:context().
+validate(Context, ?EMAILS_REQ, EmailID, ?VERIFY) ->
+    validate_email_verify(Context, EmailID, cb_context:req_verb(Context)).
 
 -spec validate_attachment(cb_context:context(), path_token(), http_method()) ->
           cb_context:context().
@@ -298,21 +342,6 @@ validate_attachment(Context, ?ICON_REQ, ?HTTP_GET) ->
     load_whitelabel_binary(Context, ?ICON_REQ);
 validate_attachment(Context, ?WELCOME_REQ, ?HTTP_GET) ->
     load_whitelabel_binary(Context, ?WELCOME_REQ);
-validate_attachment(Context, ?DKIM_KEY_REQ, ?HTTP_GET) ->
-    read_dkim_info(load_whitelabel_meta(Context, ?WHITELABEL_ID));
-validate_attachment(Context, ?DKIM_KEY_REQ, ?HTTP_DELETE) ->
-    load_whitelabel_meta(Context, ?WHITELABEL_ID);
-validate_attachment(Context, ?DKIM_KEY_REQ, ?HTTP_POST) ->
-    ReqCT = cb_context:req_header(Context, <<"content-type">>),
-    case api_util:content_type_matches(ReqCT, acceptable_content_types()) of
-        'false' ->
-            lager:info("request is to update DKIM metadata"),
-            validate_request(load_whitelabel_meta(Context, ?WHITELABEL_ID), ?DKIM_KEY_REQ);
-        'true' ->
-            lager:info("request is to upload DKIM private key data"),
-            validate_attachment_post(Context, ?DKIM_KEY_REQ, cb_context:req_files(Context))
-    end;
-
 validate_attachment(Context, AttachType, ?HTTP_POST) ->
     validate_attachment_post(Context, AttachType, cb_context:req_files(Context)).
 
@@ -336,23 +365,12 @@ validate_attachment_post(Context, ?WELCOME_REQ, []) ->
                                    ,kz_json:from_list([{<<"message">>, <<"Please provide an html file">>}])
                                    ,Context
                                    );
-validate_attachment_post(Context, ?DKIM_KEY_REQ, []) ->
-    cb_context:add_validation_error(<<"file">>
-                                   ,<<"required">>
-                                   ,kz_json:from_list([{<<"message">>, <<"Please provide a pem file">>}])
-                                   ,Context
-                                   );
 validate_attachment_post(Context, ?LOGO_REQ, [{_Filename, FileJObj}]) ->
     validate_upload(Context, FileJObj);
 validate_attachment_post(Context, ?ICON_REQ, [{_Filename, FileJObj}]) ->
     validate_upload(Context, FileJObj);
 validate_attachment_post(Context, ?WELCOME_REQ, [{_Filename, FileJObj}]) ->
     validate_upload(Context, FileJObj);
-validate_attachment_post(Context, ?DKIM_KEY_REQ, [{_Filename, FileJObj}]) ->
-    validate_pem_file(Context
-                     ,FileJObj
-                     ,public_key:pem_decode(kz_json:get_binary_value(<<"contents">>, FileJObj, <<>>))
-                     );
 validate_attachment_post(Context, ?LOGO_REQ, _Files) ->
     cb_context:add_validation_error(<<"file">>
                                    ,<<"maxItems">>
@@ -369,28 +387,6 @@ validate_attachment_post(Context, ?WELCOME_REQ, _Files) ->
     cb_context:add_validation_error(<<"file">>
                                    ,<<"maxItems">>
                                    ,kz_json:from_list([{<<"message">>, <<"Please provide a single html file">>}])
-                                   ,Context
-                                   );
-validate_attachment_post(Context, ?DKIM_KEY_REQ, _Files) ->
-    cb_context:add_validation_error(<<"file">>
-                                   ,<<"maxItems">>
-                                   ,kz_json:from_list([{<<"message">>, <<"Please provide a single pem file">>}])
-                                   ,Context
-                                   ).
-
--spec validate_pem_file(cb_context:context(), kz_json:object(), list()) ->
-          cb_context:context().
-validate_pem_file(Context, FileJObj, [{PKIType,_DER,_CipherInfo}])
-  when PKIType =:= 'PrivateKeyInfo'
-       orelse PKIType =:= 'RSAPrivateKey'
-       orelse PKIType =:= 'ECPrivateKey'
-       ->
-    lager:info("PEM decoded successfully: ~p", [PKIType]),
-    validate_upload(Context, FileJObj);
-validate_pem_file(Context, _FileJObj, _PemEntry) ->
-    cb_context:add_validation_error(<<"file">>
-                                   ,<<"required">>
-                                   ,kz_json:from_list([{<<"message">>, <<"Please provide a valid PEM file">>}])
                                    ,Context
                                    ).
 
@@ -410,6 +406,134 @@ validate_upload(Context, FileJObj) ->
                             );
         _Status -> Context1
     end.
+
+validate_emails(Context, ?HTTP_GET) ->
+    load_emails(Context);
+validate_emails(Context, ?HTTP_PUT) ->
+    check_email_schema(Context, 'undefined').
+
+validate_email(Context, EmailId, ?HTTP_GET) ->
+    load_email(Context, EmailId);
+validate_email(Context, EmailId, ?HTTP_POST) ->
+    ReqCT = cb_context:req_header(Context, <<"content-type">>),
+    case api_util:content_type_matches(ReqCT, acceptable_content_types()) of
+        'false' ->
+            lager:info("request is to update email metadata"),
+            check_email_schema(Context, EmailId);
+        'true' ->
+            lager:info("request is to upload DKIM private key data"),
+            case cb_context:req_files(Context) of
+                [{_Filename, FileJObj}] ->
+                    validate_pem_file(Context
+                                     ,EmailId
+                                     ,FileJObj
+                                     ,public_key:pem_decode(kz_json:get_binary_value(<<"contents">>, FileJObj, <<>>))
+                                     );
+                _ ->
+                    cb_context:add_validation_error(<<"file">>
+                                                   ,<<"required">>
+                                                   ,kz_json:from_list([{<<"message">>, <<"Please provide a single valid PEM file">>}])
+                                                   ,Context
+                                                   )
+            end
+    end;
+validate_email(Context, EmailId, ?HTTP_DELETE) ->
+    load_email(Context, EmailId).
+
+-spec validate_pem_file(cb_context:context(), kz_term:ne_binary(), kz_json:object(), list()) ->
+          cb_context:context().
+validate_pem_file(Context, EmailId, FileJObj, [{PKIType,_DER,_CipherInfo}])
+  when PKIType =:= 'PrivateKeyInfo'
+       orelse PKIType =:= 'RSAPrivateKey'
+       orelse PKIType =:= 'ECPrivateKey'
+       ->
+    lager:info("PEM decoded successfully: ~p", [PKIType]),
+    validate_pem_file(Context, EmailId, FileJObj);
+validate_pem_file(Context, _EmailId, _FileJObj, _PemEntry) ->
+    cb_context:add_validation_error(<<"file">>
+                                   ,<<"required">>
+                                   ,kz_json:from_list([{<<"message">>, <<"Please provide a valid PEM file">>}])
+                                   ,Context
+                                   ).
+
+-spec validate_pem_file(cb_context:context(), kz_term:ne_binary(), kz_json:object()) ->
+          cb_context:context().
+validate_pem_file(Context, EmailId, FileJObj) ->
+    Context1 = load_email(Context, EmailId),
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            Props = [{<<"content_type">>, content_type(FileJObj)}
+                    ,{<<"content_length">>, file_size(FileJObj)}
+                    ,{<<"pvt_type">>, ?EMAIL_PVT_TYPE}
+                    ],
+            cb_context:set_req_data(Context1, kz_json:set_values(Props, cb_context:doc(Context1)));
+        _Status -> Context1
+    end.
+
+validate_email_verify(Context, EmailId, ?HTTP_POST) ->
+    lager:info("request is to verify email address"),
+    OnSuccess = fun(Ctx) -> load_email(Ctx, EmailId) end,
+    cb_context:validate_request_data(<<"email_claim">>, Context, OnSuccess).
+
+-spec check_email_schema(cb_context:context(), kz_term:api_binary()) -> cb_context:context().
+check_email_schema(Context, EmailId) ->
+    OnSuccess = fun(C) -> on_successful_email_validation(C, EmailId) end,
+    cb_context:validate_request_data(kzd_emails:schema(), Context, OnSuccess).
+
+-spec on_successful_email_validation(cb_context:context(), kz_term:api_binary()) -> cb_context:context().
+on_successful_email_validation(Context, 'undefined') ->
+    Doc = kz_json:set_values([{<<"pvt_type">>, ?EMAIL_PVT_TYPE}]
+                            ,cb_context:doc(Context)
+                            ),
+    validate_email_address(cb_context:set_doc(Context, Doc));
+on_successful_email_validation(Context, EmailId) ->
+    Context1 = crossbar_doc:load_merge(EmailId, Context, ?TYPE_CHECK_OPTION(?EMAIL_PVT_TYPE)),
+    Context2 = validate_email_address(Context1),
+    case cb_context:resp_status(Context2) of
+        'success' ->
+            add_metadata_fields(Context2);
+        _Status -> Context2
+    end.
+
+-spec validate_email_address(cb_context:context()) -> cb_context:context().
+validate_email_address(Context) ->
+    EmailAddress = kzd_emails:email(cb_context:req_data(Context)),
+    case kzd_emails:is_email_unique(Context, 'undefined', EmailAddress) of
+        'true' ->
+            Context;
+        'false' ->
+            cb_context:add_validation_error(<<"email">>
+                                           ,<<"unique">>
+                                           ,kz_json:from_list(
+                                              [{<<"message">>, <<"Whitelabel email address is already in use">>}
+                                              ,{<<"cause">>, EmailAddress}
+                                              ])
+                                           ,Context
+                                           )
+    end.
+
+-spec load_emails(cb_context:context()) -> cb_context:context().
+load_emails(Context) ->
+    Options = [{'doc_type', ?EMAIL_PVT_TYPE}
+              ,{'mapper', crossbar_view:get_value_fun()}
+              ],
+    crossbar_view:load(Context, ?CB_LIST, Options).
+
+-spec load_email(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+load_email(Context, EmailId) ->
+    Context1 = crossbar_doc:load(EmailId, Context, ?TYPE_CHECK_OPTION(?EMAIL_PVT_TYPE)),
+    case cb_context:resp_status(Context1) of
+        'success' -> add_metadata_fields(Context1);
+        _Status -> Context1
+    end.
+
+-spec add_metadata_fields(cb_context:context()) -> cb_context:context().
+add_metadata_fields(Context) ->
+    Doc = cb_context:doc(Context),
+    cb_context:add_metadata_value(Context
+                                 ,<<"verified">>
+                                 ,kzd_emails:pvt_verified(Doc)
+                                 ).
 
 -spec content_type(kz_json:object()) -> kz_term:ne_binary().
 content_type(FileJObj) ->
@@ -621,16 +745,46 @@ validate_domain(Context, Domain, ?HTTP_GET) ->
         _AccountId -> load_whitelabel_meta(Context, ?WHITELABEL_ID)
     end.
 
--spec validate(cb_context:context(), path_token(), path_token()) -> cb_context:context().
-validate(Context, Domain, AttachType) ->
-    validate_domain_attachment(Context, Domain, AttachType, cb_context:req_verb(Context)).
-
 validate_domain_attachment(Context, Domain, AttachType, ?HTTP_GET) ->
     find_whitelabel_binary(Context, Domain, AttachType).
 
 -spec put(cb_context:context()) -> cb_context:context().
 put(Context) ->
     maybe_update_account_definition(crossbar_doc:save(Context)).
+
+-spec put(cb_context:context(), path_token()) -> cb_context:context().
+put(Context, ?EMAILS_REQ) ->
+    Context1 = crossbar_doc:save(update_code(Context)),
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            _ = send_verification_code(Context1),
+            Msg = <<"Email verification code was sent, Please check your email to learn how to verify your email address.">>,
+            crossbar_util:response(Msg, add_metadata_fields(Context1));
+        _Else -> Context1
+    end.
+
+-spec update_code(cb_context:context()) -> cb_context:context().
+update_code(Context) ->
+    Doc = cb_context:doc(Context),
+    Code = kz_term:to_binary(kz_term:rand_integer(1000, 9999)),
+    Setters = [{fun kzd_emails:set_pvt_code/2, Code}
+              ,{fun kzd_emails:set_pvt_verified/2, 'false'}
+              ],
+    cb_context:set_doc(Context, kz_doc:setters(Doc, Setters)).
+
+-spec send_verification_code(cb_context:context()) -> 'ok'.
+send_verification_code(Context) ->
+    Doc = cb_context:doc(Context),
+    Email = kzd_emails:email(Doc),
+    Code = kzd_emails:pvt_code(Doc),
+    lager:debug("created 4 digit pin code, sending email to '~s'", [Email]),
+    Notify = [{<<"Email">>, Email}
+             ,{<<"Verification-Code">>, Code}
+             ,{<<"Account-ID">>, kz_doc:account_id(Doc)}
+             ,{<<"Account-DB">>, kz_doc:account_db(Doc)}
+             | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+             ],
+    kapps_notify_publisher:cast(Notify, fun kapi_notifications:publish_email_verification/1).
 
 -spec post(cb_context:context()) -> cb_context:context().
 post(Context) ->
@@ -643,20 +797,67 @@ post(Context, ?ICON_REQ) ->
     update_whitelabel_binary(?ICON_REQ, ?WHITELABEL_ID, Context);
 post(Context, ?WELCOME_REQ) ->
     update_whitelabel_binary(?WELCOME_REQ, ?WHITELABEL_ID, Context);
-post(Context, ?DKIM_KEY_REQ) ->
-    update_whitelabel_binary(?DKIM_KEY_REQ, ?WHITELABEL_ID, Context);
 post(Context, ?DOMAINS_REQ) ->
     cb_context:set_resp_status(Context, 'success').
+
+-spec post(cb_context:context(), path_token(), path_token()) -> cb_context:context().
+post(Context, ?EMAILS_REQ, EmailId) ->
+    case cb_context:req_files(Context) of
+        [{_Filename, FileObj}] ->
+            lager:debug("updating DKIM file of email id ~p", [EmailId]),
+            upload_dkim_file(Context, EmailId, FileObj);
+        _Else ->
+            lager:debug("updating metadata of email id ~p", [EmailId]),
+            crossbar_doc:save(Context)
+    end.
+
+-spec upload_dkim_file(cb_context:context(), kz_term:ne_binary(), kz_json:object()) -> cb_context:context().
+upload_dkim_file(Context, EmailId, FileObj) ->
+    Contents = kz_json:get_value(<<"contents">>, FileObj),
+    CT = kz_json:get_value([<<"headers">>, <<"content_type">>], FileObj),
+    Opts = [{'content_type', CT} | ?TYPE_CHECK_OPTION(<<"whitelabel">>)],
+    lager:debug("saving DKIM file for email id ~p", [EmailId]),
+    crossbar_doc:save_attachment(EmailId
+                                ,?DKIM_PEM_FILE_NAME
+                                ,Contents
+                                ,Context
+                                ,Opts
+                                ).
+
+-spec post(cb_context:context(), path_token(), path_token(), path_token()) -> cb_context:context().
+post(Context, ?EMAILS_REQ, EmailId, ?VERIFY) ->
+    Doc = cb_context:doc(Context),
+    Code = kzd_email_claim:code(cb_context:req_data(Context)),
+    UpdatedContext =
+        case Code =:= kzd_emails:pvt_code(Doc) of
+            'true' ->
+                lager:debug("email id ~p is verified", [EmailId]),
+                Setters = [{fun kzd_emails:set_pvt_verified/2, 'true'}
+                          ,{fun kzd_emails:set_pvt_code/2, 'null'}
+                          ],
+                crossbar_doc:save(cb_context:set_doc(Context, kz_doc:setters(Doc, Setters)));
+            'false' ->
+                lager:debug("failed to verify email id ~p and sending the verification code again", [EmailId]),
+                Context1 = crossbar_doc:save(update_code(Context)),
+                case cb_context:resp_status(Context1) of
+                    'success' ->  send_verification_code(Context1);
+                    _Else ->  'ok'
+                end,
+                cb_context:add_validation_error(<<"code">>
+                                               ,<<"invalid">>
+                                               ,<<"Code does not match, a new verification code was sent. Please check your email">>
+                                               ,Context1
+                                               )
+        end,
+    add_metadata_fields(UpdatedContext).
 
 -spec delete(cb_context:context()) -> cb_context:context().
 delete(Context) ->
     maybe_cleanup_account_definition(crossbar_doc:delete(Context, ?HARD_DELETE)).
 
--spec delete(cb_context:context(), path_token()) -> cb_context:context().
-delete(Context, ?DKIM_KEY_REQ) ->
-    delete_dkim_pvt_key_file(Context
-                            ,kzd_whitelabel:dkim_key_id(cb_context:doc(Context))
-                            ).
+-spec delete(cb_context:context(), path_token(), path_token()) -> cb_context:context().
+delete(Context, ?EMAILS_REQ, _EmailId) ->
+    crossbar_doc:delete(Context).
 
 %%------------------------------------------------------------------------------
 %% @doc Load the binary attachment of a whitelabel doc (based on a domain)
@@ -791,134 +992,10 @@ update_response_with_attachment(Context, AttachmentId, JObj) ->
                                                }
                                              ),
     cb_context:set_resp_etag(WithHeaders, 'undefined').
-
-%%------------------------------------------------------------------------------
-%% @doc Update DKIM private key doc ID to whitelabel doc
-%% @end
-%%------------------------------------------------------------------------------
--spec update_dkim_pvt_key_file_id(cb_context:context(), kz_term:ne_binary() | 'null') ->
-          cb_context:context().
-update_dkim_pvt_key_file_id(Context, PvtKeyId) ->
-    crossbar_doc:save(cb_context:set_doc(Context
-                                        ,kzd_whitelabel:set_dkim_key_id(cb_context:doc(Context), PvtKeyId)
-                                        )).
-%%------------------------------------------------------------------------------
-%% @doc Load the DKIM private key doc
-%% @end
-%%------------------------------------------------------------------------------
--spec load_dkim_pvt_key_meta(cb_context:context(), kz_term:api_ne_binary()) -> cb_context:context().
-load_dkim_pvt_key_meta(Context, 'undefined') ->
-    crossbar_util:response_bad_identifier(?DKIM_KEY_REQ, Context);
-load_dkim_pvt_key_meta(Context, DocId) ->
-    crossbar_doc:load(DocId, Context, ?TYPE_CHECK_OPTION(?DKIM_KEY_REQ)).
-
--spec read_dkim_info(cb_context:context()) -> cb_context:context().
-read_dkim_info(Context) ->
-    Context1 = load_dkim_pvt_key_meta(Context
-                                     ,kzd_whitelabel:dkim_key_id(cb_context:doc(Context))
-                                     ),
-    handle_dkim_pvt_key_response(Context1, cb_context:resp_status(Context1)).
-%%------------------------------------------------------------------------------
-%% @doc Save the DKIM private key doc
-%% @end
-%%------------------------------------------------------------------------------
--spec save_dkim_pvt_key_file(cb_context:context(), kz_json:object()) ->
-          cb_context:context().
-save_dkim_pvt_key_file(Context, Doc) ->
-    [{_Filename, FileObj}] = cb_context:req_files(Context),
-    Contents = kz_json:get_value(<<"contents">>, FileObj),
-    CT = kz_json:get_value([<<"headers">>, <<"content_type">>], FileObj),
-    Opts = [{'content_type', CT} | ?TYPE_CHECK_OPTION(<<"whitelabel">>)],
-    Doc1 = kz_json:set_value(<<"pvt_type">>, ?DKIM_KEY_REQ, Doc),
-    Context1 = crossbar_doc:save(cb_context:set_doc(Context, Doc1)),
-    case cb_context:resp_status(Context1) of
-        'success' ->
-            DocId = kz_doc:id(cb_context:doc(Context1)),
-            _ = update_dkim_pvt_key_file_id(Context, DocId),
-            Context2 = crossbar_doc:save_attachment(DocId
-                                                   ,<<"pem">>
-                                                   ,Contents
-                                                   ,Context1
-                                                   ,Opts
-                                                   ),
-            handle_dkim_pvt_key_response(Context2, cb_context:resp_status(Context2));
-        _ ->
-            Context1
-    end.
-
--spec save_dkim_pvt_key_file_name(cb_context:context(), kz_json:object(), kz_term:ne_binary()) ->
-          cb_context:context().
-save_dkim_pvt_key_file_name(Context, Doc, Name) ->
-    Doc1 = kz_json:set_value(<<"name">>, Name, Doc),
-    Context1 = crossbar_doc:save(cb_context:set_doc(Context, Doc1)),
-    handle_dkim_pvt_key_response(Context1, cb_context:resp_status(Context1)).
-
-%%------------------------------------------------------------------------------
-%% @doc Delete the DKIM private key doc
-%% @end
-%%------------------------------------------------------------------------------
--spec delete_dkim_pvt_key_file(cb_context:context(), kz_term:api_ne_binary()) -> cb_context:context().
-delete_dkim_pvt_key_file(Context, DocId) ->
-    PvtKeyContext = load_dkim_pvt_key_meta(Context, DocId),
-    case cb_context:resp_status(PvtKeyContext) of
-        'success' ->
-            _ = update_dkim_pvt_key_file_id(Context, 'null'),
-
-            lager:debug("deleting DKIM pvt key info from account db"),
-            Context1 = crossbar_doc:delete(PvtKeyContext, ?HARD_DELETE),
-            handle_dkim_pvt_key_response(Context1, cb_context:resp_status(Context1));
-        _Status ->
-            PvtKeyContext
-    end.
-
-%%------------------------------------------------------------------------------
-%% @doc Remove DKIM private key doc id from the response
-%% @end
-%%------------------------------------------------------------------------------
--spec handle_dkim_pvt_key_response(cb_context:context(), crossbar_status()) -> cb_context:context().
-handle_dkim_pvt_key_response(Context, 'success') ->
-    RespData = kz_json:delete_key(<<"id">>
-                                 ,cb_context:resp_data(Context)
-                                 ),
-    Doc = kz_json:delete_key(<<"_id">>
-                            ,cb_context:doc(Context)
-                            ),
-    cb_context:setters(Context
-                      ,[{fun cb_context:set_resp_data/2, RespData}
-                       ,{fun cb_context:set_doc/2, Doc}
-                       ]);
-handle_dkim_pvt_key_response(Context, _Status) ->
-    Context.
 %%------------------------------------------------------------------------------
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec validate_request(cb_context:context(), kz_term:api_binary()) -> cb_context:context().
-validate_request(Context, ?DKIM_KEY_REQ) ->
-    case cb_context:resp_status(Context) of
-        'success' ->
-            case kzd_whitelabel:dkim_key_id(cb_context:doc(Context)) of
-                'undefined' ->
-                    cb_context:add_validation_error(<<"file">>
-                                                   ,<<"required">>
-                                                   ,kz_json:from_list([{<<"message">>, <<"Please uplaod a pem file first">>}])
-                                                   ,Context
-                                                   );
-                _PvtKeyId ->
-                    case kz_json:get_ne_binary_value(<<"name">>, cb_context:req_data(Context)) of
-                        'undefined' ->
-                            cb_context:add_validation_error(<<"name">>
-                                                           ,<<"required">>
-                                                           ,kz_json:from_list([{<<"message">>, <<"Please provide a file name">>}])
-                                                           ,Context
-                                                           );
-                        _Name ->
-                            check_whitelabel_schema(Context, ?WHITELABEL_ID)
-                    end
-            end;
-        _Status -> Context
-    end;
-
 validate_request(Context, WhitelabelId) ->
     validate_unique_domain(Context, WhitelabelId).
 
@@ -958,29 +1035,6 @@ on_successful_validation(Context, WhitelabelId) ->
 %% @doc Update the binary attachment of a whitelabel doc
 %% @end
 %%------------------------------------------------------------------------------
--spec update_whitelabel_binary(kz_term:ne_binary(), path_token(), cb_context:context()) ->
-          cb_context:context().
-update_whitelabel_binary(?DKIM_KEY_REQ, _WhitelabelId, Context) ->
-    case kzd_whitelabel:dkim_key_id(cb_context:doc(Context)) of
-        'undefined' ->
-            save_dkim_pvt_key_file(Context, kz_json:new());
-        PvtKeyId ->
-            Context1 = load_dkim_pvt_key_meta(Context, PvtKeyId),
-            Doc = cb_context:doc(Context1),
-            case cb_context:resp_status(Context1) of
-                'success' ->
-                    case kz_json:get_ne_binary_value(<<"name">>, cb_context:req_data(Context)) of
-                        'undefined' ->
-                            save_dkim_pvt_key_file(Context1
-                                                  ,kz_doc:delete_attachment(Doc, PvtKeyId)
-                                                  );
-                        Name ->
-                            save_dkim_pvt_key_file_name(Context1, Doc, Name)
-                    end;
-                _Status ->
-                    Context1
-            end
-    end;
 update_whitelabel_binary(AttachType, WhitelabelId, Context) ->
     JObj = cb_context:doc(Context),
     [{Filename, FileObj}] = cb_context:req_files(Context),
