@@ -8,6 +8,16 @@
     'minLength': 32
     'pattern': '^[0-9a-f]+$'
     'type': string
+'ADDRESS_ID':
+  'description': request ADDRESS_ID parameter
+  'in': path
+  'name': ADDRESS_ID
+  'required': true
+  'schema':
+    'maxLength': 32
+    'minLength': 32
+    'pattern': '^[0-9a-f]+$'
+    'type': string
 'ALERT_ID':
   'description': request ALERT_ID parameter
   'in': path
@@ -123,6 +133,16 @@
   'name': CALL_ID
   'required': true
   'schema':
+    'type': string
+'CARD_ID':
+  'description': request CARD_ID parameter
+  'in': path
+  'name': CARD_ID
+  'required': true
+  'schema':
+    'maxLength': 32
+    'minLength': 32
+    'pattern': '^[0-9a-f]+$'
     'type': string
 'CDR_ID':
   'description': request CDR_ID parameter
@@ -688,6 +708,16 @@
   'description': request TEMPORAL_RULE_SET parameter
   'in': path
   'name': TEMPORAL_RULE_SET
+  'required': true
+  'schema':
+    'maxLength': 32
+    'minLength': 32
+    'pattern': '^[0-9a-f]+$'
+    'type': string
+'THING_ID':
+  'description': request THING_ID parameter
+  'in': path
+  'name': THING_ID
   'required': true
   'schema':
     'maxLength': 32

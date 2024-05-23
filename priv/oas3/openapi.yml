@@ -106,6 +106,27 @@
   '/accounts/{ACCOUNT_ID}/blacklists/{BLACKLIST_ID}':
     '$ref': >-
       paths/blacklists.yml#/paths/~1accounts~1{ACCOUNT_ID}~1blacklists~1{BLACKLIST_ID}
+  '/accounts/{ACCOUNT_ID}/braintree/addresses':
+    '$ref': 'paths/braintree.yml#/paths/~1accounts~1{ACCOUNT_ID}~1braintree~1addresses'
+  '/accounts/{ACCOUNT_ID}/braintree/addresses/{ADDRESS_ID}':
+    '$ref': >-
+      paths/braintree.yml#/paths/~1accounts~1{ACCOUNT_ID}~1braintree~1addresses~1{ADDRESS_ID}
+  '/accounts/{ACCOUNT_ID}/braintree/cards':
+    '$ref': 'paths/braintree.yml#/paths/~1accounts~1{ACCOUNT_ID}~1braintree~1cards'
+  '/accounts/{ACCOUNT_ID}/braintree/cards/{CARD_ID}':
+    '$ref': >-
+      paths/braintree.yml#/paths/~1accounts~1{ACCOUNT_ID}~1braintree~1cards~1{CARD_ID}
+  '/accounts/{ACCOUNT_ID}/braintree/client_token':
+    '$ref': >-
+      paths/braintree.yml#/paths/~1accounts~1{ACCOUNT_ID}~1braintree~1client_token
+  '/accounts/{ACCOUNT_ID}/braintree/customer':
+    '$ref': 'paths/braintree.yml#/paths/~1accounts~1{ACCOUNT_ID}~1braintree~1customer'
+  '/accounts/{ACCOUNT_ID}/braintree/transactions':
+    '$ref': >-
+      paths/braintree.yml#/paths/~1accounts~1{ACCOUNT_ID}~1braintree~1transactions
+  '/accounts/{ACCOUNT_ID}/braintree/transactions/{TRANSACTION_ID}':
+    '$ref': >-
+      paths/braintree.yml#/paths/~1accounts~1{ACCOUNT_ID}~1braintree~1transactions~1{TRANSACTION_ID}
   '/accounts/{ACCOUNT_ID}/call_inspector':
     '$ref': 'paths/call_inspector.yml#/paths/~1accounts~1{ACCOUNT_ID}~1call_inspector'
   '/accounts/{ACCOUNT_ID}/call_inspector/{CALL_ID}':
@@ -186,6 +207,10 @@
       paths/connectivity.yml#/paths/~1accounts~1{ACCOUNT_ID}~1connectivity~1{CONNECTIVITY_ID}
   '/accounts/{ACCOUNT_ID}/contact_list':
     '$ref': 'paths/contact_list.yml#/paths/~1accounts~1{ACCOUNT_ID}~1contact_list'
+  '/accounts/{ACCOUNT_ID}/crud':
+    '$ref': 'paths/crud.yml#/paths/~1accounts~1{ACCOUNT_ID}~1crud'
+  '/accounts/{ACCOUNT_ID}/crud/{THING_ID}':
+    '$ref': 'paths/crud.yml#/paths/~1accounts~1{ACCOUNT_ID}~1crud~1{THING_ID}'
   '/accounts/{ACCOUNT_ID}/descendants':
     '$ref': 'paths/accounts.yml#/paths/~1accounts~1{ACCOUNT_ID}~1descendants'
   '/accounts/{ACCOUNT_ID}/devices':
@@ -481,6 +506,8 @@
       paths/presence.yml#/paths/~1accounts~1{ACCOUNT_ID}~1presence~1report-{REPORT_ID}
   '/accounts/{ACCOUNT_ID}/presence/{EXTENSION}':
     '$ref': 'paths/presence.yml#/paths/~1accounts~1{ACCOUNT_ID}~1presence~1{EXTENSION}'
+  '/accounts/{ACCOUNT_ID}/properly':
+    '$ref': 'paths/properly.yml#/paths/~1accounts~1{ACCOUNT_ID}~1properly'
   '/accounts/{ACCOUNT_ID}/quickroutes':
     '$ref': 'paths/quickroutes.yml#/paths/~1accounts~1{ACCOUNT_ID}~1quickroutes'
   '/accounts/{ACCOUNT_ID}/rate_limits':
@@ -604,6 +631,10 @@
     '$ref': 'paths/services.yml#/paths/~1accounts~1{ACCOUNT_ID}~1services~1{PLAN_ID}'
   '/accounts/{ACCOUNT_ID}/siblings':
     '$ref': 'paths/accounts.yml#/paths/~1accounts~1{ACCOUNT_ID}~1siblings'
+  '/accounts/{ACCOUNT_ID}/skels':
+    '$ref': 'paths/skels.yml#/paths/~1accounts~1{ACCOUNT_ID}~1skels'
+  '/accounts/{ACCOUNT_ID}/skels/{THING_ID}':
+    '$ref': 'paths/skels.yml#/paths/~1accounts~1{ACCOUNT_ID}~1skels~1{THING_ID}'
   '/accounts/{ACCOUNT_ID}/sms':
     '$ref': 'paths/sms.yml#/paths/~1accounts~1{ACCOUNT_ID}~1sms'
   '/accounts/{ACCOUNT_ID}/sms/{SMS_ID}':
