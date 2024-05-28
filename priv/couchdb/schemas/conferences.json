@@ -42,6 +42,11 @@
             "description": "domain",
             "type": "string"
         },
+        "endconf_grace_time": {
+            "description": "Defines how much time all members have before the conference is terminated when the last member with endconf leaves in seconds",
+            "minimum": 0,
+            "type": "integer"
+        },
         "flags": {
             "description": "Flags set by external applications",
             "items": {
@@ -57,6 +62,10 @@
         "language": {
             "description": "Prompt language to play in the conference",
             "type": "string"
+        },
+        "last_member_endconf": {
+            "description": "Indicates when last member with this flags exits the conference, conference will end after endconf_grace_time",
+            "type": "boolean"
         },
         "max_members_media": {
             "description": "Media to play when the conference is full",
@@ -80,6 +89,10 @@
                     "default": true,
                     "description": "Determines if a member will join muted",
                     "support_level": "supported",
+                    "type": "boolean"
+                },
+                "leave_endconf": {
+                    "description": "Indicates when last member with this flags exits the conference, conference will end after endconf_grace_time",
                     "type": "boolean"
                 },
                 "numbers": {
@@ -121,6 +134,10 @@
                 "join_muted": {
                     "default": false,
                     "description": "Determines if a moderator will join muted",
+                    "type": "boolean"
+                },
+                "leave_endconf": {
+                    "description": "Indicates when last moderator with this flags exits the conference, conference will end after endconf_grace_time",
                     "type": "boolean"
                 },
                 "numbers": {

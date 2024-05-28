@@ -5096,6 +5096,11 @@
     'domain':
       'description': domain
       'type': string
+    'endconf_grace_time':
+      'description': |-
+        'Defines how much time all members have before the conference is terminated when the last member with endconf leaves in seconds'
+      'minimum': 0
+      'type': integer
     'flags':
       'description': Flags set by external applications
       'items':
@@ -5129,6 +5134,10 @@
           'description': Determines if a member will join muted
           'type': boolean
           'x-support_level': supported
+        'leave_endconf':
+          'description': |-
+            Indicates when last member with this flags exits the conference, conference will end after endconf_grace_time
+          'type': boolean
         'numbers':
           'default': []
           'description': Defines the conference (call in) number(s) for members
@@ -5160,6 +5169,10 @@
         'join_muted':
           'default': false
           'description': Determines if a moderator will join muted
+          'type': boolean
+        'leave_endconf':
+          'description': |-
+            Indicates when last moderator with this flags exits the conference, conference will end after endconf_grace_time
           'type': boolean
         'numbers':
           'default': []
