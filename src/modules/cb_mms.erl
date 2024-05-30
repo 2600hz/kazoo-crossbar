@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2023, 2600Hz
+%%% @copyright (C) 2012-2024, 2600Hz
 %%% @doc
 %%% @author Luis Azedo
 %%%
@@ -252,18 +252,18 @@ set_route_type(Context) ->
 
 -spec set_route_type(cb_context:context(), kz_term:ne_binary_or_binaries()) -> cb_context:context().
 set_route_type(Context, To) ->
-    cb_context:store(Context, route_type, get_route_type(To)).
+    cb_context:store(Context, 'route_type', get_route_type(To)).
 
 -spec route_type(cb_context:context()) -> kz_term:ne_binary().
 route_type(Context) ->
-    cb_context:fetch(Context, route_type, <<"offnet">>).
+    cb_context:fetch(Context, 'route_type', <<"offnet">>).
 
 -spec get_route_type(kz_term:ne_binary_or_binaries()) -> kz_term:ne_binary().
 get_route_type(To)
   when is_binary(To) ->
     case knm_converters:is_reconcilable(To) of
-        true -> <<"offnet">>;
-        false -> <<"onnet">>
+        'true' -> <<"offnet">>;
+        'false' -> <<"onnet">>
     end;
 get_route_type([To | _List]) ->
     get_route_type(To).
@@ -279,8 +279,8 @@ validate_route_type(Context, To)
 validate_route_type(Context, [To | List]) ->
     Reconcilable = knm_converters:is_reconcilable(To),
     case lists:all(fun(T) -> Reconcilable =:= knm_converters:is_reconcilable(T) end , List) of
-        false -> cb_context:add_validation_error(<<"to">>, <<"invalid">>, <<"mixed onnet/offnet not supported">>, Context);
-        true -> Context
+        'false' -> cb_context:add_validation_error(<<"to">>, <<"invalid">>, <<"mixed onnet/offnet not supported">>, Context);
+        'true' -> Context
     end.
 
 -spec get_default_caller_id(cb_context:context(), binary(), kz_term:api_binary()) -> kz_term:api_binary().
@@ -319,7 +319,7 @@ body_is_mime_encoded(Context) ->
             try mimemail:decode(Body) of
                 {_Type, _SubType, _Headers, _Parameters, _Body} ->
                     KVs = [{<<"Body">>, Body}
-                          ,{<<"body">>, null}
+                          ,{<<"body">>, 'null'}
                           ],
                     cb_context:set_doc(Context, kz_json:set_values(KVs, cb_context:doc(Context)))
             catch
@@ -342,7 +342,7 @@ body_from_files(Context) ->
 -spec body_from_files(cb_context:context(), req_files()) -> cb_context:context().
 body_from_files(Context, Files) ->
     Parts = [mimepart_from_file(File)|| File <- Files],
-    Encoded = mimemail:encode_part({<<"multipart">>, <<"related">>, [], [], Parts}),
+    Encoded = mimemail:encode_part({<<"multipart">>, <<"related">>, [], #{}, Parts}),
     Body = kz_binary:join(Encoded, <<"\r\n">>),
     cb_context:set_doc(Context, kz_im:set_body(cb_context:doc(Context), Body)).
 
@@ -355,7 +355,7 @@ mimepart_from_file({Filename, FileJObj}) ->
               ],
     Content = kz_json:get_value(<<"contents">>, FileJObj),
     [Type, SubType] = binary:split(ContentType, <<"/">>),
-    {Type, SubType, Headers, [], Content}.
+    {Type, SubType, Headers, #{}, Content}.
 
 -spec account_is_enabled(cb_context:context()) -> cb_context:context().
 account_is_enabled(Context) ->
