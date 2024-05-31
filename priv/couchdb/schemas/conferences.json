@@ -63,10 +63,6 @@
             "description": "Prompt language to play in the conference",
             "type": "string"
         },
-        "last_member_endconf": {
-            "description": "Indicates when last member with this flags exits the conference, conference will end after endconf_grace_time",
-            "type": "boolean"
-        },
         "max_members_media": {
             "description": "Media to play when the conference is full",
             "type": "string"
