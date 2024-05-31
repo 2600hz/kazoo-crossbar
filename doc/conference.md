@@ -187,7 +187,6 @@ Key | Description | Type | Default | Required | Support Level
 `max_participants` | The maximum number of participants that can join | `integer()` |   | `false` |  
 `member.join_deaf` | Determines if a member will join deaf | `boolean()` | `false` | `false` | `supported`
 `member.join_muted` | Determines if a member will join muted | `boolean()` | `true` | `false` | `supported`
-`member.leave_endconf` | Indicates when last member with this flags exits the conference, conference will end after endconf_grace_time | `boolean()` |   | `false` |  
 `member.numbers.[]` |   | `string()` |   | `false` |  
 `member.numbers` | Defines the conference (call in) number(s) for members | `array(string())` | `[]` | `false` |  
 `member.pins.[]` |   | `string()` |   | `false` |  
@@ -196,7 +195,6 @@ Key | Description | Type | Default | Required | Support Level
 `member` | Defines the discovery (call in) properties for a member | `object()` | `{}` | `false` |  
 `moderator.join_deaf` | Determines if a moderator will join deaf | `boolean()` | `false` | `false` |  
 `moderator.join_muted` | Determines if a moderator will join muted | `boolean()` | `false` | `false` |  
-`moderator.leave_endconf` | Indicates when last moderator with this flags exits the conference, conference will end after endconf_grace_time | `boolean()` |   | `false` |  
 `moderator.numbers.[]` |   | `string()` |   | `false` |  
 `moderator.numbers` | Defines the conference (call in) number(s) for moderators | `array(string())` | `[]` | `false` |  
 `moderator.pins.[]` |   | `string()` |   | `false` |  

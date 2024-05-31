@@ -6487,10 +6487,6 @@
                             "description": "Determines if a member will join muted",
                             "type": "boolean"
                         },
-                        "leave_endconf": {
-                            "description": "Indicates when last member with this flags exits the conference, conference will end after endconf_grace_time",
-                            "type": "boolean"
-                        },
                         "numbers": {
                             "default": [],
                             "description": "Defines the conference (call in) number(s) for members",
@@ -6530,10 +6526,6 @@
                         "join_muted": {
                             "default": false,
                             "description": "Determines if a moderator will join muted",
-                            "type": "boolean"
-                        },
-                        "leave_endconf": {
-                            "description": "Indicates when last moderator with this flags exits the conference, conference will end after endconf_grace_time",
                             "type": "boolean"
                         },
                         "numbers": {
