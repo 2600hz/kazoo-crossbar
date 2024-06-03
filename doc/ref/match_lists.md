@@ -24,7 +24,7 @@ Key | Description | Type | Default | Required | Support Level
 `name` | Friendly name of the rule | `string(3..255)` |   | `true` |  
 `regex` | Regular expression to match with when type=regex | `string()` |   | `false` |  
 `target` | The target field to match against - context-dependent | `string()` |   | `false` |  
-`temporal_route_id` | When type=temporal_route, set this to the ID of the temporal route (or route set) to use |   |   | `false` |  
+`temporal_route_id` | When type=temporal_route, set this to the ID of the temporal route (or route set) to use | `string()` |   | `false` |  
 `type` |   | `string('regex' | 'temporal_route')` |   | `true` |  
 
 
