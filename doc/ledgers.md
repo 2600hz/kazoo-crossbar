@@ -19,6 +19,7 @@ Key | Description | Type | Default | Required | Support Level
 `account` | Account info | `object()` |   | `false` |  
 `amount` | Ledger amount, in currency amount | `number()` |   | `false` |  
 `description` | Useful description for ledger | `string()` |   | `false` |  
+`draft` | Should the ledger be created as a draft | `boolean()` |   | `false` |  
 `metadata` | Metadata for ledger document | `object()` |   | `false` |  
 `period.end` | Period end | `integer()` |   | `false` |  
 `period.start` | Period start | `integer()` |   | `false` |  
