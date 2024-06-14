@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2024, 2600Hz
 %%% @doc
 %%% @author Peter Defebvre
 %%% @author Luis Azedo
@@ -262,6 +262,9 @@ put(Context, Action) ->
            }
           ,{fun kz_ledger:set_executor_module/2
            ,<<?MODULE_STRING>>
+           }
+          ,{fun kz_ledger:set_draft/2
+           ,kz_json:is_true(<<"draft">>, ReqData)
            }
           ]
          ),
