@@ -263,6 +263,9 @@ put(Context, Action) ->
           ,{fun kz_ledger:set_executor_module/2
            ,<<?MODULE_STRING>>
            }
+          ,{fun kz_ledger:set_draft/2
+           ,kz_json:is_true(<<"draft">>, ReqData)
+           }
           ]
          ),
     process_action(Context, Action, kz_ledger:setters(Setters)).
