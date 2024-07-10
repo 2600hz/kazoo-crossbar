@@ -138,11 +138,11 @@ create_auth_token(Context, Method, TokenOptions, JObj, AccountId, AuthConfig) ->
 
             cb_context:add_system_error('invalid_credentials', Context);
         {'error', Reason, RespJObj} ->
-            lager:debug("authentication factor module requested that the client should preform second-factor authentication, returning ~s with response ~p"
+            lager:debug("authentication factor module requested that the client should perform second-factor authentication, returning ~s with response ~p"
                        ,[kz_term:to_binary(Reason), RespJObj]
                        ),
             MFAReq = kz_json:from_list(
-                       [{<<"message">>, <<"client needs to preform second-factor authentication">>}
+                       [{<<"message">>, <<"client needs to perform second-factor authentication">>}
                        ,{<<"multi_factor_request">>, RespJObj}
                        ]
                       ),

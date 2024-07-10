@@ -202,7 +202,7 @@ Now, when the user tries to authenticate, the 401 response should include the `m
 ```json
 {
   "data": {
-    "message": "client needs to preform second-factor authentication",
+    "message": "client needs to perform second-factor authentication",
     "multi_factor_request": {
       "key_type": "totp",
       "provider_name": "otp"
