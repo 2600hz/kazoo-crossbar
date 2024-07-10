@@ -8165,7 +8165,7 @@
                 },
                 "method": {
                     "default": "voice",
-                    "description": "The requested method for transfering the verification pin",
+                    "description": "The requested method for transferring the verification pin",
                     "enum": [
                         "voice",
                         "ivr",
