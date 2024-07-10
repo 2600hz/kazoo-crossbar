@@ -8353,16 +8353,21 @@
   'description': Schema for a number
   'properties':
     'carrier_name':
+      'description': Name of the carrier provider
       'maxLength': 30
       'minLength': 1
       'type': string
     'cnam':
+      'description': Caller ID Name of a person or business that is placing a call
       'properties':
         'display_name':
+          'description': Name that displayed in the callee side
           'maxLength': 15
           'minLength': 1
           'type': string
         'inbound_lookup':
+          'description': |-
+            Lookup name that associated with the number in provider database and display it for inbound call
           'type': boolean
       'type': object
     'create_with_state':
@@ -8379,6 +8384,7 @@
         - reserved
       'type': string
     'e911':
+      'description': E911 information for the current phone number
       'properties':
         'activated_time':
           'description': The time stamp e911 was provisioned
@@ -8450,6 +8456,7 @@
           'description': |-
             A list of email addresses to receive notification when this number places an emergency call
           'items':
+            'description': Email address
             'format': email
             'type': string
           'type': array
@@ -8512,6 +8519,7 @@
         'comments':
           'description': An array of comments
           'items':
+            'description': Comment
             'type': string
           'type': array
         'customer_contact':
