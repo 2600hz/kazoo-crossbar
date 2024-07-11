@@ -37,7 +37,7 @@ crossbar_routes() ->
 -spec paths_list() -> [route_path()].
 paths_list() ->
     %% api first, ui_wrapper, customs then default catch all path
-    [api_path(), ui_wrapper_path()] ++ kz_term:uniq_list(custom_paths()) ++ [default_path()].
+    [api_path(), ui_wrapper_path()] ++ lists:uniq(custom_paths()) ++ [default_path()].
 
 -spec ui_wrapper_path() -> route_path().
 ui_wrapper_path() ->
