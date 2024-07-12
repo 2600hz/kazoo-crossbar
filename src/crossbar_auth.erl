@@ -138,6 +138,7 @@ create_auth_token(Context, Method, TokenOptions, JObj, AccountId, AuthConfig) ->
             MFAReq = kz_json:from_list(
                        [{<<"message">>, <<"client needs to preform second-factor authentication">>}
                        ,{<<"multi_factor_request">>, RespJObj}
+                       ,{<<"user_id">>, OwnerId}
                        ]
                       ),
             cb_context:add_system_error(401, 'invalid_credentials', MFAReq, Context)

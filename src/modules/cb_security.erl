@@ -181,9 +181,10 @@ post(Context) ->
     case cb_context:resp_status(C1) of
         'success' ->
             maybe_flush_config(C1),
-            RespJObj = maybe_add_multi_factor_metadata(cb_context:resp_data(Context)),
+            {RespJObj, Meta} = maybe_add_multi_factor_metadata(cb_context:resp_data(Context)),
             Setters = [{fun cb_context:set_resp_data/2, RespJObj}
                       ,{fun cb_context:set_resp_status/2, 'success'}
+                      ,{fun cb_context:add_metadata_values/2, kz_json:to_proplist(Meta)}
                       ],
             cb_context:setters(Context, Setters);
         _ -> C1
@@ -201,9 +202,10 @@ patch(Context) ->
     case cb_context:resp_status(C1) of
         'success' ->
             maybe_flush_config(C1),
-            RespJObj = maybe_add_multi_factor_metadata(cb_context:resp_data(Context)),
+            {RespJObj, Meta} = maybe_add_multi_factor_metadata(cb_context:resp_data(Context)),
             Setters = [{fun cb_context:set_resp_data/2, RespJObj}
                       ,{fun cb_context:set_resp_status/2, 'success'}
+                      ,{fun cb_context:add_metadata_values/2, kz_json:to_proplist(Meta)}
                       ],
             cb_context:setters(Context, Setters);
         _ -> C1
@@ -253,16 +255,24 @@ read(Context) ->
 
 -spec add_inherited_config(cb_context:context()) -> cb_context:context().
 add_inherited_config(Context) ->
-    Props = [{<<"account">>
-             ,maybe_add_multi_factor_metadata(cb_context:resp_data(Context))
-             }
-            ,{<<"inherited_config">>
-             ,maybe_add_multi_factor_metadata(kz_json:from_list([{<<"auth_modules">>, crossbar_auth:get_inherited_config(Context)}]))
-             }
-            ],
-    crossbar_doc:handle_json_success(kz_json:from_list(Props), Context).
+    {AccountMF, AccountMeta} = maybe_add_multi_factor_metadata(cb_context:resp_data(Context)),
+    {InheritedMF, InheritedMeta} = maybe_add_multi_factor_metadata(kz_json:from_list([{<<"auth_modules">>, crossbar_auth:get_inherited_config(Context)}])),
 
--spec maybe_add_multi_factor_metadata(kz_json:object()) -> kz_json:object().
+    Props = [{<<"account">>, AccountMF}
+            ,{<<"inherited_config">>, InheritedMF}
+            ],
+
+    MetaProps = [{<<"account">>, AccountMeta}
+                ,{<<"inherited_config">>, InheritedMeta}
+                ],
+
+    crossbar_doc:handle_json_success(kz_json:from_list(Props)
+                                    ,cb_context:add_metadata_values(Context, MetaProps)
+                                    ).
+
+-type add_mfa_meta_acc() :: {kz_json:object(), kz_json:object()}.
+
+-spec maybe_add_multi_factor_metadata(kz_json:object()) -> add_mfa_meta_acc().
 maybe_add_multi_factor_metadata(AuthConfig) ->
     Fun = fun(K, V, Acc) ->
                   case kz_json:get_value(<<"multi_factor">>, V) of
@@ -270,22 +280,24 @@ maybe_add_multi_factor_metadata(AuthConfig) ->
                       _MFA -> add_multi_factor_metadata(K, V, Acc)
                   end
           end,
-    kz_json:foldl(Fun, AuthConfig, kz_json:get_value(<<"auth_modules">>, AuthConfig, kz_json:new())).
+    kz_json:foldl(Fun
+                 ,{AuthConfig, kz_json:new()}
+                 ,kz_json:get_value(<<"auth_modules">>, AuthConfig, kz_json:new())
+                 ).
 
--spec add_multi_factor_metadata(kz_term:ne_binary(), kz_json:object(), kz_json:object()) -> kz_json:object().
-add_multi_factor_metadata(AuthModule, JObj, AuthConfig) ->
+-spec add_multi_factor_metadata(kz_term:ne_binary(), kz_json:object(), add_mfa_meta_acc()) -> add_mfa_meta_acc().
+add_multi_factor_metadata(AuthModule, JObj, {AuthConfig, Meta}) ->
     AccountId = kz_json:get_value([<<"multi_factor">>, <<"account_id">>], JObj),
     ConfigId = kz_json:get_value([<<"multi_factor">>, <<"configuration_id">>], JObj),
 
-    Path = [<<"auth_modules">>, AuthModule, <<"multi_factor">>, <<"_read_only">>],
     case kz_term:is_not_empty(AccountId)
         andalso kz_term:is_not_empty(ConfigId)
         andalso get_metadata(AccountId, ConfigId)
     of
-        'false' -> set_as_system(AuthConfig, Path);
-        'undefined' -> set_as_system(AuthConfig, Path);
+        'false' -> set_as_system(AuthConfig, AuthModule, Meta);
+        'undefined' -> set_as_system(AuthConfig, AuthModule, Meta);
         Metadata ->
-            kz_json:set_value(Path, Metadata, AuthConfig)
+            {AuthConfig, kz_json:set_value(AuthModule, Meta, Metadata)}
     end.
 
 -spec get_metadata(kz_term:ne_binary(), kz_term:ne_binary()) -> kz_term:api_object().
@@ -299,13 +311,13 @@ get_metadata(AccountId, ConfigId) ->
         _ -> 'undefined'
     end.
 
--spec set_as_system(kz_json:object(), kz_json:path()) -> kz_json:object().
-set_as_system(AuthConfig, Path) ->
+-spec set_as_system(kz_json:object(), kz_term:ne_binary(), kz_json:object()) -> add_mfa_meta_acc().
+set_as_system(AuthConfig, AuthModule, Meta) ->
     Default = kz_json:from_list(
                 [{<<"name">>, <<"Default System Provider">>}
                 ,{<<"provider_name">>, kz_mfa_auth:default_provider()}
                 ]),
-    kz_json:set_value(Path, Default, AuthConfig).
+    {AuthConfig, kz_json:set_value(AuthModule, Default, Meta)}.
 
 %%------------------------------------------------------------------------------
 %% @doc Update an existing menu document with the data provided, if it is
