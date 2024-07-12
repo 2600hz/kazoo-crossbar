@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2023, 2600Hz
+%%% @copyright (C) 2010-2024, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -144,6 +144,7 @@ create_auth_token(Context, Method, TokenOptions, JObj, AccountId, AuthConfig) ->
             MFAReq = kz_json:from_list(
                        [{<<"message">>, <<"client needs to perform second-factor authentication">>}
                        ,{<<"multi_factor_request">>, RespJObj}
+                       ,{<<"user_id">>, OwnerId}
                        ]
                       ),
             cb_context:add_system_error(401, 'invalid_credentials', MFAReq, Context)
