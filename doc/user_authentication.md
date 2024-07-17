@@ -6,10 +6,6 @@ Using your user name and password, along with an account identifier, will instru
 
 #### Schema
 
-Provides an auth-token via user credentials
-
-
-
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `account_id` | The account ID of the user | `string(32)` |   | `false` |  
@@ -20,8 +16,9 @@ Key | Description | Type | Default | Required | Support Level
 `phone_number` | A phone number assigned to the users account | `string(1..64)` |   | `false` |  
 
 
-
 ## Create
+
+Provides an auth-token when provided the user credentials listed above.
 
 > PUT /v2/user_auth
 
@@ -201,7 +198,7 @@ curl -v -X POST \
 
 ## Impersonate a User
 
-You can impersonate as another user in your sub account if you're already is logged in as an admin in your master account. This features a useful way to login as your customer to debug/test issues with the user system's point of view.
+You can impersonate as another user in your sub account if you're already is logged in as an admin in your master account. This feature is a useful way to login as a customer account to debug/test issues from the user system's point of view.
 
 > PUT /v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/user_auth
 

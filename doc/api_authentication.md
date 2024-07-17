@@ -1,13 +1,13 @@
 # Account API Authentication
 
-Use your account's API token to instruct Crossbar to create an authentication token to be used on subsequent requests requiring authentication.
+Use your account's API key to instruct Crossbar to create an authentication token to be used on subsequent requests requiring authentication.
 
 ## Getting your API key from the API:
 
-Use [Account API](accounts.md) to get API key for your account:
+Use the [Account API](accounts.md) to get API key for your account:
 
 !!! note
-    Must already authenticated as a user.
+    Must already be authenticated as a user.
 
 
 ```shell

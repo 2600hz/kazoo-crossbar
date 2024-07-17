@@ -1,6 +1,6 @@
 # Authenticating REST request
 
-Almost every request to Crossbar must be supplying with authentication credentials.
+Almost every request to Crossbar be sent with authentication credentials.
 
 Failing to do so will result in in `401 Unauthorized` HTTP response status with response payload like this:
 
