@@ -1,19 +1,16 @@
 # Sending data in HTTP
 
-There are multiple ways to sending data in HTTP protocol and we are not going to deep explaining all of them. This writing is just a very
-quick cheat sheet describing some specific needs to help in times we stuck.
+There are numerous ways to send data in HTTP protocol, and we aren't going to go into detail on all of them here. This document aims to serve as a very quick cheat sheet for some specific use cases when handling HTTP requests.
 
-This section tries to describes things in general you may need to read the endpoint documentation first for any specific options or work flow.
+This section tries to describe things that in general may help you to better understand how an API works.
 
-Sending data in HTTP protocol is possible with HTTP methods like `PUT`, `POST`, `PATCH` and `DELETE`. Another important part of the request is setting
-the correct HTTP headers like `Content-Type` which specifies how the server (in this case Kazoo) should interpret the payload.
+Sending data in HTTP protocol is possible with HTTP methods like `PUT`, `POST`, `PATCH` and `DELETE`. Another important part of the request is setting the correct HTTP headers, like `Content-Type` which specifies how the server (in this case Kazoo) should interpret the payload.
 
 The main content in Kazoo is `application/json`. This indicates the payload is JSON data structure in plain text.
 
-Another most common content type (or encoding) is `text/plain`. You may see this in Kazoo Notification API endpoint when you are trying to fetch or update
-the notification plain text template attachments.
+Another common content type (or encoding) is `text/plain`. You may see this for example in Kazoo's Notification API endpoint when you are trying to fetch or update the notification plain text template attachments.
 
-The rest content types are either binary data like `image/png` or `audio/mp3` or etc... . There are multiple way to send binary data see read below to learn more.
+The other content types are either binary data like `image/png` or `audio/mp3`. There are multiple way to send binary data: read below to learn more.
 
 Kazoo also supports `application/base64` content type. This type is handy to upload very small image files like icon and logo.
 

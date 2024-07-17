@@ -1,20 +1,27 @@
 # API Basics
 
-## Give it a REST
+## Crossbar
 
-Crossbar is the REST API server, from which developers can build applications that configure Kazoo's myriad services and functionalities.
+Kazoo's REST API server is called Crossbar, from which developers can build applications that configure Kazoo's myriad of services and functionalities.
+
+On Kazoo startup, Crossbar will begin listening on the configured port (default is 8000).
+
+```
+curl {CROSSBAR_SERVER}:8000
+```
 
 ## Basic URI Structure
 
-Requests Crossbar follows this structure:
+Typical Crossbar request URIs follow the following structure:
 
 ```
 /{VERSION}/accounts/{ACCOUNT_ID}/resources/{RESOURCE_ID}
 ```
 
-Here the explanation:
+Here's the explanation:
 
-* `{VERSION}` - The version of the API you are calling. Currently the only support value is `v2`.
+* `{VERSION}` - The version of the API you are calling. Currently, the only supported value is `v2`.
+* `accounts` - This is an example Crossbar module. Crossbar modules can be thought of as the available API endpoints. All Crossbar modules running on the system can be found by a system admin using `sup crossbar_maintenance running_modules`.
 * `{ACCOUNT_ID}` - Most requests operate against a specific account and thus require the `account_id` to route the request properly
 * `{RESOURCE_ID}` - When accessing a specific resource, like a device, user, or callflow, this is the `{RESOURCE_ID}` points to the specific instance you're accessing.
 
@@ -45,70 +52,9 @@ Given a URI of `/v2/accounts/{ACCOUNT_ID}/devices/{DEVICE_ID}`:
 
 So we have a request to account `{ACCOUNT_ID}` to do something with a device `{DEVICE_ID}`.
 
-## HTTP Verbs
-
-The HTTP verb will determine the class of actions to take against the resource. Generically speaking, the verbs map thusly:
-
-* `/v2/accounts/{ACCOUNT_ID}/resources`
-    * `GET`: Fetches a summary of configured resources
-    * `PUT`: Creates a new instance of the resource.
-
-* `/v2/accounts/{ACCOUNT_ID}/resources/{RESOURCE_ID}`
-    * `GET`: Fetches the full representation of the resource
-    * `POST`: Updates the full representation of the resource
-    * `PATCH`: Sends a partial representation of the resource, merged with the existing, and then validated/saved
-    * `DELETE`: Deletes the resource
-
-### PATCH
-
-Some resources are supporting the `PATCH` verb, allowing partial updates instead of requiring the request to include the full version of the document. `/users/{USER_ID}`, for instance, supports `PATCH`:
-
-```shell
-curl -v -X PATCH \
-   -H "Content-Type: application/json" \
-   -H "X-Auth-Token: {AUTH_TOKEN}" \
-   'http://crossbar.server.com:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}' \
-   -d '{"data":{"vm_to_email_enabled":true}}'
-```
-This cURL request will patch the user's document and set `vm_to_email_enabled` to `true`. All normal validation will occur after patching the document; this also means clients can `PATCH` documents with their own data only.
-
-If a resource does not support `PATCH` yet, clients can expect to receive a `405 Method Not Allowed` error.
-
-### Tunneling the HTTP Verb
-
-Some clients do not support the full range of HTTP verbs, and are typically limited to `GET` and `POST`. To access the functionalities of `PUT` and `DELETE`, you can tunnel the verb in a `POST` in a couple of ways:
-
-1. As part of the [request envelope](#request-envelope): `{"data":{...}, "verb":"PUT"}`
-2. As a query string parameter: `/v2/accounts/{ACCOUNT_ID}/resources?verb=PUT`
-
-### Tunneling the Accept Header
-
-Some clients do not support the ability to set the [Accept header](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html) in the request, meaning they will not necessarily receive the response in the format they wish. Clients can append `accept=text/html` to the request body or query string to indicate they'd like the response processed as if the Accept header was `text/html`.
-
-!!! note
-    `accept=csv` is retained for backwards-compatibility but it is encouraged to use a proper media type going forward.
-
-### Setting an entity ID on creation
-
-For some usecases, it can be desirable to set the ID of the entity on creation.
-
-The ID *must* be a 32-character, alphanumeric UUID.
-
-```json
-{
-    "data":{
-        "id":"{YOUR_UUID}",
-        ... other entity data
-    }
-}
-```
-
-!!! note
-    This feature requires a system admin to set `"allow_onboarding_setting_id":true` in the crossbar system config: `sup kapps_config set_default crossbar allow_onboarding_setting_id true`
-
 ## Request Envelope
 
-When issuing a `PUT`, `POST` or `PUT`, a request body is needed. When submitting a JSON (the most common body), Crossbar expects a request envelope with a few bits of metadata:
+When issuing a `PUT`, `POST` or `PUT`, a request body is required. When submitting a JSON (the most common body), Crossbar expects a request envelope with a few bits of metadata:
 
 * `data`: this top-level key will contain the object you wish to create/update
 * `auth_token`: optionally put your auth token in the envelope
@@ -171,6 +117,69 @@ When receiving JSON responses, clients will receive the response in an envelope.
     "request_id": "{REQUEST_ID}"
 }
 ```
+
+
+## HTTP Verbs
+
+The HTTP verb will determine the class of actions to take against the resource. Generically speaking, the verbs map like this:
+
+* `/v2/accounts/{ACCOUNT_ID}/resources`
+    * `GET`: Fetches a summary of configured resources
+    * `PUT`: Creates a new instance of the resource.
+
+* `/v2/accounts/{ACCOUNT_ID}/resources/{RESOURCE_ID}`
+    * `GET`: Fetches the full representation of the resource
+    * `POST`: Updates the full representation of the resource
+    * `PATCH`: Sends a partial representation of the resource, merged with the existing, and then validated/saved
+    * `DELETE`: Deletes the resource
+
+### PATCH
+
+Some resources support the `PATCH` verb, allowing partial updates rather than requiring the request to include the full document. `/users/{USER_ID}`, for instance, supports `PATCH`:
+
+```shell
+curl -v -X PATCH \
+   -H "Content-Type: application/json" \
+   -H "X-Auth-Token: {AUTH_TOKEN}" \
+   'http://crossbar.server.com:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}' \
+   -d '{"data":{"vm_to_email_enabled":true}}'
+```
+
+This cURL request will patch the user's document and set `vm_to_email_enabled` to `true`. All normal validation will occur after patching the document; this also means clients can `PATCH` documents with their own data only.
+
+If a resource does not support `PATCH` yet, clients can expect to receive a `405 Method Not Allowed` error.
+
+### Tunneling the HTTP Verb
+
+Some clients do not support the full range of HTTP verbs, and are typically limited to `GET` and `POST`. To access the functionalities of `PUT` and `DELETE`, you can tunnel the verb in a `POST` in a couple of ways:
+
+1. As part of the [request envelope](#request-envelope): `{"data":{...}, "verb":"PUT"}`
+2. As a query string parameter: `/v2/accounts/{ACCOUNT_ID}/resources?verb=PUT`
+
+### Tunneling the Accept Header
+
+Some clients do not support the ability to set the [Accept header](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html) in the request, meaning they will not necessarily receive the response in the format they wish. Clients can append `accept=text/html` to the request body or query string to indicate they'd like the response processed as if the Accept header was `text/html`.
+
+!!! note
+    `accept=csv` is retained for backwards-compatibility but it is encouraged to use a proper media type going forward.
+
+### Setting an entity ID on creation
+
+For some usecases, it can be desirable to set the ID of the entity on creation.
+
+The ID *must* be a 32-character, alphanumeric UUID.
+
+```json
+{
+    "data":{
+        "id":"{YOUR_UUID}",
+        ... other entity data
+    }
+}
+```
+
+!!! note
+    This feature is hidden behind a feature flag: you must set `"allow_onboarding_setting_id":true` in the Crossbar system config.For example: `sup kapps_config set_default crossbar allow_onboarding_setting_id true`
 
 ## Pagination
 
@@ -292,6 +301,20 @@ The query string parameter `is_chunked` (boolean value) can be used to enable or
 
 To set the default chunk size, you can use `chunk_size` in the query string. Default value is `50`.
 
+## Timestamps
+
+KAZOO, unless explicitly stated, represents time in Gregorian seconds.
+
+Conversion with UNIX timestamps is straightforward:
+
+```
+UnixEpochInGregorian = 62167219200
+
+gregorian_to_unix($greg) -> $greg - 62167219200
+
+unix_to_gregorian($unix) -> $unix + 62167219200
+```
+
 ## Pretty Printing
 
 If needed, the JSON response to be pretty printed, the server can can do so.
@@ -348,18 +371,4 @@ curl -v -X GET \
     -H "Accept: text/csv" \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/cdrs?file_name={FILE_NAME}
-```
-
-## Timestamps
-
-KAZOO, unless explicitly stated, represents time in Gregorian seconds.
-
-Conversion with UNIX timestamps is straightforward:
-
-```
-UnixEpochInGregorian = 62167219200
-
-gregorian_to_unix($greg) -> $greg - 62167219200
-
-unix_to_gregorian($unix) -> $unix + 62167219200
 ```

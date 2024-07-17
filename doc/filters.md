@@ -40,15 +40,15 @@ Filters can be chained together on a query string and will be applied as a boole
 
 ## Fetching Sparse Fieldsets
 
-A client **MAY** request that an endpoint return only specific fields (of the document) in the response. This will only works the request is listing objects, like `/users`.
+A client might request that an endpoint return only specific fields of the document in the API response. This can only be done if the request is a list of objects, for example the `/users` endpoint.
 
-The value of `fields` parameters must be an encoded JSON array. Each element of the array can be dot-delimited string representing a JSON key path. If any of the requested fields are restricted (are private fields) then they would be ignored.
+To do so, you must include a `fields` URI query parameter. This parameter must be an encoded JSON array. Each element of the array can be dot-delimited string representing a JSON key path. If any of the requested fields are restricted (are private fields) then they would be ignored.
 
 The `id` of documents (if any) will always be part of the response.
 
 If `fields` parameter is empty, the server will treat the request as if no `fields` parameter is specified and will return the default response (i.e. the "listing" result, not the full document).
 
-For example, endpoint `/callflows` which is lists callflows normally will return a response like this:
+For example, the `/callflows` endpoint, normally will return a response of callflow objects like this:
 
 ```json
 {
@@ -92,9 +92,9 @@ If you were to make this request without the `fields` querystring, you would not
 
 ## Requesting Full Documents
 
-A client **MAY** request that an endpoint return all public fields of the documents in the response using `full_docs=true` query string when the request is listing objects, like `/users`.
+A client might request that an endpoint return all public fields for each object in the API response. This can be done using the `full_docs=true` query string parameter, but only when the request is listing objects, for example the `/users` endpoint.
 
-This feature is opt-in and can be enabled by system administrator in `system_configs/crossbar`.
+This feature is opt-in and can be enabled by the system administrator in `system_config/crossbar`. 
 
-* Set `allow_fetch_full_docs` to `true` for enabling this for all endpoints
-* Set `{CB_MODULE_NAME}` to `true` under `allowed_modules_fetch_full_docs` to enable for specific endpoints.
+* Set `allow_fetch_full_docs: true` to enable this behavior for all endpoints.
+* Set `allowed_modules_fetch_full_docs.{CB_MODULE_NAME}: true` to enable this behavior for a specific Crossbar module. CB_MODULE_NAME must be an enabled Crossbar module on the system.

@@ -1062,7 +1062,7 @@ There is also a system_config in `crossbar.devices`, `check_sync_event`, that ca
 
 ## Quickcalls
 
-See [the quickcall](quickcall.md) docs for how to perform this action.
+See [the quickcall](./quickcall.md) docs for how to perform this action.
 
 ## Adding Ringtones
 
