@@ -9,7 +9,6 @@ Users represent just that, your users of the system. You can assign multiple dev
 Schema for a user
 
 
-
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `addresses.vcard.[].address` |   | `string()` |   | `true` |  
@@ -388,6 +387,8 @@ Key | Description | Type | Default | Required | Support Level
 curl -v -X GET \
     -H "X-Auth-Token: {AUTH_TOKEN} \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users
+```
+```json
 {
     "auth_token": "{AUTH_TOKEN}",
     "data": [
@@ -435,6 +436,8 @@ curl -v -X PUT \
     -H "Content-Type: application/json" \
     -d '{"data":{"first_name":"User", "last_name":"Three"}}' \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users
+```
+```json
 {
     "auth_token": "{AUTH_TOKEN}",
     "data": {
@@ -489,6 +492,8 @@ This request will return the current JSON object of the now-deleted user.
 curl -v -X DELETE \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}
+```
+```json
 {
     "auth_token": "{AUTH_TOKEN}",
     "data": {
@@ -542,8 +547,6 @@ Key | Description | Type | Default | Required | Support Level
 `object_types` | List of object types owned by the user that should also be deleted as part of the user delete process. NOTE: If "phone_numbers" is included in the list, numbers assigned to callflows owned by the user will also be released. | `array(string('phone_numbers' | 'callflow' | 'vmbox' | 'device' | 'conference' | 'faxbox' | 'media')) | string('all')` |   | `false` |
 
 
-
-
 When deleting a user, a list of `object_types` could be passed either within the request body or the query string.
 If object_types are included in the request, along deleting the user, the objects owned by the user that are listed
 will be deleted as well. See [#/definitions/users_delete](#users_delete) for more information.
@@ -562,6 +565,8 @@ curl -v -X DELETE \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     -d '{"data": {"object_types": ["callflow", "vmbox"]}}'
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}
+```
+```json
 {
     "auth_token": "{AUTH_TOKEN}",
     "data": {
@@ -626,6 +631,8 @@ curl -v -X DELETE \
 curl -v -X GET \
     -H "X-Auth-Token: {AUTH_TOKEN} \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}
+```
+```json
 {
     "auth_token": "{AUTH_TOKEN}",
     "data": {
@@ -680,6 +687,8 @@ curl -v -X PATCH \
     -H "Content-Type: application/json" \
     -d '{"data":{"enabled":false}}' \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}
+```
+```
 {
     "auth_token": "{AUTH_TOKEN}",
     "data": {
@@ -738,6 +747,8 @@ curl -v -X POST \
     -H "Content-Type: application/json" \
     -d '{"data":{"first_name":"User","last_name":"Three","call_restriction":{},"caller_id":{},"contact_list":{},"dial_plan":{},"enabled":false,"hotdesk":{"enabled":false,"keep_logged_in_elsewhere":false,"require_pin":false},"media":{"audio":{"codecs":["PCMU"]},"encryption":{"enforce_security":false,"methods":[]},"video":{"codecs":[]}},"music_on_hold":{},"priv_level":"user","profile":{},"require_password_update":false,"ringtones":{},"verified":false,"vm_to_email_enabled":true}}' \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}
+```
+```json
 {
     "auth_token": "{AUTH_TOKEN}",
     "data": {
@@ -797,6 +808,8 @@ curl -v -X GET \
     -H "X-Auth-Token: {AUTH_TOKEN} \
     -H "Accept: text/x-vcard"
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/vcard
+
+```
 BEGIN:VCARD
 VERSION:3.0
 FN:User Three
@@ -911,7 +924,7 @@ sup kapps_config flush auth.password
 sup kapps_account_config flush {ACCOUNT_ID} auth.password
 ```
 
-For more info please refer to [Kazoo Auth Password](../../../core/kazoo_auth/doc/password.md) documentation.
+For more info please refer to [Kazoo Auth Password](https://docs.2600hz.com/git/2600hz/kazoo-core/kazoo_auth/doc/password.md) documentation.
 
 ### Example of password enforcement API rejects insecure password
 

@@ -10,8 +10,6 @@ For instance, a callee could setup a metaflow on their user doc such that when t
 
 Actions applied to a call outside of the normal callflow, initiated by the caller(s)
 
-
-
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `binding_digit` | What DTMF will trigger the collection and analysis of the subsequent DTMF sequence | `string('1' \| '2' \| '3' \| '4' \| '5' \| '6' \| '7' \| '8' \| '9' \| '0' \| '*' \| '#')` | `*` | `false` |  
@@ -132,7 +130,3 @@ If you want to assign metaflows to a particular user or device, the API commands
 - Account: `/v2/accounts/{ACCOUNT_ID}/metaflows`
 - User: `/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/metaflows`
 - Device: `/v2/accounts/{ACCOUNT_ID}/devices/{DEVICE_ID}/metaflows`
-
-## Metaflow actions
-
-To see what actions can be set in a metaflow, look at the relevant documentation in [Konami](/applications/konami/doc/README.md)
