@@ -10,23 +10,27 @@ Schema for a number
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`carrier_name` |   | `string(1..30)` |   | `false` |  
-`cnam.display_name` |   | `string(1..15)` |   | `false` |  
-`cnam.inbound_lookup` |   | `boolean()` |   | `false` |  
-`cnam` |   | `object()` |   | `false` |  
+`carrier_name` | Name of the carrier provider | `string(1..30)` |   | `false` |  
+`cnam.display_name` | Name that displayed in the callee side | `string(1..15)` |   | `false` |  
+`cnam.inbound_lookup` | Lookup name that associated with the number in provider database and display it for inbound call | `boolean()` |   | `false` |  
+`cnam` | Caller ID Name of a person or business that is placing a call | `object()` |   | `false` |  
 `create_with_state` | The state to create numbers in | `string('aging' | 'available' | 'deleted' | 'discovery' | 'in_service' | 'port_in' | 'port_out' | 'released' | 'reserved')` |   | `false` |  
 `e911.activated_time` | The time stamp e911 was provisioned | `string()` |   | `false` |  
+`e911.callback_cid_number` | 10-digit DID used as caller ID to PSAP, overrides CID | `string(10)` |   | `false` |  
 `e911.caller_name` | The name that will show to emergency services | `string(3..)` |   | `false` |  
-`e911.extended_address` | The suit/floor/apt. address where the number is in service | `string()` |   | `false` |  
-`e911.latitude` | The e911 provisioning system calculated service address latitude | `string()` |   | `false` |  
-`e911.legacy_data.house_number` | The name that will show to emergency services | `string()` |   | `false` |  
+`e911.country` | The country is identified by the two-letter ISO 3166 code. Example: US | `string(2)` |   | `false` |  
+`e911.delivery_method` | How the emergency call is routed by the destination handler (not applicable to all providers) | `string('direct' | 'three_way' | 'security_desk')` |   | `false` |  
+`e911.extended_address` | The suite/floor/apt. address where the number is in service | `string()` |   | `false` |  
+`e911.latitude` | The geo-position of a location, north or south of the equator, using WGS84 formatting | `string(0..11)` |   | `false` |  
+`e911.legacy_data.house_number` | House number, numeric part only. Example: 123 | `string()` |   | `false` |  
 `e911.legacy_data.predirectional` | The name that will show to emergency services | `string()` |   | `false` |  
 `e911.legacy_data.streetname` | The name that will show to emergency services | `string()` |   | `false` |  
 `e911.legacy_data.suite` | The name that will show to emergency services | `string()` |   | `false` |  
 `e911.legacy_data` | Legacy E911 information | `object()` |   | `false` |  
 `e911.locality` | The locality (city) where the number is in service | `string()` |   | `true` |  
 `e911.location_id` | The e911 provisioning system internal id for this service address | `string()` |   | `false` |  
-`e911.longitude` | The e911 provisioning system calculated service address longitude | `string()` |   | `false` |  
+`e911.location_identifier` | United States unique 10-digit number known as an E911 location identifier (ELIN) | `integer()` |   | `false` |  
+`e911.longitude` | The geo-position of a location, east or west of the prime meridian, using WGS84 formatting | `string(0..11)` |   | `false` |  
 `e911.notification_contact_emails.[]` |   | `string()` |   | `false` |  
 `e911.notification_contact_emails` | A list of email addresses to receive notification when this number places an emergency call | `array(string())` | `[]` | `false` |  
 `e911.plus_four` | The extended zip/postal code where the number is in service | `string()` |   | `false` |  
@@ -34,7 +38,7 @@ Key | Description | Type | Default | Required | Support Level
 `e911.region` | The region (state) where the number is in service | `string(2)` |   | `true` |  
 `e911.status` | The e911 provisioning system status for this service address | `string('INVALID' | 'GEOCODED' | 'PROVISIONED' | 'REMOVED' | 'ERROR')` |   | `false` |  
 `e911.street_address` | The street address where the number is in service | `string()` |   | `true` |  
-`e911` |   | `object()` |   | `false` |  
+`e911` | E911 information for the current phone number | `object()` |   | `false` |  
 `porting.billing_account_id` | The account id the losing carrier has on file | `string()` |   | `false` |  
 `porting.billing_extended_address` | The suit/floor/apt. address the losing carrier has on file | `string()` |   | `false` |  
 `porting.billing_locality` | The locality (city) the losing carrier has on file | `string()` |   | `false` |  

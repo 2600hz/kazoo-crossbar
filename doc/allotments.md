@@ -6,7 +6,7 @@ Each object have name (`outbound_national`) which build from direction (inbound 
 
 **Properties**
 
-- `amount`: time in seconds. which can be consumed
+- `amount`: time in seconds, which can be consumed
 - `cycle`: when we reset consumed allotments counter, must be one of `minutely`, `hourly`, `daily`, `weekly`, `monthly`.
 - `increment`: step (in seconds) of incrementing counter, minimum 1 second
 - `minimum`: minimum amount added to counter
@@ -15,7 +15,7 @@ Each object have name (`outbound_national`) which build from direction (inbound 
 
 ### Examples
 
-#### increment", "minimum" and "no_consume_time"
+#### "increment", "minimum" and "no_consume_time"
 
 ```json
 {
@@ -108,13 +108,13 @@ Create buckets of minutes per time-period
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`^\w+$.amount` |   | `integer(0..)` |   | `false` |  
-`^\w+$.cycle` |   | `string('minutely' | 'hourly' | 'daily' | 'weekly' | 'monthly')` |   | `false` |  
+`^\w+$.amount` | Time in seconds, which can be consumed  | `integer(0..)` |   | `true` |  
+`^\w+$.cycle` | On the basis to reset consumed allotments counter  | `string('minutely', 'hourly', 'daily', 'weekly', 'monthly')` |   | `true` |  
 `^\w+$.group_consume.[]` |   | `string()` |   | `false` |  
-`^\w+$.group_consume` |   | `array(string())` |   | `false` |  
-`^\w+$.increment` |   | `integer(1..)` |   | `false` |  
-`^\w+$.minimum` |   | `integer(0..)` |   | `false` |  
-`^\w+$.no_consume_time` |   | `integer(0..)` |   | `false` |  
+`^\w+$.group_consume` | Other allotments which will be summed, when calculating rest of allotments time on authorization  | `array(string())` |   | `false` | 
+`^\w+$.increment` | Step (in seconds) of incrementing counter  | `integer(1..)` |   | `false` | 
+`^\w+$.minimum` | Minimum amount added to counter  | `integer(0..)` |   | `false` |  
+`^\w+$.no_consume_time` | If call duration is less or equal of this time (in seconds), then no allotment consumed  | `integer(0..)` |   | `false` |   
 `^\w+$` |   | `object()` |   | `false` |  
 
 

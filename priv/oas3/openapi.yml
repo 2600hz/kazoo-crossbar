@@ -326,17 +326,6 @@
     '$ref': 'paths/lists.yml#/paths/~1accounts~1{ACCOUNT_ID}~1lists'
   '/accounts/{ACCOUNT_ID}/lists/{LIST_ID}':
     '$ref': 'paths/lists.yml#/paths/~1accounts~1{ACCOUNT_ID}~1lists~1{LIST_ID}'
-  '/accounts/{ACCOUNT_ID}/lists/{LIST_ID}/entries':
-    '$ref': 'paths/lists.yml#/paths/~1accounts~1{ACCOUNT_ID}~1lists~1{LIST_ID}~1entries'
-  '/accounts/{ACCOUNT_ID}/lists/{LIST_ID}/entries/{LIST_ENTRY_ID}':
-    '$ref': >-
-      paths/lists.yml#/paths/~1accounts~1{ACCOUNT_ID}~1lists~1{LIST_ID}~1entries~1{LIST_ENTRY_ID}
-  '/accounts/{ACCOUNT_ID}/lists/{LIST_ID}/entries/{LIST_ENTRY_ID}/photo':
-    '$ref': >-
-      paths/lists.yml#/paths/~1accounts~1{ACCOUNT_ID}~1lists~1{LIST_ID}~1entries~1{LIST_ENTRY_ID}~1photo
-  '/accounts/{ACCOUNT_ID}/lists/{LIST_ID}/entries/{LIST_ENTRY_ID}/vcard':
-    '$ref': >-
-      paths/lists.yml#/paths/~1accounts~1{ACCOUNT_ID}~1lists~1{LIST_ID}~1entries~1{LIST_ENTRY_ID}~1vcard
   '/accounts/{ACCOUNT_ID}/match_lists':
     '$ref': 'paths/match_lists.yml#/paths/~1accounts~1{ACCOUNT_ID}~1match_lists'
   '/accounts/{ACCOUNT_ID}/match_lists/{MATCH_LIST_ID}':

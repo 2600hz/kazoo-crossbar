@@ -8,7 +8,7 @@
 -define(OUT, "priv/couchdb/schemas/timezone.json").
 -define(IN, ?OUT ++ ".src").
 
--include_lib("erlang_localtime/include/tz_database.hrl").
+-include_lib("qdate_localtime/include/tz_database.hrl").
 -include_lib("kazoo_stdlib/include/kz_types.hrl").
 
 main(_) ->

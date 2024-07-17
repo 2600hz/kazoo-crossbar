@@ -62,6 +62,11 @@
             "default": "Kazoo CNAM",
             "description": "cnam http_user_agent_header",
             "type": "string"
+        },
+        "provider": {
+            "default": "opencnam",
+            "description": "cnam provider",
+            "type": "string"
         }
     },
     "type": "object"

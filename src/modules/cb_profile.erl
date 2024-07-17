@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2024, 2600Hz
 %%% @doc Crossbar API for profile.
 %%% @author James Aimonetti
 %%%
@@ -32,8 +32,7 @@
 init() ->
     case fprof:start() of
         {'ok', _P} -> lager:debug("fprof pid: ~p", [_P]);
-        {'error', {'already_started', _P}} -> lager:debug("fprof pid: ~p", [_P]);
-        {'error', _R} -> lager:debug("failed to start fprof: ~p", [_R])
+        {'error', {'already_started', _P}} -> lager:debug("fprof pid: ~p", [_P])
     end,
     _ = crossbar_bindings:bind(<<"*.init">>, ?MODULE, 'req_init'),
     _ = crossbar_bindings:bind(<<"*.finish_request.*.*">>, ?MODULE, 'req_finish').

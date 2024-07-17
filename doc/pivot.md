@@ -2,7 +2,7 @@
 
 ## About Pivot
 
-The Pivot Crossbar resource allows the client to query and inspect data related to the [Pivot](../../pivot/doc/README.md) application (real-time call control).
+The Pivot Crossbar resource allows the client to query and inspect data related to the [Pivot](https://docs.2600hz.com/kazoo-pivot/doc/README.md) application (real-time call control).
 
 ## Enabling in Crossbar
 
@@ -18,10 +18,6 @@ The Pivot endpoint is not loaded on start in a default Kazoo installation.
 
 !!! note
     Adding `cb_pivot` to the crossbar `system_config` doc will not start the endpoint; only on restarting Crossbar will `cb_pivot` be loaded. Use the `sup` command above to start the endpoint at runtime.
-
-## Callflow Schema
-
-See the [Pivot callflow schema](../../callflow/doc/pivot.md) for details.
 
 ## Debugging pivot attempts
 
@@ -125,5 +121,5 @@ curl -v -X GET \
      }
 ```
 
-!!! note
+!!! note 
     You must URL-encode the call-id in the URL. Typically this would just mean converting `@` to `%40`, but you'll need to take care depending on how your call-ids are constructed.

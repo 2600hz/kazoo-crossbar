@@ -1029,12 +1029,27 @@
                             "description": "Additional location information. Example: Room 543",
                             "type": "string"
                         },
+                        "callback_cid_number": {
+                            "description": "10-digit DID used as caller ID to PSAP, overrides CID",
+                            "maxLength": 10,
+                            "minLength": 10,
+                            "type": "string"
+                        },
                         "country": {
                             "description": "The country is identified by the two-letter ISO 3166 code. Example: US",
                             "type": "string"
                         },
                         "county": {
                             "description": "County, parish, gun (JP), district (IN). Example: King's County",
+                            "type": "string"
+                        },
+                        "delivery_method": {
+                            "description": "How the emergency call is routed by the destination handler (not applicable to all providers)",
+                            "enum": [
+                                "direct",
+                                "three_way",
+                                "security_desk"
+                            ],
                             "type": "string"
                         },
                         "floor": {
@@ -1049,6 +1064,11 @@
                             "description": "House number suffix. Example: A, 1/2",
                             "type": "string"
                         },
+                        "latitude": {
+                            "description": "The geo-position of a location, north or south of the equator, using WGS84 formatting",
+                            "maxLength": 11,
+                            "type": "string"
+                        },
                         "locality": {
                             "description": "City, township, shi (JP). Example: New York",
                             "type": "string"
@@ -1056,6 +1076,11 @@
                         "location_identifier": {
                             "description": "United States unique 10-digit number known as an E911 location identifier (ELIN)",
                             "type": "integer"
+                        },
+                        "longitude": {
+                            "description": "The geo-position of a location, east or west of the prime meridian, using WGS84 formatting",
+                            "maxLength": 11,
+                            "type": "string"
                         },
                         "name": {
                             "description": "Name (residence, business or office occupant). Example: Joe's Barbershop",
@@ -7015,6 +7040,259 @@
                 }
             }
         },
+        "contacts": {
+            "description": "Schema for a contact",
+            "examples": [
+                {
+                    "contacts": [
+                        {
+                            "contact": "+14123456789",
+                            "device_type": "work",
+                            "primary": true,
+                            "type": "voice"
+                        },
+                        {
+                            "contact": "+14123456780",
+                            "device_type": "home",
+                            "primary": false,
+                            "type": "voice"
+                        },
+                        {
+                            "contact": "user@2600hz.com",
+                            "email_type": "work",
+                            "primary": true,
+                            "type": "email"
+                        },
+                        {
+                            "contact": "+14123456788",
+                            "device_type": "personal",
+                            "primary": false,
+                            "type": "sms"
+                        }
+                    ],
+                    "first_name": "John",
+                    "last_name": "Keith",
+                    "organization": {
+                        "name": "2600Hz"
+                    }
+                }
+            ],
+            "properties": {
+                "capture_group": {
+                    "default": {},
+                    "description": "The capture group information",
+                    "examples": [
+                        {
+                            "key": "01",
+                            "length": 2
+                        }
+                    ],
+                    "properties": {
+                        "key": {
+                            "description": "The number which is used to select this contact, length should be same as `length`",
+                            "examples": [
+                                "01"
+                            ],
+                            "type": "string"
+                        },
+                        "length": {
+                            "description": "Length of the numbers in the contacts for which it used to select desire Caller ID",
+                            "examples": [
+                                2
+                            ],
+                            "type": "integer"
+                        }
+                    },
+                    "type": "object"
+                },
+                "contacts": {
+                    "description": "A list of contact information",
+                    "items": {
+                        "description": "A Schema",
+                        "examples": [
+                            {
+                                "contact": "+14123456789",
+                                "device_type": "work",
+                                "primary": true,
+                                "type": "voice"
+                            },
+                            {
+                                "contact": "+14123456780",
+                                "device_type": "home",
+                                "primary": false,
+                                "type": "voice"
+                            },
+                            {
+                                "contact": "user@2600hz.com",
+                                "email_type": "work",
+                                "primary": true,
+                                "type": "email"
+                            },
+                            {
+                                "contact": "+14123456788",
+                                "device_type": "personal",
+                                "primary": false,
+                                "type": "sms"
+                            }
+                        ],
+                        "properties": {
+                            "contact": {
+                                "description": "The phone number or email associated with the contact",
+                                "examples": [
+                                    "+14123456789",
+                                    "+14123456780",
+                                    "user@2600hz.com",
+                                    "+14123456788"
+                                ],
+                                "type": "string"
+                            },
+                            "device_type": {
+                                "description": "The type of the device",
+                                "enum": [
+                                    "work",
+                                    "home",
+                                    "mobile",
+                                    "personal",
+                                    "fax"
+                                ],
+                                "type": "string"
+                            },
+                            "email_type": {
+                                "description": "The type of the email",
+                                "enum": [
+                                    "work",
+                                    "home"
+                                ],
+                                "type": "string"
+                            },
+                            "ext": {
+                                "description": "The extension of the user",
+                                "examples": [
+                                    "356",
+                                    "622"
+                                ],
+                                "type": "string"
+                            },
+                            "primary": {
+                                "description": "If this is the primary contact for this contact type",
+                                "examples": [
+                                    true
+                                ],
+                                "type": "boolean"
+                            },
+                            "type": {
+                                "description": "The type of this contact",
+                                "enum": [
+                                    "voice",
+                                    "email",
+                                    "sms"
+                                ],
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "type",
+                            "contact",
+                            "primary"
+                        ],
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "favorite": {
+                    "default": false,
+                    "description": "Whether the contact is a favorite",
+                    "type": "boolean"
+                },
+                "first_name": {
+                    "description": "The first name of the contact",
+                    "examples": [
+                        "John"
+                    ],
+                    "type": "string"
+                },
+                "history": {
+                    "default": [],
+                    "description": "The history of contact usage",
+                    "items": {
+                        "description": "A Schema",
+                        "examples": [
+                            {
+                                "contact": {
+                                    "contact": "+14123456789",
+                                    "device_type": "work",
+                                    "primary": true,
+                                    "type": "voice"
+                                },
+                                "notes": "Call John about the contact list feature and discussed a lot of ideas.  Told him I would call back in 3 days.",
+                                "timestamp": 123456789
+                            }
+                        ],
+                        "properties": {
+                            "contact": {
+                                "description": "The contact that was used",
+                                "type": "object"
+                            },
+                            "notes": {
+                                "description": "Notes from the communication",
+                                "type": "string"
+                            },
+                            "timestamp": {
+                                "description": "The gregorian timestamp",
+                                "type": "integer"
+                            }
+                        },
+                        "required": [
+                            "contact"
+                        ],
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "last_name": {
+                    "description": "The last name of the contact",
+                    "examples": [
+                        "Keith"
+                    ],
+                    "type": "string"
+                },
+                "organization": {
+                    "default": {},
+                    "description": "The organization this entity belongs to",
+                    "examples": [
+                        {
+                            "name": "2600Hz"
+                        }
+                    ],
+                    "properties": {
+                        "name": {
+                            "description": "The name of the organization",
+                            "examples": [
+                                "2600Hz"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                },
+                "pattern": {
+                    "description": "Match pattern",
+                    "type": "string"
+                },
+                "tags": {
+                    "description": "Tags that contact belong to",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "required": [
+                "first_name",
+                "contacts"
+            ],
+            "type": "object"
+        },
         "custom_channel_vars": {
             "description": "Custom Channel Vars applied to an INVITE",
             "type": "object"
@@ -7887,7 +8165,7 @@
                 },
                 "method": {
                     "default": "voice",
-                    "description": "The requested method for transfering the verification pin",
+                    "description": "The requested method for transferring the verification pin",
                     "enum": [
                         "voice",
                         "ivr",
@@ -9194,7 +9472,8 @@
                     "type": "string"
                 },
                 "temporal_route_id": {
-                    "description": "When type=temporal_route, set this to the ID of the temporal route (or route set) to use"
+                    "description": "When type=temporal_route, set this to the ID of the temporal route (or route set) to use",
+                    "type": "string"
                 },
                 "type": {
                     "enum": [
@@ -10408,18 +10687,22 @@
             "description": "Schema for a number",
             "properties": {
                 "carrier_name": {
+                    "description": "Name of the carrier provider",
                     "maxLength": 30,
                     "minLength": 1,
                     "type": "string"
                 },
                 "cnam": {
+                    "description": "Caller ID Name of a person or business that is placing a call",
                     "properties": {
                         "display_name": {
+                            "description": "Name that displayed in the callee side",
                             "maxLength": 15,
                             "minLength": 1,
                             "type": "string"
                         },
                         "inbound_lookup": {
+                            "description": "Lookup name that associated with the number in provider database and display it for inbound call",
                             "type": "boolean"
                         }
                     },
@@ -10441,9 +10724,16 @@
                     "type": "string"
                 },
                 "e911": {
+                    "description": "E911 information for the current phone number",
                     "properties": {
                         "activated_time": {
                             "description": "The time stamp e911 was provisioned",
+                            "type": "string"
+                        },
+                        "callback_cid_number": {
+                            "description": "10-digit DID used as caller ID to PSAP, overrides CID",
+                            "maxLength": 10,
+                            "minLength": 10,
                             "type": "string"
                         },
                         "caller_name": {
@@ -10451,19 +10741,35 @@
                             "minLength": 3,
                             "type": "string"
                         },
+                        "country": {
+                            "description": "The country is identified by the two-letter ISO 3166 code. Example: US",
+                            "maxLength": 2,
+                            "minLength": 2,
+                            "type": "string"
+                        },
+                        "delivery_method": {
+                            "description": "How the emergency call is routed by the destination handler (not applicable to all providers)",
+                            "enum": [
+                                "direct",
+                                "three_way",
+                                "security_desk"
+                            ],
+                            "type": "string"
+                        },
                         "extended_address": {
-                            "description": "The suit/floor/apt. address where the number is in service",
+                            "description": "The suite/floor/apt. address where the number is in service",
                             "type": "string"
                         },
                         "latitude": {
-                            "description": "The e911 provisioning system calculated service address latitude",
+                            "description": "The geo-position of a location, north or south of the equator, using WGS84 formatting",
+                            "maxLength": 11,
                             "type": "string"
                         },
                         "legacy_data": {
                             "description": "Legacy E911 information",
                             "properties": {
                                 "house_number": {
-                                    "description": "The name that will show to emergency services",
+                                    "description": "House number, numeric part only. Example: 123",
                                     "type": "string"
                                 },
                                 "predirectional": {
@@ -10489,14 +10795,20 @@
                             "description": "The e911 provisioning system internal id for this service address",
                             "type": "string"
                         },
+                        "location_identifier": {
+                            "description": "United States unique 10-digit number known as an E911 location identifier (ELIN)",
+                            "type": "integer"
+                        },
                         "longitude": {
-                            "description": "The e911 provisioning system calculated service address longitude",
+                            "description": "The geo-position of a location, east or west of the prime meridian, using WGS84 formatting",
+                            "maxLength": 11,
                             "type": "string"
                         },
                         "notification_contact_emails": {
                             "default": [],
                             "description": "A list of email addresses to receive notification when this number places an emergency call",
                             "items": {
+                                "description": "Email address",
                                 "format": "email",
                                 "type": "string"
                             },
@@ -10578,6 +10890,7 @@
                         "comments": {
                             "description": "An array of comments",
                             "items": {
+                                "description": "Comment",
                                 "type": "string"
                             },
                             "type": "array"
@@ -20799,7 +21112,7 @@
                     "type": "string"
                 },
                 "days": {
-                    "description": "The occurance day(s) of the month (1-31) for this rule",
+                    "description": "The occurrence day(s) of the month (1-31) for this rule",
                     "items": {
                         "maximum": 31,
                         "minimum": 1,
@@ -23353,16 +23666,6 @@
             "maxLength": 32,
             "minLength": 32,
             "name": "LINK_ID",
-            "pattern": "^[0-9a-f]+$",
-            "required": true,
-            "type": "string"
-        },
-        "LIST_ENTRY_ID": {
-            "description": "request LIST_ENTRY_ID parameter",
-            "in": "path",
-            "maxLength": 32,
-            "minLength": 32,
-            "name": "LIST_ENTRY_ID",
             "pattern": "^[0-9a-f]+$",
             "required": true,
             "type": "string"
@@ -28802,218 +29105,6 @@
                     },
                     {
                         "$ref": "#/parameters/LIST_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
-        "/accounts/{ACCOUNT_ID}/lists/{LIST_ID}/entries": {
-            "delete": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/LIST_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "get": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/LIST_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "put": {
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "lists",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/lists"
-                        }
-                    },
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/LIST_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
-        "/accounts/{ACCOUNT_ID}/lists/{LIST_ID}/entries/{LIST_ENTRY_ID}": {
-            "delete": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/LIST_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/LIST_ENTRY_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "get": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/LIST_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/LIST_ENTRY_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "patch": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/LIST_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/LIST_ENTRY_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
-            "post": {
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "lists",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/lists"
-                        }
-                    },
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/LIST_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/LIST_ENTRY_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
-        "/accounts/{ACCOUNT_ID}/lists/{LIST_ID}/entries/{LIST_ENTRY_ID}/photo": {
-            "post": {
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "lists",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/lists"
-                        }
-                    },
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/LIST_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/LIST_ENTRY_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            }
-        },
-        "/accounts/{ACCOUNT_ID}/lists/{LIST_ID}/entries/{LIST_ENTRY_ID}/vcard": {
-            "get": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/LIST_ID"
-                    },
-                    {
-                        "$ref": "#/parameters/LIST_ENTRY_ID"
                     }
                 ],
                 "responses": {
@@ -35038,6 +35129,32 @@
                         "description": "request succeeded"
                     }
                 }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "whitelabel",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/whitelabel"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/WHITELABEL_DOMAIN"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
             }
         },
         "/accounts/{ACCOUNT_ID}/whitelabel/{WHITELABEL_DOMAIN}/logo": {
@@ -35058,11 +35175,63 @@
                         "description": "request succeeded"
                     }
                 }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "whitelabel",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/whitelabel"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/WHITELABEL_DOMAIN"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
             }
         },
         "/accounts/{ACCOUNT_ID}/whitelabel/{WHITELABEL_DOMAIN}/welcome": {
             "get": {
                 "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/WHITELABEL_DOMAIN"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "whitelabel",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/whitelabel"
+                        }
+                    },
                     {
                         "$ref": "#/parameters/auth_token_header"
                     },

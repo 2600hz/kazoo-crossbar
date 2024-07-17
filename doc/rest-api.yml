@@ -1,0 +1,100 @@
+- "doc/README.md"
+- "Overview":
+    - "!q:doc/basics.md"
+    - "doc/filters.md"
+    - "doc/multipart.md"
+    - "doc/rate_limiting.md"
+    - "doc/schemas.md"
+- "Authentication":
+    - "doc/auth.md"
+    - "!f:doc/api_authentication.md"
+    - "doc/basic_auth.md"
+    - "doc/ip_auth.md"
+    - "doc/how_to_authenticate.md"
+    - "doc/multi_factor.md"
+    - "doc/scope_restrictions.md"
+    - "doc/token_auth.md"
+    - "doc/token_restrictions.md"
+    - "doc/user_authentication.md"
+- "Realtime Events":
+    - "!f:doc/websockets.md"
+    - "doc/notifications.md"
+- "Webhooks":
+    - "doc/webhooks.md"
+- "Account Actions and Permissions":
+    - "doc/accounts.md"
+    - "doc/security.md"
+    - "doc/access_lists.md"
+    - "doc/alerts.md"
+    - "doc/ips.md"
+    - "doc/registrations.md"
+    - "Other Account Features":
+        - "doc/comments.md"
+        - "doc/configs.md"
+        - "doc/contact_list.md"
+        - "doc/lists.md"
+        - "doc/migrations.md"
+        - "doc/search.md"
+        - "doc/storage.md"
+        - "doc/sup.md"
+- "Devices and Users":
+    - "!f:doc/devices.md"
+    - "doc/endpoints.md"
+    - "doc/groups.md"
+    - "doc/port_requests.md"
+    - "doc/resource_selectors.md"
+    - "doc/resource_templates.md"
+    - "doc/resources.md"
+    - "doc/users.md"
+- "Media":
+    - "doc/media.md"
+    - "doc/mms.md"
+- "Call Control":
+    - "Callflows":
+        - "doc/callflows.md"
+    - "Access":
+        - "doc/acls.md"
+    - "Limits":
+        - "doc/limits.md"
+        - "doc/allotments.md"
+    - "Menus":
+        - "doc/menus.md"
+    - "Advanced Features":
+        - "Conferences":
+            - "doc/conference.md"
+            - "doc/conference_auth.md"
+        - "Pivot":
+            - "doc/pivot.md"
+            - "doc/functions.md"
+        - "Faxes":
+            - "doc/faxes.md"
+            - "doc/faxboxes.md"
+        - "doc/cccps.md"
+        - "doc/presence.md"
+        - "doc/blacklists.md"
+        - "doc/call_inspector.md"
+        - "doc/dialplans.md"
+        - "doc/directories.md"
+        - "!f:doc/metaflows.md"
+        - "doc/recordings.md"
+        - "doc/sms.md"
+        - "doc/temporal_rules.md"
+        - "doc/temporal_rules_sets.md"
+        - "doc/voicemail.md"
+- "Usage":
+    - "doc/services.md"
+    - "doc/402.md"
+    - "doc/braintree.md"
+    - "doc/cdrs.md"
+    - "doc/ledgers.md"
+    - "!f:doc/phone_numbers.md"
+    - "doc/rates.md"
+    - "doc/transactions.md"
+- "Call Queues":
+    - "doc/queues.md"
+    - "doc/agents.md"
+- "SysAdmin":
+    - "doc/system_configs.md"
+    - "doc/system_status.md"
+    - "doc/tasks.md"
+    - "doc/whitelabeling.md"

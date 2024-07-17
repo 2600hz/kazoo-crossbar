@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2024, 2600Hz
 %%% @doc
 %%% @author Peter Defebvre
 %%%
@@ -192,7 +192,8 @@ put(Context) ->
 load_available(Context) ->
     QS = cb_context:query_string(Context),
     Zone = kz_json:get_ne_binary_value(<<"zone">>, QS),
-    case kz_ips:available(Zone) of
+    Quantity = kz_json:get_integer_value(<<"quantity">>, QS, 1),
+    case kz_ips:available(Zone, Quantity) of
         {'ok', JObjs} ->
             cb_context:set_resp_data(cb_context:set_resp_status(Context, 'success')
                                     ,JObjs
