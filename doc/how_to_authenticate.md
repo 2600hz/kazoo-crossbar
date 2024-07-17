@@ -1,8 +1,8 @@
-# Authenticating REST request
+# Authenticating Requests
 
-Almost every request to Crossbar be sent with authentication credentials.
+Almost every request to Crossbar must be sent with authentication credentials.
 
-Failing to do so will result in in `401 Unauthorized` HTTP response status with response payload like this:
+Failing to do so will result in in `401 Unauthorized` HTTP response status with a response payload like this:
 
 ```json
 {
@@ -20,17 +20,17 @@ Failing to do so will result in in `401 Unauthorized` HTTP response status with 
 }
 ```
 
-Crossbar provide a number of ways of authenticating request. Most common way is authenticated as user and received a token usable on subsequent requests.
+Crossbar provides a number of ways of authenticating request.The most common way is to authenticate as a user and receive a token that can be used on subsequent requests.
 
 ## Basic Authentication
 
-This is very simple and quick way of authentication. In this method you have to add `Authorization` HTTP header to request. The authorization method is `Basic` and the value is concatenation of your account ID and `md5` hash of username and password. Refer to [Basic Authentication](basics.md) for more information on how to generate the value for `Authorization` header.
+This is very simple and quick way of authentication. In this method, you have to add an `Authorization` HTTP header to request. The authorization method is `Basic` and the value is concatenation of your account ID and `md5` hash of username and password. Refer to [Basic Authentication](./basics.md) for more information on how to generate the value for `Authorization` header.
 
-Basic authentication has the disadvantage you have to provide the username and password in unencrypted text in every request.
+Basic authentication has a disadvantage in that you have to provide the username and password in unencrypted text for every request.
 
 ## Token based Authentication
 
-This is the prefer and more secure way to do authentication with Crossbar API.
+This is the preferred and more secure way to do authentication with Crossbar API.
 
 In Token based authentication you have to login first to get a token which you can then use in other requests. The token should be set in `X-Auth-Token` HTTP header in subsequent requests.
 
@@ -38,7 +38,7 @@ The are different ways to do login authentication.
 
 ### Authenticate as a User
 
-The best way to get authenticated and get the token for UI applications and making manual requests.
+This is the best way to get authenticated and get the token for UI applications for manual requests.
 
 In this method, you provide the credentials of your user just for login and crossbar will generate an authentication token in response.
 
@@ -47,7 +47,7 @@ User credentials is MD5 hash of `USERNAME:PASSWORD`. So for example if the usern
 !!! note 
     When hashing, the username must be converted to all lowercase characters before computing the hash.
 
-For generating MD5 of a text in terminal you can use `md5sum` (in Linux) or `md5` (in macOS) as follow:
+For generating the MD5 of a text in terminal you can use `md5sum` (in Linux) or `md5` (in macOS) like this:
 
 ```shell
 $ echo -n 'john@example.com:m32c6NfqYEt' | md5sum
@@ -99,11 +99,11 @@ curl -X GET \
     https://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}
 ```
 
-See [User Authentication](user_authentication.md) to learn more about this API resource.
+See [User Authentication](./user_authentication.md) to learn more about this API resource.
 
 ### Account API Authentication
 
-Uses your account's API token to generate authentication token. If you're building a server applications, this is the best way to authenticate your application.
+Uses your account's API token to generate authentication token. If you're building server applications, this is the best way to authenticate your application.
 
 This is the same as authenticating as user, except you supplying the API key as data.
 
@@ -117,7 +117,7 @@ You can find the API key in Authentication application in UI, or you can get it 
 
 ## Next Steps
 
-There are more way to authenticate your request, learn more about them in Authentication APIs section.
+There are more ways to authenticate your request. Learn more about them in Authentication APIs section.
 
-* For adding more security to your system see Multi-Factor Authentication.
-* Use [Security API](security.md) for configuring authentication method.
+* For adding more security to your system see [Multi-Factor Authentication](./multi_factor.md).
+* Use [Security API](./security.md) for configuring authentication method.

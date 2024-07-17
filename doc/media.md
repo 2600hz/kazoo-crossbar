@@ -28,7 +28,7 @@ curl -v -X GET -H "X-Auth-Token: {AUTH_TOKEN}" http://server.com:8000/v2/media?f
 The comparison is case-insensitive, but `en` and `en-US` are treated separately. If a media metadata object is missing a language attribute (on an older installation when system media was imported with no language field, say), use `key_missing=language` in the request.
 
 
-Once you've assigned languages, you can use the [`language` callflow action](../../callflow/doc/language.md) to set the language for that call.
+Once you've assigned languages, you can use the [`language` callflow action](https://docs.2600hz.com/git/2600hz/kazoo-callflow/doc/language.md) to set the language for that call.
 
 ### Normalize Media Files
 

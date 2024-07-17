@@ -1,10 +1,10 @@
-# Multi Factor Authentication Configuration
+# Multi Factor Auth
 
 ## About Multi Factor
 
 API endpoint to configure Crossbar Multi Factor Authentication (MFA) providers.
 
-See [Kazoo Auth multi factor documentation](../../../core/kazoo_auth/doc/multi_factor.md) to learn more about available providers and their required settings.
+See [Kazoo Auth multi factor documentation](https://docs.2600hz.com/git/2600hz/kazoo-core/kazoo_auth/doc/multi_factor.md) to learn more about available providers and their required settings.
 
 ## Enable MFA for a Crossbar auth module
 
@@ -286,7 +286,7 @@ curl -v -X GET \
 
 ## Create a Provider Configuration for an Account
 
-Create configuration for a MFA provider. Provider config should be in `"settings"`. See [Kazoo Auth Multi-Factor](../../../core/kazoo_auth/doc/multi_factor.md) to find out required configuration for each provider.
+Create configuration for a MFA provider. Provider config should be in `"settings"`. See [Kazoo Auth Multi-Factor](https://docs.2600hz.com/git/2600hz/kazoo-core/kazoo_auth/doc/multi_factor.md) to find out required configuration for each provider.
 
 > PUT /v2/accounts/{ACCOUNT_ID}/multi_factor
 
@@ -580,7 +580,7 @@ curl -v -X GET \
 
 ## Create a System Provider Configuration
 
-Provider config should be in `"settings"`. See [Kazoo Auth Multi-Factor](../../../core/kazoo_auth/doc/multi_factor.md) to find out required configuration for each provider.
+Provider config should be in `"settings"`. See [Kazoo Auth Multi-Factor](https://docs.2600hz.com/git/2600hz/kazoo-core/kazoo_auth/doc/multi_factor.md) to find out required configuration for each provider.
 
 !!! note
     Only super duper admin can create system providers configuration!
