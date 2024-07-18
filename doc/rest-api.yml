@@ -3,7 +3,7 @@
     - "!q:doc/api_basics.md"
     - "doc/filters.md"
     - "doc/multipart.md"
-    - "doc/rate_limiting.md"
+    # - "doc/rate_limiting.md"
     - "doc/schemas.md"
 - "Authentication":
     - "doc/auth.md"
@@ -52,8 +52,8 @@
 - "Call Control":
     - "Callflows":
         - "doc/callflows.md"
-    - "Access":
-        - "doc/acls.md"
+    # - "Access":
+    #     - "doc/acls.md"
     - "Limits":
         - "doc/limits.md"
         - "doc/allotments.md"
