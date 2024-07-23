@@ -1,6 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "_id": "account_config.default",
+    "additionalProperties": false,
     "description": "Schema for default account_config",
     "properties": {
         "max_upload_size": {

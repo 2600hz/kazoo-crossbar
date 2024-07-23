@@ -68,15 +68,9 @@ validate(Context, ConfigId) ->
 -spec validate(cb_context:context(), http_method(), path_token()) -> cb_context:context().
 validate(Context, ?HTTP_GET, ConfigId) -> set_config_to_context(ConfigId, Context);
 
-validate(Context, ?HTTP_DELETE, ConfigId) ->
-    Doc = case kapps_config_util:load_config_from_account(cb_context:account_id(Context), ConfigId) of
-              {'ok', Document} -> Document;
-              _ -> set_id(ConfigId, kz_json:new())
-          end,
-    cb_context:setters(Context,[
-                                {fun cb_context:set_doc/2, Doc}
-                               ,{fun cb_context:set_resp_status/2, 'success'}
-                               ]);
+validate(Context, ?HTTP_DELETE, _ConfigId) ->
+    %% Doc deletion is idempotent, don't need to validate its existence
+    cb_context:set_resp_status(Context, 'success');
 
 validate(Context, ?HTTP_PUT, ConfigId) ->
     validate(Context, ?HTTP_POST, ConfigId);
@@ -93,7 +87,7 @@ validate(Context, ?HTTP_POST, ConfigId) ->
 validate_with_parent(Context, ConfigId, Parent) ->
     RequestData = strip_id(cb_context:req_data(Context)),
     FullConfig = kz_json:merge(Parent, RequestData),
-    Schema = kapps_config_util:account_schema_name(ConfigId),
+    Schema = kapps_config_util:account_schema(ConfigId),
     cb_context:validate_request_data(Schema, cb_context:set_req_data(Context, FullConfig),
                                      fun(Ctx) ->
                                              cb_context:set_req_data(Ctx, kz_json:diff(RequestData, Parent))
@@ -113,11 +107,8 @@ post(Context, ConfigId) ->
     maybe_save_or_delete(Context, ConfigId).
 
 -spec delete(cb_context:context(), path_token()) -> cb_context:context().
-delete(Context, _ConfigId) ->
-    case strip_id(cb_context:doc(Context)) of
-        ?EMPTY_JSON_OBJECT -> cb_context:set_resp_status(Context, 'success');
-        _ -> crossbar_doc:delete(Context, ?HARD_DELETE)
-    end.
+delete(Context, ConfigId) ->
+    maybe_save_or_delete(Context, ConfigId, ?EMPTY_JSON_OBJECT).
 
 -spec set_config_to_context(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
 set_config_to_context(ConfigId, Context) ->
@@ -132,12 +123,17 @@ strip_id(JObj) -> kz_json:delete_key(<<"id">>, JObj, 'prune').
 
 -spec maybe_save_or_delete(cb_context:context(), path_token()) -> cb_context:context().
 maybe_save_or_delete(Context, ConfigId) ->
+    maybe_save_or_delete(Context, ConfigId, cb_context:req_data(Context)).
+
+-spec maybe_save_or_delete(cb_context:context(), path_token(), kz_json:json_term()) -> cb_context:context().
+maybe_save_or_delete(Context, ConfigId, ReqData) ->
     Stored = kz_doc:private_fields(kapps_account_config:get(cb_context:account_id(Context), ConfigId)),
     UpdatedContext =
-        case {cb_context:req_data(Context), kz_doc:revision(Stored)} of
-            {?EMPTY_JSON_OBJECT, 'undefined'} -> Context;
+        case {ReqData, kz_doc:revision(Stored)} of
+            {?EMPTY_JSON_OBJECT, 'undefined'} ->
+                cb_context:set_resp_status(Context, 'success');
             {?EMPTY_JSON_OBJECT, _} ->
-                crossbar_doc:delete(cb_context:set_doc(Context, Stored));
+                crossbar_doc:delete(cb_context:set_doc(Context, Stored), ?HARD_DELETE);
             {Diff, _} ->
                 crossbar_doc:save(Context, kz_json:merge(Stored, Diff), [])
         end,

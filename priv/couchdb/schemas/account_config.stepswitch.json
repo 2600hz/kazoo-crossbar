@@ -1,6 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
     "_id": "account_config.stepswitch",
+    "additionalProperties": false,
     "description": "Schema for stepswitch account_config",
     "properties": {
         "default_fail_on_single_reject": {
