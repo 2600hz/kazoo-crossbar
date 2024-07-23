@@ -22,6 +22,7 @@
     - order
   'type': object
 'account_config.auth.password':
+  'additionalProperties': false
   'description': Schema for auth.password account_config
   'properties':
     'should_enforce_strength':
@@ -53,6 +54,7 @@
       'type': object
   'type': object
 'account_config.call_command':
+  'additionalProperties': false
   'description': Schema for call_command account_config
   'properties':
     'unknown_cid_name':
@@ -61,6 +63,7 @@
       'type': string
   'type': object
 'account_config.callflow':
+  'additionalProperties': false
   'description': Schema for callflow account_config
   'properties':
     'dialog_subscribed_mwi_prefix':
@@ -149,6 +152,7 @@
           'type': string
   'type': object
 'account_config.cdr':
+  'additionalProperties': false
   'description': Schema for cdr account_config
   'properties':
     'ignore_loopback_bowout':
@@ -166,6 +170,7 @@
       'type': array
   'type': object
 'account_config.conferences':
+  'additionalProperties': false
   'description': Schema for conferences account_config
   'properties':
     'controls':
@@ -268,6 +273,7 @@
       'type': boolean
   'type': object
 'account_config.crossbar.auth':
+  'additionalProperties': false
   'description': Schema for crossbar.auth account_config
   'properties':
     'auth_modules':
@@ -325,6 +331,7 @@
     - auth_modules
   'type': object
 'account_config.crossbar.sms':
+  'additionalProperties': false
   'description': Schema for crossbar.sms account_config
   'properties':
     'api_e164_convert_from':
@@ -337,6 +344,7 @@
       'type': boolean
   'type': object
 'account_config.default':
+  'additionalProperties': false
   'description': Schema for default account_config
   'properties':
     'max_upload_size':
@@ -349,6 +357,7 @@
       'type': integer
   'type': object
 'account_config.doodle':
+  'additionalProperties': false
   'description': Schema for doodle account_config
   'properties':
     'api_preserve_caller_id':
@@ -361,6 +370,7 @@
       'type': object
   'type': object
 'account_config.fax':
+  'additionalProperties': false
   'description': Schema for fax account_config
   'properties':
     'default_smtp_domain':
@@ -377,6 +387,7 @@
       'type': integer
   'type': object
 'account_config.kazoo_endpoint':
+  'additionalProperties': false
   'description': Schema for kazoo_endpoint account_config
   'properties':
     'default_can_text_self':
@@ -385,6 +396,7 @@
       'type': boolean
   'type': object
 'account_config.keys':
+  'additionalProperties': false
   'description': Schema for DTMF keys account_config
   'properties':
     'voicemail':
@@ -392,6 +404,7 @@
       'description': DTMF keys for voicemail callflow module
   'type': object
 'account_config.ledgers':
+  'additionalProperties': false
   'description': Schema for ledgers account_config
   'properties':
     'registered_ledgers':
@@ -410,6 +423,7 @@
       'type': array
   'type': object
 'account_config.media':
+  'additionalProperties': false
   'description': Schema for media account_config
   'properties':
     'call_recording':
@@ -431,6 +445,7 @@
           'type': integer
   'type': object
 'account_config.notify':
+  'additionalProperties': false
   'description': Schema for notify account_config
   'properties':
     'notify_persist_exceptions':
@@ -446,6 +461,7 @@
       'type': boolean
   'type': object
 'account_config.number_manager':
+  'additionalProperties': false
   'description': Schema for number_manager account_config
   'properties':
     'unauthorized_numbers_lookup':
@@ -454,6 +470,7 @@
       'type': boolean
   'type': object
 'account_config.omnipresence':
+  'additionalProperties': false
   'description': Schema for omnipresence account_config
   'properties':
     'dialog_subscribed_mwi_prefix':
@@ -462,6 +479,7 @@
       'type': string
   'type': object
 'account_config.privacy':
+  'additionalProperties': false
   'description': Schema for privacy account_config
   'properties':
     'block_anonymous_caller_id':
@@ -474,6 +492,7 @@
       'type': string
   'type': object
 'account_config.stepswitch':
+  'additionalProperties': false
   'description': Schema for stepswitch account_config
   'properties':
     'default_fail_on_single_reject':
@@ -487,6 +506,7 @@
       'type': array
   'type': object
 'account_config.tasks.bill_early':
+  'additionalProperties': false
   'description': Schema for tasks.bill_early account_config
   'properties':
     'bill_early_enabled':
@@ -500,6 +520,7 @@
       'type': boolean
   'type': object
 'account_config.voicemail':
+  'additionalProperties': false
   'description': Schema for voicemail account_config
   'properties':
     'after_forward_action':
@@ -516,6 +537,7 @@
       'type': string
   'type': object
 'account_config.webhooks':
+  'additionalProperties': false
   'description': Schema for webhooks account_config
   'properties':
     'attempt_failure_count':
