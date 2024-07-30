@@ -2,9 +2,12 @@
 
 ## About Metaflows
 
-Metaflows allow functionality to be executed on an in-progress call, triggered by DTMFs from the caller/callee or an API call.
+Metaflows execute functionality on an in-progress call. They can be set up in an account to 
+passively listen for DTMF triggers from calls, or can be triggered actively on specific ongoing 
+calls through the [Channels API](channels.md).
 
-For instance, a callee could setup a metaflow on their user doc such that when they receive a call, they can press `*9` to initiate a recording of the call.
+Konami Pro provides some common call actions directly, and can also use any 
+[callflow object](https://docs.2600hz.com/kazoo/callflow/).
 
 #### Schema
 
@@ -20,7 +23,7 @@ Key | Description | Type | Default | Required | Support Level
 `patterns./.+/` | A metaflow node defines a module to execute, data to provide to that module, and one or more children to branch to | [#/definitions/metaflow](#metaflow) |   | `false` |  
 `patterns` | A list of patterns with their flows | `object()` |   | `false` |  
 
-### metaflow
+### Metaflow
 
 A metaflow node defines a module to execute, data to provide to that module, and one or more children to branch to
 
@@ -34,7 +37,7 @@ Key | Description | Type | Default | Required | Support Level
 
 
 
-## Fetch account-level metaflows
+## Fetch Account-Level Metaflows
 
 These are available to all users and devices within the account
 
@@ -46,7 +49,7 @@ curl -v -X GET \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/metaflows
 ```
 
-### No metaflows assigned
+### No Metaflows Assigned
 
 ```json
 {
@@ -60,7 +63,7 @@ curl -v -X GET \
 }
 ```
 
-## Set metaflows on the account
+## Set Metaflows on the Account
 
 > POST /v2/accounts/{ACCOUNT_ID}/metaflows
 
@@ -101,7 +104,7 @@ In the above example, the `binding_digit` is `*` which, when pressed on the phon
 
 Thus `*21234` would instruct Kazoo to blind-transfer the caller to extension `1234`.
 
-## Remove metaflows from the account
+## Remove Metaflows from the Account
 
 > DELETE /v2/accounts/{ACCOUNT_ID}/metaflows
 
@@ -123,7 +126,7 @@ curl -v -X DELETE \
 }
 ```
 
-## Users and devices
+## Users and Devices
 
 If you want to assign metaflows to a particular user or device, the API commands are the same except you need to include the user or device in the URI:
 
