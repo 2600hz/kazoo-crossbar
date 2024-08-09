@@ -89,9 +89,9 @@ Key | Description | Type | Default | Required | Support Level
 `gateways.[].port` | This resource gateway port | `integer()` | `5060` | `false` |  
 `gateways.[].prefix` | A string to prepend to the dialed number or capture group of the matching rule | `string(0..64)` |   | `false` |  
 `gateways.[].progress_timeout` | The progress timeout to apply to the resource gateway | `integer()` |   | `false` |  
-`gateways.[].realm` | This resource gateway authentication realm | `string()` |   | `false` |  
+`gateways.[].realm` | This resource gateway authentication realm | `string(1..128)` |   | `false` |  
 `gateways.[].route` | A statically configured SIP URI to route all call to | `string()` |   | `false` |  
-`gateways.[].server` | This resource gateway server | `string()` |   | `true` |  
+`gateways.[].server` | This resource gateway server | `string(1..128)` |   | `true` |  
 `gateways.[].skype_interface` | The name of the Skype interface to route the call over | `string()` |   | `false` |  
 `gateways.[].skype_rr` | Determines whether to round-robin calls amongst all interfaces (overrides "skype_interface" setting) | `boolean()` | `true` | `false` |  
 `gateways.[].span` | The identity of the hardware on the media server | `string()` |   | `false` |  
@@ -260,7 +260,6 @@ Some upstream carriers require the From address' realm to be formatted. There ar
 2. Set `"from_account_realm":true` to use the calling account's realm
 3. Set `"realm":"{CUSTOM_REALM}"` on a per-gateway basis (not on the top-level resource)
 
-
 ## rules_test.[]
 
 The `rules_test` object defines an array of regular expressions for test patterns of the given resource.
@@ -276,7 +275,7 @@ For example, if the resource handles emergency routes in North America:
 defining `933` as a test route, will inform teletype this emergency call is a test and will be reflected as such in the notification.
 
 
-## Fetch
+## List the account's resources
 
 > GET /v2/accounts/{ACCOUNT_ID}/resources
 
@@ -752,3 +751,32 @@ curl -v -X POST \
     }
 }
 ```
+
+## Server hostname validation
+
+KAZOO clusters may restrict what hostnames can be put in the `server` portion of a gateway.
+
+For SIP hostnames, the following process is followed to validate the value of `server`:
+
+1. Is the `server` value an IP address
+  a. If yes, go to 2
+  b. If no, go to 3
+2. For IP addresses, compare against a system-configured deny list of CIDRs and a system-configured restricted IP list.
+3. For `server` value `sip.example.com`, lookup SRV records for `_sip._udp.sip.example.com`
+  a. If no results, go to 4
+  b. For each hostname found, go to 1
+4. Lookup A record of `sip.example.com`
+  a. If no results, go to 5
+  b. For each result, go to 1
+5. Lookup in local (node) file (/etc/hosts for instance)
+
+### Restricted IP space
+
+CIDRs and IPs that qualify as "restricted" include (but aren't limited to):
+ - [RFC1918 IPs](https://www.rfc-editor.org/rfc/rfc1918)
+ - IPv6 unique local addresses: `fc00::/7`
+ - IPv4 unspecified address: `0.0.0.0/32`
+ - IPv4 loopback address: `127.0.0.0/8`
+ - IPv6 loopback address: `::1/128`
+ - IPv4 auto-config address: `169.254.0.0/16`
+ - IPv6 link-local prefix: `fe80::/10`
