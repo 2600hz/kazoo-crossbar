@@ -380,23 +380,10 @@
                         "type": "integer"
                     },
                     "realm": {
-                        "anyOf": [
-                            {
-                                "maxLength": 128,
-                                "minLength": 1,
-                                "type": "string"
-                            },
-                            {
-                                "format": "ipv4",
-                                "type": "string"
-                            },
-                            {
-                                "format": "ipv6",
-                                "type": "string"
-                            }
-                        ],
                         "description": "This resource gateway authentication realm",
-                        "kazoo-validation": true,
+                        "format": "sip_hostname",
+                        "maxLength": 128,
+                        "minLength": 1,
                         "type": "string"
                     },
                     "route": {
@@ -404,23 +391,10 @@
                         "type": "string"
                     },
                     "server": {
-                        "anyOf": [
-                            {
-                                "maxLength": 128,
-                                "minLength": 1,
-                                "type": "string"
-                            },
-                            {
-                                "format": "ipv4",
-                                "type": "string"
-                            },
-                            {
-                                "format": "ipv6",
-                                "type": "string"
-                            }
-                        ],
                         "description": "This resource gateway server",
-                        "kazoo-validation": true,
+                        "format": "sip_hostname",
+                        "maxLength": 128,
+                        "minLength": 1,
                         "type": "string"
                     },
                     "skype_interface": {
