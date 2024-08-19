@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2024, 2600Hz
 %%% @doc Users module
 %%% Handle client requests for user documents
 %%%
@@ -299,7 +299,7 @@ post(Context, _UserId) ->
         'success' ->
             _ = maybe_update_devices_presence(Context2),
             _ = maybe_send_desktop_welcome_email(Context1),
-            Context2;
+            cb_context:add_metadata_values(Context2, user_metadata(cb_context:doc(Context)));
         _ -> Context2
     end.
 
@@ -730,16 +730,23 @@ load_user(UserId, Context) ->
     case cb_context:resp_status(Context1) of
         'success' ->
             %% Migrate old-format vcard addresses (pre KZOO-310) to new format addresses object
-            UserJObj = kzd_users:maybe_migrate_user_addresses(cb_context:doc(Context1)),
+            UserJObj0 = kzd_users:maybe_migrate_user_addresses(cb_context:doc(Context1)),
+            UserJObj1 = kzd_users:set_require_password_update(UserJObj0, kzd_users:is_password_expired(UserJObj0)),
+
             Context2 = cb_context:setters(Context1
-                                         ,[{fun cb_context:set_doc/2, UserJObj}
-                                          ,{fun cb_context:set_resp_data/2, kz_doc:public_fields(UserJObj)}
+                                         ,[{fun cb_context:set_doc/2, UserJObj1}
+                                          ,{fun cb_context:set_resp_data/2, kz_doc:public_fields(UserJObj1)}
+                                          ,{fun cb_context:add_metadata_values/2, user_metadata(UserJObj1)}
                                           ]
                                          ),
             add_has_avatar(Context2);
         _ -> Context1
     end.
 
+user_metadata(UserJObj) ->
+    [{<<"password_expiration_timestamp">>, kzd_users:password_expiration_timestamp(UserJObj)}
+    ,{<<"is_password_expired">>, kzd_users:is_password_expired(UserJObj)}
+    ].
 
 %%------------------------------------------------------------------------------
 %% @doc This function tries to load the user's document and all the object_types' documents listed
@@ -884,7 +891,7 @@ set_org(JObj, Context) ->
     case kz_json:get_value(<<"org">>
                           ,cb_context:doc(crossbar_doc:load(cb_context:account_id(Context)
                                                            ,Context
-                                                           ,?TYPE_CHECK_OPTION(kzd_users:type())
+                                                           ,?TYPE_CHECK_OPTION(kzd_accounts:type())
                                                            )
                                          )
                           )
