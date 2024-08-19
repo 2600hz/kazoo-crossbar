@@ -181,9 +181,10 @@ post(Context) ->
     case cb_context:resp_status(C1) of
         'success' ->
             maybe_flush_config(C1),
-            RespJObj = maybe_add_multi_factor_metadata(cb_context:resp_data(Context)),
+            {RespJObj, Meta} = maybe_add_multi_factor_metadata(cb_context:resp_data(Context)),
             Setters = [{fun cb_context:set_resp_data/2, RespJObj}
                       ,{fun cb_context:set_resp_status/2, 'success'}
+                      ,{fun cb_context:add_metadata_values/2, kz_json:to_proplist(Meta)}
                       ],
             cb_context:setters(Context, Setters);
         _ -> C1
