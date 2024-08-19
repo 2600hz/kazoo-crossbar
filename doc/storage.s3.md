@@ -105,5 +105,5 @@ $ curl -vX \
     PUT localhost:8000/v2/accounts/{ACCOUNT_ID}/storage \
     -H "X-Auth-Token: $AUTH_TOKEN" \
     -H "Content-Type: application/json" \
-    -d "@{JSON_CONFIG_FILE}" | python -m json.tool
+    -d "@{JSON_CONFIG_FILE}" | python3 -m json.tool
 ```
