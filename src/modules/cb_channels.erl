@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2024, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -219,7 +219,7 @@ find_channel(AccountId, CallId, [StatusJObj|JObjs]) ->
     Channel = kz_json:get_value([<<"Channels">>, CallId], StatusJObj),
     case kz_json:get_value(<<"Account-ID">>, Channel) of
         AccountId -> Channel;
-        _AccountId -> find_channel(AccountId, CallId, JObjs)
+        _OtherAccountId -> find_channel(AccountId, CallId, JObjs)
     end.
 
 %%------------------------------------------------------------------------------
@@ -418,9 +418,9 @@ merge_user_channels_jobj(JObj, Dict) ->
     lists:foldl(fun merge_user_channels_fold/2, Dict, kz_json:get_value(<<"Channels">>, JObj, [])).
 
 -spec merge_user_channels_fold(kz_json:object(), dict:dict()) -> dict:dict().
-merge_user_channels_fold(Channel, D) ->
-    UUID = kz_json:get_value(<<"uuid">>, Channel),
-    dict:store(UUID, Channel, D).
+merge_user_channels_fold(Channel, Dict) ->
+    UUID = kz_json:get_ne_binary_value(<<"uuid">>, Channel),
+    dict:store(UUID, kz_json:set_value(<<"call_id">>, UUID, Channel), Dict).
 
 -spec delete_keys(kz_json:object()) -> kz_json:object().
 delete_keys(JObj) ->
