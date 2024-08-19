@@ -860,17 +860,19 @@ curl -v -X GET \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/qrcode
 ```
 
-## User Password Strength Compliance
+## User Password Strength Compliance (Admins)
 
+By default, KAZOO is not enforcing a secure password is used. This can be changed on a per-system configuration or per-account basis.
 
-By default Kazoo is not enforcing a secure password. This can be change per system configuration or per account.
+Enforcement is implemented as a list of regular expressions.
 
-The enforce is implemented as a list of regular expressions. Each regular expression should
-return a match. Non match means the regex is rejecting the password as it is not secure.
+Each regular expression should use a capture group to return a match.
+
+Failure of the regex to match against the password indicates the password will be rejected.
 
 ### Password strength configuration
 
-There are a couple of configurations to control this password strength enforcer:
+There are a few places to configure to control the password strength enforcer:
 
 - Enabling password strength enforcer:
     - Enabling globally:
@@ -903,7 +905,6 @@ sup kapps_account_config flush {ACCOUNT_ID} auth.password
 For more info please refer to [Kazoo Auth Password](../../../core/kazoo_auth/doc/password.md) documentation.
 
 ### Example of password enforcement API rejects insecure password
-
 
 > POST /v2/accounts/{ACCOUNT_ID}/users/{USER_ID}
 
@@ -938,3 +939,37 @@ Failed response:
     "status": "failed"
 }
 ```
+
+## Password expiration
+
+For system operators who wish to enforce password rotation, password expiration can be configured.
+
+In the `system_config/crossbar` doc, set the `password_expiry_s` key to the amount of time from when a password was set that the password should be considered expired.
+
+When this key is undefined, no password exipration check is made.
+
+When set to a number (like 31540000 for seconds in a year) KAZOO will check the user's doc for a pvt field with the password creation timestamp:
+  a. If undefined (all user docs pre-password expiry, the password is considered expired
+  b. If set, add UserPasswordTimestampS to ExpiryS and compare if less than now() (less than implies expired).
+
+If the password is considered expired, auth attempts by the user will be denied. The user's password will need to be updated via POST to the users API by an admin of the account.
+
+A password expiration timestamp (when the password will be considered expired) and an `is_expired_expired` boolean are included on the metadata of a user fetch now:
+
+```json
+{
+  "metadata": {
+    "created": {DOC_CREATED},
+    "id": "{DOC_ID}",
+    "is_password_expired": false,
+    "modified": {DOC_MODIFIED},
+    "password_expiration_timestamp": {TIMESTAMP + EXPIRY}
+  }
+}
+```
+
+### Legacy concerns
+
+When fetching the user's doc, if the password is considered expired, `require_password_update` will also be set in the `data` object of the user (some UIs use this to force password resets while the user is logged in).
+
+Going forward, UIs should create a password expiration policy (say warn the user starting 10 days before expiration and force a reset by the user 3 days before expiration) to enforce changing the password before the password expires.

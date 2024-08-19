@@ -28,7 +28,7 @@
         },
         "api_auth_tokens": {
             "default": 35,
-            "description": "crossbar api auth tokens",
+            "description": "Default token cost when using api_auth",
             "type": "integer"
         },
         "autoload_modules": {
@@ -51,7 +51,7 @@
         },
         "conference_auth_tokens": {
             "default": 35,
-            "description": "crossbar conference_auth_tokens",
+            "description": "Default token cost when using conference_auth",
             "type": "integer"
         },
         "cowboy_custom_routes_handlers": {
@@ -82,7 +82,7 @@
         },
         "desktop_auth_tokens": {
             "default": 35,
-            "description": "crossbar desktop_auth_tokens",
+            "description": "Default token cost when using desktop_auth API",
             "type": "integer"
         },
         "display_dependency_list": {
@@ -106,7 +106,7 @@
             "type": "boolean"
         },
         "ip": {
-            "description": "crossbar ip",
+            "description": "IP address to bind to when starting up",
             "type": "string"
         },
         "load_view_chunk_size": {
@@ -151,13 +151,17 @@
         },
         "pagination_page_size": {
             "default": 50,
-            "description": "crossbar pagination page size",
+            "description": "Default page size for pagination when unspecified by client request",
             "minimum": 1,
+            "type": "integer"
+        },
+        "password_expiry_s": {
+            "description": "Password expiry from password creation time, in seconds",
             "type": "integer"
         },
         "port": {
             "default": 8000,
-            "description": "crossbar port",
+            "description": "Cleartext API port to bind to on startup",
             "type": "integer"
         },
         "pretty_metrics": {
@@ -252,7 +256,7 @@
         },
         "token_costs": {
             "default": 1,
-            "description": "crossbar token costs",
+            "description": "Token costs for API requests",
             "type": "integer"
         },
         "trace_path": {
@@ -262,17 +266,17 @@
         },
         "use_plaintext": {
             "default": true,
-            "description": "crossbar use plaintext",
+            "description": "Toggle whether to start a cleartext socket listener",
             "type": "boolean"
         },
         "use_ssl": {
             "default": false,
-            "description": "crossbar use ssl",
+            "description": "Toggle whether to start a TLS socket listener",
             "type": "boolean"
         },
         "user_auth_tokens": {
             "default": 35,
-            "description": "crossbar user auth tokens",
+            "description": "Default token cost when using user_auth",
             "type": "integer"
         },
         "workers": {
