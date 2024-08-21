@@ -18,7 +18,6 @@ Key | Description | Type | Default | Required | Support Level
 `commland` | Properties related to commland | `object()` |   | `false` |  
 `company_name` | The company name to display to users | `string()` |   | `false` | `supported`
 `conference_public_domain` | This is the whitelabeled domain that conference participants can use to reach the conference through webphone | `string()` |   | `false` | `supported`
-`dkim_selector` | This is the selector that the receiving server should use to look up the DNS record | `string()` |   | `false` | `supported`
 `domain` | This is the whitelabeled domain that users will be entering to reach the UI | `string()` |   | `false` | `supported`
 `fake_api_url` | This is a whitelabeled API URL, primarily used by the developer application | `string()` |   | `false` | `beta`
 `hide_credits` | When checked this hides the credits | `boolean()` | `false` | `false` | `beta`
@@ -398,13 +397,182 @@ Or domain specific:
 
 > GET /v2/accounts/{ACCOUNT_ID}/whitelabel/{domain}/icon
 
+## Configure an Email address for an Account
+
+### Create
+
+> PUT /v2/accounts/{ACCOUNT_ID}/whitelabel/emails
+
+```shell
+curl -v -X PUT \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d '{"data": {"email":"test@2600hz.com", "dkim_selector":"myselector"} }' \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/emails
+```
+
+```json
+{
+  "data": "Email verification code was sent, Please check your email to learn how to verify your email address.",
+  "metadata": {
+    "id": "{EMAIL_ID}",
+    "created": 63884920912,
+    "modified": 63884920912,
+    "verified": false
+  }
+}
+```
+
+When an email address is configured successfully, a 4-digit code is sent to the email address and it should be used to verify the email address.
+
+### Verify Email Address
+
+> POST /v2/accounts/{ACCOUNT_ID}/whitelabel/emails/{EMAIL_ID}/verify
+
+```shell
+curl -v -X POST \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d '{"data": {"code": "1234"} }' \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/emails/{EMAIL_ID}/verify
+```
+
+```json
+{
+  "data": {
+        "email": "test@2600hz.com",
+        "dkim_selector": "myselector",
+        "id": "{EMAIL_ID}"
+  },
+  "metadata": {
+    "id": "{EMAIL_ID}",
+    "created": 63884920912,
+    "modified": 63884924153,
+    "verified": true
+  }
+}
+```
+
+If verification code is not matched, a newly generated verification will sent to the email address. And it will result in `400 Validation Error` HTTP response status with response payload like this:
+
+```json
+{
+  "data": {
+    "code": {
+      "invalid": {
+        "message": "Code does not match, a new verification code was sent. Please check your email"
+      }
+    }
+  },
+  "metadata": {
+    "id": "{EMAIL_ID}",
+    "created": 63884920912,
+    "modified": 63884924153,
+    "verified": false
+  },
+  "error": "400",
+  "message": "validation error",
+  "status": "error"
+}
+```
+
+### Fetch an Email address
+
+You may fetch the email with GET:
+
+> GET /v2/accounts/{ACCOUNT_ID}/whitelabel/emails/{EMAIL_ID}
+
+```json
+{
+  "data": {
+        "email": "test@2600hz.com",
+        "dkim_selector": "myselector",
+        "id": "{EMAIL_ID}"
+  },
+  "metadata": {
+    "id": "{EMAIL_ID}",
+    "created": 63884920912,
+    "modified": 63884924153,
+    "verified": false
+  }  
+}
+```
+
+### Fetch configured Email addresses
+
+> GET /v2/accounts/{ACCOUNT_ID}/whitelabel/emails
+
+```json
+{
+  "data": [
+    {
+      "id": "{EMAIL_ID_1}",
+      "email": "test@2600hz.com",
+      "verified": false
+    },
+    {
+      "id": "{EMAIL_ID_2}",
+      "email": "test1@2600hz.com",
+      "verified": true
+    }
+  ] 
+}
+```
+
+### Delete an Email address
+
+> DELETE /v2/accounts/{ACCOUNT_ID}/whitelabel/emails/{EMAIL_ID}
+
+```json
+{
+  "data": {
+        "email": "test@2600hz.com",
+        "dkim_selector": "myselector",
+        "id": "{EMAIL_ID}"
+    },
+  "metadata": {
+    "id": "{EMAIL_ID}",
+    "created": 63884920912,
+    "modified": 63884924153,
+    "deleted": true,
+    "verified": false
+  }  
+}
+```
+
+### Modify an Email address
+
+> POST /v2/accounts/{ACCOUNT_ID}/whitelabel/emails/{EMAIL_ID}
+
+```shell
+curl -v -X POST \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -H 'Content-Type: application/json' \
+    -d '{"data": {"email":"test@2600hz.com", "dkim_selector":"myselector1"} }' \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/emails/{EMAIL_ID}
+```
+
+```json
+{
+  "data": {
+        "email": "test@2600hz.com",
+        "dkim_selector": "myselector1",
+        "id": "{EMAIL_ID}"
+    },
+  "metadata": {
+    "id": "{EMAIL_ID}",
+    "created": 63884920912,
+    "modified": 63884924362,
+    "verified": false
+  }  
+}
+```
+
 ## Uploading the PEM file for DKIM Signing
 
 DKIM (DomainKeys Identified Mail) lets domain owners "sign" emails from their domain. This allows receiving email servers to verify that the email came from the domain it purports to, by fetching the public key from a DNS TXT record and verifying the signature.
 
 ### DKIM DNS TXT record
 
-The `name` of a DKIM entry follows the format of `[selector]._domainkey.[domain]` where `selector` is what you enter for the `dkim_selector` in the whitelabel document. `domain` is, your domain name set in the whitelabel document as well.
+The `name` of a DKIM entry follows the format of `[selector]._domainkey.[domain]` where `selector` is what you enter for the `dkim_selector` in the whitelabel email document. `domain` is, your domain name set in the whitelabel document as well.
 
 The content of the TXT record looks like `v=DKIM1; p=[public key]`. `v` is `DKIM1` and `p` is the public key that is the complement to the private key uploaded here.
 
@@ -412,14 +580,14 @@ Read [RFC6376](https://datatracker.ietf.org/doc/html/rfc6376/) for more on DKIM.
 
 ### Uploading the DKIM private key
 
-> POST /v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
+> POST /v2/accounts/{ACCOUNT_ID}/whitelabel/emails/{EMAIL_ID}
 
 ```shell
 curl -v -X POST \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     -H 'Content-Type: application/x-pem-file' \
     --data-binary "@/local/path/to/pvt_file.pem" \
-    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/emails/{EMAIL_ID}
 ```
 
 The file should be a plaintext PEM file (like what's generated from `openssl genrsa -out private-key.pem 1024` or similar).
@@ -427,43 +595,3 @@ The file should be a plaintext PEM file (like what's generated from `openssl gen
 !!!note Once the PEM file is uploaded successfully, it will not be fetchable via API again.
 
 Subsequent POSTs to upload another PEM file will cause the existing PEM file to not be available (so most recently uploaded PEM file is the actively used one).
-
-Once the PEM file is uploaded successfully, you can provide a friendly name for the file, using below POST request.
-
-```shell
-curl -v -X POST \
-    -H "X-Auth-Token: {AUTH_TOKEN}" \
-    -d '{"data": {"name":"mypemfile"} }' \
-    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
-```
-
-## Fetch DKIM PEM file information
-
-This returns ONLY the friendly name (`name`) of the PEM file.
-
-> GET /v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key
-
-Assuming your PEM file name is "mypemfile", you should receive a payload similar to:
-
-```json
-{
-  "auth_token": "{AUTH_TOKEN}",
-  "data": [
-    {
-      "name": "mypemfile"
-    }
-    "..."
-  ],
-  "timestamp": "{TIMESTAMP}",
-  "version": "{VERSION}",
-  "node": "{NODE_HASH}",
-  "request_id": "{REQUEST_ID}",
-  "status": "success"
-}
-```
-
-## Remove DKIM PEM file information
-
-This removes the PEM file.
-
-> DELETE /v2/accounts/{ACCOUNT_ID}/whitelabel/dkim_key

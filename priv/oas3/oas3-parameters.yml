@@ -191,6 +191,16 @@
     'minLength': 32
     'pattern': '^[0-9a-f]+$'
     'type': string
+'EMAIL_ID':
+  'description': request EMAIL_ID parameter
+  'in': path
+  'name': EMAIL_ID
+  'required': true
+  'schema':
+    'maxLength': 32
+    'minLength': 32
+    'pattern': '^[0-9a-f]+$'
+    'type': string
 'ENDPOINT_ID':
   'description': request ENDPOINT_ID parameter
   'in': path

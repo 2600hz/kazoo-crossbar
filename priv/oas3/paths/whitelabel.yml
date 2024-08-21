@@ -54,45 +54,6 @@ paths:
       summary: Add an instance of whitelabel
       tags:
         - whitelabel
-  /accounts/{ACCOUNT_ID}/whitelabel/dkim_key:
-    delete:
-      operationId: DeleteAccountsAccountIdWhitelabelDkimKey
-      parameters:
-        - $ref: '../oas3-parameters.yml#/auth_token_header'
-        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
-      responses:
-        200:
-          description: Successful operation
-      summary: Delete an instance of whitelabel
-      tags:
-        - whitelabel
-    get:
-      operationId: GetAccountsAccountIdWhitelabelDkimKey
-      parameters:
-        - $ref: '../oas3-parameters.yml#/auth_token_header'
-        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
-      responses:
-        200:
-          description: Successful operation
-      summary: Get dkim_key of whitelabel
-      tags:
-        - whitelabel
-    post:
-      operationId: PostAccountsAccountIdWhitelabelDkimKey
-      parameters:
-        - $ref: '../oas3-parameters.yml#/auth_token_header'
-        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '../oas3-schemas.yml#/whitelabel'
-      responses:
-        200:
-          description: Successful operation
-      summary: Update an instance of whitelabel
-      tags:
-        - whitelabel
   /accounts/{ACCOUNT_ID}/whitelabel/domains:
     get:
       operationId: GetAccountsAccountIdWhitelabelDomains
@@ -110,6 +71,94 @@ paths:
       parameters:
         - $ref: '../oas3-parameters.yml#/auth_token_header'
         - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '../oas3-schemas.yml#/whitelabel'
+      responses:
+        200:
+          description: Successful operation
+      summary: Update an instance of whitelabel
+      tags:
+        - whitelabel
+  /accounts/{ACCOUNT_ID}/whitelabel/emails:
+    get:
+      operationId: GetAccountsAccountIdWhitelabelEmails
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Get emails of whitelabel
+      tags:
+        - whitelabel
+    put:
+      operationId: PutAccountsAccountIdWhitelabelEmails
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '../oas3-schemas.yml#/whitelabel'
+      responses:
+        200:
+          description: Successful operation
+      summary: Add an instance of whitelabel
+      tags:
+        - whitelabel
+  /accounts/{ACCOUNT_ID}/whitelabel/emails/{EMAIL_ID}:
+    delete:
+      operationId: DeleteAccountsAccountIdWhitelabelEmailsEmailId
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../oas3-parameters.yml#/EMAIL_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Delete an instance of whitelabel
+      tags:
+        - whitelabel
+    get:
+      operationId: GetAccountsAccountIdWhitelabelEmailsEmailId
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../oas3-parameters.yml#/EMAIL_ID'
+      responses:
+        200:
+          description: Successful operation
+      summary: Get a whitelabel by ID
+      tags:
+        - whitelabel
+    post:
+      operationId: PostAccountsAccountIdWhitelabelEmailsEmailId
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../oas3-parameters.yml#/EMAIL_ID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '../oas3-schemas.yml#/whitelabel'
+      responses:
+        200:
+          description: Successful operation
+      summary: Update an instance of whitelabel
+      tags:
+        - whitelabel
+  /accounts/{ACCOUNT_ID}/whitelabel/emails/{EMAIL_ID}/verify:
+    post:
+      operationId: PostAccountsAccountIdWhitelabelEmailsEmailIdVerify
+      parameters:
+        - $ref: '../oas3-parameters.yml#/auth_token_header'
+        - $ref: '../oas3-parameters.yml#/ACCOUNT_ID'
+        - $ref: '../oas3-parameters.yml#/EMAIL_ID'
       requestBody:
         content:
           application/json:
