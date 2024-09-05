@@ -725,21 +725,19 @@ load_users_summary(Context) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec load_user(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
-load_user(UserId, Context) ->
-    Context1 = crossbar_doc:load(UserId, Context, ?TYPE_CHECK_OPTION(kzd_users:type())),
-    case cb_context:resp_status(Context1) of
-        'success' ->
+load_user(UserId, Context0) ->
+    case kzd_users:fetch(cb_context:account_id(Context0), UserId) of
+        {'ok', UserJObj0} ->
+            lager:info("fetched user ~s", [UserId]),
             %% Migrate old-format vcard addresses (pre KZOO-310) to new format addresses object
-            UserJObj = kzd_users:maybe_migrate_user_addresses(cb_context:doc(Context1)),
+            UserJObj1 = kzd_users:maybe_migrate_user_addresses(UserJObj0),
 
-            Context2 = cb_context:setters(Context1
-                                         ,[{fun cb_context:set_doc/2, UserJObj}
-                                          ,{fun cb_context:set_resp_data/2, kz_doc:public_fields(UserJObj)}
-                                          ,{fun cb_context:add_metadata_values/2, user_metadata(UserJObj)}
-                                          ]
+            Context1 = cb_context:setters(crossbar_doc:handle_json_success(UserJObj1, Context0)
+                                         ,[{fun cb_context:add_metadata_values/2, user_metadata(UserJObj1)}]
                                          ),
-            add_has_avatar(Context2);
-        _ -> Context1
+            add_has_avatar(Context1);
+        {'error', Error} ->
+            crossbar_doc:handle_datamgr_errors(Error, UserId, Context0)
     end.
 
 user_metadata(UserJObj) ->
