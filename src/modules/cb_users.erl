@@ -730,13 +730,12 @@ load_user(UserId, Context) ->
     case cb_context:resp_status(Context1) of
         'success' ->
             %% Migrate old-format vcard addresses (pre KZOO-310) to new format addresses object
-            UserJObj0 = kzd_users:maybe_migrate_user_addresses(cb_context:doc(Context1)),
-            UserJObj1 = kzd_users:set_require_password_update(UserJObj0, kzd_users:is_password_expired(UserJObj0)),
+            UserJObj = kzd_users:maybe_migrate_user_addresses(cb_context:doc(Context1)),
 
             Context2 = cb_context:setters(Context1
-                                         ,[{fun cb_context:set_doc/2, UserJObj1}
-                                          ,{fun cb_context:set_resp_data/2, kz_doc:public_fields(UserJObj1)}
-                                          ,{fun cb_context:add_metadata_values/2, user_metadata(UserJObj1)}
+                                         ,[{fun cb_context:set_doc/2, UserJObj}
+                                          ,{fun cb_context:set_resp_data/2, kz_doc:public_fields(UserJObj)}
+                                          ,{fun cb_context:add_metadata_values/2, user_metadata(UserJObj)}
                                           ]
                                          ),
             add_has_avatar(Context2);
