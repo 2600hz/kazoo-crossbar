@@ -2,7 +2,7 @@
 
 ## About Pivot
 
-The Pivot Crossbar resource allows the client to query and inspect data related to the [Pivot](https://docs.2600hz.com/kazoo-pivot/doc/README.md) application (real-time call control).
+The Pivot Crossbar resource allows the client to query and inspect data related to the [Pivot](https://docs.2600hz.com/git/2600hz/kazoo-pivot/doc/README.md) application (real-time call control).
 
 ## Enabling in Crossbar
 

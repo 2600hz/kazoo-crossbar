@@ -2,7 +2,7 @@
 
 #### About Queues
 
-When you have more callers than agents to handle those calls, you can create a call queue to put the callers on hold while agents process callers in the order they arrived in.  It is important to note that the information is for ACDC and NOT Qubicle. If you are looking for Qubicle Queues API documentation [click here](https://docs.2600hz.com/git/kazoo-qubicle/doc/crossbar/qubicle_queues.md)
+When you have more callers than agents to handle those calls, you can create a call queue to put the callers on hold while agents process callers in the order they arrived in.  It is important to note that the information is for ACDC and NOT Qubicle. If you are looking for Qubicle Queues API documentation [click here](https://docs.2600hz.com/git/2600hz/kazoo-qubicle/doc/crossbar/qubicle_queues.md)
 
 #### Schema
 
