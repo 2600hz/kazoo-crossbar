@@ -30,8 +30,8 @@ create_timezones() ->
 timezones() ->
     Bin = read_tz_database_hrl(),
     [Tz | Tzs] = lists:usort(lists:foldl(fun match_tz/2
-                            ,[]
-                            ,binary:split(Bin, <<"\n">>, [global, trim_all]))
+                                        ,[]
+                                        ,binary:split(Bin, <<"\n">>, [global, trim_all]))
                             ),
     iolist_to_binary([<<?PRETTY_SPACE, $", Tz/binary, $">>] ++ [<<$,, $\n, ?PRETTY_SPACE, $", B/binary, $">> || B <- Tzs]).
 
@@ -60,9 +60,9 @@ read_tz_database_hrl() ->
                              ),
                     throw(Error)
             end;
-    Error ->
-        io:format("Error, unable to read deps/qdate_localtime/include/tz_database.hrl:~n~p~n"
-                 ,[Error]
-                 ),
-        throw(Error)
-end.
+        Error ->
+            io:format("Error, unable to read deps/qdate_localtime/include/tz_database.hrl:~n~p~n"
+                     ,[Error]
+                     ),
+            throw(Error)
+    end.
