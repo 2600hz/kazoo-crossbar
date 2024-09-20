@@ -9320,32 +9320,20 @@
             'description': The progress timeout to apply to the resource gateway
             'type': integer
           'realm':
-            'anyOf':
-              - 'maxLength': 128
-                'minLength': 1
-                'type': string
-              - 'format': ipv4
-                'type': string
-              - 'format': ipv6
-                'type': string
             'description': This resource gateway authentication realm
+            'format': sip_hostname
+            'maxLength': 128
+            'minLength': 1
             'type': string
-            'x-kazoo-validation': true
           'route':
             'description': A statically configured SIP URI to route all call to
             'type': string
           'server':
-            'anyOf':
-              - 'maxLength': 128
-                'minLength': 1
-                'type': string
-              - 'format': ipv4
-                'type': string
-              - 'format': ipv6
-                'type': string
             'description': This resource gateway server
+            'format': sip_hostname
+            'maxLength': 128
+            'minLength': 1
             'type': string
-            'x-kazoo-validation': true
           'skype_interface':
             'description': The name of the Skype interface to route the call over
             'type': string
