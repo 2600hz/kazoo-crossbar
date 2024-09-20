@@ -21,7 +21,7 @@ maybe_create_timezones(false) ->
         false -> create_timezones()
     end.
 
-create_timezones() ->        
+create_timezones() ->
     {'ok', SchemaBin} = file:read_file(?IN),
     Timezones = timezones(),
     NewSchema = binary:replace(SchemaBin, ?AUTOGEN_REPLACE, <<"\"enum\": [\n", Timezones/binary, "\n    ],">>),
