@@ -28,6 +28,7 @@
     - "doc/alerts.md"
     - "doc/ips.md"
     - "doc/registrations.md"
+    - "doc/apps_store.md"
     - "Other Account Features":
         - "doc/comments.md"
         - "doc/configs.md"
@@ -37,6 +38,8 @@
         - "doc/search.md"
         - "doc/storage.md"
         - "doc/sup.md"
+        - "doc/about.md"
+        - "doc/apps_link.md"
 - "Devices and Users":
     - "!f:doc/devices.md"
     - "doc/endpoints.md"
@@ -69,6 +72,7 @@
         - "Faxes":
             - "doc/faxes.md"
             - "doc/faxboxes.md"
+        - "doc/channels.md"
         - "doc/cccps.md"
         - "doc/presence.md"
         - "doc/blacklists.md"
@@ -81,6 +85,9 @@
         - "doc/temporal_rules.md"
         - "doc/temporal_rules_sets.md"
         - "doc/voicemail.md"
+        - "doc/hotdesks.md"
+        - "doc/parked_calls.md"
+        - "doc/quickcall.md"
 - "Usage":
     - "doc/services.md"
     - "doc/402.md"
@@ -90,6 +97,9 @@
     - "!f:doc/phone_numbers.md"
     - "doc/rates.md"
     - "doc/transactions.md"
+    - "doc/connectivity.md"
+    - "doc/att_handlers_errors.md"
+    - "doc/sdks.md"
 - "Call Queues":
     - "doc/queues.md"
     - "doc/agents.md"
@@ -98,3 +108,11 @@
     - "doc/system_status.md"
     - "doc/tasks.md"
     - "doc/whitelabeling.md"
+    - "doc/acls.md"
+    - "doc/cb_apps_maintenance.md"
+    - "doc/configuration.md"
+    - "doc/rate_limiting.md"
+    - "doc/reverse_proxy.md"
+    - "doc/securing_crossbar.md"
+    - "doc/storage.http.md"
+
