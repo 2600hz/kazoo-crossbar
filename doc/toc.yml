@@ -99,7 +99,7 @@
     - "doc/transactions.md"
     - "doc/connectivity.md"
     - "doc/att_handlers_errors.md"
-    - "doc/sdks.md"
+    # - "doc/sdks.md"
 - "Call Queues":
     - "doc/queues.md"
     - "doc/agents.md"
