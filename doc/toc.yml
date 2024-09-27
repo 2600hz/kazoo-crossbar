@@ -99,10 +99,11 @@
     - "doc/transactions.md"
     - "doc/connectivity.md"
     - "doc/att_handlers_errors.md"
+    - "doc/clicktocall.md"
     # - "doc/sdks.md"
-- "Call Queues":
-    - "doc/queues.md"
-    - "doc/agents.md"
+# - "Call Queues":
+#     - "doc/queues.md"
+#     - "doc/agents.md"
 - "SysAdmin":
     - "doc/system_configs.md"
     - "doc/system_status.md"
