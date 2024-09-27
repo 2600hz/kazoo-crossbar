@@ -99,7 +99,7 @@
     - "doc/transactions.md"
     - "doc/connectivity.md"
     - "doc/att_handlers_errors.md"
-    - "doc/clicktocall.md"
+    - "doc/clicktocall.md" # Originally Community!
     # - "doc/sdks.md"
 # - "Call Queues":
 #     - "doc/queues.md"
