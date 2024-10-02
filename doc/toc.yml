@@ -3,7 +3,7 @@
     - "!q:doc/api_basics.md"
     - "doc/filters.md"
     - "doc/multipart.md"
-    # - "doc/rate_limiting.md"
+    - "doc/rate_limits.md" 
     - "doc/schemas.md"
 - "Authentication":
     - "doc/auth.md"
