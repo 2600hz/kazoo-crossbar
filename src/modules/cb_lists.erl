@@ -280,7 +280,7 @@ check_owner(Context) ->
             Context;
         'false' ->
             Message = kz_json:from_list([{<<"message">>, <<"request userid token and contact owner_id doesn't match">>}]),
-            cb_context:add_validation_error(<<"owner_id">>, <<"missmatch">>, Message, Context)
+            cb_context:add_validation_error(<<"owner_id">>, <<"mismatch">>, Message, Context)
     end.
 %%------------------------------------------------------------------------------
 %% @doc Load instances from the database where tag is matched
