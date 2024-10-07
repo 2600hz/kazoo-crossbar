@@ -91,19 +91,19 @@ Key | Description | Type | Default | Required | Support Level
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`capture_group.key` | The number which is used to select this contact, length should be same as `capture_group_length` | `string()` |  | `false` |  
-`capture_group.length` | Length of the numbers in the contacts for which it used to select desire Caller ID | `integer()` |  | `false` |  
-`capture_group` | The capture group information | `object()` | `{}` | `false` |  
-`contacts` | A list of contact information | `array([#/definitions/contacts](#contacts))` |  | `true` | 
-`favorite` | Whether the contact is a favorite | `boolean()` | `false` | `false` |  
-`first_name` | The first name of the contact | `string()` |  | `true` |  
-`history` | The history of contact usage | `array([#/definitions/history](#history))` | `[]` | `false` |  
-`last_name` | The last name of the contact | `string()` |  | `false` |  
-`organization.name` | The name of the organization | `string()` |  | `false` |  
-`organization` | The organization this entity belongs to | `object()` | `{}` | `false` |  
-`pattern` | Match pattern | `string()` |  | `false` |  
-`tags.[]` |   | `string()` |   | `false` |  
-`tags` | Tags that contact belong to | `array(string())` |   | `false` | 
+`capture_group.key` | The number which is used to select this contact, length should be same as `capture_group_length` | `string()` |  | `false` |
+`capture_group.length` | Length of the numbers in the contacts for which it used to select desire Caller ID | `integer()` |  | `false` |
+`capture_group` | The capture group information | `object()` | `{}` | `false` |
+`contacts` | A list of contact information | `array([#/definitions/contacts](#contacts))` |  | `true` |
+`favorite` | Whether the contact is a favorite | `boolean()` | `false` | `false` |
+`first_name` | The first name of the contact | `string()` |  | `true` |
+`history` | The history of contact usage | `array([#/definitions/history](#history))` | `[]` | `false` |
+`last_name` | The last name of the contact | `string()` |  | `false` |
+`organization.name` | The name of the organization | `string()` |  | `false` |
+`organization` | The organization this entity belongs to | `object()` | `{}` | `false` |
+`pattern` | Match pattern | `string()` |  | `false` |
+`tags.[]` |   | `string()` |   | `false` |
+`tags` | Tags that contact belong to | `array(string())` |   | `false` |
 
 ### contacts
 
@@ -111,12 +111,12 @@ Schema for a contact.
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`contact` | The phone number or email associated with the contact (Ex: +14158867903, user@2600hz.com) | `string()` |  | `true` | 
-`device_type` | The type of the device | `string('work', 'home', 'mobile', 'personal', 'fax')` |  | `false` |  
-`email_type` | The type of the email | `string('work', 'home')` |  | `false` |  
-`ext` | The extension of the user (Ex: 356, 622) | `string()` |  | `false` |  
-`primary` | If this is the primary contact for this contact type. | `boolean()` |  | `true` |  
-`type` | The type of this contact | `string('voice', 'email', 'sms')` |  | `true` |  
+`contact` | The phone number or email associated with the contact (Ex: +14158867903, user@2600hz.com) | `string()` |  | `true` |
+`device_type` | The type of the device | `string('work', 'home', 'mobile', 'personal', 'fax')` |  | `false` |
+`email_type` | The type of the email | `string('work', 'home')` |  | `false` |
+`ext` | The extension of the user (Ex: 356, 622) | `string()` |  | `false` |
+`primary` | If this is the primary contact for this contact type. | `boolean()` |  | `true` |
+`type` | The type of this contact | `string('voice', 'email', 'sms')` |  | `true` |
 
 There is only one `primary` contact (`primary`: `true`) for a given contact `type`. Otherwise, it will result `400 Validation Error` HTTP response status with response payload like this:
 
@@ -141,9 +141,9 @@ Schema for a history.
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`contact` | The contact that was used | [#/definitions/contacts](#contacts) |  | `true` | 
-`notes` | Notes from the communication | `string()` |  | `false` |  
-`timestamp` | The gregorian timestamp | `integer()` |  | `false` |  
+`contact` | The contact that was used | [#/definitions/contacts](#contacts) |  | `true` |
+`notes` | Notes from the communication | `string()` |  | `false` |
+`timestamp` | The gregorian timestamp | `integer()` |  | `false` |
 
 ### Company Contact (No associated Owner ID)
 
@@ -422,7 +422,7 @@ Personal contact contains an `owner_id` and these endpoints associate with `user
         {
             "data": {
                 "owner_id": {
-                    "missmatch": {
+                    "mismatch": {
                         "message": "request userid token and contact owner_id doesn't match"
                     }
                 }
