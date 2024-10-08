@@ -486,7 +486,12 @@ put(Context) ->
 -spec put(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 put(Context, _BoxId, ?MESSAGES_RESOURCE) ->
     Context1 = crossbar_doc:save(Context),
-    maybe_save_attachment(Context1).
+        case cb_context:resp_status(Context1) of
+        'success' ->
+            maybe_save_attachment(Context1);
+        _ ->
+            Context1
+    end.
 
 -spec put(cb_context:context(), path_token(), path_token(), path_token(), path_token()) -> cb_context:context().
 put(Context, _BoxId, ?MESSAGES_RESOURCE, MsgID, ?BIN_DATA) ->
