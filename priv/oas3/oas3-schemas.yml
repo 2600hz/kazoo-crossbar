@@ -5094,6 +5094,11 @@
     'domain':
       'description': domain
       'type': string
+    'endconf_grace_time':
+      'description': |-
+        Defines how much time all members have before the conference is terminated when the last member with endconf leaves in seconds
+      'minimum': 0
+      'type': integer
     'flags':
       'description': Flags set by external applications
       'items':
