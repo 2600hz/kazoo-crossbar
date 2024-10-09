@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2024, 2600Hz
+%%% @copyright (C) 2011-2023, 2600Hz
 %%% @doc VMBoxes module
 %%% Handle client requests for vmbox documents
 %%%
@@ -486,12 +486,7 @@ put(Context) ->
 -spec put(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 put(Context, _BoxId, ?MESSAGES_RESOURCE) ->
     Context1 = crossbar_doc:save(Context),
-    case cb_context:resp_status(Context1) of
-        'success' ->
-            maybe_save_attachment(Context1);
-        _ ->
-            Context1
-    end.
+    maybe_save_attachment(Context1).
 
 -spec put(cb_context:context(), path_token(), path_token(), path_token(), path_token()) -> cb_context:context().
 put(Context, _BoxId, ?MESSAGES_RESOURCE, MsgID, ?BIN_DATA) ->
@@ -606,8 +601,19 @@ check_mailbox_for_messages_array(Context, VMBoxMsgs) ->
 
 -spec maybe_save_attachment(cb_context:context()) -> cb_context:context().
 maybe_save_attachment(Context) ->
+    maybe_save_attachment(Context, cb_context:resp_status(Context)).
+
+maybe_save_attachment(Context, 'success') ->
     Context1 = crossbar_util:maybe_remove_attachments(Context),
-    save_attachment(Context1, cb_context:req_files(Context1)).
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            save_attachment(Context, cb_context:req_files(Context));
+        _ ->
+            Context1
+    end;
+maybe_save_attachment(Context, _Error) ->
+    lager:info("saving message metadata failed"),
+    Context.
 
 -spec save_attachment(cb_context:context(), req_files()) -> cb_context:context().
 save_attachment(Context, []) -> Context;
