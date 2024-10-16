@@ -32,7 +32,6 @@
 | `migrate/0`                           |                                         | Applies any data migrations needed between versions of KAZOO                                         |
 | `migrate/1`                           | `(AccountDbs)`                          |                                                                                                      |
 | `migrate_call_forward/1`              | `(AccountDb)`                           |                                                                                                      |
-
 | `move_account/2`                      | `(Account,ToAccount)`                   | Moves `Account` to be a child of `ToAccount`                                                         |
 | `promote_account/1`                   | `(AccountId)`                           | Add the `superduper_admin` status to the account                                                     |
 | `refresh/0`                           |                                         | Deprecated: use `kapps_maintenance refresh` instead                                                  |
