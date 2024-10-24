@@ -113,7 +113,6 @@ Request's data.json:
     "number_timeout": 5000,
     "pin_timeout": 5000,
     "support_name_announcement": true,
-    "id": "configs_conferences"
   }
 }
 ```
@@ -171,6 +170,20 @@ curl -v -X PATCH \
   "status": "success",
   "auth_token": "{AUTH_TOKEN}"
 }
+```
+To add a profile to the conference config:
+
+```json
+{
+  "data": {
+    "profiles": [
+      { 
+        "PROFILE_NAME": {
+          "max-members": 400,
+          "announce-count": 300
+        }
+      }
+    ]
 ```
 
 #### Remove
