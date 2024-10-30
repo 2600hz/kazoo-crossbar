@@ -41,9 +41,9 @@ configurable under `crossbar_auth` name in `system_configs/token_buckets`. The r
 setting is:
 
 ```bash
-sup kapps_config set_integer token_buckets crossbar_auth_bucket tokens_fill_rate 175
-sup kapps_config set_integer token_buckets crossbar_auth_bucket max_bucket_tokens 175
-sup kapps_config set_string token_buckets crossbar_auth_bucket tokens_fill_time hour
+sup kapps_config set_integer token_buckets crossbar_auth_bucket.tokens_fill_rate 175
+sup kapps_config set_integer token_buckets crossbar_auth_bucket.max_bucket_tokens 175
+sup kapps_config set_string token_buckets crossbar_auth_bucket.tokens_fill_time hour
 ```
 
 Token Cost for all auth is set to `35` by default (each auth module has its own token cost configurable).

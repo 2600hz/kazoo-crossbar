@@ -4,7 +4,7 @@ A Crossbar Authentication module for public conferences.
 
 ## About Conference Authentication
 
-This module module provide an authentication for public conferences or can if there is a valid JWT, create an invite link to the public including a JWT token.
+This module provides an authentication for public conferences or can if there is a valid JWT, create an invitation link to the public including a JWT token.
 
 The account that the requested conference belongs needs to have their reseller account configured a public conference domain in the reseller's white label document.
 
@@ -43,14 +43,14 @@ curl -v -X PUT \
     http://{SERVER}:8000/v2/conference_auth
 ```
 
-## Get an link to a conference
+## Get a link to a conference
 
 To create a link to public link, the person that want to create and share the invite link must be a Kazoo user already and have logged in to the UI.
 Then they can create a link by making a request to this API.
 
 The successful response payload have an JSON object containing the full link to the conference with JWT token included.
 
-Upon opening the link the conference login app will uses the provided JWT to request the conference bridge info.
+Upon opening the link the conference login app will use the provided JWT to request the conference bridge info.
 
 > PUT /v2/accounts/{ACCOUNT_ID}/conference_auth/{CONFERENCE_ID}
 
