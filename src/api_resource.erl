@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2024, 2600Hz
 %%% @doc API resource
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -53,6 +53,10 @@
         ,expires/2
         ,get_range/2
         ]).
+
+-ifdef(TEST).
+-export([forwarded_for/1]).
+-endif.
 
 -include("crossbar.hrl").
 
@@ -183,10 +187,15 @@ get_profile_id(Req) ->
 -spec get_client_ip(cowboy_req:req()) -> kz_term:ne_binary().
 get_client_ip(Req) ->
     {Peer, _PeerPort} = cowboy_req:peer(Req),
-    case cowboy_req:header(<<"x-forwarded-for">>, Req) of
+    case forwarded_for(cowboy_req:header(<<"x-forwarded-for">>, Req)) of
         'undefined' -> kz_network_utils:iptuple_to_binary(Peer);
         ForwardIP -> maybe_allow_proxy_req(kz_network_utils:iptuple_to_binary(Peer), ForwardIP)
     end.
+
+forwarded_for('undefined') -> 'undefined';
+forwarded_for(ForwardedFor) ->
+    [ClientIP | _] = binary:split(ForwardedFor, <<$,>>),
+    kz_binary:strip(ClientIP).
 
 -spec maybe_trace(cowboy_req:req()) -> 'ok'.
 maybe_trace(Req) ->
