@@ -26,7 +26,7 @@ Key | Description | Type | Default | Required | Support Level
 `apns.alert.subtitle_params.[]` |   | `string()` |   | `false` |  
 `apns.alert.subtitle_params` | The array of values to replace placeholders in the localized subtitle | `array(string())` |   | `false` |  
 `apns.alert` |   | `object()` |   | `false` |  
-`apns.push_type` | The type of push notification | `string('alert' | 'background' | 'complication' | 'fileprovider' | 'location' | 'mdm' | 'voip')` |   | `false` |  
+`apns.push_type` | The type of push notification | `string('alert' \| 'background' \| 'complication' \| 'fileprovider' \| 'location' \| 'mdm' \| 'voip')` |   | `false` |  
 `apns.thread_id` | The app-specific identifier for grouping related notifications | `string()` |   | `false` |  
 `apns.topic` | The topic for the notification | `string()` |   | `false` |  
 `apns` | APNs parameters | `object()` |   | `false` |  
@@ -38,7 +38,7 @@ Key | Description | Type | Default | Required | Support Level
 `content_mutable` | Specify `true` to allow a notification service app extension on iOS to modify the notification's content before delivery | `boolean()` |   | `false` |  
 `data` | The custom data to include in the notification | `object()` |   | `false` |  
 `fcm` | FCM parameters | `object()` |   | `false` |  
-`priority` | The priority of the notification | `string('low' | 'normal' | 'high')` | `high` | `false` |  
+`priority` | The priority of the notification | `string('low' \| 'normal' \| 'high')` | `high` | `false` |  
 `sound` | The name of a sound file to play when the device receives the notification | `string()` |   | `false` |  
 `ttl` | The duration (in seconds) for which notification delivery should be retried if it fails | `integer()` |   | `false` |  
 

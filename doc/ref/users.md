@@ -47,13 +47,13 @@ Key | Description | Type | Default | Required | Support Level
 `media` | Configure audio/video/etc media options for this user | [#/definitions/endpoint.media](#endpointmedia) |   | `false` |  
 `metaflows` | The device metaflow parameters | [#/definitions/metaflows](#metaflows) |   | `false` |  
 `music_on_hold.media_id` | The ID of a media object that should be used as the music on hold | `string(0..128)` |   | `false` |  
-`music_on_hold.options.[]` |   | `string('preserve-position' | 'random-start')` |   | `false` |  
-`music_on_hold.options` | Options for playing music on hold | `array(string('preserve-position' | 'random-start'))` |   | `false` |  
+`music_on_hold.options.[]` |   | `string('preserve-position' \| 'random-start')` |   | `false` |  
+`music_on_hold.options` | Options for playing music on hold | `array(string('preserve-position' \| 'random-start'))` |   | `false` |  
 `music_on_hold` | The music on hold parameters used if not a property of the device owner | `object()` | `{}` | `false` |  
 `password` | The GUI login password | `string()` |   | `false` | `supported`
 `presence_aliases` | Presence Aliases | [#/definitions/presence_aliases](#presence_aliases) |   | `false` |  
 `presence_id` | Static presence ID (used instead of SIP username) | `string()` |   | `false` | `supported`
-`priv_level` | The privilege level of the user | `string('user' | 'admin')` | `user` | `false` | `supported`
+`priv_level` | The privilege level of the user | `string('user' \| 'admin')` | `user` | `false` | `supported`
 `profile` | User's profile data | [#/definitions/profile](#profile) |   | `false` |  
 `pronounced_name.media_id` | The ID of a media object that should be used as the music on hold | `string(0..128)` |   | `false` |  
 `pronounced_name` | Name pronounced by user to introduce himself to conference members | `object()` |   | `false` |  
@@ -158,7 +158,7 @@ Key | Description | Type | Default | Required | Support Level
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `enabled` | is recording enabled | `boolean()` |   | `false` |  
-`format` | What format to store the recording on disk | `string('mp3' | 'wav')` |   | `false` |  
+`format` | What format to store the recording on disk | `string('mp3' \| 'wav')` |   | `false` |  
 `record_min_sec` | The minimum length, in seconds, the recording must be to be considered successful. Otherwise it is deleted | `integer()` |   | `false` |  
 `record_on_answer` | Recording should start on answer | `boolean()` |   | `false` |  
 `record_on_bridge` | Recording should start on bridge | `boolean()` |   | `false` |  
@@ -224,10 +224,10 @@ Key | Description | Type | Default | Required | Support Level
 `format.all` | Format to use for all CID formatting needs (vs per-classifier) | `object()` |   | `false` |  
 `format` | Object for CID formatters based on number classifiers | `object()` |   | `false` |  
 `ignore_completed_elsewhere` | Suppress the completed elsewhere cause | `boolean()` |   | `false` |  
-`outbound_privacy` | Determines what appears as caller id for offnet outbound calls. Values: full - hides name and number; name - hides only name; number - hides only number; none - hides nothing | `string('full' | 'name' | 'number' | 'none')` |   | `false` |  
-`privacy_method` | Method to use for anonymizing CID | `string('sip' | 'none' | 'kazoo')` |   | `false` |  
+`outbound_privacy` | Determines what appears as caller id for offnet outbound calls. Values: full - hides name and number; name - hides only name; number - hides only number; none - hides nothing | `string('full' \| 'name' \| 'number' \| 'none')` |   | `false` |  
+`privacy_method` | Method to use for anonymizing CID | `string('sip' \| 'none' \| 'kazoo')` |   | `false` |  
 `show_rate` | Whether to show the rate | `boolean()` |   | `false` |  
-`type` | Caller ID on endpoint to choose | `string('internal' | 'external' | 'emergency')` |   | `false` |  
+`type` | Caller ID on endpoint to choose | `string('internal' \| 'external' \| 'emergency')` |   | `false` |  
 
 ### codecs.audio
 
@@ -264,10 +264,10 @@ Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `audio.codecs` | A list of audio codecs the endpoint supports | [#/definitions/codecs.audio](#codecsaudio) |   | `false` |  
 `audio` | The audio media parameters | `object()` | `{}` | `false` |  
-`bypass_media` | Default bypass media mode (The string type is deprecated, please use this as a boolean) | `boolean() | string('auto' | 'false' | 'true')` |   | `false` |  
+`bypass_media` | Default bypass media mode (The string type is deprecated, please use this as a boolean) | `boolean() | string('auto' \| 'false' \| 'true')` |   | `false` |  
 `encryption.enforce_security` | Is Encryption Enabled? | `boolean()` | `false` | `false` |  
-`encryption.methods.[]` |   | `string('zrtp' | 'srtp')` |   | `false` |  
-`encryption.methods` | Supported Encryption Types | `array(string('zrtp' | 'srtp'))` | `[]` | `false` |  
+`encryption.methods.[]` |   | `string('zrtp' \| 'srtp')` |   | `false` |  
+`encryption.methods` | Supported Encryption Types | `array(string('zrtp' \| 'srtp'))` | `[]` | `false` |  
 `encryption` | Encryption Parameters | `object()` | `{}` | `false` |  
 `fax_option` | Is T.38 Supported? | `boolean()` |   | `false` |  
 `ignore_early_media` | The option to determine if early media from the endpoint should always be ignored | `boolean()` |   | `false` |  
@@ -292,7 +292,7 @@ Schema for formatter options
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`direction` | Only apply the formatter on the relevant request direction | `string('inbound' | 'outbound' | 'both')` |   | `false` |  
+`direction` | Only apply the formatter on the relevant request direction | `string('inbound' \| 'outbound' \| 'both')` |   | `false` |  
 `match_invite_format` | Applicable on fields with SIP URIs. Will format the username portion to match the invite format of the outbound request. | `boolean()` |   | `false` |  
 `prefix` | Prepends value against the result of a successful regex match | `string()` |   | `false` |  
 `regex` | Matches against the value, with optional capture group | `string()` |   | `false` |  
@@ -319,9 +319,9 @@ Actions applied to a call outside of the normal callflow, initiated by the calle
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`binding_digit` | What DTMF will trigger the collection and analysis of the subsequent DTMF sequence | `string('1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' | '*' | '#')` | `*` | `false` |  
+`binding_digit` | What DTMF will trigger the collection and analysis of the subsequent DTMF sequence | `string('1' \| '2' \| '3' \| '4' \| '5' \| '6' \| '7' \| '8' \| '9' \| '0' \| '*' \| '#')` | `*` | `false` |  
 `digit_timeout` | How long to wait between DTMF presses before processing the collected sequence (milliseconds) | `integer(0..)` |   | `false` |  
-`listen_on` | Which leg(s) of the call to listen for DTMF | `string('both' | 'self' | 'peer')` |   | `false` |  
+`listen_on` | Which leg(s) of the call to listen for DTMF | `string('both' \| 'self' \| 'peer')` |   | `false` |  
 `numbers./^[0-9]+$/` | A metaflow node defines a module to execute, data to provide to that module, and one or more children to branch to | [#/definitions/metaflow](#metaflow) |   | `false` |  
 `numbers` | A list of static numbers with their flows | `object()` |   | `false` |  
 `patterns./.+/` | A metaflow node defines a module to execute, data to provide to that module, and one or more children to branch to | [#/definitions/metaflow](#metaflow) |   | `false` |  

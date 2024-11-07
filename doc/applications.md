@@ -99,7 +99,7 @@ Key | Description | Type | Default | Required | Support Level
 `license` | Application license | `string()` |   | `true` |  
 `masqueradable` | Whether an application is masqueradable or not | `boolean()` | `true` | `false` |  
 `name` | Application name | `string(3..64)` |   | `true` |  
-`phase` | Application test phase | `string('alpha' | 'beta' | 'gold')` |   | `false` |  
+`phase` | Application test phase | `string('alpha' \| 'beta' \| 'gold')` |   | `false` |  
 `price` | Application price | `number()` |   | `false` |  
 `published` | Indicated if the app is published | `boolean()` | `true` | `false` |  
 `screenshots.[]` |   | `string()` |   | `false` |  

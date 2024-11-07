@@ -12,7 +12,7 @@ Schema for a temporal rules
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`cycle` | The recurrence cycle for this rule | `string('date' | 'daily' | 'weekly' | 'monthly' | 'yearly')` |   | `true` | `supported`
+`cycle` | The recurrence cycle for this rule | `string('date' \| 'daily' \| 'weekly' \| 'monthly' \| 'yearly')` |   | `true` | `supported`
 `days` | The occurance day(s) of the month (1-31) for this rule | `array(integer(1..31))` |   | `false` | `supported`
 `enabled` | Whether the rule is enabled | `boolean()` |   | `false` |  
 `end_date` | The date that any recurrence should be calculated as ending on | `integer()` |   | `false` | `supported`
@@ -23,13 +23,13 @@ Key | Description | Type | Default | Required | Support Level
 `interval` | The recurrence interval for this rule | `integer(1..)` | `1` | `false` | `supported`
 `month` | The recurrence month for this rule | `integer(1..12)` |   | `false` | `supported`
 `name` | A friendly name for the temporal rule | `string(1..128)` |   | `true` | `supported`
-`ordinal` | The recurrence ordinal for this rule | `string('every' | 'first' | 'second' | 'third' | 'fourth' | 'fifth' | 'last')` |   | `false` | `supported`
+`ordinal` | The recurrence ordinal for this rule | `string('every' \| 'first' \| 'second' \| 'third' \| 'fourth' \| 'fifth' \| 'last')` |   | `false` | `supported`
 `owner_id` | KAZOO User ID of the owner of this temporal rule | `string()` |   | `false` |  
 `start_date` | The date that any recurrence should be calculated as starting on | `integer()` | `62586115200` | `false` | `supported`
 `time_window_start` | Seconds from the start of a day to consider this rule valid | `integer(0..86400)` |   | `false` | `supported`
 `time_window_stop` | Seconds from the start of a day to stop considering this rule valid | `integer(0..86400)` |   | `false` | `supported`
-`wdays.[]` |   | `string('monday' | 'tuesday' | 'wednesday' | 'wensday' | 'thursday' | 'friday' | 'saturday' | 'sunday')` |   | `false` | `supported`
-`wdays` | The recurrence weekdays for this rule | `array(string('monday' | 'tuesday' | 'wednesday' | 'wensday' | 'thursday' | 'friday' | 'saturday' | 'sunday'))` |   | `false` | `supported`
+`wdays.[]` |   | `string('monday' \| 'tuesday' \| 'wednesday' \| 'wensday' \| 'thursday' \| 'friday' \| 'saturday' \| 'sunday')` |   | `false` | `supported`
+`wdays` | The recurrence weekdays for this rule | `array(string('monday' \| 'tuesday' \| 'wednesday' \| 'wensday' \| 'thursday' \| 'friday' \| 'saturday' \| 'sunday'))` |   | `false` | `supported`
 
 
 
