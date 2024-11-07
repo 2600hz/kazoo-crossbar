@@ -43,8 +43,8 @@ Key | Description | Type | Default | Required | Support Level
 `mobile.mdn` | The MDN - mobile device number | `string()` |   | `false` |  
 `mobile` | KAZOO devices that integrate with mobile providers | `object()` |   | `false` |  
 `music_on_hold.media_id` | The ID of a media object that should be used as the music on hold | `string(0..2048)` |   | `false` |  
-`music_on_hold.options.[]` |   | `string('preserve-position' | 'random-start')` |   | `false` |  
-`music_on_hold.options` | Options for playing music on hold | `array(string('preserve-position' | 'random-start'))` |   | `false` |  
+`music_on_hold.options.[]` |   | `string('preserve-position' \| 'random-start')` |   | `false` |  
+`music_on_hold.options` | Options for playing music on hold | `array(string('preserve-position' \| 'random-start'))` |   | `false` |  
 `music_on_hold` | The music on hold parameters used if not a property of the device owner | `object()` | `{}` | `false` |  
 `mwi_unsolicited_updates` | When true enables unsolicited mwi notifications | `boolean()` | `true` | `false` |  
 `name` | A friendly name for the device | `string(1..128)` |   | `true` | `supported`
@@ -76,9 +76,9 @@ Key | Description | Type | Default | Required | Support Level
 `sip.expire_seconds` | The time, in seconds, sent to the provisioner for the registration period that the device should be configured with. | `integer()` | `300` | `false` | `supported`
 `sip.forward` | Forward IP to use | `string()` |   | `false` |  
 `sip.ignore_completed_elsewhere` | When set to false the phone should not consider ring group calls answered elsewhere as missed | `boolean()` |   | `false` |  
-`sip.invite_format` | The SIP request URI invite format | `string('username' | 'npan' | '1npan' | 'e164' | 'route' | 'strip_plus' | 'contact')` | `contact` | `false` | `supported`
+`sip.invite_format` | The SIP request URI invite format | `string('username' \| 'npan' \| '1npan' \| 'e164' \| 'route' \| 'strip_plus' \| 'contact')` | `contact` | `false` | `supported`
 `sip.ip` | IP address for this device | `string()` |   | `false` | `supported`
-`sip.method` | Method of authentication | `string('password' | 'ip' | 'authorization')` | `password` | `false` | `supported`
+`sip.method` | Method of authentication | `string('password' \| 'ip' \| 'authorization')` | `password` | `false` | `supported`
 `sip.number` | The number used if the invite format is 1npan, npan, or e164 (if not set the dialed number is used) | `string()` |   | `false` |  
 `sip.password` | SIP authentication password | `string(5..32)` |   | `false` | `supported`
 `sip.proxy` | Proxy IP address to use | `string()` |   | `false` |  
@@ -103,7 +103,7 @@ Key | Description | Type | Default | Required | Support Level
 `emergency.callback_cid_number` | 10-digit DID used as caller ID to PSAP, overrides CID | `string(10)` |   | `false` |  
 `emergency.country` | The country is identified by the two-letter ISO 3166 code. Example: US | `string()` |   | `true` |  
 `emergency.county` | County, parish, gun (JP), district (IN). Example: King's County | `string()` |   | `false` |  
-`emergency.delivery_method` | How the emergency call is routed by the destination handler (not applicable to all providers) | `string('direct' | 'three_way' | 'security_desk')` |   | `false` |  
+`emergency.delivery_method` | How the emergency call is routed by the destination handler (not applicable to all providers) | `string('direct' \| 'three_way' \| 'security_desk')` |   | `false` |  
 `emergency.floor` | Floor. Example: 4 | `integer()` |   | `false` |  
 `emergency.house_number` | House number, numeric part only. Example: 123 | `integer()` |   | `true` |  
 `emergency.house_number_suffix` | House number suffix. Example: A, 1/2 | `string()` |   | `false` |  
@@ -207,7 +207,7 @@ Key | Description | Type | Default | Required | Support Level
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `enabled` | is recording enabled | `boolean()` |   | `false` |  
-`format` | What format to store the recording on disk | `string('mp3' | 'wav')` |   | `false` |  
+`format` | What format to store the recording on disk | `string('mp3' \| 'wav')` |   | `false` |  
 `record_min_sec` | The minimum length, in seconds, the recording must be to be considered successful. Otherwise it is deleted | `integer()` |   | `false` |  
 `record_on_answer` | Recording should start on answer | `boolean()` |   | `false` |  
 `record_on_bridge` | Recording should start on bridge | `boolean()` |   | `false` |  
@@ -273,10 +273,10 @@ Key | Description | Type | Default | Required | Support Level
 `format.all` | Format to use for all CID formatting needs (vs per-classifier) | `object()` |   | `false` |  
 `format` | Object for CID formatters based on number classifiers | `object()` |   | `false` |  
 `ignore_completed_elsewhere` | Suppress the completed elsewhere cause | `boolean()` |   | `false` |  
-`outbound_privacy` | Determines what appears as caller id for offnet outbound calls. Values: full - hides name and number; name - hides only name; number - hides only number; none - hides nothing | `string('full' | 'name' | 'number' | 'none')` |   | `false` |  
-`privacy_method` | Method to use for anonymizing CID | `string('sip' | 'none' | 'kazoo')` |   | `false` |  
+`outbound_privacy` | Determines what appears as caller id for offnet outbound calls. Values: full - hides name and number; name - hides only name; number - hides only number; none - hides nothing | `string('full' \| 'name' \| 'number' \| 'none')` |   | `false` |  
+`privacy_method` | Method to use for anonymizing CID | `string('sip' \| 'none' \| 'kazoo')` |   | `false` |  
 `show_rate` | Whether to show the rate | `boolean()` |   | `false` |  
-`type` | Caller ID on endpoint to choose | `string('internal' | 'external' | 'emergency')` |   | `false` |  
+`type` | Caller ID on endpoint to choose | `string('internal' \| 'external' \| 'emergency')` |   | `false` |  
 
 ### codecs.audio
 
@@ -330,10 +330,10 @@ Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `audio.codecs` | A list of audio codecs the endpoint supports | [#/definitions/codecs.audio](#codecsaudio) |   | `false` |  
 `audio` | The audio media parameters | `object()` | `{}` | `false` |  
-`bypass_media` | Default bypass media mode (The string type is deprecated, please use this as a boolean) | `boolean() | string('auto' | 'false' | 'true')` |   | `false` |  
+`bypass_media` | Default bypass media mode (The string type is deprecated, please use this as a boolean) | `boolean() | string('auto' \| 'false' \| 'true')` |   | `false` |  
 `encryption.enforce_security` | Is Encryption Enabled? | `boolean()` | `false` | `false` |  
-`encryption.methods.[]` |   | `string('zrtp' | 'srtp')` |   | `false` |  
-`encryption.methods` | Supported Encryption Types | `array(string('zrtp' | 'srtp'))` | `[]` | `false` |  
+`encryption.methods.[]` |   | `string('zrtp' \| 'srtp')` |   | `false` |  
+`encryption.methods` | Supported Encryption Types | `array(string('zrtp' \| 'srtp'))` | `[]` | `false` |  
 `encryption` | Encryption Parameters | `object()` | `{}` | `false` |  
 `fax_option` | Is T.38 Supported? | `boolean()` |   | `false` |  
 `ignore_early_media` | The option to determine if early media from the endpoint should always be ignored | `boolean()` |   | `false` |  
@@ -358,7 +358,7 @@ Schema for formatter options
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`direction` | Only apply the formatter on the relevant request direction | `string('inbound' | 'outbound' | 'both')` |   | `false` |  
+`direction` | Only apply the formatter on the relevant request direction | `string('inbound' \| 'outbound' \| 'both')` |   | `false` |  
 `match_invite_format` | Applicable on fields with SIP URIs. Will format the username portion to match the invite format of the outbound request. | `boolean()` |   | `false` |  
 `prefix` | Prepends value against the result of a successful regex match | `string()` |   | `false` |  
 `regex` | Matches against the value, with optional capture group | `string()` |   | `false` |  
@@ -385,9 +385,9 @@ Actions applied to a call outside of the normal callflow, initiated by the calle
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`binding_digit` | What DTMF will trigger the collection and analysis of the subsequent DTMF sequence | `string('1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' | '*' | '#')` | `*` | `false` |  
+`binding_digit` | What DTMF will trigger the collection and analysis of the subsequent DTMF sequence | `string('1' \| '2' \| '3' \| '4' \| '5' \| '6' \| '7' \| '8' \| '9' \| '0' \| '*' \| '#')` | `*` | `false` |  
 `digit_timeout` | How long to wait between DTMF presses before processing the collected sequence (milliseconds) | `integer(0..)` |   | `false` |  
-`listen_on` | Which leg(s) of the call to listen for DTMF | `string('both' | 'self' | 'peer')` |   | `false` |  
+`listen_on` | Which leg(s) of the call to listen for DTMF | `string('both' \| 'self' \| 'peer')` |   | `false` |  
 `numbers./^[0-9]+$/` | A metaflow node defines a module to execute, data to provide to that module, and one or more children to branch to | [#/definitions/metaflow](#metaflow) |   | `false` |  
 `numbers` | A list of static numbers with their flows | `object()` |   | `false` |  
 `patterns./.+/` | A metaflow node defines a module to execute, data to provide to that module, and one or more children to branch to | [#/definitions/metaflow](#metaflow) |   | `false` |  
