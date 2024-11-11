@@ -630,7 +630,7 @@ save_attachment(Context, Filename, FileJObj) ->
     C1 = crossbar_doc:save_attachment(MessageId, AttName, Contents, Context, Opts),
     case cb_context:resp_status(C1) of
         'success' ->
-            lager:info("saved attachment to message ~s", [MessageId]),
+            lager:info("saved attachment to message ~s.", [MessageId]),
             C2 = crossbar_util:response(kzd_box_message:metadata(JObj), C1),
             update_mwi(C2, kzd_box_message:source_id(JObj));
         _ -> C1
