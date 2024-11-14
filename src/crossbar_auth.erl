@@ -19,6 +19,12 @@
         ,available_scopes/1
         ,scopes/2
         ,validate_refresh_token/1, refresh_token/1
+
+        ,get_auth_account_info/1
+        ,is_account_locked/2
+        ,maybe_lock_account/3
+        ,find_account_buckets/1
+        ,unlock_account/1
         ]).
 
 -include("crossbar.hrl").
@@ -111,7 +117,7 @@ create_auth_token(Context, Method, TokenOptions, JObj, AccountId, AuthConfig) ->
         {'ok', Token} ->
             Setters = [{fun cb_context:set_auth_token/2, Token}
                       ,{fun cb_context:set_auth_doc/2, kz_json:from_list(Claims)}
-                      ,{fun cb_context:store/3, 'include_token', true}
+                      ,{fun cb_context:store/3, 'include_token', 'true'}
                       ],
             Props = props:filter_undefined(
                       [{<<"account_id">>, AccountId}
@@ -482,13 +488,13 @@ auth_method(Context) ->
 validate_refresh_token(Context) ->
     validate_refresh_token(Context, auth_method(Context)).
 
-validate_refresh_token(Context, undefined) ->
+validate_refresh_token(Context, 'undefined') ->
     lager:warning("trying to renew a token without method"),
     crossbar_util:response('error', <<"invalid token for renew">>, 412, Context);
 validate_refresh_token(Context, Method) ->
     case is_auth_module_renew_enabled(Context) of
-        true -> allow_refresh_token(Context);
-        false -> deny_refresh_token(Context, Method)
+        'true' -> allow_refresh_token(Context);
+        'false' -> deny_refresh_token(Context, Method)
     end.
 
 deny_refresh_token(Context, Method) ->
@@ -509,3 +515,88 @@ refresh_token(Context) ->
               ,{fun cb_context:set_resp_data/2, kz_json:new()}
               ],
     cb_context:setters(Context, Setters).
+
+-spec get_auth_account_info(cb_context:context()) -> list().
+get_auth_account_info(Context) ->
+    ReqData = cb_context:req_data(Context),
+    [Value
+     || Key <-  [<<"account_id">>
+                ,<<"account_name">>
+                ,<<"account_realm">>
+                ,<<"realm">>
+                ,<<"phone_number">>
+                ],
+        Value <- [kz_json:get_ne_binary_value(Key, ReqData)],
+        kz_term:is_not_empty(Value)
+    ].
+
+-spec is_account_locked(cb_context:context(), kz_term:ne_binaries()) ->
+          {boolean(), cb_context:context()}.
+is_account_locked(Context, []) ->
+    {'false', Context};
+is_account_locked(Context, BucketNames) ->
+    case kapps_config:is_true(?AUTH_CONFIG_CAT, <<"lock_account_on_failed_attempts">>, 'false') of
+        'true' ->
+            case is_account_locked(BucketNames) of
+                'true'->
+                    Error = kz_json:from_list([{<<"message">>, <<"your account is locked because of too many failed login attempts">>}]),
+                    {'true', cb_context:add_system_error(401, <<"account_is_locked">>, Error, Context)};
+                'false' ->
+                    {'false', Context}
+            end;
+        'false' ->
+            {'false', Context}
+    end.
+
+-spec is_account_locked(kz_term:ne_binaries()) -> boolean().
+is_account_locked([]) ->
+    'false';
+is_account_locked([BucketName|BucketNames]) ->
+    case kz_buckets:tokens_remaining(?CROSSBAR_AUTH_BUCKET, BucketName) of
+        0 -> 'true';
+        _Reamining ->
+            is_account_locked(BucketNames)
+    end.
+
+-spec maybe_lock_account(cb_context:context(), kz_term:ne_binaries(), non_neg_integer()) ->
+          cb_context:context().
+maybe_lock_account(Context, [], _TokenCost) ->
+    Context;
+maybe_lock_account(Context, BucketNames, TokenCost) ->
+    case kapps_config:is_true(?AUTH_CONFIG_CAT, <<"lock_account_on_failed_attempts">>) of
+        'true' ->
+            maybe_lock_account_fold(Context, BucketNames, TokenCost);
+        _Other ->
+            Context
+    end.
+
+-spec maybe_lock_account_fold(cb_context:context(), kz_term:ne_binaries(), non_neg_integer()) ->
+          cb_context:context().
+maybe_lock_account_fold(Context, [], _TokenCost) ->
+    Context;
+maybe_lock_account_fold(Context, [BucketName|BucketNames], TokenCost) ->
+    case kz_buckets:consume_tokens_until(?CROSSBAR_AUTH_BUCKET, BucketName, TokenCost) of
+        'true' ->
+            maybe_lock_account(Context, BucketNames, TokenCost);
+        'false' ->
+            Error = kz_json:from_list([{<<"message">>, <<"your account is locked because of too many failed login attempts">>}]),
+            cb_context:add_system_error(401, <<"account_is_locked">>, Error, Context)
+    end.
+
+-spec find_account_buckets(kz_term:ne_binary()) -> kz_term:ne_binaries().
+find_account_buckets(AccountId) ->
+    [Key
+     || Key <- [AccountId
+               ,kzd_accounts:fetch_name(AccountId)
+               ,kzd_accounts:fetch_realm(AccountId)
+               ],
+        kz_term:is_not_empty(Key),
+        kz_buckets:exists(?CROSSBAR_AUTH_BUCKET, Key)
+    ].
+
+-spec unlock_account(kz_term:ne_binaries()) -> 'ok'.
+unlock_account(BucketNames) ->
+    _ = [kz_buckets:stop_bucket(?CROSSBAR_AUTH_BUCKET, BucketName)
+         || BucketName <- BucketNames
+        ],
+    'ok'.
