@@ -23,6 +23,37 @@ Only a parent Account or the same Account can set `configuration_id` and `accoun
 
 See [Multi Factor Authentication API documentation](./multi_factor.md).
 
+### Lock account on multiple login failure
+
+For security compliance, it is required to lock the user if it tries to login and it
+fails when specific amount of attempts are reached. Unfortunately currently there is no way to find
+out what user is trying to login in Crossbar.
+
+As security per caution for the time being, Kazoo will lock the whole account. This is an
+opt-in feature, a sysadmin need to enable this feature using:
+
+```bash
+sup kapps_config set_boolean crossbar.auth lock_account_on_failed_attempts true
+```
+
+The mechanism is similar to Token Buckets but it has its own bucket configuration. The bucket is
+configurable under `crossbar_auth` name in `system_configs/token_buckets`. The recommended
+setting is:
+
+```bash
+sup kapps_config set_integer token_buckets crossbar_auth_bucket.tokens_fill_rate 175
+sup kapps_config set_integer token_buckets crossbar_auth_bucket.max_bucket_tokens 175
+sup kapps_config set_string token_buckets crossbar_auth_bucket.tokens_fill_time hour
+```
+
+Token Cost for all auth is set to `35` by default (each auth module has its own token cost configurable).
+So when `max_bucket_tokens` is 175, users can attempt to login for 5 times: `35 * 5 = 175`. The fill time
+is set to one hour so the account will be locked for that amount of time.
+
+If the account is locked, a reseller or super duper admin can unlock the account using the
+[API provided below](#unlock-an-account).
+
+
 ## Account Auth Configuration Schema
 
 #### Schema
@@ -305,6 +336,98 @@ curl -v -X POST \
   "auth_token": "{AUTH_TOKEN}"
 }
 ```
+
+## Check if account is locked due multiple failed login attempts
+
+A reseller of an account can check if one of their sub-accounts are locked because of
+multiple failed login attempts or not.
+
+`{ACCOUNT_ID}` is the account ID to check its lock status.
+
+> GET /v2/accounts/{ACCOUNT_ID}/security/login_lock
+
+Example request:
+```shell
+curl -v -X GET \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/security/login_lock
+```
+
+Example response if the account is locked:
+```json
+{
+  "data": {
+    "status": "account is locked"
+  },
+  "timestamp": "{TIMESTAMP}",
+  "version": "{VERSION}",
+  "node": "{NODE_HASH}",
+  "request_id": "{REQUEST_ID}",
+  "status": "success",
+  "auth_token": "{AUTH_TOKEN}"
+}
+```
+
+Example response if the account is not locked:
+```json
+{
+  "data": {
+    "status": "account is not locked"
+  },
+  "timestamp": "{TIMESTAMP}",
+  "version": "{VERSION}",
+  "node": "{NODE_HASH}",
+  "request_id": "{REQUEST_ID}",
+  "status": "success",
+  "auth_token": "{AUTH_TOKEN}"
+}
+```
+
+## Unlock an account
+
+A reseller can unlock theur sub-accounts if the account is locked due multiple failed login attempts.
+
+`{ACCOUNT_ID}` is the account ID to unlock.
+
+> DELETE /v2/accounts/{ACCOUNT_ID}/security/login_lock
+
+```shell
+curl -v -X DELETE \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/security/login_lock
+```
+
+Example response if the account unlocked successfully:
+```json
+{
+  "data": {
+    "status": "account is unlocked"
+  },
+  "timestamp": "{TIMESTAMP}",
+  "version": "{VERSION}",
+  "node": "{NODE_HASH}",
+  "request_id": "{REQUEST_ID}",
+  "status": "success",
+  "auth_token": "{AUTH_TOKEN}"
+}
+```
+
+Example response if the account is not locked:
+```json
+{
+  "data": {
+    "status": "account was not locked"
+  },
+  "timestamp": "{TIMESTAMP}",
+  "version": "{VERSION}",
+  "node": "{NODE_HASH}",
+  "request_id": "{REQUEST_ID}",
+  "status": "success",
+  "auth_token": "{AUTH_TOKEN}"
+}
+```
+
+## Fetch
 
 ## Get a List of All Login Attempts
 
