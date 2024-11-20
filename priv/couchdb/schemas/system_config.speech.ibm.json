@@ -21,6 +21,10 @@
             "default": true,
             "description": "speech ibm asr_smart_formatting",
             "type": "boolean"
+        },
+        "asr_url": {
+            "description": "speech ibm asr_url",
+            "type": "string"
         }
     },
     "type": "object"
