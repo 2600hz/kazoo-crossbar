@@ -19,4 +19,4 @@
               {modules,[]},
               {registered,[crossbar_cache,crossbar_jobs_listener,crossbar_sup,
                            crossbar_module_sup]},
-              {vsn,"5.0.0"}]}.
+              {vsn,"4.0.0"}]}.

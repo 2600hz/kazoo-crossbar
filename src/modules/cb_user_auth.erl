@@ -473,20 +473,17 @@ maybe_account_is_expired(Context, Account) ->
     case kzd_accounts:is_expired(Account) of
         'false' -> maybe_account_is_enabled(Context, Account);
         {'true', Expired} ->
-            resp_account_expired(Context, Account, Expired)
+            _ = kz_process:spawn(fun crossbar_util:maybe_disable_account/1, [Account]),
+            Cause =
+                kz_json:from_list(
+                  [{<<"message">>, <<"account expired">>}
+                  ,{<<"cause">>, Expired}
+                  ]
+                 ),
+            Reason = kz_term:to_binary(io_lib:format("account expired: ~p", [Expired])),
+            crossbar_auth:log_failed_auth(?MODULE, <<"credentials">>, Reason, Context, Account),
+            cb_context:add_validation_error(<<"account">>, <<"expired">>, Cause, Context)
     end.
-
-resp_account_expired(Context, Account, Expired) ->
-    _ = kz_process:spawn(fun crossbar_util:maybe_disable_account/1, [Account]),
-    Cause =
-        kz_json:from_list(
-          [{<<"message">>, <<"account expired">>}
-          ,{<<"cause">>, Expired}
-          ]
-         ),
-    Reason = kz_term:to_binary(io_lib:format("account expired: ~p", [Expired])),
-    crossbar_auth:log_failed_auth(?MODULE, <<"credentials">>, Reason, Context, Account),
-    cb_context:add_validation_error(<<"account">>, <<"expired">>, Cause, Context).
 
 -spec maybe_account_is_enabled(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 maybe_account_is_enabled(Context, Account) ->
