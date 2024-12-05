@@ -22298,6 +22298,26 @@
                     ],
                     "type": "string"
                 },
+                "members": {
+                    "description": "List of the Shared VM Box members",
+                    "properties": {
+                        "id": {
+                            "description": "Id of the member. It can be User Id or Group Id",
+                            "maxLength": 32,
+                            "minLength": 32,
+                            "type": "string"
+                        },
+                        "type": {
+                            "description": "Type of the member",
+                            "enum": [
+                                "user",
+                                "group"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    "type": "array"
+                },
                 "name": {
                     "description": "A friendly name for the voicemail box",
                     "maxLength": 128,
@@ -22369,6 +22389,16 @@
                     "description": "callflow fastforward and rewind seek duration",
                     "minimum": 0,
                     "type": "integer"
+                },
+                "shared_vmbox": {
+                    "default": false,
+                    "description": "Determines if the vmbox is used as Shared VM box",
+                    "type": "boolean"
+                },
+                "shared_vmbox_notify_owner_email": {
+                    "default": false,
+                    "description": "Determines if the owner od the shared vmbox should be notified by email",
+                    "type": "boolean"
                 },
                 "silence_hits": {
                     "description": "The number of consecutive hits to see before the channel is considered silent",
