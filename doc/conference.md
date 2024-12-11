@@ -15,6 +15,7 @@ Schema for conferences
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `allow_shareable_link` | Indicates if the conference is reachable using a public link | `boolean()` | `false` | `false` |  
+`auto_record` | when the number of participants meet the required configuration, conference will be recorded | `boolean()` |   | `false` |  
 `base_profile_name` | name of base profile | `string()` |   | `false` |  
 `bridge_password` | the password used for a conference bridge | `string()` |   | `false` |  
 `bridge_username` | the username used for a conference bridge | `string()` |   | `false` |  
@@ -54,6 +55,7 @@ Key | Description | Type | Default | Required | Support Level
 `play_welcome` | Whether to play the welcome prompt | `boolean()` |   | `false` |  
 `profile` | Profile configuration | `object()` |   | `false` |  
 `profile_name` | conference profile name | `string()` |   | `false` |  
+`recording_data` | recording information for upload: url, method and recorder | `object()` |   | `false` |  
 `require_moderator` | does the conference require a moderator | `boolean()` |   | `false` |  
 `video` | If false, video participants will join with video muted | `boolean()` |   | `false` |  
 `wait_for_moderator` | should members wait for a moderator before joining the conference | `boolean()` |   | `false` |  
