@@ -9,6 +9,7 @@
             "type": "boolean"
         },
         "auto_record": {
+            "default": false,
             "description": "when the number of participants meet the required configuration, conference will be recorded",
             "type": "boolean"
         },
