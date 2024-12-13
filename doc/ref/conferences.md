@@ -51,7 +51,6 @@ Key | Description | Type | Default | Required | Support Level
 `play_welcome` | Whether to play the welcome prompt | `boolean()` |   | `false` |  
 `profile` | Profile configuration | `object()` |   | `false` |  
 `profile_name` | conference profile name | `string()` |   | `false` |  
-`recording_data` | recording information for upload: url, method and recorder | `object()` |   | `false` |  
 `require_moderator` | does the conference require a moderator | `boolean()` |   | `false` |  
 `video` | If false, video participants will join with video muted | `boolean()` |   | `false` |  
 `wait_for_moderator` | should members wait for a moderator before joining the conference | `boolean()` |   | `false` |  

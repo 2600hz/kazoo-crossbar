@@ -214,10 +214,6 @@
             "description": "conference profile name",
             "type": "string"
         },
-        "recording_data": {
-            "description": "recording information for upload: url, method and recorder",
-            "type": "object"
-        },
         "require_moderator": {
             "description": "does the conference require a moderator",
             "type": "boolean"
