@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2013-2023, 2600Hz
+%%% @copyright (C) 2013-2025, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -25,8 +25,6 @@
 -define(REPORT_PREFIX, "report-").
 -define(MATCH_REPORT_PREFIX(ReportId), <<?REPORT_PREFIX, ReportId/binary>>).
 -define(MATCH_REPORT_PREFIX, <<?REPORT_PREFIX, _ReportId/binary>>).
-
--define(MANUAL_PRESENCE_DOC, <<"manual_presence">>).
 
 -define(CONFIRMED, <<"confirmed">>).
 -define(EARLY, <<"early">>).
@@ -249,12 +247,20 @@ validate_presence_thing(Context, [{<<"presence">>, _}
                                  ,{<<"devices">>, [DeviceId]}
                                  ,{<<"accounts">>, [_AccountId]}
                                  ]) ->
-    validate_action(load_device(Context, DeviceId));
+    Context1 = load_device(Context, DeviceId),
+    case cb_context:resp_status(Context1) of
+        'success' -> validate_action(Context1);
+        _ -> Context1
+    end;
 validate_presence_thing(Context, [{<<"presence">>, _}
                                  ,{<<"users">>, [UserId]}
                                  ,{<<"accounts">>, [_AccountId]}
                                  ]) ->
-    validate_action(load_presence_for_user(Context, UserId));
+    Context1 = load_presence_for_user(Context, UserId),
+    case cb_context:resp_status(Context1) of
+        'success' -> validate_action(Context1);
+        _ -> Context1
+    end;
 validate_presence_thing(Context, _ReqNouns) ->
     crossbar_util:response_faulty_request(Context).
 
@@ -267,32 +273,63 @@ validate_presence_thing(Context, _Extension, _ReqNouns) ->
     crossbar_util:response_faulty_request(Context).
 
 -spec load_device(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
-load_device(Context, ThingId) ->
+load_device(Context, DeviceId) ->
     %% validating device
-    crossbar_doc:load(ThingId, Context, ?TYPE_CHECK_OPTION(kzd_devices:type())).
+    case kz_datamgr:open_cache_doc(cb_context:account_id(Context), DeviceId) of
+        {'ok', Device} ->
+            Setters = [{fun cb_context:store/3, 'db_doc', Device}
+                      ,{fun cb_context:set_resp_status/2, 'success'}
+                      ],
+            cb_context:setters(Context, Setters);
+        {'error', 'not_found'} ->
+            error_no_entity(Context, DeviceId);
+        {'error', _} ->
+            crossbar_util:response_db_fatal(Context)
+    end.
+
+-spec error_no_entity(cb_context:context(), path_token()) ->
+          cb_context:context().
+error_no_entity(Context, ThingId) ->
+    cb_context:add_system_error('bad_identifier'
+                               ,kz_json:from_list([{<<"cause">>, ThingId}])
+                               ,Context
+                               ).
 
 -spec load_presence_for_user(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 load_presence_for_user(Context, UserId) ->
     %% load the user_doc if it has a presence_id set, otherwise load all the user's devices
-    Context1 = crossbar_doc:load(UserId, Context, ?TYPE_CHECK_OPTION(kzd_users:type())),
-    case cb_context:resp_status(Context1) of
-        'success' -> maybe_load_user_devices(Context1);
-        _ -> Context
+    case kz_datamgr:open_cache_doc(cb_context:account_id(Context), UserId) of
+        {'ok', User} ->
+            maybe_load_user_devices(Context, User);
+        {'error', 'not_found'} ->
+            error_no_entity(Context, UserId);
+        {'error', _} ->
+            crossbar_util:response_db_fatal(Context)
     end.
 
--spec maybe_load_user_devices(cb_context:context()) -> cb_context:context().
-maybe_load_user_devices(Context) ->
-    User = cb_context:doc(Context),
+-spec maybe_load_user_devices(cb_context:context(), kz_json:object()) -> cb_context:context().
+maybe_load_user_devices(Context, User) ->
     case kzd_users:presence_id(User) of
-        'undefined' -> load_user_devices(Context);
-        _PresenceId -> Context
+        'undefined' ->
+            load_user_devices(Context, User);
+        _PresenceId ->
+            Setters = [{fun cb_context:store/3, 'db_doc', User}
+                      ,{fun cb_context:set_resp_status/2, 'success'}
+                      ],
+            cb_context:setters(Context, Setters)
     end.
 
--spec load_user_devices(cb_context:context()) -> cb_context:context().
-load_user_devices(Context) ->
-    User = cb_context:doc(Context),
-    Devices = kz_attributes:owned_by_docs(kz_doc:id(User), cb_context:account_id(Context)),
-    cb_context:set_doc(Context, Devices).
+-spec load_user_devices(cb_context:context(), kz_json:object()) -> cb_context:context().
+load_user_devices(Context, User) ->
+    case  kz_attributes:owned_by_docs(kz_doc:id(User), cb_context:account_id(Context)) of
+        [] ->
+            error_no_entity(Context, kz_doc:id(User));
+        Devices ->
+            Setters = [{fun cb_context:store/3, 'db_doc', Devices}
+                      ,{fun cb_context:set_resp_status/2, 'success'}
+                      ],
+            cb_context:setters(Context, Setters)
+    end.
 
 -spec validate_action(cb_context:context()) -> cb_context:context().
 validate_action(Context) ->
@@ -316,11 +353,10 @@ validate_action(Context, _ReqData, <<"reset">>) ->
 validate_action(Context, _ReqData, <<"set">>) ->
     cb_context:validate_request_data(<<"presence.state">>, Context).
 
-
 -spec post(cb_context:context()) -> cb_context:context().
 post(Context) ->
     ReqData = cb_context:req_data(Context),
-    Things = cb_context:doc(Context),
+    Things = cb_context:fetch(Context, 'db_doc'),
     post_things(Context, Things, kz_json:get_value(<<"action">>, ReqData)).
 
 -spec post(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
@@ -371,22 +407,13 @@ publish_presence_reset(Context, PresenceId) ->
 -spec publish_presence_update(cb_context:context(), kz_term:api_ne_binary(), kz_term:ne_binary()) -> 'ok'.
 publish_presence_update(_Context, 'undefined', _PresenceState) -> 'ok';
 publish_presence_update(Context, PresenceId, PresenceState) ->
+    AccountId = cb_context:account_id(Context),
     Realm = cb_context:account_realm(Context),
-    AccountDb = cb_context:db_name(Context),
     lager:debug("updating presence for ~s@~s to state ~s", [PresenceId, Realm, PresenceState]),
-    %% persist presence setting
-    Update = [{[PresenceId], presence_update_state(PresenceState)}],
-    UpdateOptions = [{'update', Update}
-                    ,{'ensure_saved', 'true'}
-                    ,{'should_create', 'true'}
-                    ],
-    {'ok', _} = kz_datamgr:update_doc(AccountDb, ?MANUAL_PRESENCE_DOC, UpdateOptions),
+    {'ok', _} = kzd_presence:update_presence(AccountId, PresenceId, PresenceState),
+
     PresenceString = <<PresenceId/binary, "@", Realm/binary>>,
     kapps_call_command:presence(PresenceState, PresenceString, kz_term:to_hex_binary(crypto:hash('md5', PresenceString))).
-
--spec presence_update_state(kz_term:ne_binary()) -> kz_term:ne_binary() | 'null'.
-presence_update_state(<<"terminated">>) -> 'null';
-presence_update_state(PresenceState) -> PresenceState.
 
 -spec find_presence_id(kz_term:ne_binary() | kz_json:object()) -> kz_term:api_binary().
 find_presence_id(<<Extension/binary>>) ->
