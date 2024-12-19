@@ -25,7 +25,7 @@
             "type": "string"
         },
         "media_id": {
-            "description": "Doc ID of the created recording - if unspecified, KAZOO will generate one",
+            "description": "Doc ID of the created recording - if unspecified, {% BRAND_NAME %} will generate one",
             "type": "string"
         },
         "media_name": {

@@ -9,7 +9,7 @@
             "type": "boolean"
         },
         "recipients": {
-            "description": "One or more specific email addresses, Kazoo user ids or a combination of both",
+            "description": "One or more specific email addresses, {% BRAND_NAME %} user ids or a combination of both",
             "items": {
                 "properties": {
                     "id": {
@@ -27,7 +27,7 @@
                         ]
                     },
                     "type": {
-                        "description": "Controls if the ID of this object is a Kazoo user ID or an email address",
+                        "description": "Controls if the ID of this object is a {% BRAND_NAME %} user ID or an email address",
                         "enum": [
                             "user",
                             "email"

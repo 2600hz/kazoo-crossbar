@@ -28,7 +28,7 @@
             "type": "string"
         },
         "id": {
-            "description": "The KAZOO device or user ID",
+            "description": "The {% BRAND_NAME %} device or user ID",
             "type": "string"
         },
         "max_menu_attempts": {

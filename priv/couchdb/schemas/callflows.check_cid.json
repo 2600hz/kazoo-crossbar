@@ -36,7 +36,7 @@
             "type": "boolean"
         },
         "user_id": {
-            "description": "kazoo User ID to use as owner_id instead of detected owner_id",
+            "description": "{% BRAND_NAME %} User ID to use as owner_id instead of detected owner_id",
             "type": "string"
         }
     },

@@ -9,7 +9,7 @@
             "type": "object"
         },
         "id": {
-            "description": "Kazoo ID of the conference",
+            "description": "{% BRAND_NAME %} ID of the conference",
             "maxLength": 32,
             "minLength": 32,
             "type": "string"
@@ -48,7 +48,7 @@
             "description": "Describes how the caller is greeted on entering a conference",
             "properties": {
                 "media_id": {
-                    "description": "Media to play, either Kazoo media ID or URL",
+                    "description": "Media to play, either {% BRAND_NAME %} media ID or URL",
                     "type": "string"
                 },
                 "play": {
