@@ -1,0 +1,23 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "_id": "system_config.parking.park",
+    "description": "Schema for parking.park system_config",
+    "properties": {
+        "default_callback_timeout": {
+            "default": 30000,
+            "description": "parking park default_callback_timeout",
+            "type": "integer"
+        },
+        "default_ringback_timeout": {
+            "default": 120000,
+            "description": "parking park default_ringback_timeout",
+            "type": "integer"
+        },
+        "parked_presence_type": {
+            "default": "early",
+            "description": "parking park parked_presence_type",
+            "type": "string"
+        }
+    },
+    "type": "object"
+}

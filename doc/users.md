@@ -9,6 +9,7 @@ Users represent just that, your users of the system. You can assign multiple dev
 Schema for a user
 
 
+
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `addresses.vcard.[].address` |   | `string()` |   | `true` |  

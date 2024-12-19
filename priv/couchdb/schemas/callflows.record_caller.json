@@ -55,6 +55,25 @@
             "description": "If true, the recording will continue after a transfer on the active leg",
             "type": "boolean"
         },
+        "silence_detection": {
+            "description": "Whether to stop the recording if no speech is detected for a period of time. When silence is detected, a timer will start, see silence_final_timeout and silence_initial_timeout.",
+            "type": "boolean"
+        },
+        "silence_final_timeout": {
+            "default": 5,
+            "description": "The timeout in milliseconds to stop the recording when silence is detected. This timeout is different from initial timeout in that in final timeout the speech is already detected since the recording is started.",
+            "type": "integer"
+        },
+        "silence_initial_timeout": {
+            "default": 0,
+            "description": "The timeout in milliseconds to stop the recording when silence is detected and no speech is detected since the start of recording",
+            "type": "integer"
+        },
+        "silence_threshold": {
+            "default": 200,
+            "description": "The energy level below which is considered silence.",
+            "type": "integer"
+        },
         "skip_module": {
             "description": "When set to true this callflow action is skipped, advancing to the wildcard branch (if any)",
             "type": "boolean"

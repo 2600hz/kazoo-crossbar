@@ -22,10 +22,10 @@ Schema for a number
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`carrier_name` |   | `string(1..30)` |   | `false` |  
-`cnam.display_name` |   | `string(1..15)` |   | `false` |  
-`cnam.inbound_lookup` |   | `boolean()` |   | `false` |  
-`cnam` |   | `object()` |   | `false` |  
+`carrier_name` | Name of the carrier provider | `string(1..30)` |   | `false` |  
+`cnam.display_name` | Name that displayed in the callee side | `string(1..15)` |   | `false` |  
+`cnam.inbound_lookup` | Lookup name that associated with the number in provider database and display it for inbound call | `boolean()` |   | `false` |  
+`cnam` | Caller ID Name of a person or business that is placing a call | `object()` |   | `false` |  
 `create_with_state` | The state to create numbers in | `string('aging' \| 'available' \| 'deleted' \| 'discovery' \| 'in_service' \| 'port_in' \| 'port_out' \| 'released' \| 'reserved')` |   | `false` |  
 `e911.activated_time` | The time stamp e911 was provisioned | `string()` |   | `false` |  
 `e911.callback_cid_number` | 10-digit DID used as caller ID to PSAP, overrides CID | `string(10)` |   | `false` |  
@@ -50,7 +50,7 @@ Key | Description | Type | Default | Required | Support Level
 `e911.region` | The region (state) where the number is in service | `string(2)` |   | `true` |  
 `e911.status` | The e911 provisioning system status for this service address | `string('INVALID' \| 'GEOCODED' \| 'PROVISIONED' \| 'REMOVED' \| 'ERROR')` |   | `false` |  
 `e911.street_address` | The street address where the number is in service | `string()` |   | `true` |  
-`e911` |   | `object()` |   | `false` |  
+`e911` | E911 information for the current phone number | `object()` |   | `false` |  
 `porting.billing_account_id` | The account id the losing carrier has on file | `string()` |   | `false` |  
 `porting.billing_extended_address` | The suit/floor/apt. address the losing carrier has on file | `string()` |   | `false` |  
 `porting.billing_locality` | The locality (city) the losing carrier has on file | `string()` |   | `false` |  

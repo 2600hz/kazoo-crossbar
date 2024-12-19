@@ -10,10 +10,10 @@ Schema for a number
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`carrier_name` |   | `string(1..30)` |   | `false` |  
-`cnam.display_name` |   | `string(1..15)` |   | `false` |  
-`cnam.inbound_lookup` |   | `boolean()` |   | `false` |  
-`cnam` |   | `object()` |   | `false` |  
+`carrier_name` | Name of the carrier provider | `string(1..30)` |   | `false` |  
+`cnam.display_name` | Name that displayed in the callee side | `string(1..15)` |   | `false` |  
+`cnam.inbound_lookup` | Lookup name that associated with the number in provider database and display it for inbound call | `boolean()` |   | `false` |  
+`cnam` | Caller ID Name of a person or business that is placing a call | `object()` |   | `false` |  
 `create_with_state` | The state to create numbers in | `string('aging' \| 'available' \| 'deleted' \| 'discovery' \| 'in_service' \| 'port_in' \| 'port_out' \| 'released' \| 'reserved')` |   | `false` |  
 `e911.activated_time` | The time stamp e911 was provisioned | `string()` |   | `false` |  
 `e911.callback_cid_number` | 10-digit DID used as caller ID to PSAP, overrides CID | `string(10)` |   | `false` |  

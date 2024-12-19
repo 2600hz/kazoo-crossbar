@@ -4,7 +4,7 @@
 
 #### Schema
 
-
+Provides an auth-token via user credentials
 
 
 

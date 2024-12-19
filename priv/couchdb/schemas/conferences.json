@@ -8,6 +8,11 @@
             "description": "Indicates if the conference is reachable using a public link",
             "type": "boolean"
         },
+        "auto_record": {
+            "default": false,
+            "description": "Automatically start recording when the number of participants meets the configured required minimum participants for recording (default minimum of two participants)",
+            "type": "boolean"
+        },
         "base_profile_name": {
             "description": "name of base profile",
             "type": "string"

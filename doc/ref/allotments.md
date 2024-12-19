@@ -10,13 +10,13 @@ Create buckets of minutes per time-period
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`^\w+$.amount` |   | `integer(0..)` |   | `false` |  
-`^\w+$.cycle` |   | `string('minutely' \| 'hourly' \| 'daily' \| 'weekly' \| 'monthly')` |   | `false` |  
+`^\w+$.amount` | Time in seconds, which can be consumed | `integer(0..)` |   | `false` |  
+`^\w+$.cycle` | On the basis to reset consumed allotments counter | `string('minutely' \| 'hourly' \| 'daily' \| 'weekly' \| 'monthly')` |   | `false` |  
 `^\w+$.group_consume.[]` |   | `string()` |   | `false` |  
-`^\w+$.group_consume` |   | `array(string())` |   | `false` |  
-`^\w+$.increment` |   | `integer(1..)` |   | `false` |  
-`^\w+$.minimum` |   | `integer(0..)` |   | `false` |  
-`^\w+$.no_consume_time` |   | `integer(0..)` |   | `false` |  
+`^\w+$.group_consume` | Other allotments which will be summed, when calculating rest of allotments time on authorization | `array(string())` |   | `false` |  
+`^\w+$.increment` | Step (in seconds) of incrementing counter | `integer(1..)` |   | `false` |  
+`^\w+$.minimum` | Minimum amount added to counter | `integer(0..)` |   | `false` |  
+`^\w+$.no_consume_time` | If call duration is less or equal of this time (in seconds), then no allotment consumed | `integer(0..)` |   | `false` |  
 `^\w+$` |   | `object()` |   | `false` |  
 
 
