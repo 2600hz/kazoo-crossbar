@@ -4,7 +4,7 @@
     "description": "UI application metadata schema",
     "properties": {
         "api_url": {
-            "description": "Optional API URL that application can use. default to Kazoo Crossbar API",
+            "description": "Optional API URL that application can use. default to {% BRAND_NAME %} Crossbar API",
             "format": "uri",
             "minLength": 7,
             "type": "string"

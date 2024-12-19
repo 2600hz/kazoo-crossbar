@@ -55,7 +55,7 @@ Log in to the Console with the credentials you defined in the `MINIO_ROOT_USER` 
 
 
 
-## Connect Kazoo to MinIO
+## Connect {% BRAND_NAME %} to MinIO
 
 **1.** Create a bucket via MinIO Console in the `Buckets` section.
 
@@ -99,7 +99,7 @@ $ sup crossbar_maintenance start_module cb_storage
 
 `b6fac6f8023e47f0be9a8fabb4da1a8d` can be changed to any other 32 bits long UUID.
 
-**4.** Configure Kazoo to use your MinIO server:
+**4.** Configure {% BRAND_NAME %} to use your MinIO server:
 ```bash
 $ curl -vX \
     PUT localhost:8000/v2/accounts/{ACCOUNT_ID}/storage \

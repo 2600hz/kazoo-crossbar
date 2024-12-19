@@ -1,6 +1,6 @@
 ### Configs
 
-Certain settings are available per account. What settings are understood by Kazoo
+Certain settings are available per account. What settings are understood by {% BRAND_NAME %}
 is determined by account_config.{CONFIG_ID}.json schemas. Please note not all
 possible configuration options are available on per-account basis, some (most)
 of them are system-wide.

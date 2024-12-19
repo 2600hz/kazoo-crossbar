@@ -104,7 +104,7 @@ curl -v -X GET \
 Streams back a PDF document.
 ```
 
-If your client does not support setting the `Accept` header, you can append `?accept=pdf` to the URI and Kazoo will pretend you sent the proper `Accept` header.
+If your client does not support setting the `Accept` header, you can append `?accept=pdf` to the URI and {% BRAND_NAME %} will pretend you sent the proper `Accept` header.
 
 ## Add a user to the directory listing
 

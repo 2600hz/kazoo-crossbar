@@ -9,7 +9,7 @@ Manipulate documents in the `system_config` database via Crossbar.
 
 A system configuration document is a JSON document of certain syntactic type (each node value must be a JSON object of type `system_config.$config_name`). REST API allows to address both documents and document nodes. Default node of the configuration document is treated specially, see below.
 
-In order to avoid confusion configuration document nodes we call document sections, each such section is a JSON object representing a configuration object for Kazoo node or zone.
+In order to avoid confusion configuration document nodes we call document sections, each such section is a JSON object representing a configuration object for {% BRAND_NAME %} node or zone.
 
 General idea is to return (with `with_defaults=true` URI option) the effective values for configuration, therefore a complex merge down is performed: document values are merged with document default section, and then merged with schema defaults.
 

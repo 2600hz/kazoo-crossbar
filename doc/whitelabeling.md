@@ -1,6 +1,6 @@
 # Whitelabeling
 
-Whitelabeling is one of the core functionality of the Kazoo which allows to make your own brand.
+Whitelabeling is one of the core functionality of the {% BRAND_NAME %} which allows to make your own brand.
 
 #### Schema
 
@@ -105,7 +105,7 @@ Request and Response are same as create API.
 
 > GET /v2/accounts/{ACCOUNT_ID}/whitelabel/domains
 
-When you whitelabel Kazoo's services, DNS settings are needed to make sure your hostname maps appropriate for the various DNS entries (CNAM, A, NAPTR, etc). If the system admin has configured their settings on the backend, you can query Crossbar to show you what your settings should map to.
+When you whitelabel {% BRAND_NAME %}'s services, DNS settings are needed to make sure your hostname maps appropriate for the various DNS entries (CNAM, A, NAPTR, etc). If the system admin has configured their settings on the backend, you can query Crossbar to show you what your settings should map to.
 
 You have two options on the request for what domain to use:
 
@@ -209,13 +209,13 @@ Assuming your whitelabel domain is "mydomain.com" you should receive a payload s
 }
 ```
 
-Here you can see which DNS records are supported and where they should point to access the Kazoo cluster.
+Here you can see which DNS records are supported and where they should point to access the {% BRAND_NAME %} cluster.
 
 ## Testing your domains
 
 > POST /v2/accounts/{ACCOUNT_ID}/whitelabel/domains
 
-Kazoo will attempt to validate your whitelabel settings if you send it a POST to do so:
+{% BRAND_NAME %} will attempt to validate your whitelabel settings if you send it a POST to do so:
 
 ```shell
 curl -v -X POST \
@@ -329,7 +329,7 @@ System administrators can set/update the domains object that is used when resell
         "{WHITELABEL_ABLE_DOMAIN}":{
             "mapping":["{IP_ADDRESS}", "{SRV_RECORD}", "{NAPTR_RECORD}"],
             "name":"Friendly name",
-            "zone":"{KAZOO_ZONE}"
+            "zone":"{ZONE}"
         }
      }
     }
@@ -338,7 +338,7 @@ System administrators can set/update the domains object that is used when resell
 * `{DNS_RECORD_TYPE}`: In all uppercase, the DNS record type. "CNAM", "A", "SRV", "MX", etc, that you have defined.
 * `{WHITELABEL_ABLE_DOMAIN}`: The template for what the hostname will look like when whitelabeled. The only template parameter is `{{domain}}`, which will be replaced by the whitelabel domain of the reseller.
 * `mapping`: This is a list of records the reseller should use when configuring their DNS entries for this DNS record type. It could be a list of IP addresses for CNAM or A, or listings of NAPTR/SRV records. Again, the mappings can use the `{{domain}}` placeholder for the whitelabeled domain.
-* `{KAZOO_ZONE}`: what zone this host is located in. If using dedicated IPs for the reseller, this will help when building the IP addresses usable by the reseller. Currently, however, this is purely informational.
+* `{ZONE}`: what zone this host is located in. If using dedicated IPs for the reseller, this will help when building the IP addresses usable by the reseller. Currently, however, this is purely informational.
 
 To set the system domains object, the API is:
 

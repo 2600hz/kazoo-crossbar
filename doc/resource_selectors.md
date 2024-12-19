@@ -298,7 +298,7 @@ Here we see selectors for resource `RES-4` with selector name `lcr`. Resulted li
 
 ### Manage selectors
 
-Manage (import/delete) resource selectors made via kazoo tasks (CSV file).
+Manage (import/delete) resource selectors made via {% BRAND_NAME %} tasks (CSV file).
 
 Category `resource_selectors`, action `import` or `delete`.
 

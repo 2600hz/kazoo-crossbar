@@ -85,7 +85,7 @@
             "type": "string"
         },
         "owner_id": {
-            "description": "KAZOO User ID of the owner of this temporal rule",
+            "description": "User ID of the owner of this temporal rule",
             "type": "string"
         },
         "start_date": {

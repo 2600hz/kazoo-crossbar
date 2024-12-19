@@ -2,7 +2,7 @@
 
 ## About Accounts
 
-Accounts are the container for most things in Kazoo. They typically represent an office, business, family, etc. Kazoo arranges accounts into a tree structure, where parent accounts can access their sub accounts but not their ancestor accounts.
+Accounts are the container for most things in {% BRAND_NAME %}. They typically represent an office, business, family, etc. {% BRAND_NAME %} arranges accounts into a tree structure, where parent accounts can access their sub accounts but not their ancestor accounts.
 
 ## About the Account Tree
 
@@ -641,7 +641,7 @@ curl -v -X GET \
 
 ## Fetch the account's API key
 
-The API key is used by the `api_auth` API to obtain an `auth_token`. This is intended for use by applications talking to kazoo and provides a mechanism for authentication that does not require storing a username and password in the application. The API key can be obtained via the accounts API's endpoint `api_key`.
+The API key is used by the `api_auth` API to obtain an `auth_token`. This is intended for use by applications talking to Crossbar and provides a mechanism for authentication that does not require storing a username and password in the application. The API key can be obtained via the accounts API's endpoint `api_key`.
 
 > GET /v2/accounts/{ACCOUNT_ID}/api_key
 
@@ -816,7 +816,7 @@ curl -v -X PUT \
 An account can only be moved by a "superduper_admin" or if enabled by anyone above the desired account.
 
 !!! note
-    Kazoo does NOT support moving accounts between reseller accounts.
+    {% BRAND_NAME %} does NOT support moving accounts between reseller accounts.
     You can enable that feature by editing the document `crossbar.accounts` in your `system_config` database and set the value to `tree`.
 
 The result of a successful `move` will have `{ACCOUNT_ID}` as a child of the `to` account ID passed in the request data.
@@ -865,11 +865,11 @@ curl -v -X POST \
 
 #### Call recording direction
 
-`inbound` vs `outbound` is relative to the media server in KAZOO.
+`inbound` vs `outbound` is relative to the media server in {% BRAND_NAME %}.
 
-For instance, Alice places a call from her device to KAZOO - `inbound` call to KAZOO.
+For instance, Alice places a call from her device to {% BRAND_NAME %} - `inbound` call to {% BRAND_NAME %}.
 
-Bob receives a call from KAZOO on his device - `outbound` call from KAZOO.
+Bob receives a call from {% BRAND_NAME %} on his device - `outbound` call from {% BRAND_NAME %}.
 
 
 ## Sign up parameters

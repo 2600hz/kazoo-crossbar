@@ -47,11 +47,11 @@
                     "properties": {
                         "in": {
                             "$ref": "custom_sip_headers",
-                            "description": "Custom SIP Headers to be applied to calls inbound to Kazoo from the endpoint"
+                            "description": "Custom SIP Headers to be applied to calls inbound to {% BRAND_NAME %} from the endpoint"
                         },
                         "out": {
                             "$ref": "custom_sip_headers",
-                            "description": "Custom SIP Headers to be applied to calls outbound from Kazoo to the endpoint"
+                            "description": "Custom SIP Headers to be applied to calls outbound from {% BRAND_NAME %} to the endpoint"
                         }
                     }
                 }

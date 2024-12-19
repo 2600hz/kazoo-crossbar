@@ -45,7 +45,7 @@ curl -v -X PUT \
 
 ## Get an link to a conference
 
-To create a link to public link, the person that want to create and share the invite link must be a Kazoo user already and have logged in to the UI.
+To create a link to public link, the person that want to create and share the invite link must be a {% BRAND_NAME %} user already and have logged in to the UI.
 Then they can create a link by making a request to this API.
 
 The successful response payload have an JSON object containing the full link to the conference with JWT token included.

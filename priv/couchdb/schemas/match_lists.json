@@ -8,7 +8,7 @@
             "type": "string"
         },
         "owner_id": {
-            "description": "KAZOO User ID of the owner of this match list",
+            "description": "User ID of the owner of this match list",
             "type": "string"
         },
         "rules": {

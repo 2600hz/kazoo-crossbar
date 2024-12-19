@@ -1,6 +1,6 @@
-# KAZOO Endpoints
+# {% BRAND_NAME %} Endpoints
 
-When you see references to `endpoints` in KAZOO, it is typically something that exists outside of KAZOO that KAZOO wishes to send calls (or messages) to.
+When you see references to `endpoints` in {% BRAND_NAME %}, it is typically something that exists outside of {% BRAND_NAME %} that {% BRAND_NAME %} wishes to send calls (or messages) to.
 
 Concretely, an `endpoint` typically refers to a `device`, but can also mean a `user`, `group`, or even `account` (and extendable to other entities).
 
@@ -29,7 +29,7 @@ Let's see how these parameters interact:
 
 ## Users
 
-Under normal circumstances, when dialing a `user`, KAZOO will find all devices owned by the user and follow the appropriate rules for those devices. Since a `user` won't have SIP credentials configured (at least KAZOO will not look for them), legs generated for the call to the `user` will be from the devices owned by the user or the `call_forward` settings.
+Under normal circumstances, when dialing a `user`, {% BRAND_NAME %} will find all devices owned by the user and follow the appropriate rules for those devices. Since a `user` won't have SIP credentials configured (at least {% BRAND_NAME %} will not look for them), legs generated for the call to the `user` will be from the devices owned by the user or the `call_forward` settings.
 
 ## call_forward.substitute
 
@@ -37,4 +37,4 @@ Particular attention should be paid to `call_forward.substitute` as it affects a
 
 This is more relevant for users or groups where SIP credentials aren't also going to be considered. Setting `call_forward.substitute=true` on a user or group means skipping normal leg creation rules and creating *just* the leg specified by the endpoint's `call_forward` object.
 
-To re-iterate, if a `user` sets the `call_forward.substitute` flag, KAZOO will not look for devices owned by the user; KAZOO will immediately create only a call leg based on the user's `call_forward` object. Same for any other entity.
+To re-iterate, if a `user` sets the `call_forward.substitute` flag, {% BRAND_NAME %} will not look for devices owned by the user; {% BRAND_NAME %} will immediately create only a call leg based on the user's `call_forward` object. Same for any other entity.

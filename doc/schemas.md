@@ -1,15 +1,15 @@
 # JSON Schema
 
-Kazoo uses [JSON Schemas](http://json-schema.org/) to validate incoming data from clients.
+Crossbar uses [JSON Schemas](http://json-schema.org/) to validate incoming data from clients.
 
 Any fields that aren't defined in the JSON schema will be stored, unmodified, along side the validated fields (assuming all is well).
-This excludes Kazoo-managed private fields (top-level keys prefixed with `"_"` or `"pvt_"`).
+This excludes {% BRAND_NAME %} managed private fields (top-level keys prefixed with `"_"` or `"pvt_"`).
 
 This is the API endpoint to inspect all JSON Schemas.
 
 #### List All Available Schema
 
-The default fetch will retrieve only the documents meant for the APIs to operate on (doc and `system_config` schemas). Kazoo also has the internal JSON APIs available as JSON schemas, which can be fetched via `/v2/schemas?internals=true`.
+The default fetch will retrieve only the documents meant for the APIs to operate on (doc and `system_config` schemas). {% BRAND_NAME %} also has the internal JSON APIs available as JSON schemas, which can be fetched via `/v2/schemas?internals=true`.
 
 > GET /v2/schemas
 

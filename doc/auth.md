@@ -53,9 +53,9 @@ Key | Description | Type | Default | Required | Support Level
 
 
 
-## Resetting System (Kazoo) Signature Secret
+## Resetting System Signature Secret
 
-System signature secret and the subject signature is being used to sign the signature in the JWT token that Kazoo is issuing.
+System signature secret and the subject signature is being used to sign the signature in the JWT token that {% BRAND_NAME %} is issuing.
 
 If you feel that this system secret is compromised, use this API to reset it.
 
@@ -91,7 +91,7 @@ Returns an empty success response.
 
 ## Resetting an Account or a User Signature Secret
 
-System signature secret and the subject signature is being used to sign the signature in the JWT token that Kazoo is issuing.
+System signature secret and the subject signature is being used to sign the signature in the JWT token that {% BRAND_NAME %} is issuing.
 
 If you feel that an account or a user secret is compromised, use this API to reset it.
 
@@ -318,7 +318,7 @@ curl -v -X PUT \
 
 ### Response when no User is Linked yet
 
-If this is the first time that the user is authenticating using this SSO provider, Kazoo returns and empty response indicating that user should first login using it's own Kazoo credentials first to link the SSO application with its user. After login the user is linked with the application and it no need to manual login again.
+If this is the first time that the user is authenticating using this SSO provider, {% BRAND_NAME %} returns and empty response indicating that user should first login using it's own {% BRAND_NAME %} credentials first to link the SSO application with its user. After login the user is linked with the application and it no need to manual login again.
 
 ```json
 {
@@ -641,7 +641,7 @@ curl -v -X GET \
 
 ## Link an User to a SSO Application
 
-When the user is signing on with A Single Sign On provider for the first time, it should login with its own Kazoo credentials one more time, and then make a request to this API to link its Kazoo's user to the SSO. After that the user can sign in with SSO regularly and no need to use Kazoo credentials again.
+When the user is signing on with A Single Sign On provider for the first time, it should login with its own {% BRAND_NAME %} credentials one more time, and then make a request to this API to link its {% BRAND_NAME %}'s user to the SSO. After that the user can sign in with SSO regularly and no need to use {% BRAND_NAME %} credentials again.
 
 > PUT /v2/auth/links/{LINK_ID}
 

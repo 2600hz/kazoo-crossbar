@@ -2,7 +2,7 @@
 
 #### About Alerts
 
-Kazoo enables automatic alerting for significant events and situations, ensuring users have instant insight into the status of their accounts. In general, alerts are automatically generated for provisioning errors, financials notifications (low balance, payment token, etc.), system alerts and port actions (port_requests, port_suspended, etc.).
+{% BRAND_NAME %} enables automatic alerting for significant events and situations, ensuring users have instant insight into the status of their accounts. In general, alerts are automatically generated for provisioning errors, financials notifications (low balance, payment token, etc.), system alerts and port actions (port_requests, port_suspended, etc.).
 
 In addition to fetch current alerts of the account, you can manually generate a new alert via API. This offers flexibility in tailoring the alerting system to specific needs or requirements.
 
@@ -52,8 +52,8 @@ curl -v -X GET \
             ],
             "value": {
                 "id": "{ALERT_ID}",
-                "title": "kazoo telemetry grace period active",
-                "message": "kazoo telemetry will automatically enable in 6 days.",
+                "title": "{% BRAND_NAME %} telemetry grace period active",
+                "message": "{% BRAND_NAME %} telemetry will automatically enable in 6 days.",
                 "category": "kazoo_telemetry",
                 "from": [
                     {
@@ -139,8 +139,8 @@ curl -v -X GET \
 {
     "auth_token": "{AUTH_TOKEN}",
     "data": {
-        "title": "kazoo telemetry grace period active",
-        "message": "kazoo telemetry will automatically enable in 6 days.",
+        "title": "{% BRAND_NAME %} telemetry grace period active",
+        "message": "{% BRAND_NAME %} telemetry will automatically enable in 6 days.",
         "from": [
             {
                 "type": "account",

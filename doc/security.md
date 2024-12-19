@@ -29,7 +29,7 @@ For security compliance, it is required to lock the user if it tries to login an
 fails when specific amount of attempts are reached. Unfortunately currently there is no way to find
 out what user is trying to login in Crossbar.
 
-As security per caution for the time being, Kazoo will lock the whole account. This is an
+As security per caution for the time being, {% BRAND_NAME %} will lock the whole account. This is an
 opt-in feature, a sysadmin need to enable this feature using:
 
 ```bash

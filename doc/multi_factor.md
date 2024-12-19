@@ -4,7 +4,7 @@
 
 API endpoint to configure Crossbar Multi Factor Authentication (MFA) providers.
 
-See [Kazoo Auth multi factor documentation](https://docs.2600hz.com/git/2600hz/kazoo-core/kazoo_auth/doc/multi_factor.md) to learn more about available providers and their required settings.
+See [{% BRAND_NAME %} Auth multi factor documentation](https://docs.2600hz.com/git/2600hz/kazoo-core/kazoo_auth/doc/multi_factor.md) to learn more about available providers and their required settings.
 
 ## Enable MFA for a Crossbar auth module
 
@@ -15,13 +15,13 @@ If you want to use multi factor authentication for a module, set the `multi_fact
 
 ## Multi Factor Authentication (MFA) flow summary
 
-The MFA process in Kazoo is straight forward. Configure the KAZOO integrated MFA service provider and enable the multi-factor setting for an authentication endpoint. A user (for example) will authenticate as usual by their KAZOO credentials. If the first factor authentication passed, second-factor provider information (usually a signed token) would be returned to client with HTTP `401 Unauthorized` status.
+The MFA process in {% BRAND_NAME %} is straight forward. Configure the {% BRAND_NAME %} integrated MFA service provider and enable the multi-factor setting for an authentication endpoint. A user (for example) will authenticate as usual by their {% BRAND_NAME %} credentials. If the first factor authentication passed, second-factor provider information (usually a signed token) would be returned to client with HTTP `401 Unauthorized` status.
 
-User's client performs the second-factor authentication with the provider and sends provider response to Kazoo in the `multi_factor_response` key. If the provider validates true, the user will be authenticated successfully and a KAZOO token will be generated as usual; otherwise, if the second-factor provider response is not validated, an HTTP `401 Unauthorized` will be returned.
+User's client performs the second-factor authentication with the provider and sends provider response to {% BRAND_NAME %} in the `multi_factor_response` key. If the provider validates true, the user will be authenticated successfully and a {% BRAND_NAME %} token will be generated as usual; otherwise, if the second-factor provider response is not validated, an HTTP `401 Unauthorized` will be returned.
 
 ### OTP (one-time password) MFA flow
 
-KAZOO comes with a built-in OTP MFA provider that can work with users' authenticator apps (like [Google Authenticator](https://googleauthenticator.net/)). Once configured, the user will include the TOTP code as part of the payload for authentication.
+{% BRAND_NAME %} comes with a built-in OTP MFA provider that can work with users' authenticator apps (like [Google Authenticator](https://googleauthenticator.net/)). Once configured, the user will include the TOTP code as part of the payload for authentication.
 
 #### Setup OTP provider
 
@@ -53,9 +53,9 @@ First, you can see the available providers on the cluster:
 
 Here you can see that the [DUO integration](https://duo.com/product/multi-factor-authentication-mfa) is available already.
 
-Let's create the KAZOO OTP provider:
+Let's create the {% BRAND_NAME %} OTP provider:
 
-> PUT  http://{SERVER}:8000/v2/multi_factor -d '{"data":{"enabled":true,"name":"KAZOO","provider_name":"otp","settings": {}}}'
+> PUT  http://{SERVER}:8000/v2/multi_factor -d '{"data":{"enabled":true,"name":"MY OTP Provider","provider_name":"otp","settings": {}}}'
 
 The important bit is `provider_name = otp`.
 
@@ -64,7 +64,7 @@ The important bit is `provider_name = otp`.
   "data": {
     "enabled": true,
     "id": "{PROVIDER_ID}",
-    "name": "KAZOO",
+    "name": "My OTP provider",
     "provider_name": "otp",
     "settings": {
     }
@@ -163,7 +163,7 @@ We specifically want users to be required to use MFA, so let's PATCH the `cb_use
 
 > PATCH http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/security -d '{"data":{"auth_modules":{"cb_user_auth":{"multi_factor":{"configuration_id":"{PROVIDER_ID}","account_id":"{ACCOUNT_ID}","enabled":true}}}}}'
 
-Here we use the `{PROVIDER_ID}` of the KAZOO OTP provider creation earlier.
+Here we use the `{PROVIDER_ID}` of the OTP provider creation earlier.
 
 ```json
 {
@@ -220,7 +220,7 @@ At this point, the user should check the TOTP code on their authenticator applic
 
 Here, `{TOTP_CODE}` is the 6-digit code.
 
-Assuming the TOTP is correct (and KAZOO will check one time period before, the current time period, and the next time period to account for delays), the API request should respond with the generated auth token and expected user_auth response.
+Assuming the TOTP is correct (and {% BRAND_NAME %} will check one time period before, the current time period, and the next time period to account for delays), the API request should respond with the generated auth token and expected user_auth response.
 
 ## Provider Configuration Schema
 
@@ -286,7 +286,7 @@ curl -v -X GET \
 
 ## Create a Provider Configuration for an Account
 
-Create configuration for a MFA provider. Provider config should be in `"settings"`. See [Kazoo Auth Multi-Factor](https://docs.2600hz.com/git/2600hz/kazoo-core/kazoo_auth/doc/multi_factor.md) to find out required configuration for each provider.
+Create configuration for a MFA provider. Provider config should be in `"settings"`. See [{% BRAND_NAME %} Auth Multi-Factor](https://docs.2600hz.com/git/2600hz/kazoo-core/kazoo_auth/doc/multi_factor.md) to find out required configuration for each provider.
 
 > PUT /v2/accounts/{ACCOUNT_ID}/multi_factor
 
@@ -580,7 +580,7 @@ curl -v -X GET \
 
 ## Create a System Provider Configuration
 
-Provider config should be in `"settings"`. See [Kazoo Auth Multi-Factor](https://docs.2600hz.com/git/2600hz/kazoo-core/kazoo_auth/doc/multi_factor.md) to find out required configuration for each provider.
+Provider config should be in `"settings"`. See [{% BRAND_NAME %} Auth Multi-Factor](https://docs.2600hz.com/git/2600hz/kazoo-core/kazoo_auth/doc/multi_factor.md) to find out required configuration for each provider.
 
 !!! note
     Only super duper admin can create system providers configuration!

@@ -14,7 +14,7 @@
                     "type": "string"
                 },
                 "is_aio_cluster": {
-                    "description": "Indicates all Kazoo VM nodes are running same list of Kazoo Apps",
+                    "description": "Indicates all {% BRAND_NAME %} VM nodes are running same list of {% BRAND_NAME %} Apps",
                     "type": "boolean"
                 },
                 "name": {

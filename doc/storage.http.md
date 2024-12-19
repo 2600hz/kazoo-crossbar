@@ -15,7 +15,7 @@ echo $(tr -dc a-f0-9 < /dev/urandom | dd bs=32 count=1 2> /dev/null)
 
 This UUID will be your reference to your HTTP server in the storage plan.
 
-There are two main pieces of the storage plan to configure now: the `attachments` where you'll define the HTTP server information, and the `plan` where you'll configure KAZOO to use your HTTP server.
+There are two main pieces of the storage plan to configure now: the `attachments` where you'll define the HTTP server information, and the `plan` where you'll configure {% BRAND_NAME %} to use your HTTP server.
 
 For instance, you can store new voicemails with a storage config like the following:
 ```json
@@ -46,18 +46,18 @@ For instance, you can store new voicemails with a storage config like the follow
 }
 ```
 
-PUT-ing this to `/v2/accounts/{ACCOUNT_ID}/storage` will result in your web server receiving a PUT/POST to `/some_prefix/{ACCOUNT_ID}/{TEST_ID}/{RANDOM}_test_credentials_file.txt`. The text file will contain something like `some random content: {RANDOM}`. Respond with a 201 to let KAZOO know the reception occurred.
+PUT-ing this to `/v2/accounts/{ACCOUNT_ID}/storage` will result in your web server receiving a PUT/POST to `/some_prefix/{ACCOUNT_ID}/{TEST_ID}/{RANDOM}_test_credentials_file.txt`. The text file will contain something like `some random content: {RANDOM}`. Respond with a 201 to let {% BRAND_NAME %} know the reception occurred.
 
-Next, KAZOO will attempt to GET that attachment back. Your web server will see a request for `/some_prefix/{ACCOUNT_ID}/{TEST_ID}/{RANDOM}_test_credentials_file.txt` and expects to see a 200 OK and the contents.
+Next, {% BRAND_NAME %} will attempt to GET that attachment back. Your web server will see a request for `/some_prefix/{ACCOUNT_ID}/{TEST_ID}/{RANDOM}_test_credentials_file.txt` and expects to see a 200 OK and the contents.
 
 If both the PUT/POST and the GET are successful, the API request to create the storage config will return a 201. You can now safely delete `{RANDOM}_test_credentials_file.txt` from your web server.
 
 ### On save
 
-Now, when a voicemail (for instance) is saved to the account, your web server will receive a PUT/POST request to `PUT req /some_prefix/{ACCOUNT_ID}/{MESSAGE_ID}/uploaded_file_{TIMESTAMP}.mp3` with the binary data as the body. Your web server will then need to respond with a 201 to let KAZOO know storing the data was successful.
+Now, when a voicemail (for instance) is saved to the account, your web server will receive a PUT/POST request to `PUT req /some_prefix/{ACCOUNT_ID}/{MESSAGE_ID}/uploaded_file_{TIMESTAMP}.mp3` with the binary data as the body. Your web server will then need to respond with a 201 to let {% BRAND_NAME %} know storing the data was successful.
 
 !!! note
-    Save processing of the file for a later process; return the 201 to KAZOO as soon as your server confirms storing the file was successful locally.
+    Save processing of the file for a later process; return the 201 to {% BRAND_NAME %} as soon as your server confirms storing the file was successful locally.
 
 ### Multipart requests
 
@@ -75,7 +75,7 @@ If you want to receive both the binary data and the JSON metadata, you can add `
 }
 ```
 
-On save, KAZOO will send a `multipart/mixed` request that will something like:
+On save, {% BRAND_NAME %} will send a `multipart/mixed` request that will something like:
 
 ```
 {BOUNDARY}
@@ -103,7 +103,7 @@ If the backend needs to receive the attachment binary as a base64-encoded value,
         }
 ```
 
-When fetching the attachment back from your server, you can return either the raw binary or the base64-encoded version. KAZOO will decode it if necessary.
+When fetching the attachment back from your server, you can return either the raw binary or the base64-encoded version. {% BRAND_NAME %} will decode it if necessary.
 
 ### Fetching the binary
 

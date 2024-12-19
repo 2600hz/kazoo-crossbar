@@ -1,6 +1,6 @@
 # Setup SSL support for Crossbar
 
-Note: all commands are run from `$KAZOO/applications/crossbar/priv/ssl/`.
+Note: all commands are run from `${path_to_crossbar_src}/priv/ssl/`.
 
 1. Create the root key (skip if you have a root key already that you want to use):
 

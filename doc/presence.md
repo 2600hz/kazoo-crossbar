@@ -2,7 +2,7 @@
 
 ## About Presence
 
-Kazoo tracks presence subscriptions and those states can be accessed/manipulated via this API.
+{% BRAND_NAME %} tracks presence subscriptions and those states can be accessed/manipulated via this API.
 
 There are three main ways to access presence information:
 
@@ -75,7 +75,7 @@ Where `{EXTENSION}` could be `*3101`, `110011`, or whatever other extensions are
 
 ### Post To Reset Presence State
 
-Sometimes folks subscribe for parking slots or other values that are not represented in the Kazoo REST API.
+Sometimes folks subscribe for parking slots or other values that are not represented in the Crossbar REST API.
 
 ```shell
 curl -v -X POST \

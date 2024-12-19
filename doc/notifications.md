@@ -58,7 +58,7 @@ Creating the configuration documents is all well and good, but it is necessary t
 
 ### Operation considerations
 
-In Kazoo versions prior to 3.19, notification templates were managed and processed by the `notify` application. In the newer Kazoo versions this has been replace by a robust and more featureful `teletype` application.
+In {% BRAND_NAME %} versions prior to 3.19, notification templates were managed and processed by the `notify` application. In the newer {% BRAND_NAME %} versions this has been replace by a robust and more featureful `teletype` application.
 
 All accounts will continue to be processed by the `notify` application until the Crossbar notification APIs are accessed for the first time (for instance, when using the Branding application in Monster). Once a client has accessed the APIs, a flag is set on the account telling the `notify` application to ignore processing and instructs the `teletype` application to process it instead. This allows administrators to run both `notify` and `teletype` concurrently without sending multiple copies of each notification.
 
@@ -450,7 +450,7 @@ curl -v -X POST \
     -H 'Content-Type: application/json' \
     -d '{"data": {
         "to": {"email_addresses": ["me@2600hz.com"]},
-        "from": "kazoo@2600hz.com",
+        "from": "noreply@2600hz.com",
         "subject": "Testing NOTIFICATION",
         "html": "SSUyNTIwJTI1dTI2NjElMjUyMFVuaWNvZGUlMjUyMQ==",
         "plain": "You just received an email! It was sent to {{user.email}}",
@@ -765,9 +765,9 @@ For specifying the actual message (and the email subject) you want to send, prov
 }
 ```
 
-### Send Message from your Kazoo Application
+### Send Message from your {% BRAND_NAME %} Application
 
-To send an update to a customer from your Kazoo Application, you can build payload include your application data (`<<"DataBag">>` field) and send it over AMQP using predefined particular template (`<<"Template-ID">>` field) or your own hard coded templates (`<<"HTML">>` and `<<"Text">>` fields):
+To send an update to a customer from your {% BRAND_NAME %} Application, you can build payload include your application data (`<<"DataBag">>` field) and send it over AMQP using predefined particular template (`<<"Template-ID">>` field) or your own hard coded templates (`<<"HTML">>` and `<<"Text">>` fields):
 
 ```erlang
 -spec send_account_update(ne_binary()) -> 'ok'.
@@ -800,11 +800,11 @@ build_customer_update_payload(AccountId) ->
 ```
 ## Configuring DKIM Signing for Email Notifications
 
-To enable DKIM signing for outgoing email notifications from your Kazoo application, you should configure below DKIM parameters on the whitelabel along with your email address.
+To enable DKIM signing for outgoing email notifications from your {% BRAND_NAME %} application, you should configure below DKIM parameters on the whitelabel along with your email address.
   1. configure and verify your email address using whitelabel APIs for email
   2. configure DKIM selector and upload the PEM file (plain private key generated with RSA) for your email address
   4. configure Domain on general whitelabel API
 
 You can refer whitelabel document for API information.
 
-When Kazoo lookus up the email notification template, it looks for the DKIM information related to the account which the template belongs. Therefore when an email template is found in an account, Kazoo attempts to fetch the whitelabel document and email document of `from` email address to extract DKIM parameters from that. If there are no DKIM parameters or the whitelabel document is not present for that account, then the email notification is sent without DKIM signing option. If DKIM parameters are available, email notification is sent with DKIM signing option.
+When {% BRAND_NAME %} lookus up the email notification template, it looks for the DKIM information related to the account which the template belongs. Therefore when an email template is found in an account, {% BRAND_NAME %} attempts to fetch the whitelabel document and email document of `from` email address to extract DKIM parameters from that. If there are no DKIM parameters or the whitelabel document is not present for that account, then the email notification is sent without DKIM signing option. If DKIM parameters are available, email notification is sent with DKIM signing option.

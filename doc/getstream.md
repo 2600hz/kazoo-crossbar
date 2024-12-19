@@ -32,7 +32,7 @@ curl -v -X PUT \
 
 ## Fetch getstream enabled users in the account
 
-Get the users who has the getstream feature enabled. For this kazoo will query the users who has pvt_chat.getstream.enabled parameter equal to true in user doc.
+Get the users who has the getstream feature enabled. For this {% BRAND_NAME %} will query the users who has pvt_chat.getstream.enabled parameter equal to true in user doc.
 
 > GET /v2/accounts/{ACCOUNT_ID}/users/getstream
 

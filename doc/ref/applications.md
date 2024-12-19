@@ -10,7 +10,7 @@ UI application metadata schema
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`api_url` | Optional API URL that application can use. default to Kazoo Crossbar API | `string(7..)` |   | `false` |  
+`api_url` | Optional API URL that application can use. default to {% BRAND_NAME %} Crossbar API | `string(7..)` |   | `false` |  
 `author` | Name of app publisher | `string(2..64)` |   | `true` |  
 `i18n` | Application translation | `object()` |   | `false` |  
 `icon` | Name of application icon | `string()` |   | `false` |  

@@ -12,7 +12,7 @@ Flow is:
   a. Optionally assign a `ratedeck_name` to each row to add rates to different ratedeck databases
 2. Create a service plan for ratedecks
   a. Add the service plan to account(s)
-3. When `{ACCOUNT_ID}` has a rate-able call, Kazoo `hotornot` application will lookup what ratedeck database to use
+3. When `{ACCOUNT_ID}` has a rate-able call, {% BRAND_NAME %} `hotornot` application will lookup what ratedeck database to use
   a. If using the trie algorithm, `hotornot` will find the PID with that ratedeck's trie and query it
   b. Otherwise, use the view of the ratedeck database to query for rates
 

@@ -38,7 +38,7 @@ Key | Description | Type | Default | Required | Support Level
 `media` | Configure audio/video/etc media options for this device | [#/definitions/endpoint.media](#endpointmedia) |   | `false` |  
 `metaflows` | The device metaflow parameters | [#/definitions/metaflows](#metaflows) |   | `false` |  
 `mobile.mdn` | The MDN - mobile device number | `string()` |   | `false` |  
-`mobile` | KAZOO devices that integrate with mobile providers | `object()` |   | `false` |  
+`mobile` | {% BRAND_NAME %} devices that integrate with mobile providers | `object()` |   | `false` |  
 `music_on_hold.media_id` | The ID of a media object that should be used as the music on hold | `string(0..2048)` |   | `false` |  
 `music_on_hold.options.[]` |   | `string('preserve-position' \| 'random-start')` |   | `false` |  
 `music_on_hold.options` | Options for playing music on hold | `array(string('preserve-position' \| 'random-start'))` |   | `false` |  
@@ -65,8 +65,8 @@ Key | Description | Type | Default | Required | Support Level
 `ringtones.external` | The alert info SIP header added when the call is from internal sources | `string(0..256)` |   | `false` |  
 `ringtones.internal` | The alert info SIP header added when the call is from external sources | `string(0..256)` |   | `false` |  
 `ringtones` | Ringtone Parameters | `object()` | `{}` | `false` |  
-`sip.custom_sip_headers.in` | Custom SIP Headers to be applied to calls inbound to Kazoo from the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
-`sip.custom_sip_headers.out` | Custom SIP Headers to be applied to calls outbound from Kazoo to the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
+`sip.custom_sip_headers.in` | Custom SIP Headers to be applied to calls inbound to {% BRAND_NAME %} from the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
+`sip.custom_sip_headers.out` | Custom SIP Headers to be applied to calls outbound from {% BRAND_NAME %} to the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
 `sip.custom_sip_headers.^[a-zA-z0-9_\-]+$` | The SIP header to add | `string() | boolean() | integer()` |   | `false` |  
 `sip.custom_sip_headers` | A property list of SIP headers | `object()` |   | `false` |  
 `sip.custom_sip_interface` | If the bridge string should target a different SIP interface | `string()` |   | `false` |  

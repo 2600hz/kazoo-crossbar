@@ -9,7 +9,7 @@
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `^_` | Ignores CouchDB fields prefixed by underscores | `boolean() | integer() | object() | string()` |   | `false` |  
-`^pvt_` | Ignores Kazoo private fields prefixed by pvt_ | `boolean() | integer() | string()` |   | `false` |  
+`^pvt_` | Ignores {% BRAND_NAME %} private fields prefixed by pvt_ | `boolean() | integer() | string()` |   | `false` |  
 `attachments` | Defines where and how to store attachments. Keys are 32-character identifiers to be used in storage plans | [#/definitions/storage.attachments](#storageattachments) |   | `false` |  
 `connections` | Describes alternative connections to use (such as alternative CouchDB instances | [#/definitions/storage.connections](#storageconnections) |   | `false` |  
 `id` | ID of the storage document | `string()` |   | `false` |  

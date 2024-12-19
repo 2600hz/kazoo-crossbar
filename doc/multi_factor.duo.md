@@ -8,7 +8,7 @@ Once the user has been prompted for their 2FA the UI will receive a `code` back.
 
 In your Duo admin panel, locate the Client ID, Client Secret, and API Hostname.
 
-Configure your KAZOO cluster:
+Configure your {% BRAND_NAME %} cluster:
 
 ```bash
 sup kapps_config set_default duo.universal client_id {DUO_CLIENT_ID}
@@ -29,7 +29,7 @@ sup kz_mfa_duo_universal duo_health_check
 health check resp: {"stat": "OK", "response": {"timestamp": {UNIX_TIMESTAMP}}}
 ```
 
-## Configure KAZOO to use Duo as an MFA provider
+## Configure {% BRAND_NAME %} to use Duo as an MFA provider
 
 As superduper admin, let's create the Duo OTP provider:
 
@@ -137,4 +137,4 @@ Will match a typical user_auth response payload.
 }
 ```
 
-KAZOO will use the code and redirect_uri to reach out to Duo's [access_token](https://duo.com/docs/oauthapi#access-token) API to verify the code against the user and confirm it matches the user attempting to authenticate.
+{% BRAND_NAME %} will use the code and redirect_uri to reach out to Duo's [access_token](https://duo.com/docs/oauthapi#access-token) API to verify the code against the user and confirm it matches the user attempting to authenticate.

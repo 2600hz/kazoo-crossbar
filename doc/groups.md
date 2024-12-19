@@ -175,9 +175,6 @@ curl -v -X GET \
                 "weight": 2
             }
         },
-        "ui_metadata": {
-            "ui": "kazoo-ui"
-        },
         "id": "1743724cd775bf6994380dbc79c1af09"
     },
     "status": "success"
@@ -229,9 +226,6 @@ curl -v -X POST \
                 "type": "device",
                 "weight": 2
             }
-        },
-        "ui_metadata": {
-            "ui": "kazoo-ui"
         },
         "id": "1743724cd775bf6994380dbc79c1af09"
     },

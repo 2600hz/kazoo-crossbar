@@ -2,7 +2,7 @@
 
 ## About Callflows
 
-Callflows are the instructions Kazoo uses to process a call. A callflow includes a list of numbers or regex patterns used by Kazoo to determine what callflow is used when a call comes in for an account. The `flow` parameter defines the tree of actions, allowing branching (such as in the `menu` action) and chaining actions together. You can also branch to other callflows and execute its `flow` (useful to avoid recreating the same sub-flow structure).
+Callflows are the instructions {% BRAND_NAME %} uses to process a call. A callflow includes a list of numbers or regex patterns used by {% BRAND_NAME %} to determine what callflow is used when a call comes in for an account. The `flow` parameter defines the tree of actions, allowing branching (such as in the `menu` action) and chaining actions together. You can also branch to other callflows and execute its `flow` (useful to avoid recreating the same sub-flow structure).
 
 #### Schema
 

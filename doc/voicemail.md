@@ -4,9 +4,9 @@
 
 Voicemail boxes store messages, recorded from the caller, for the voicemail box owner to listen to at a later time.
 
-### Differences between Kazoo version 3.x and 4.x
+### Differences between {% BRAND_NAME %} version 3.x and 4.x
 
-As of Kazoo 4.0 all new voicemail messages will be stored in the account MODbs.
+As of {% BRAND_NAME %} 4.0 all new voicemail messages will be stored in the account MODbs.
 
 Regarding this change voicemail API will ___no longer___ returns the messages array when fetching mailbox settings.
 The existing `/messages` API _should be_ used to manage messages in a voicemail box.

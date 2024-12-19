@@ -2,7 +2,7 @@
 
 ## About Applications
 
-Applications API is a new API to work with UI applications in Kazoo, it replaces the old deprecated
+Applications API is a new API to work with UI applications in Crossbar, it replaces the old deprecated
 [App Store](./apps_store.md) API to interacting with UI applications documents.
 
 New application doc now have a field to show the UI type of the applications, this allows
@@ -16,8 +16,8 @@ This API endpoint provide functionality for:
 
 ### Introduction to apps
 
-Kazoo provides mechanism to control access to the UI apps. For this, all UI apps metadata
-must be stored in Kazoo database. UI applications metadata are added to master account by system
+{% BRAND_NAME %} provides mechanism to control access to the UI apps. For this, all UI apps metadata
+must be stored in {% BRAND_NAME %} database. UI applications metadata are added to master account by system
 administrator. This can be done either through API or UI App started via 2600Hz Marketplace.
 
 #### Publish and block apps
@@ -92,7 +92,7 @@ UI application metadata schema
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`api_url` | Optional API URL that application can use. default to Kazoo Crossbar API | `string(7..)` |   | `false` |  
+`api_url` | Optional API URL that application can use. default to {% BRAND_NAME %} Crossbar API | `string(7..)` |   | `false` |  
 `author` | Name of app publisher | `string(2..64)` |   | `true` |  
 `i18n` | Application translation | `object()` |   | `false` |  
 `icon` | Name of application icon | `string()` |   | `false` |  

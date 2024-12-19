@@ -5,7 +5,7 @@
 Uploading media for custom music on hold, IVR prompts, or TTS (if a proper TTS engine is enabled).
 
 
-Kazoo provides some default system media files for common things like voicemail prompts. These are accessible via the media Crossbar endpoint as well, if your user has super duper admin privileges. To manipulate those resources, simply omit the `/accounts/{ACCOUNT_ID}` from the URI.
+{% BRAND_NAME %} provides some default system media files for common things like voicemail prompts. These are accessible via the media Crossbar endpoint as well, if your user has super duper admin privileges. To manipulate those resources, simply omit the `/accounts/{ACCOUNT_ID}` from the URI.
 
 For example, to get a listing of all system media files:
 
@@ -80,7 +80,7 @@ curl -s -S  -H "X-Goog-Api-Key: YOUR-TOKEN-HERE" \
 
 ### Normalize Media Files
 
-Kazoo can be configured to normalize uploaded media files. This can fix things like:
+{% BRAND_NAME %} can be configured to normalize uploaded media files. This can fix things like:
 
 * Normalizing volume
 * Fix clipping

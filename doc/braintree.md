@@ -6,7 +6,7 @@ DISCLAIMER: Please read the [docs available at braintree](https://developers.bra
 
 Braintree provides good docs to make you knowledgeable about what are important fields and what fields can be left from the API requests.
 
-This doc just provides examples as what is possible with the API but you should consult braintree and their API documentation before using kazoo's braintree modules.
+This doc just provides examples as what is possible with the API but you should consult braintree and their API documentation before using {% BRAND_NAME %}'s braintree modules.
 
 Test out braintree using sandbox account before deploying it in production as the module is considered *NOT PRODUCTION READY*.
 

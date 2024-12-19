@@ -2,7 +2,7 @@
 
 ## About Comments
 
-Allows you to add comments to "any" documents in Kazoo.
+Allows you to add comments to "any" documents in {% BRAND_NAME %}.
 
 #### Schema
 

@@ -5,11 +5,11 @@
     "description": "Call Detail Records",
     "properties": {
         "app_name": {
-            "description": "The Kazoo application that issued the CDR",
+            "description": "The {% BRAND_NAME %} application that issued the CDR",
             "type": "string"
         },
         "app_version": {
-            "description": "The internal Kazoo version number of the application that issued the CDR",
+            "description": "The internal {% BRAND_NAME %} version number of the application that issued the CDR",
             "type": "string"
         },
         "billing_seconds": {
@@ -68,7 +68,7 @@
             "additionalProperties": {
                 "type": "string"
             },
-            "description": "Kazoo-specific key/value pairs set on the channel",
+            "description": "{% BRAND_NAME %} specific key/value pairs set on the channel",
             "type": "object"
         },
         "custom_sip_headers": {
@@ -80,11 +80,11 @@
                     "properties": {
                         "in": {
                             "$ref": "custom_sip_headers",
-                            "description": "Custom SIP Headers to be applied to calls inbound to Kazoo from the endpoint"
+                            "description": "Custom SIP Headers to be applied to calls inbound to {% BRAND_NAME %} from the endpoint"
                         },
                         "out": {
                             "$ref": "custom_sip_headers",
-                            "description": "Custom SIP Headers to be applied to calls outbound from Kazoo to the endpoint"
+                            "description": "Custom SIP Headers to be applied to calls outbound from {% BRAND_NAME %} to the endpoint"
                         }
                     }
                 }
@@ -105,11 +105,11 @@
             "type": "integer"
         },
         "event_category": {
-            "description": "KAZOO specific key (Event-Category) included on each payload it publishes",
+            "description": "{% BRAND_NAME %} specific key (Event-Category) included on each payload it publishes",
             "type": "string"
         },
         "event_name": {
-            "description": "KAZOO specific key (Event-Name) included on each payload it publishes",
+            "description": "{% BRAND_NAME %} specific key (Event-Name) included on each payload it publishes",
             "type": "string"
         },
         "fax_bad_rows": {
@@ -145,7 +145,7 @@
             "type": "string"
         },
         "from": {
-            "description": "Built by Kazoo, depending on direction, to represent the From user",
+            "description": "Built by {% BRAND_NAME %}, depending on direction, to represent the From user",
             "type": "string"
         },
         "from_tag": {
@@ -185,7 +185,7 @@
             "type": "string"
         },
         "msg_id": {
-            "description": "KAZOO specific key (Msg-Id) assigned to each payload it publishes",
+            "description": "{% BRAND_NAME %} specific key (Msg-Id) assigned to each payload it publishes",
             "type": "string"
         },
         "node": {
@@ -221,7 +221,7 @@
             "type": "string"
         },
         "request": {
-            "description": "Built by Kazoo this is the processed request URI",
+            "description": "Built by {% BRAND_NAME %} this is the processed request URI",
             "type": "string"
         },
         "ringing_seconds": {
@@ -249,7 +249,7 @@
             "type": "integer"
         },
         "to": {
-            "description": "Built by Kazoo, depending on direction, to represent the To user",
+            "description": "Built by {% BRAND_NAME %}, depending on direction, to represent the To user",
             "type": "string"
         },
         "to_tag": {

@@ -5,16 +5,18 @@
 
 The following table outlines the configs that can be found in the `system_config` database, `crossbar` document:
 
+<!-- TODO: Update this table, find a way to make this table to populated from json schema -->
+
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `api_auth_tokens` | `integer()` | 35 | Default token cost of creating an auth token via API key |
-| `autoload_modules` | `list(string())` | See [here](https://github.com/2600hz/kazoo/blob/master/applications/crossbar/src/crossbar.hrl#L65-L119) | The list of Crossbar modules initially started |
+| `autoload_modules` | `list(string())` |  | The list of Crossbar modules initially started |
 | `cache_ttl` | `integer()` | 300 | Cache TTL, in seconds |
 | `cleanup_timer` | `integer()` | 86400 | Time, in seconds, to run the cleanup routines |
 | `compress_response_body` | `boolean()` | `true` | Whether to compress the response body before sending |
 | `default_allow_anonymous_quickcalls` | `boolean()` | `true` | Whether to allow unauthenticated quickcall API requests |
 | `default_language` | `string()` | `en-US` | The default language, if none are defined on the account |
-| `magic_path_patterns` | `list(string())` | See [here](https://github.com/2600hz/kazoo/blob/master/applications/crossbar/src/crossbar_default_handler.erl#L21-L24) | Magic path templates |
+| `magic_path_patterns` | `list(string())` |  | Magic path templates |
 | `max_upload_size` | `integer()` | 8000000 bytes (8Mb) | Max upload size for request bodies |
 | `maximum_range` | `integer()` | 2682000 | Maximum range, in seconds, for time-based view queries |
 | `pagination_page_size` | `integer()` | 50 | Default page size when paginating |

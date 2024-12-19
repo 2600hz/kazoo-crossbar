@@ -800,7 +800,7 @@ See [pushes.md](./pushes.md) for information about this action.
 
 ## Fetch (or create) a vCard
 
-[vCard](https://en.wikipedia.org/wiki/VCard) is a file format typically used in emails as a form of business card. Kazoo currently generates a 3.0 compatible vCard.
+[vCard](https://en.wikipedia.org/wiki/VCard) is a file format typically used in emails as a form of business card. {% BRAND_NAME %} currently generates a 3.0 compatible vCard.
 
 > GET /v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/vcard
 
@@ -885,7 +885,7 @@ curl -v -X GET \
 
 ## User Password Strength Compliance (Admins)
 
-By default, KAZOO is not enforcing a secure password is used. This can be changed on a per-system configuration or per-account basis.
+By default, {% BRAND_NAME %} is not enforcing a secure password is used. This can be changed on a per-system configuration or per-account basis.
 
 Enforcement is implemented as a list of regular expressions.
 
@@ -925,7 +925,7 @@ sup kapps_config flush auth.password
 sup kapps_account_config flush {ACCOUNT_ID} auth.password
 ```
 
-For more info please refer to [Kazoo Auth Password](https://docs.2600hz.com/git/2600hz/kazoo-core/kazoo_auth/doc/password.md) documentation.
+For more info please refer to [{% BRAND_NAME %} Auth Password](https://docs.2600hz.com/git/2600hz/kazoo-core/kazoo_auth/doc/password.md) documentation.
 
 ### Example of password enforcement API rejects insecure password
 
@@ -971,7 +971,7 @@ In the `system_config/crossbar` doc, set the `password_expiry_s` key to the amou
 
 When this key is undefined, no password exipration check is made.
 
-When set to a number (like 31540000 for seconds in a year) KAZOO will check the user's doc for a pvt field with the password creation timestamp:
+When set to a number (like 31540000 for seconds in a year) {% BRAND_NAME %} will check the user's doc for a pvt field with the password creation timestamp:
   a. If undefined (all user docs pre-password expiry, the password is considered expired
   b. If set, add UserPasswordTimestampS to ExpiryS and compare if less than now() (less than implies expired).
 

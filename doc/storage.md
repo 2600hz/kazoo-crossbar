@@ -12,7 +12,7 @@ A storage plan has three main components:
 
 ### Attachments
 
-Rather than storing binary data like voicemails, received faxes, and call recordings, in the Kazoo databases, it can be convenient to store them in third-party storage services like [Amazon S3](https://aws.amazon.com/s3), [Google Drive](https://www.google.com/drive/), etc. This keeps the binary data in a place that an account or user maintains control over. Kazoo keeps a pointer to the location when it needs to fetch the binary data (such as when you call into your voicemail box).
+Rather than storing binary data like voicemails, received faxes, and call recordings, in the {% BRAND_NAME %} databases, it can be convenient to store them in third-party storage services like [Amazon S3](https://aws.amazon.com/s3), [Google Drive](https://www.google.com/drive/), etc. This keeps the binary data in a place that an account or user maintains control over. {% BRAND_NAME %} keeps a pointer to the location when it needs to fetch the binary data (such as when you call into your voicemail box).
 
 The `attachments` object configures storage back-ends - for instance, if you want to store to S3, you'll add your AWS secret and key and your S3 bucket information here.
 
@@ -45,7 +45,7 @@ sup crossbar_maintenance start_module cb_storage
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `^_` | Ignores CouchDB fields prefixed by underscores | `boolean() | integer() | object() | string()` |   | `false` |  
-`^pvt_` | Ignores Kazoo private fields prefixed by pvt_ | `boolean() | integer() | string()` |   | `false` |  
+`^pvt_` | Ignores {% BRAND_NAME %} private fields prefixed by pvt_ | `boolean() | integer() | string()` |   | `false` |  
 `attachments` | Defines where and how to store attachments. Keys are 32-character identifiers to be used in storage plans | [#/definitions/storage.attachments](#storageattachments) |   | `false` |  
 `connections` | Describes alternative connections to use (such as alternative CouchDB instances | [#/definitions/storage.connections](#storageconnections) |   | `false` |  
 `id` | ID of the storage document | `string()` |   | `false` |  
@@ -431,7 +431,7 @@ curl -v -X DELETE \
 
 ## Skipping attachment settings validation
 
-When a storage plan is PUT/POSTed to Crossbar, KAZOO will attempt to use the attachments' settings and store a small text file to verify that files can be stored remotely. KAZOO will then issue a GET request to read the file back to test retrieval.
+When a storage plan is PUT/POSTed to Crossbar, {% BRAND_NAME %} will attempt to use the attachments' settings and store a small text file to verify that files can be stored remotely. {% BRAND_NAME %} will then issue a GET request to read the file back to test retrieval.
 
 For "dumb" storage backends this is typically a non-issue as storing/retrieving files is what the backend does!
 
@@ -450,7 +450,7 @@ curl -v -X PUT \
 
 ### Enabling This Feature
 
-By default, Kazoo will not allow clients to skip settings validation. Clients that include the `validate_settings` request parameter on these systems will receive a 400 validation error indicating attachment storage settings must be tested.
+By default, {% BRAND_NAME %} will not allow clients to skip settings validation. Clients that include the `validate_settings` request parameter on these systems will receive a 400 validation error indicating attachment storage settings must be tested.
 
 Sysadmins can allow clients by setting a `system_config` flag: `sup kzs_plan allow_validation_overrides`
 
@@ -459,7 +459,7 @@ Disabling it later is similar: `sup kzs_plan disallow_validation_overrides`
 
 ## URL formatting
 
-It is possible to craft the URLs used by the handler based on the JSON document and attachment being saved by specifying a `field_list` array of objects that will help KAZOO map values to the generated URL:
+It is possible to craft the URLs used by the handler based on the JSON document and attachment being saved by specifying a `field_list` array of objects that will help {% BRAND_NAME %} map values to the generated URL:
 
 ```json
 {UUID}:{

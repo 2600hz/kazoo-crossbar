@@ -20,7 +20,7 @@
             ]
         },
         "^pvt_": {
-            "description": "Ignores Kazoo private fields prefixed by pvt_",
+            "description": "Ignores {% BRAND_NAME %} private fields prefixed by pvt_",
             "oneOf": [
                 {
                     "type": "boolean"

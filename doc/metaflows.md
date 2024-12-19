@@ -7,7 +7,7 @@ passively listen for DTMF triggers from calls, or can be triggered actively on s
 calls through the [Channels API](channels.md).
 
 Konami Pro provides some common call actions directly, and can also use any 
-[callflow object](https://docs.2600hz.com/kazoo/callflow/).
+[callflow object](callflows.md#schema).
 
 #### Schema
 
@@ -102,9 +102,9 @@ curl -v -X POST \
 }
 ```
 
-In the above example, the `binding_digit` is `*` which, when pressed on the phone's keypad, tells Kazoo that a metaflow is starting. `2(\\d+)` tells Kazoo to look for a 2 and then capture one or more digits.
+In the above example, the `binding_digit` is `*` which, when pressed on the phone's keypad, tells {% BRAND_NAME %} that a metaflow is starting. `2(\\d+)` tells {% BRAND_NAME %} to look for a 2 and then capture one or more digits.
 
-Thus `*21234` would instruct Kazoo to blind-transfer the caller to extension `1234`.
+Thus `*21234` would instruct {% BRAND_NAME %} to blind-transfer the caller to extension `1234`.
 
 ## Remove Metaflows from the Account
 

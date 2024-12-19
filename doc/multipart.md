@@ -4,15 +4,16 @@ There are numerous ways to send data in HTTP protocol, and we aren't going to go
 
 This section tries to describe things that in general may help you to better understand how an API works.
 
-Sending data in HTTP protocol is possible with HTTP methods like `PUT`, `POST`, `PATCH` and `DELETE`. Another important part of the request is setting the correct HTTP headers, like `Content-Type` which specifies how the server (in this case Kazoo) should interpret the payload.
+Sending data in HTTP protocol is possible with HTTP methods like `PUT`, `POST`, `PATCH` and `DELETE`. Another important part of the request is
+setting the correct HTTP headers, like `Content-Type` which specifies how the server (in this case Crossbar server) should interpret the payload.
 
-The main content in Kazoo is `application/json`. This indicates the payload is JSON data structure in plain text.
+The main content in Crossbar is `application/json`. This indicates the payload is JSON data structure in plain text.
 
-Another common content type (or encoding) is `text/plain`. You may see this for example in Kazoo's Notification API endpoint when you are trying to fetch or update the notification plain text template attachments.
+Another common content type (or encoding) is `text/plain`. You may see this for example in {% BRAND_NAME %}'s Notification API endpoint when you are trying to fetch or update the notification plain text template attachments.
 
 The other content types are either binary data like `image/png` or `audio/mp3`. There are multiple way to send binary data: read below to learn more.
 
-Kazoo also supports `application/base64` content type. This type is handy to upload very small image files like icon and logo.
+Crossbar also supports `application/base64` content type. This type is handy to upload very small image files like icon and logo.
 
 ## Different ways to send data
 
@@ -20,7 +21,7 @@ Kazoo also supports `application/base64` content type. This type is handy to upl
 
 #### Send JSON data as `application/json`
 
-This is best way to send JSON data to Kazoo. The payload is JSON as plain text with HTTP header set to `application/json`.
+This is best way to send JSON data to Crossbar. The payload is JSON as plain text with HTTP header set to `application/json`.
 
 Here is an example plain text of a HTTP request with `application/x-www-form-urlencoded`:
 
@@ -158,7 +159,7 @@ curl -v -X PUT -i \
 
 ### Send data as `application/base64`
 
-This is another way to send data (binary or JSON) to Kazoo. Base64 is a text encoding mechanism, [RFC 4648](http://tools.ietf.org/html/rfc4648). This is useful to send very small files in plain text, like icon or logo. For bigger files it is better to use binary method or `multipart/mixed`.
+This is another way to send data (binary or JSON) to Crossbar. Base64 is a text encoding mechanism, [RFC 4648](http://tools.ietf.org/html/rfc4648). This is useful to send very small files in plain text, like icon or logo. For bigger files it is better to use binary method or `multipart/mixed`.
 
 For using this method you have to set `Content-Type: application/base64` and send body part in Base64 encoded plain text.
 

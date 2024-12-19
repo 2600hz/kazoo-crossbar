@@ -13,8 +13,8 @@ Key | Description | Type | Default | Required | Support Level
 `caller_id_number` | Explicitly set caller id number | `string()` |   | `false` |  
 `custom_application_vars./[a-zA-Z0-9\-_]+/` |   | `string()` |   | `false` |  
 `custom_application_vars` | Key-value pairs to set as custom_application_vars on the channel | `object()` | `{}` | `false` |  
-`custom_sip_headers.in` | Custom SIP Headers to be applied to calls inbound to Kazoo from the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
-`custom_sip_headers.out` | Custom SIP Headers to be applied to calls outbound from Kazoo to the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
+`custom_sip_headers.in` | Custom SIP Headers to be applied to calls inbound to {% BRAND_NAME %} from the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
+`custom_sip_headers.out` | Custom SIP Headers to be applied to calls outbound from {% BRAND_NAME %} to the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
 `custom_sip_headers.^[a-zA-z0-9_\-]+$` | The SIP header to add | `string() | boolean() | integer()` |   | `false` |  
 `custom_sip_headers` | A property list of SIP headers | `object()` |   | `false` |  
 `dial_first` | Determines what will be dialed first: extension or contact | `string('extension' \| 'contact')` |   | `false` |  

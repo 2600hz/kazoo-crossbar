@@ -29,7 +29,7 @@
 | `init_app/2`                          | `(AppPath,AppUrl)`                      | Initializes (or updates) the app to use the `AppUrl` for API requests                                |
 | `init_apps/1`                         | `(AppsPath)`                            | `AppsPath` is the filesystem path to a directory of apps (which each have a `metadata/app.json` file |
 | `init_apps/2`                         | `(AppsPath,AppUrl)`                     | Initializes (or updates) the apps to use the `AppUrl` for API requests                               |
-| `migrate/0`                           |                                         | Applies any data migrations needed between versions of KAZOO                                         |
+| `migrate/0`                           |                                         | Applies any data migrations needed between versions of {% BRAND_NAME %}                                         |
 | `migrate/1`                           | `(AccountDbs)`                          |                                                                                                      |
 | `migrate_call_forward/1`              | `(AccountDb)`                           |                                                                                                      |
 | `move_account/2`                      | `(Account,ToAccount)`                   | Moves `Account` to be a child of `ToAccount`                                                         |

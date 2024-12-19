@@ -4,7 +4,7 @@ Contact List represents the basic contact information including name and number 
 
 #### About Contact List
 
-This contains the contact information of Featurecodes configured for `call_forward`, `hotdesk`, `park` etc. and Numbers and Extensions configured in `menu`, `conference`, `directory` etc. in Kazoo system.
+This contains the contact information of Featurecodes configured for `call_forward`, `hotdesk`, `park` etc. and Numbers and Extensions configured in `menu`, `conference`, `directory` etc. in {% BRAND_NAME %} system.
 
 Please note that if `Hide from Contact List` is enabled for a number/extension, it will be excluded from the Contact List.
 

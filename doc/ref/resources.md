@@ -22,12 +22,12 @@ Key | Description | Type | Default | Required | Support Level
 `classifiers./.+/.weight_cost` | A value between 0 and 100 that determines the order of resources when multiple can be used | `integer(0..100)` | `50` | `false` |  
 `classifiers./.+/` |   | `object()` |   | `false` |  
 `classifiers` | Resource classifiers to use as rules when matching against dialed numbers | `object()` |   | `false` |  
-`custom_channel_vars.in` | Custom Channel Vars to be applied to calls inbound to Kazoo from the endpoint | [#/definitions/custom_channel_vars](#custom_channel_vars) |   | `false` |  
-`custom_channel_vars.out` | Custom Channel Vars to be applied to calls outbound from Kazoo to the endpoint | [#/definitions/custom_channel_vars](#custom_channel_vars) |   | `false` |  
+`custom_channel_vars.in` | Custom Channel Vars to be applied to calls inbound to {% BRAND_NAME %} from the endpoint | [#/definitions/custom_channel_vars](#custom_channel_vars) |   | `false` |  
+`custom_channel_vars.out` | Custom Channel Vars to be applied to calls outbound from {% BRAND_NAME %} to the endpoint | [#/definitions/custom_channel_vars](#custom_channel_vars) |   | `false` |  
 `custom_channel_vars.^[a-zA-z0-9_\-]+$` | The Custom Channel Var to add | `string() | boolean() | integer() | object()` |   | `false` |  
 `custom_channel_vars` | A property list of Channel Vars | `object()` |   | `false` |  
-`custom_sip_headers.in` | Custom SIP Headers to be applied to calls inbound to Kazoo from the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
-`custom_sip_headers.out` | Custom SIP Headers to be applied to calls outbound from Kazoo to the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
+`custom_sip_headers.in` | Custom SIP Headers to be applied to calls inbound to {% BRAND_NAME %} from the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
+`custom_sip_headers.out` | Custom SIP Headers to be applied to calls outbound from {% BRAND_NAME %} to the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
 `custom_sip_headers.^[a-zA-z0-9_\-]+$` | The SIP header to add | `string() | boolean() | integer()` |   | `false` |  
 `custom_sip_headers` | A property list of SIP headers | `object()` |   | `false` |  
 `custom_sip_interface` | The name of a custom SIP interface | `string()` |   | `false` |  
@@ -46,12 +46,12 @@ Key | Description | Type | Default | Required | Support Level
 `gateways.[].caller_id_type` | The type of caller id to use | `string('internal' \| 'external' \| 'emergency')` |   | `false` |  
 `gateways.[].channel_selection` | Automatic selection of the channel within the span: ascending starts at 1 and moves up; descending is the opposite | `string('ascending' \| 'descending')` | `ascending` | `false` |  
 `gateways.[].codecs` | A list of single list codecs supported by this gateway (to support backward compatibility) | [#/definitions/codecs](#codecs) |   | `false` |  
-`gateways.[].custom_channel_vars.in` | Custom Channel Vars to be applied to calls inbound to Kazoo from the endpoint | [#/definitions/custom_channel_vars](#custom_channel_vars) |   | `false` |  
-`gateways.[].custom_channel_vars.out` | Custom Channel Vars to be applied to calls outbound from Kazoo to the endpoint | [#/definitions/custom_channel_vars](#custom_channel_vars) |   | `false` |  
+`gateways.[].custom_channel_vars.in` | Custom Channel Vars to be applied to calls inbound to {% BRAND_NAME %} from the endpoint | [#/definitions/custom_channel_vars](#custom_channel_vars) |   | `false` |  
+`gateways.[].custom_channel_vars.out` | Custom Channel Vars to be applied to calls outbound from {% BRAND_NAME %} to the endpoint | [#/definitions/custom_channel_vars](#custom_channel_vars) |   | `false` |  
 `gateways.[].custom_channel_vars.^[a-zA-z0-9_\-]+$` | The Custom Channel Var to add | `string() | boolean() | integer() | object()` |   | `false` |  
 `gateways.[].custom_channel_vars` | A property list of Channel Vars | `object()` |   | `false` |  
-`gateways.[].custom_sip_headers.in` | Custom SIP Headers to be applied to calls inbound to Kazoo from the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
-`gateways.[].custom_sip_headers.out` | Custom SIP Headers to be applied to calls outbound from Kazoo to the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
+`gateways.[].custom_sip_headers.in` | Custom SIP Headers to be applied to calls inbound to {% BRAND_NAME %} from the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
+`gateways.[].custom_sip_headers.out` | Custom SIP Headers to be applied to calls outbound from {% BRAND_NAME %} to the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
 `gateways.[].custom_sip_headers.^[a-zA-z0-9_\-]+$` | The SIP header to add | `string() | boolean() | integer()` |   | `false` |  
 `gateways.[].custom_sip_headers` | A property list of SIP headers | `object()` |   | `false` |  
 `gateways.[].custom_sip_interface` | The name of a custom SIP interface | `string()` |   | `false` |  

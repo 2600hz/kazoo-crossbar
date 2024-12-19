@@ -1,6 +1,6 @@
 # Tasks - Background Jobs
 
-Kazoo Tasks enables listing, adding, starting & removing generic background tasks.
+{% BRAND_NAME %} Tasks enables listing, adding, starting & removing generic background tasks.
 
 #### Schema
 

@@ -4,7 +4,7 @@
 
 Functions enable dynamic call processing based on customized serverless function and callflow document as input.
 
-Pivot allows you to receive a per-call HTTP request to decide what to do, generally to access data sources not available to KAZOO. However, if your business logic is self-contained and side-effect free (and not directly representable via the callflow JSON structure), functions allow you to create that custom logic and have it run within the KAZOO infrastructure. This minimizes the time spent processing the function (as it is run "locally") and doesn't require you to have to stand up separate infrastructure to handle the HTTP request and generate the JSON response.
+Pivot allows you to receive a per-call HTTP request to decide what to do, generally to access data sources not available to {% BRAND_NAME %}. However, if your business logic is self-contained and side-effect free (and not directly representable via the callflow JSON structure), functions allow you to create that custom logic and have it run within the {% BRAND_NAME %} infrastructure. This minimizes the time spent processing the function (as it is run "locally") and doesn't require you to have to stand up separate infrastructure to handle the HTTP request and generate the JSON response.
 
 #### Schema
 
@@ -23,7 +23,7 @@ Key | Description | Type | Default | Required | Support Level
 
 ## User-defined Functions
 
-Effectively, KAZOO gives you `function(call) {...}` and asks you to supply the `...`. You have the `call` object containing the same [request parameters](applications/pivot/doc/requests/) as you would in Pivot (such as `call['To']` or `call['Call-ID']`).
+Effectively, {% BRAND_NAME %} gives you `function(call) {...}` and asks you to supply the `...`. You have the `call` object containing the same [request parameters](applications/pivot/doc/requests/) as you would in Pivot (such as `call['To']` or `call['Call-ID']`).
 
 ### Example 1: Say Hi!
 
@@ -49,7 +49,7 @@ As of now, [ECMA-262 5th edition (“ES5”) of the language](https://docs.couch
 
 ## Fetch available functions on the system
 
-Depending on the version of the KAZOO system running, the available functions may differ. Use this API to query the system for available functions.
+Depending on the version of the {% BRAND_NAME %} system running, the available functions may differ. Use this API to query the system for available functions.
 
 > GET /v2/functions
 
@@ -206,7 +206,7 @@ javascript = "<absolute path>/bin/couchjs --eval <absolute path>/share/server/ma
 
 It is recommended that you do not run the `eval`/`new Function()` enabled CouchDB instance in your main DB cluster.
 
-Fortunately, KAZOO allows you to define alternate CouchDB connections for specific databases or database classifications. Since all `function` documents are stored in the `functions` aggregate database, you can create a connection just for the `functions` database that points to a entirely separated CouchDB server or cluster:
+Fortunately, {% BRAND_NAME %} allows you to define alternate CouchDB connections for specific databases or database classifications. Since all `function` documents are stored in the `functions` aggregate database, you can create a connection just for the `functions` database that points to a entirely separated CouchDB server or cluster:
 
 Create a 32-char UUID: `> UUID = kz_binary:rand_hex(16).` => `"9ee5860b4d717907dfc63274af0d06e9"`
 

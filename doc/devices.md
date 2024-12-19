@@ -3,7 +3,7 @@
 ## About Devices
 
 Devices are the endpoints assigned to an account that serve that account's needs.
-Devices like fax machines, SIP phones, soft phone clients, and cell phones (via call forwarding), among others, can be represented by Kazoo devices.
+Devices like fax machines, SIP phones, soft phone clients, and cell phones (via call forwarding), among others, can be represented by {% BRAND_NAME %} devices.
 
 #### Schema
 
@@ -41,7 +41,7 @@ Key | Description | Type | Default | Required | Support Level
 `media` | Configure audio/video/etc media options for this device | [#/definitions/endpoint.media](#endpointmedia) |   | `false` |  
 `metaflows` | The device metaflow parameters | [#/definitions/metaflows](#metaflows) |   | `false` |  
 `mobile.mdn` | The MDN - mobile device number | `string()` |   | `false` |  
-`mobile` | KAZOO devices that integrate with mobile providers | `object()` |   | `false` |  
+`mobile` | {% BRAND_NAME %} devices that integrate with mobile providers | `object()` |   | `false` |  
 `music_on_hold.media_id` | The ID of a media object that should be used as the music on hold | `string(0..2048)` |   | `false` |  
 `music_on_hold.options.[]` |   | `string('preserve-position' \| 'random-start')` |   | `false` |  
 `music_on_hold.options` | Options for playing music on hold | `array(string('preserve-position' \| 'random-start'))` |   | `false` |  
@@ -68,8 +68,8 @@ Key | Description | Type | Default | Required | Support Level
 `ringtones.external` | The alert info SIP header added when the call is from internal sources | `string(0..256)` |   | `false` |  
 `ringtones.internal` | The alert info SIP header added when the call is from external sources | `string(0..256)` |   | `false` |  
 `ringtones` | Ringtone Parameters | `object()` | `{}` | `false` |  
-`sip.custom_sip_headers.in` | Custom SIP Headers to be applied to calls inbound to Kazoo from the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
-`sip.custom_sip_headers.out` | Custom SIP Headers to be applied to calls outbound from Kazoo to the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
+`sip.custom_sip_headers.in` | Custom SIP Headers to be applied to calls inbound to {% BRAND_NAME %} from the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
+`sip.custom_sip_headers.out` | Custom SIP Headers to be applied to calls outbound from {% BRAND_NAME %} to the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
 `sip.custom_sip_headers.^[a-zA-z0-9_\-]+$` | The SIP header to add | `string() | boolean() | integer()` |   | `false` |  
 `sip.custom_sip_headers` | A property list of SIP headers | `object()` |   | `false` |  
 `sip.custom_sip_interface` | If the bridge string should target a different SIP interface | `string()` |   | `false` |  
@@ -423,7 +423,7 @@ In 5.2, call forwarding is being retooled to allow more dynamic decision-making 
 
 As such, the `call_forward` object (if it exists) will be transformed into a set of sub-objects representing the new call forwarding options.
 
-KAZOO will automatically "fix" the legacy format to the new format when processing calls; saving of the device doc with "call_forward" in legacy mode will result in schema errors.
+{% BRAND_NAME %} will automatically "fix" the legacy format to the new format when processing calls; saving of the device doc with "call_forward" in legacy mode will result in schema errors.
 
 #### Mapping legacy settings to the new format
 
@@ -559,9 +559,9 @@ curl -v -X GET \
 }
 ```
 
-### New in Kazoo 5: List devices with their statuses
+### New in {% BRAND_NAME %} 5: List devices with their statuses
 
-Using Kazoo 5+, If query string `?with_status=true` is set result will also includes the device registration statuses (see [Fetch registration statuses of all devices](#fetch-registration-statuses-of-all-devices)):
+Using {% BRAND_NAME %} 5+, If query string `?with_status=true` is set result will also includes the device registration statuses (see [Fetch registration statuses of all devices](#fetch-registration-statuses-of-all-devices)):
 
 ```shell
 curl -v -X GET \
@@ -895,7 +895,7 @@ curl -v -X PATCH \
 
 ## Send a SIP NOTIFY to a device
 
-Kazoo will generate the NOTIFY packet if the device is registered.
+{% BRAND_NAME %} will generate the NOTIFY packet if the device is registered.
 
 PUT body options:
 
@@ -950,7 +950,7 @@ An example for a Yealink might look like (thanks to forum user [https://forums.2
 This will fetch the current registrations of any devices.
 
 
-**New in Kazoo 5:**
+**New in {% BRAND_NAME %} 5:**
 
 This will list all devices including non-registered devices.
 Some device types will never be expected to be registered. This list of device types are stored in System Config `always_registered_device_types` in `crossbar.devices`.
@@ -994,7 +994,7 @@ See [pushes.md](./pushes.md) for information about this action.
 
 ## Reboot a device
 
-Some devices support receiving SIP NOTIFY packets with `event` = `check-sync`. This is typically used to reboot the phone if the configuration has changed. Kazoo will generate the NOTIFY packet if the device is registered.
+Some devices support receiving SIP NOTIFY packets with `event` = `check-sync`. This is typically used to reboot the phone if the configuration has changed. {% BRAND_NAME %} will generate the NOTIFY packet if the device is registered.
 
 > POST /v2/accounts/{ACCOUNT_ID}/devices/{DEVICE_ID}/sync
 

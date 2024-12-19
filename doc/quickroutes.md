@@ -2,11 +2,11 @@
 
 ## About Quickroutes
 
-Associates a number with a list of endpoints to dial, bypassing internal KAZOO call routing decisions.
+Associates a number with a list of endpoints to dial, bypassing internal {% BRAND_NAME %} call routing decisions.
 
 For example, imagine a callflow for DID +12125551234 that does TTS(Hi there) -> User(UUID).
 
-If a quickroute is created for +12125551234 to route a KAZOO device's ID, the caller would not hear the TTS played, and the device would immediately start ringing.
+If a quickroute is created for +12125551234 to route a {% BRAND_NAME %} device's ID, the caller would not hear the TTS played, and the device would immediately start ringing.
 
 Quickroutes bypass all routing and account limiting so should only be in place for good reasons.
 

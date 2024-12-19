@@ -2,9 +2,9 @@
 
 ## Crossbar
 
-Kazoo's REST API server is called Crossbar, from which developers can build applications that configure Kazoo's myriad of services and functionalities.
+{% BRAND_NAME %}'s REST API server is called Crossbar, from which developers can build applications that configure {% BRAND_NAME %}'s myriad of services and functionalities.
 
-On Kazoo startup, Crossbar will begin listening on the configured port (default is 8000).
+On {% BRAND_NAME %} startup, Crossbar will begin listening on the configured port (default is 8000).
 
 ```
 curl {CROSSBAR_SERVER}:8000
@@ -223,7 +223,7 @@ The pagination response keys are `next_start_key`, `page_size`, and `start_key`.
 
 Assuming no changes are made to the underlying documents, `start_key` will get you this page of results, and `next_start_key` will give you a pointer to the next page (imagine a linked-list).
 
-### Encoded Start Keys (Kazoo 4.2+ Only)
+### Encoded Start Keys ({% BRAND_NAME %} 4.2+ Only)
 
 As you can see from the response above, both the `start_key` and `next_start_key` are encoded as URL-safe Base64 strings of their Erlang term representation. A couple character substitutions (`_` for `/` and `_` for `+`) and one character removal (`=`) ensures a string that plays nice in URLs.
 
@@ -272,7 +272,7 @@ For individual API request, you can also include a `page_size` query string para
 
 ### Setting sorting order
 
-By default, Crossbar returns the results in descending order. To get results in ascending order either set `ascending=true` (Kazoo 4.2+ only) or `descending=false` in the request query string.
+By default, Crossbar returns the results in descending order. To get results in ascending order either set `ascending=true` ({% BRAND_NAME %} 4.2+ only) or `descending=false` in the request query string.
 
 !!! note
     The field used to sort the individual API results depends on the internal implementation of the API endpoint and is not controllable by the client.
@@ -283,9 +283,9 @@ If you want to disable pagination for a request, simply include `paginate=false`
 
 #### Protecting from (un)intentional abuse
 
-Since pagination can be turned off by a client-supplied query string parameter, it is important that KAZOO still protect itself from overly large datasets being loaded. Examples seen include large CDR listings, call recording listings, and ledger listings.
+Since pagination can be turned off by a client-supplied query string parameter, it is important that Crossbar still protect itself from overly large datasets being loaded. Examples seen include large CDR listings, call recording listings, and ledger listings.
 
-Therefore, during a non-paginated request, KAZOO monitors memory consumption of the handling server process and will abort the request if the processing is exceeding a high watermark setting (configured by the system operator). The client can expect to receive an HTTP "416 Range Not Satisfiable" error as a result of exceeding the limit.
+Therefore, during a non-paginated request, Crossbar monitors memory consumption of the handling server process and will abort the request if the processing is exceeding a high watermark setting (configured by the system operator). The client can expect to receive an HTTP "416 Range Not Satisfiable" error as a result of exceeding the limit.
 
 The memory limit threshold can be set by system administrators with
 
@@ -295,7 +295,7 @@ In this case, memory per-request (for listings) is constrained to 10MB.
 
 ## Chunked Response
 
-Starting with Kazoo 4.2, most of the summary API endpoints can send [chunked responses](https://en.wikipedia.org/wiki/Chunked_transfer_encoding). Some known APIs, which tend to have larger datasets, are chunked by default (e.g. `/cdrs/interaction` and `/ledgers/{LEDGER}`).
+Starting with {% BRAND_NAME %} 4.2, most of the summary API endpoints can send [chunked responses](https://en.wikipedia.org/wiki/Chunked_transfer_encoding). Some known APIs, which tend to have larger datasets, are chunked by default (e.g. `/cdrs/interaction` and `/ledgers/{LEDGER}`).
 
 The query string parameter `is_chunked` (boolean value) can be used to enable or disable chunking per-request.
 
@@ -303,7 +303,7 @@ To set the default chunk size, you can use `chunk_size` in the query string. Def
 
 ## Timestamps
 
-KAZOO, unless explicitly stated, represents time in Gregorian seconds.
+{% BRAND_NAME %}, unless explicitly stated, represents time in Gregorian seconds.
 
 Conversion with UNIX timestamps is straightforward:
 

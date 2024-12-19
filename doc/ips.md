@@ -317,7 +317,7 @@ added IP 1.2.3.4 to available dedicated ips
 Key | Description | Type | Default | Required
 --- | ----------- | ---- | ------- | --------
 `{IP}` | The IP address of the proxy | `string()` |   | `true`
-`{ZONE}` | The Kazoo zone this proxy is assigned  | `string()` |   | `true`
+`{ZONE}` | The {% BRAND_NAME %} zone this proxy is assigned  | `string()` |   | `true`
 `{HOST}` | The Hostname associated with the IP | `string()` | | `true`
 
 Once you've added IPs to the system, you can assign those to different customer accounts to proxy their calls through using the above Crossbar APIs.

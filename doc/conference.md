@@ -573,9 +573,6 @@ Playing a media file to everyone in a conference:
         "numbers": [],
         "pins": []
     },
-    "ui_metadata": {
-        "ui": "kazoo-ui"
-    },
     "moderator": {
         "join_deaf": false,
         "join_muted": false,
@@ -653,15 +650,15 @@ if parameter is unset, then all events are published.
         "authorizing_id": "{AUTHZ_ID}",
         "authorizing_type": "device",
         "owner_id": "{OWNER_ID}",
-        "presence_id": "1000@kamailio.kazoo",
+        "presence_id": "1000@kamailio.local.dev",
         "fetch_id": "{FETCH_ID}",
         "bridge_id": "{BRIDGE_ID}",
         "precedence": 5,
-        "realm": "kamailio.kazoo",
+        "realm": "kamailio.local.dev",
         "username": "sip1",
         "call_interaction_id": "{INTERACTION_ID}"
     },
-    "channel_presence_id": "1000@kamailio.kazoo",
+    "channel_presence_id": "1000@kamailio.local.dev",
     "caller_id_number": "sip1",
     "caller_id_name": "sip1",
     "mute_detect": false,
@@ -675,10 +672,10 @@ if parameter is unset, then all events are published.
     "participant_id": 20,
     "instance_id": "{INSTANCE_ID}",
     "conference_id": "{CONFERENCE_ID}",
-    "focus": "freeswitch@freeswitch.kazoo",
+    "focus": "freeswitch@freeswitch.local.dev",
     "call_id": "{CALL_ID}",
     "event": "add-member",
-    "node": "kazoo_apps@kazoo.kazoo",
+    "node": "kazoo_apps@local.dev",
     "msg_id": "{MSG_ID}",
     "event_name": "participant_event",
     "event_category": "conference",

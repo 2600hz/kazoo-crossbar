@@ -4,10 +4,10 @@
 
 The Call Inspector Crossbar resource allows the client to query and inspect data related to the Call Inspector application.
 
-[More info on Call Inspector](https://github.com/2600hz/kazoo/blob/master/applications/call_inspector/doc/README.md).
+[More info on Call Inspector](https://docs.2600hz.com/git/2600hz/kazoo-call-inspector/doc/README.md).
 
 
-The Call Inspector endpoint is not loaded on start in a default Kazoo installation.
+The Call Inspector endpoint is not loaded on start in a default {% BRAND_NAME %} installation.
 
 * To enable at runtime:
     * `sup crossbar_maintenance start_module cb_call_inspector`

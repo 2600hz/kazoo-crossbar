@@ -2,7 +2,7 @@
 
 ## About Webhooks
 
-Webhooks allow Kazoo to send HTTP requests to a third-party web server, alerting that server of events occurring within Kazoo. Typically, events would be fired for new calls, when a call is answered, and when a call is finished, though other events will be added in the future.
+Webhooks allow {% BRAND_NAME %} to send HTTP requests to a third-party web server, alerting that server of events occurring within {% BRAND_NAME %}. Typically, events would be fired for new calls, when a call is answered, and when a call is finished, though other events will be added in the future.
 
 #### Schema
 
@@ -31,7 +31,7 @@ Key | Description | Type | Default | Required | Support Level
 
 ## Fetch available webhooks on the system
 
-Depending on the version of the KAZOO system running, the available webhooks may differ. Use this API to query the system for available webhooks.
+Depending on the version of the {% BRAND_NAME %} system running, the available webhooks may differ. Use this API to query the system for available webhooks.
 
 > GET /v2/webhooks
 
@@ -52,7 +52,7 @@ curl -v -X GET \
             "name": "SMS"
         },
         {
-            "description": "Receive notifications when objects (like JSON document objects) in Kazoo are changed",
+            "description": "Receive notifications when objects (like JSON document objects) in {% BRAND_NAME %} are changed",
             "id": "object",
             "modifiers": {
                 "action": {
@@ -86,7 +86,7 @@ curl -v -X GET \
             "name": "Object"
         },
         {
-            "description": "Fire a webhook when a notification event is triggered in Kazoo",
+            "description": "Fire a webhook when a notification event is triggered in {% BRAND_NAME %}",
             "id": "notifications",
             "modifiers": {
                 "type": {
@@ -464,7 +464,7 @@ curl -v -X GET \
         {
             "client_error": "nxdomain",
             "hook_id": "{HOOK_ID}",
-            "reason": "kazoo http client error",
+            "reason": "http client error",
             "result": "failure",
             "retries left": 2,
             "timestamp": 63590996563
@@ -493,7 +493,7 @@ curl -v -X GET \
 
 ## Re-enable auto-disabled hooks in bulk
 
-Webhooks will auto-disable failing hooks (if Kazoo can't reach your server, or you take too long to respond with `200 OK`, for instance). Especially if you're a reseller with webhooks in your client accounts, it can be tedious to have to iterate through all your accounts and re-enable each hook. Fortunately, you can perform this bulk-enable action against an account or an account and its descendants.
+Webhooks will auto-disable failing hooks (if {% BRAND_NAME %} can't reach your server, or you take too long to respond with `200 OK`, for instance). Especially if you're a reseller with webhooks in your client accounts, it can be tedious to have to iterate through all your accounts and re-enable each hook. Fortunately, you can perform this bulk-enable action against an account or an account and its descendants.
 
 Enable an account's hooks
 
@@ -530,7 +530,7 @@ When `"version" = "v2"`, the shape of the event sent to the HTTP URL will resemb
 ### Base Payload (version 1)
 
 * hook_event: The type of hook being fired
-* call_direction: "inbound" or "outbound", relative to Kazoo
+* call_direction: "inbound" or "outbound", relative to {% BRAND_NAME %}
 * timestamp: Gregorian timestamp of the event
 * account_id: ID of the account generating the event
 * request: SIP Request

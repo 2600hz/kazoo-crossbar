@@ -10,8 +10,8 @@ Call Detail Records
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`app_name` | The Kazoo application that issued the CDR | `string()` |   | `false` |  
-`app_version` | The internal Kazoo version number of the application that issued the CDR | `string()` |   | `false` |  
+`app_name` | The {% BRAND_NAME %} application that issued the CDR | `string()` |   | `false` |  
+`app_version` | The internal {% BRAND_NAME %} version number of the application that issued the CDR | `string()` |   | `false` |  
 `billing_seconds` | The number of seconds the call leg can be billed for (typically from when the call leg is answered | `integer()` |   | `false` |  
 `call_direction` | Direction of the call, relative to the media switch | `string('inbound' \| 'outbound')` |   | `false` |  
 `call_id` | Unique identifier of the call leg | `string()` |   | `true` |  
@@ -24,16 +24,16 @@ Key | Description | Type | Default | Required | Support Level
 `channel_name` | Media Server channel name | `string()` |   | `false` |  
 `channel_state` | Media Server channel state | `string()` |   | `false` |  
 `custom_application_vars` | Any custom-set values | `object()` |   | `false` |  
-`custom_channel_vars` | Kazoo-specific key/value pairs set on the channel | `object()` |   | `false` |  
-`custom_sip_headers.in` | Custom SIP Headers to be applied to calls inbound to Kazoo from the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
-`custom_sip_headers.out` | Custom SIP Headers to be applied to calls outbound from Kazoo to the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
+`custom_channel_vars` | {% BRAND_NAME %} specific key/value pairs set on the channel | `object()` |   | `false` |  
+`custom_sip_headers.in` | Custom SIP Headers to be applied to calls inbound to {% BRAND_NAME %} from the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
+`custom_sip_headers.out` | Custom SIP Headers to be applied to calls outbound from {% BRAND_NAME %} to the endpoint | [#/definitions/custom_sip_headers](#custom_sip_headers) |   | `false` |  
 `custom_sip_headers.^[a-zA-z0-9_\-]+$` | The SIP header to add | `string() | boolean() | integer()` |   | `false` |  
 `custom_sip_headers` | A property list of SIP headers | `object()` |   | `false` |  
 `digits_dialed` | All the DTMF tones detected on this leg of the call | `string()` |   | `false` |  
 `disposition` | Who sent the SIP BYE message | `string()` |   | `false` |  
 `duration_seconds` | The duration of the call leg, in seconds | `integer()` |   | `false` |  
-`event_category` | KAZOO specific key (Event-Category) included on each payload it publishes | `string()` |   | `false` |  
-`event_name` | KAZOO specific key (Event-Name) included on each payload it publishes | `string()` |   | `false` |  
+`event_category` | {% BRAND_NAME %} specific key (Event-Category) included on each payload it publishes | `string()` |   | `false` |  
+`event_name` | {% BRAND_NAME %} specific key (Event-Name) included on each payload it publishes | `string()` |   | `false` |  
 `fax_bad_rows` | Number of rows that failed to transfer | `string()` |   | `false` |  
 `fax_ecm_used` | Was ECM (error correction mode) used on the fax | `string()` |   | `false` |  
 `fax_result_code` | Media Server's result code of the transmission | `string()` |   | `false` |  
@@ -42,7 +42,7 @@ Key | Description | Type | Default | Required | Support Level
 `fax_total_pages` | Number of pages in the fax | `string()` |   | `false` |  
 `fax_transfer_rate` | Baud of the fax transfer | `string()` |   | `false` |  
 `fax_transferred_pages` | Number of pages transferred | `string()` |   | `false` |  
-`from` | Built by Kazoo, depending on direction, to represent the From user | `string()` |   | `false` |  
+`from` | Built by {% BRAND_NAME %}, depending on direction, to represent the From user | `string()` |   | `false` |  
 `from_tag` | SIP From TAG | `string()` |   | `false` |  
 `from_uri` | The From SIP URI | `string()` |   | `false` |  
 `hangup_cause` | The reason for the call leg's termination | `string()` |   | `false` |  
@@ -52,7 +52,7 @@ Key | Description | Type | Default | Required | Support Level
 `interaction_time` | Timestamp of the creation of the interaction ID | `integer()` |   | `false` |  
 `local_sdp` | The SDP negotiated by the local agent | `string()` |   | `false` |  
 `media_server` | The hostname of the media server that processed the call | `string()` |   | `false` |  
-`msg_id` | KAZOO specific key (Msg-Id) assigned to each payload it publishes | `string()` |   | `false` |  
+`msg_id` | {% BRAND_NAME %} specific key (Msg-Id) assigned to each payload it publishes | `string()` |   | `false` |  
 `node` | The ecallmgr which issued the CDR | `string()` |   | `false` |  
 `other_leg_call_id` | If this leg was bridged, the call-id of the opposite leg | `string()` |   | `false` |  
 `other_leg_caller_id_name` | Caller ID name of the bridged leg | `string()` |   | `false` |  
@@ -61,14 +61,14 @@ Key | Description | Type | Default | Required | Support Level
 `other_leg_direction` | direction of the other leg, relative to the media server | `string()` |   | `false` |  
 `presence_id` | ID used in NOTIFY SIP messages | `string()` |   | `false` |  
 `remote_sdp` | The SDP negotiated by the remote agent | `string()` |   | `false` |  
-`request` | Built by Kazoo this is the processed request URI | `string()` |   | `false` |  
+`request` | Built by {% BRAND_NAME %} this is the processed request URI | `string()` |   | `false` |  
 `ringing_seconds` | How many seconds the leg was ringing (pre-answer) | `integer()` |   | `false` |  
 `switch_hostname` | Media Server hostname (as reported by the switch) | `string()` |   | `false` |  
 `switch_nodename` | Media Server node name (as known in ecallmgr) | `string()` |   | `false` |  
 `switch_uri` | Media Server URI | `string()` |   | `false` |  
 `switch_url` | Media Server URL | `string()` |   | `false` |  
 `timestamp` | UTC timestamp, in Gregorian seconds, of when the CDR was generated | `integer()` |   | `false` |  
-`to` | Built by Kazoo, depending on direction, to represent the To user | `string()` |   | `false` |  
+`to` | Built by {% BRAND_NAME %}, depending on direction, to represent the To user | `string()` |   | `false` |  
 `to_tag` | SIP TO Tag | `string()` |   | `false` |  
 `to_uri` | The To SIP URI | `string()` |   | `false` |  
 `user_agent` | User agent header from SIP packet | `string()` |   | `false` |  
@@ -94,11 +94,11 @@ Clients should use the `next_start_key` to move to the next page on subsequent r
 
 ### Filtering results.
 
-KAZOO provides [filters](filters.md) to filter out rows from the results. This can be helpful if you're looking for rows related to each other (like the same `presence_id`, for instance).
+{% BRAND_NAME %} provides [filters](filters.md) to filter out rows from the results. This can be helpful if you're looking for rows related to each other (like the same `presence_id`, for instance).
 
 ### Timestamps
 
-KAZOO timestamps, unless otherwise noted, are in [Gregorian seconds](basics.md#timestamps). Alternative timestamp formats are generally noted by the field name (e.g. `unix_timestamp`, `rfc1036`, or `iso8601`).
+{% BRAND_NAME %} timestamps, unless otherwise noted, are in [Gregorian seconds](basics.md#timestamps). Alternative timestamp formats are generally noted by the field name (e.g. `unix_timestamp`, `rfc1036`, or `iso8601`).
 
 ### Fetch request
 
@@ -209,15 +209,15 @@ Some fields need a little more explanation to help you understand what they are 
   * outbound - Uses the presence-id or else it uses the SIP Request address
   * inbound - the SIP To header
 
-### Kazoo-specific properties
+### {% BRAND_NAME %}-specific properties
 
-These are properties set by Kazoo for internal purposes. These are the properties found under the `custom_channel_vars` property at the top-level of the CDR JSON object. The non-exhaustive list of properties:
+These are properties set by {% BRAND_NAME %} for internal purposes. These are the properties found under the `custom_channel_vars` property at the top-level of the CDR JSON object. The non-exhaustive list of properties:
 
 * `account_id` - Account ID this leg belongs to
 * `authorizing_id` - Document ID used to authorize this call leg
 * `authorizing_type` - Type of document used to authorize call
-  * `device` - the call leg is to/from a known Kazoo device
-  * `mobile` - the call leg is to/from a known Kazoo mobile device
+  * `device` - the call leg is to/from a known {% BRAND_NAME %} device
+  * `mobile` - the call leg is to/from a known {% BRAND_NAME %} mobile device
   * `resource` - the call leg is from a known offnet carrier
   * `outbound_fax`
 * `bridge_id` - Typically the A-leg's call-id; helps with tracking transfers
@@ -260,9 +260,9 @@ These properties may exist on a CDR for a fax request (inbound or outbound):
 All resource properties are set by the Stepswitch application.
 
 * `resource_type` - This property attempts to explain the reason the resource was used.  The possible values are:
-    * offnet-origination - Inbound call from a resource/carrier to a Kazoo account
-    * offnet-termination - Outbound call from a Kazoo account to a resource/carrier
-    * onnet-origination - Inbound call from a Kazoo account to another Kazoo account
-    * onnet-termination - Outbound call from a Kazoo account to another Kazoo account
+    * offnet-origination - Inbound call from a resource/carrier to a {% BRAND_NAME %} account
+    * offnet-termination - Outbound call from a {% BRAND_NAME %} account to a resource/carrier
+    * onnet-origination - Inbound call from a {% BRAND_NAME %} account to another {% BRAND_NAME %} account
+    * onnet-termination - Outbound call from a {% BRAND_NAME %} account to another {% BRAND_NAME %} account
 * `global_resource` - This boolean is TRUE when the channel has been created by processing a resource from the offnet database, and FALSE if the resource is from an account database (local).
 * `resource_id` - This is resource document id used to create the channel

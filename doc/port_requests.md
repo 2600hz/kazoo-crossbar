@@ -68,7 +68,7 @@ A port request can be in one of seven **states**:
 
 ### Port authority (Port Agent)
 
-Port authority (sometimes called port agent or simply agent) is an account in Kazoo system which is responsible for managing
+Port authority (sometimes called port agent or simply agent) is an account in {% BRAND_NAME %} system which is responsible for managing
 their sub account port requests. They are responsible to submitted and oversees port request to losing/winner carrier.
 
 Master account is default port authority.

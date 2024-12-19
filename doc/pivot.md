@@ -6,7 +6,7 @@ The Pivot Crossbar resource allows the client to query and inspect data related 
 
 ## Enabling in Crossbar
 
-The Pivot endpoint is not loaded on start in a default Kazoo installation.
+The Pivot endpoint is not loaded on start in a default {% BRAND_NAME %} installation.
 
 * To enable at runtime:
     * `sup crossbar_maintenance start_module cb_pivot`
@@ -63,7 +63,7 @@ curl -v -X GET \
             "node": "{PIVOT_SERVER}",
             "status_code": "404",
             "has_schema_errors": false,
-            "uri": "http://127.0.0.1/pivot/kazoo_4786.php?Language=en-us&Caller-ID-Number=user_suyt9r93ng&Caller-ID-Name=user_suyt9r93ng&Direction=inbound&Api-Version=2015-03-01&To-Realm={SIP_REALM}&To=4786&From-Realm={SIP_REALM}&From=user_suyt9r93ng&Account-ID={ACCOUNT_ID}&Call-ID={UUID_1}"
+            "uri": "http://127.0.0.1/pivot.php?Language=en-us&Caller-ID-Number=user_suyt9r93ng&Caller-ID-Name=user_suyt9r93ng&Direction=inbound&Api-Version=2015-03-01&To-Realm={SIP_REALM}&To=4786&From-Realm={SIP_REALM}&From=user_suyt9r93ng&Account-ID={ACCOUNT_ID}&Call-ID={UUID_1}"
         },
         {
             "call_id": "{UUID_2}",

@@ -493,10 +493,10 @@ curl -v -X DELETE \
 
 This is an API endpoint to interact with 2600Hz Marketplace Connector and its
 configurations. Sysadmins (super duper admins) are expected to use this API to setup their
-Kazoo Cluster to be able to use Kazoo Applications from 2600Hz Marketplace.
+{% BRAND_NAME %} Cluster to be able to use {% BRAND_NAME %} Applications from 2600Hz Marketplace.
 
 Sysadmins can browse and purchase applications from 2600Hz Marketplace. To use those
-apps, Kazoo needs to be configured and linked to Marketplace Server to be able to request
+apps, {% BRAND_NAME %} needs to be configured and linked to Marketplace Server to be able to request
 access to Apps.
 
 After cluster is linked to Marketplace Server, and all things are configured, sysadmins can
@@ -505,7 +505,7 @@ purchase apps from Marketplace, then try to load and start the apps in their clu
 Please consult each application documentation or Marketplace to see how to initially
 config the app and then how to start them.
 
-When starting applications purchase through Marketplace, Kazoo will see the app is
+When starting applications purchase through Marketplace, {% BRAND_NAME %} will see the app is
 available locally and tries to ask Marketplace Server to check if the sysadmin has access
 to the app, and will fetch, load and start the app on demand.
 
@@ -617,7 +617,7 @@ Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `access_code` | Access Code from Marketplace Portal during cluster link request | `string()` |   | `true`  | `true` |
 `settings.api_url` | Crossbar API URL to be used to serve UI applications | `string()` |   | `false` |
-`settings.is_aio_cluster` | Indicates all Kazoo VM nodes are running same list of Kazoo Apps | `boolean()` |   | `false` |
+`settings.is_aio_cluster` | Indicates all {% BRAND_NAME %} VM nodes are running same list of {% BRAND_NAME %} Apps | `boolean()` |   | `false` |
 `settings.name` | A friendly name for cluster | `string()` |   | `false` |
 `settings` |   | `object()` |   | `false` |
 
@@ -660,15 +660,15 @@ Connector.
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `settings.api_url` | Crossbar API URL to be used to serve UI applications | `string()` |   | `false` |
-`settings.is_aio_cluster` | Indicates all Kazoo VM nodes are running same list of Kazoo Apps | `boolean()` |   | `false` |
+`settings.is_aio_cluster` | Indicates all {% BRAND_NAME %} VM nodes are running same list of {% BRAND_NAME %} Apps | `boolean()` |   | `false` |
 `settings.name` | A friendly name for cluster | `string()` |   | `false` |
 `settings` |   | `object()` |   | `false` |
 
 - `api_url`: this is the Crossbar API URL, and is being used to serve the UI applications
   assets. If you don't set this setting, the UI applications from Marketplace won't be
 able to start or work.
-- `is_aio_cluster`: This indicates that All of Kazoo VM node servers in your cluster are
-running the same list of Kazoo apps across your whole cluster. This is the intended way of
+- `is_aio_cluster`: This indicates that All of {% BRAND_NAME %} VM node servers in your cluster are
+running the same list of {% BRAND_NAME %} apps across your whole cluster. This is the intended way of
 using Marketplace apps. If you don't set this to `true`, you're in expert mode. This means you as sysadmin is
 knowing how to setup and start marketplace apps on your own, you
 
