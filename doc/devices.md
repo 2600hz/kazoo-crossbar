@@ -476,7 +476,7 @@ For forwarding only when the device/user doesn't answer, replace `unconditional`
 
 Selective call forwarding allows the device/user's call forwarding settings to only apply in certain cases. For instance, you may want calls from your family to route to your cell phone instead of your SIP devices.
 
-To do so, the `selective` settings for call forwarding include a list of `rules` that map to [matchlists](./match_lists.md "match lists") where you can configure the logic around when to call forward.
+To do so, the `selective` settings for call forwarding include a list of `rules` that map to [matchlists](./match_lists.md) where you can configure the logic around when to call forward.
 
 For example, a simple match list based on the caller ID number could be created thusly:
 
@@ -928,7 +928,7 @@ curl -v -X POST \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/devices/{DEVICE_ID}
 ```
 
-An example for a Yealink might look like (thanks to forum user [https://forums.2600hz.com/forums/topic/12045-sip-notify/#comment-62381](andy.wells) for the suggestion):
+An example for a Yealink might look like (thanks to forum user [andy.wells](https://forums.2600hz.com/forums/topic/12045-sip-notify/#comment-62381) for the suggestion):
 
 ```json
 {

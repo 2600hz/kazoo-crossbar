@@ -14,7 +14,7 @@ Account template located in `{ACCOUNT_DB}/token_restrictions`.
 #### How it works?
 
 When you make request to Crossbar (API), the system loads rules from auth token (used for authentication) and tries to apply the rules to URI (`/v2/accounts/{ACCOUNT_ID}/devices/{DEVICE_ID}/`).
-More information about URI structure can be found [here](./basics.md).
+Reaaad ,ore information about [URI structure](./api_basics.md#basic-uri-structure).
 If Crossbar doesn't find a match for all parameters (endpoint name, account id, endpoint arguments, HTTP method), then it halts the request and returns a 403 error.
 
 #### Full Example

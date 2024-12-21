@@ -88,7 +88,7 @@ Key | Description | Type | Default | Required | Support Level
 
 ### Prerequisites
 
-By default requests are [paginated](basics.md#pagination). The default page size is 50 records though it can vary based on the system's configuration. It is recommended to fetch CDRs by page to not overload the system on particularly busy accounts.
+By default requests are [paginated](api_basics.md#pagination). The default page size is 50 records though it can vary based on the system's configuration. It is recommended to fetch CDRs by page to not overload the system on particularly busy accounts.
 
 Clients should use the `next_start_key` to move to the next page on subsequent requests.
 
@@ -98,7 +98,7 @@ Clients should use the `next_start_key` to move to the next page on subsequent r
 
 ### Timestamps
 
-{% BRAND_NAME %} timestamps, unless otherwise noted, are in [Gregorian seconds](basics.md#timestamps). Alternative timestamp formats are generally noted by the field name (e.g. `unix_timestamp`, `rfc1036`, or `iso8601`).
+{% BRAND_NAME %} timestamps, unless otherwise noted, are in [Gregorian seconds](api_basics.md#timestamps). Alternative timestamp formats are generally noted by the field name (e.g. `unix_timestamp`, `rfc1036`, or `iso8601`).
 
 ### Fetch request
 

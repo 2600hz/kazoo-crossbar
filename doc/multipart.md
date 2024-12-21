@@ -72,11 +72,11 @@ This is another popular way to upload form data from HTML, each value is sent as
 delimiter ("boundary") separating each part. The keys are given in the `Content-Disposition` header of each part.
 
 You can also add other HTTP headers in each part, this can be useful to upload multiple files of different type
-(also see [multipart/mixed](sending-data-as-multipart-mixed) section below).
+(also see [multipart/mixed](#sending-data-as-multipart-mixed) section below).
 
 Here is an example plain text of a HTTP request with `application/x-www-form-urlencoded`:
 
-Also read [Setting transfer encoding type](setting-transfer-encoding-type-with-content-transfer-encoding).
+Also read [Setting transfer encoding type](#setting-transfer-encoding-type-with-content-transfer-encoding).
 
 ```
 POST /test HTTP/1.1
@@ -121,7 +121,7 @@ This is the best and recommended way to send multiple file.
 
 `multipart/mixed` is used for sending files with different Content-Type header fields inline (or as attachments).
 
-Also read [Setting transfer encoding type](setting-transfer-encoding-type-with-content-transfer-encoding).
+Also read [Setting transfer encoding type](#setting-transfer-encoding-type-with-content-transfer-encoding).
 
 !!! note
     The default content-type for each part is "text/plain". So don't forget to set content-type header!
@@ -155,7 +155,7 @@ curl -v -X PUT -i \
 ```
 
 !!! note
-    See [multipart/form-data](sending-data-as-multipart-form-data) for cURL command options details.
+    See [multipart/form-data](#sending-data-as-multipart-form-data) for cURL command options details.
 
 ### Send data as `application/base64`
 

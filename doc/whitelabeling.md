@@ -351,7 +351,81 @@ curl -v -X POST \
     http://{SERVER}:8000/v2/whitelabel/domains
 ```
 
-Where `{DOMAINS_OBJECT}` is the JSON. If you look at the [default domains fixture](https://github.com/2600hz/kazoo-core/blob/master/kazoo_documents/priv/fixtures/domains.json) for a good base JSON object to modify to your needs.
+Where `{DOMAINS_OBJECT}` is the JSON. Here is a good base JSON object to you can modify to your needs:
+
+```json
+{
+    "A": {
+        "us-central.{{domain}}": {
+            "mapping": [
+                "127.0.0.1"
+            ],
+            "name": "Secondary Proxy",
+            "zone": "us-central"
+        },
+        "us-east.{{domain}}": {
+            "mapping": [
+                "127.0.0.1"
+            ],
+            "name": "Primary Proxy",
+            "zone": "us-east"
+        },
+        "us-west.{{domain}}": {
+            "mapping": [
+                "127.0.0.1"
+            ],
+            "name": "Tertiary Proxy",
+            "zone": "us-west"
+        }
+    },
+    "CNAME": {
+        "api.{{domain}}": {
+            "mapping": [
+                "api.yourcompany.net"
+            ],
+            "name": "API"
+        },
+        "portal.{{domain}}": {
+            "mapping": [
+                "ui.yourcompany.net"
+            ],
+            "name": "Web GUI"
+        }
+    },
+    "MX": {},
+    "NAPTR": {
+        "proxy-central.{{domain}}": {
+            "mapping": [
+                "10 100 \"S\" \"SIP+D2U\" \"\" _sip._udp.proxy-central.{{domain}}"
+            ],
+            "name": "Central NAPTR"
+        },
+        "proxy-east.{{domain}}": {
+            "mapping": [
+                "10 100 \"S\" \"SIP+D2U\" \"\" _sip._udp.proxy-east.{{domain}}"
+            ],
+            "name": "East NAPTR"
+        },
+        "proxy-west.{{domain}}": {
+            "mapping": [
+                "10 100 \"S\" \"SIP+D2U\" \"\" _sip._udp.proxy-west.{{domain}}"
+            ],
+            "name": "West NAPTR"
+        }
+    },
+    "SRV": {
+        "_sip._udp.proxy-east.{{domain}}": {
+            "mapping": [
+                "10 10 7000 us-east.{{domain}}",
+                "15 15 7000 us-central.{{domain}}",
+                "20 20 7000 us-west.{{domain}}"
+            ],
+            "name": "East SRV"
+        }
+    },
+    "TXT": {}
+}
+```
 
 If you receive a 400 when POSTing with a response like:
 

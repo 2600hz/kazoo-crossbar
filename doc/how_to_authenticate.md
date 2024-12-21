@@ -24,7 +24,9 @@ Crossbar provides a number of ways of authenticating request.The most common way
 
 ## Basic Authentication
 
-This is very simple and quick way of authentication. In this method, you have to add an `Authorization` HTTP header to request. The authorization method is `Basic` and the value is concatenation of your account ID and `md5` hash of username and password. Refer to [Basic Authentication](./basics.md) for more information on how to generate the value for `Authorization` header.
+This is very simple and quick way of authentication. In this method, you have to add an `Authorization` HTTP header to request. The authorization method is `Basic`
+and the value is concatenation of your account ID and `md5` hash of username and password.
+Refer to [Basic Authentication](basic_auth.md) for more information on how to generate the value for `Authorization` header.
 
 Basic authentication has a disadvantage in that you have to provide the username and password in unencrypted text for every request.
 

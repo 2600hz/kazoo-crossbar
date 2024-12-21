@@ -14,7 +14,7 @@
     - 'applications/crossbar/doc/att_handlers_errors.md'
     - 'applications/crossbar/doc/auth.md'
     - 'applications/crossbar/doc/basic_auth.md'
-    - 'applications/crossbar/doc/basics.md'
+    - 'applications/crossbar/doc/api_basics.md'
     - 'applications/crossbar/doc/blacklists.md'
     - 'applications/crossbar/doc/braintree.md'
     - 'applications/crossbar/doc/call_inspector.md'

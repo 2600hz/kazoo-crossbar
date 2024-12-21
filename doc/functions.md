@@ -23,7 +23,7 @@ Key | Description | Type | Default | Required | Support Level
 
 ## User-defined Functions
 
-Effectively, {% BRAND_NAME %} gives you `function(call) {...}` and asks you to supply the `...`. You have the `call` object containing the same [request parameters](applications/pivot/doc/requests/) as you would in Pivot (such as `call['To']` or `call['Call-ID']`).
+Effectively, {% BRAND_NAME %} gives you `function(call) {...}` and asks you to supply the `...`. You have the `call` object containing the same [request parameters](https://docs.2600hz.com/git/2600hz/kazoo-pivot/doc/requests.md) as you would in Pivot (such as `call['To']` or `call['Call-ID']`).
 
 ### Example 1: Say Hi!
 
@@ -170,7 +170,7 @@ sup cb_functions init
 
 We leverage CouchDB's [show function](http://guide.couchdb.org/editions/1/en/show.html) to provide hosting and processing of the user's Javascript function.
 
-The client will create a "function" document containing the Javascript function as a string. The `show` function [`functions/wh`](https://github.com/2600hz/kazoo/blob/master/applications/functions/priv/couchdb/views/functionsdb-functions.json) will be run with the "function"'s doc id and the call will be placed in the request's query string parameters.
+The client will create a "function" document containing the Javascript function as a string. The `show` function `functions/wh` from `functions` database will be run with the "function"'s doc id and the call will be placed in the request's query string parameters.
 
 The `wh` show function will create a new function (using Javascript's `new Function()`) from the stringified version on the doc and pass it the query string object from the `req` argument. The user's function should return the new flow JSON (as you would using Pivot).
 
@@ -178,7 +178,7 @@ The `wh` show function will create a new function (using Javascript's `new Funct
 
 Javascript's `new Function()`, which is similar to `eval`, is used to parse a piece of Javascript code in a string into a function object, which is invoked with the call object to return the new flow JSON. It is considered more secure than `eval` since the `new Function()` code runs in a separate scope.
 
-However, both `eval` and `new Function()` are blocked by Content Security Policy in CouchDB (see this [commit](https://github.com/apache/couchdb/commit/1cd5852a758bf79c1860dae8d69e103d2e0611a4). A workaround has to be applied to enable `new Function()`.
+However, both `eval` and `new Function()` are blocked by Content Security Policy in CouchDB. A workaround has to be applied to enable `new Function()`.
 
 ##### CouchDB 2.3
 Make sure `--eval` is explicitly added under query_servers of etc/local.ini.
