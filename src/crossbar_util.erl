@@ -437,7 +437,7 @@ move_account(AccountId, AccountJObj, ToAccount, NewTree) ->
     PreviousTree = kzd_accounts:tree(AccountJObj),
     Updates = [{[kzd_services:path_tree()], NewTree}
               ,{[kzd_services:path_tree_previously()], PreviousTree}
-              ,{[kz_doc:path_modified()], kz_time:now_s()}
+              ,{kz_doc:path_modified(), kz_time:now_s()}
               ],
 
     %%FIXME: do something about setting pvt_auth_*_id
