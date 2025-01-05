@@ -175,8 +175,17 @@ local_template_database(Context) ->
 %%------------------------------------------------------------------------------
 -spec is_allowed_to_update(cb_context:context()) -> boolean().
 is_allowed_to_update(Context) ->
+    is_allowed_to_update(Context, cb_context:is_superduper_admin(Context)).
+
+is_allowed_to_update(_Context, 'true') ->
+    lager:info("superadmin allowed to update"),
+    'true';
+is_allowed_to_update(Context, 'false') ->
     AccountId = cb_context:auth_account_id(Context),
     AccountDb = kzs_util:format_account_db(AccountId),
+    lager:info("checking auth account ~s against context db_name ~s"
+              ,[AccountId, cb_context:db_name(Context)]
+              ),
     cb_context:db_name(Context) =:= AccountDb.
 
 -spec forbidden(cb_context:context()) -> cb_context:context().
