@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc Handle client requests for local resource documents
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -34,7 +34,7 @@
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec init() -> ok.
+-spec init() -> 'ok'.
 init() ->
     _ = crossbar_bindings:bind(<<"*.allowed_methods.resource_templates">>, ?MODULE, 'allowed_methods'),
     _ = crossbar_bindings:bind(<<"*.resource_exists.resource_templates">>, ?MODULE, 'resource_exists'),
@@ -43,7 +43,7 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.execute.post.resource_templates">>, ?MODULE, 'post'),
     _ = crossbar_bindings:bind(<<"*.execute.patch.resource_templates">>, ?MODULE, 'patch'),
     _ = crossbar_bindings:bind(<<"*.execute.delete.resource_templates">>, ?MODULE, 'delete'),
-    ok.
+    'ok'.
 
 %%------------------------------------------------------------------------------
 %% @doc This function determines the verbs that are appropriate for the
