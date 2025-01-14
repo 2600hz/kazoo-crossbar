@@ -1065,7 +1065,7 @@ validate_request_data(SchemaJObj, Context, OnSuccess, OnFailure, _SchemaRequired
     Options = [{'extra_validator_options', [{'stability_level', SystemSL}]}],
     try kz_json_schema:validate(SchemaJObj, kz_doc:public_fields(req_data(Context)), Options) of
         {'ok', JObj} ->
-            lager:debug("validation passed"),
+            lager:debug("~s validation passed", [kz_doc:id(SchemaJObj)]),
             validate_passed(set_req_data(Context, JObj), OnSuccess);
         {'error', Errors} when Strict ->
             lager:debug("validation errors when strictly validating"),
