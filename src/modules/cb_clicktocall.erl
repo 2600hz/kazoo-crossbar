@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc Click to call
 %%% Allow embedded HTML forms (or other ways to POST to the URL)
 %%% and create a call.
@@ -37,6 +37,7 @@
 -define(CB_LIST, <<"click2call/crossbar_listing">>).
 -define(HISTORY_LIST, <<"clicktocall/history_listing">>).
 -define(PVT_TYPE, kzd_clicktocall:type()).
+-define(PVT_HISTORY_TYPE, <<"c2c_history">>).
 -define(CONNECT_C2C_URL, [{<<"clicktocall">>, [_, ?CONNECT_CALL]}
                          ,{?KZ_ACCOUNTS_DB, [_]}
                          ]).
@@ -77,6 +78,8 @@ allowed_methods() ->
     [?HTTP_GET, ?HTTP_PUT].
 
 -spec allowed_methods(path_token()) -> http_methods().
+allowed_methods(?CONNECT_CALL) ->
+    [?HTTP_POST];
 allowed_methods(_C2CId) ->
     [?HTTP_GET, ?HTTP_POST, ?HTTP_PATCH, ?HTTP_DELETE].
 
@@ -95,35 +98,36 @@ allowed_methods(_C2CId, ?HISTORY) ->
 resource_exists() -> 'true'.
 
 -spec resource_exists(path_token()) -> 'true'.
+resource_exists(?CONNECT_CALL) -> 'true';
 resource_exists(_) -> 'true'.
 
 -spec resource_exists(path_token(), path_token()) -> 'true'.
 resource_exists(_, ?CONNECT_CALL) -> 'true';
 resource_exists(_, ?HISTORY) -> 'true'.
 
--spec authenticate(cb_context:context()) -> 'true'.
+-spec authenticate(cb_context:context()) -> boolean().
 authenticate(Context) ->
     is_c2c_url(Context, cb_context:req_nouns(Context))
         andalso maybe_authenticate(Context).
 
--spec authenticate(cb_context:context(), path_token()) -> 'true'.
+-spec authenticate(cb_context:context(), path_token()) -> boolean().
 authenticate(Context, _) ->
     authenticate(Context).
 
--spec authenticate(cb_context:context(), path_token(), path_token()) -> 'true'.
+-spec authenticate(cb_context:context(), path_token(), path_token()) -> boolean().
 authenticate(Context, _, _) ->
     authenticate(Context).
 
--spec authorize(cb_context:context()) -> 'true'.
+-spec authorize(cb_context:context()) -> boolean().
 authorize(Context) ->
     is_c2c_url(Context, cb_context:req_nouns(Context))
         andalso maybe_authorize(Context).
 
--spec authorize(cb_context:context(), path_token()) -> 'true'.
+-spec authorize(cb_context:context(), path_token()) -> boolean().
 authorize(Context, _) ->
     authorize(Context).
 
--spec authorize(cb_context:context(), path_token(), path_token()) -> 'true'.
+-spec authorize(cb_context:context(), path_token(), path_token()) -> boolean().
 authorize(Context, _, _) ->
     authorize(Context).
 
@@ -177,6 +181,14 @@ validate_c2cs(Context, ?HTTP_PUT) ->
     create_c2c(Context).
 
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
+validate(Context, ?CONNECT_CALL) ->
+    Context1 = create_dynamic_c2c(Context),
+    case cb_context:resp_status(Context1) of
+        'success' ->
+            Q2CId = kz_doc:id(cb_context:doc(Context1)),
+            originate_call(Q2CId, Context1);
+        _Status -> Context1
+    end;
 validate(Context, Id) ->
     validate_c2c(Context, Id, cb_context:req_verb(Context)).
 
@@ -196,6 +208,8 @@ validate(Context, Id, ?CONNECT_CALL) ->
     establish_c2c(Id, Context).
 
 -spec post(cb_context:context(), path_token()) -> cb_context:context().
+post(Context, ?CONNECT_CALL) ->
+    cb_context:set_resp_status(Context, 'success');
 post(Context, _) ->
     crossbar_doc:save(Context).
 
@@ -262,6 +276,46 @@ establish_c2c(C2CId, Context) ->
         _Status -> Context1
     end.
 
+-spec create_dynamic_c2c(cb_context:context()) -> kz_json:object().
+create_dynamic_c2c(Context) ->
+    case get_custom_application_vars(Context) of
+        {'ok', CAVs} ->
+            ReqData = kzd_clicktocall:set_custom_application_vars(cb_context:req_data(Context), CAVs),
+            create_dynamic_c2c(Context, ReqData);
+        {'error', C1} ->
+            C1
+    end.
+
+-spec create_dynamic_c2c(cb_context:context(), kz_json:object()) -> cb_context:context().
+create_dynamic_c2c(Context, ReqData) ->
+    Q2CId = <<"c2c_", (kz_binary:rand_hex(12))/binary>>,
+    CAVs = kz_json:set_values([{<<"dynamic_clicktocall_id">>, Q2CId}
+                              ]
+                             ,kzd_clicktocall:custom_application_vars(ReqData)
+                             ),
+    Routines = [{fun kzd_clicktocall:set_auth_required/2, 'true'}
+               ,{fun kzd_clicktocall:set_custom_application_vars/2, CAVs}
+               ,{fun kzd_clicktocall:set_name/2, kzd_clicktocall:name(ReqData, <<"dynamic_c2c_", (kz_binary:rand_hex(5))/binary>>)}
+               | set_dynamic_extension(ReqData, is_quicktocall(CAVs))
+               ],
+    Q2CDoc = kz_doc:setters(ReqData, Routines),
+    C1 = cb_context:validate_request_data(kzd_clicktocall:schema(), cb_context:set_req_data(Context, Q2CDoc)),
+    case cb_context:resp_status(C1) of
+        'success' ->
+            Doc = cb_context:doc(C1),
+            C2 = cb_context:store(C1, 'cavs', kzd_clicktocall:custom_application_vars(Doc)),
+            cb_context:set_doc(cb_context:store(C2, 'dynamic_c2c', 'true'), kz_doc:set_id(Doc, Q2CId));
+        _ ->
+            C1
+    end.
+
+set_dynamic_extension(_ReqData, 'true') ->
+    [{fun kzd_clicktocall:set_extension/2, <<"quicktocall">>}
+    ,{fun kzd_clicktocall:set_dial_first/2, <<"contact">>}
+    ];
+set_dynamic_extension(ReqData, 'false') ->
+    [{fun kzd_clicktocall:set_extension/2, kzd_clicktocall:extension(ReqData)}].
+
 -spec clear_history_set_type(cb_context:context()) -> cb_context:context().
 clear_history_set_type(Context) ->
     cb_context:set_doc(Context
@@ -298,47 +352,59 @@ originate_call(C2CId, Context, Contact) ->
 -spec originate_call(kz_term:ne_binary(), cb_context:context(), kz_term:api_binary(), boolean()) -> cb_context:context().
 originate_call(_C2CId, Context, Contact, 'false') ->
     crossbar_util:response_400(<<"Contact doesn't match whitelist">>, Contact, Context);
-originate_call(C2CId, Context, Contact, 'true') ->
-    Request = build_originate_req(Contact, Context),
-    do_originate_call(C2CId, Context, Contact, Request, cb_context:req_value(Context, <<"blocking">>, 'false')).
+originate_call(C2CId, Context0, Contact, 'true') ->
+    case get_custom_application_vars(Context0) of
+        {'ok', CAVs} ->
+            Context = cb_context:store(Context0, 'cavs', CAVs),
+            Request = build_originate_req(Contact, Context, is_quicktocall(CAVs)),
+            ShouldBlock = kz_term:is_true(cb_context:req_value(Context, <<"blocking">>, 'false')),
+            do_originate_call(C2CId, Context, Contact, Request, ShouldBlock);
+        {'error', C1} ->
+            C1
+    end.
 
+-spec do_originate_call(kz_term:ne_binary(), cb_context:context(), kz_term:ne_binary(), kz_term:proplist(), boolean()) -> cb_context:context().
 do_originate_call(C2CId, Context, Contact, Request, 'false') ->
-    _Pid = kz_process:spawn(fun() -> do_originate_call(C2CId, Context, Contact, Request) end),
+    _Pid = kz_process:spawn(fun() -> do_originate_call_async(C2CId, Context, Contact, Request) end),
     JObj = kz_json:normalize(kz_json:from_list(kz_api:remove_defaults(Request))),
-    lager:debug("attempting call in ~p", [JObj]),
+    lager:debug("attempting call in background ~p, c2c doc: ~p", [_Pid, JObj]),
     crossbar_util:response_202(<<"processing request">>, JObj, cb_context:set_resp_data(Context, Request));
 do_originate_call(C2CId, Context, Contact, Request, 'true') ->
     Resp = exec_originate(Request),
-    case handle_response(C2CId, Context, Contact, Resp) of
+    case handle_response(Context, Contact, Request, Resp) of
         {'ok', HistoryItem} -> crossbar_doc:handle_json_success(HistoryItem, Context);
         {'error', Error} -> crossbar_doc:handle_datamgr_errors(Error, C2CId, Context)
     end.
 
-handle_response(C2CId, Context, Contact, Resp) ->
+-spec handle_response(cb_context:context(), kz_term:ne_binary(), kz_term:proplist(), {'success' | 'error', kz_json:object()}) ->
+          {'ok', kz_json:object()} |
+          kz_datamgr:data_error().
+handle_response(Context, Contact, Request, Resp) ->
     AccountId = cb_context:account_id(Context),
     Modb = cb_context:account_modb(Context),
 
-    JObj = kz_json:from_list(create_c2c_history_item(Resp, C2CId, Contact)),
+    JObj = kz_json:from_list(create_c2c_history_item(Context, Contact, Request, Resp)),
     Options = [{'account_id', cb_context:account_id(Context)}
-              ,{'type', <<"c2c_history">>}
+              ,{'type', ?PVT_HISTORY_TYPE}
               ],
     HistoryItem = kz_doc:update_pvt_parameters(crossbar_doc:update_pvt_parameters(JObj, Context)
                                               ,Modb
                                               ,Options
                                               ),
-    _ = kazoo_modb:save_doc(AccountId, HistoryItem).
+    kazoo_modb:save_doc(AccountId, HistoryItem).
 
--spec do_originate_call(kz_term:ne_binary(), cb_context:context(), kz_term:api_binary(), kz_term:proplist()) ->
+-spec do_originate_call_async(kz_term:ne_binary(), cb_context:context(), kz_term:api_binary(), kz_term:proplist()) ->
           {'ok', kz_json:object()} |
           kz_datamgr:data_error().
-do_originate_call(C2CId, Context, Contact, Request) ->
+do_originate_call_async(_C2CId, Context, Contact, Request) ->
     ReqId = cb_context:req_id(Context),
     kz_log:put_callid(ReqId),
 
     Resp = exec_originate(Request),
     lager:debug("got status for ~p", [Resp]),
 
-    handle_response(C2CId, Context, Contact, Resp).
+    %% handle_response(C2CId, Context, Contact, Resp).
+    handle_response(Context, Contact, Request, Resp).
 
 -spec match_regexps(kz_term:binaries(), kz_term:ne_binary()) -> boolean().
 match_regexps([Pattern | Rest], Number) ->
@@ -406,19 +472,34 @@ handle_originate_resp({'timeout', _T}) ->
                  ,name :: kz_term:ne_binary()
                  }).
 
+-spec build_originate_req(kz_term:ne_binary(), cb_context:context(), boolean()) -> kz_term:proplist().
+build_originate_req(Contact, Context, 'true') ->
+    lager:debug("requested to execute a custom flow, forcing quicktocall ext and dial_first=contact"),
+    Routines = [{fun kzd_clicktocall:set_extension/2, <<"quicktocall">>}
+               ,{fun kzd_clicktocall:set_dial_first/2, <<"contact">>}
+               ],
+    C2CDoc = kz_doc:setters(cb_context:doc(Context), Routines),
+    build_originate_req(Contact, cb_context:set_doc(Context, C2CDoc));
+build_originate_req(Contact, Context, 'false') ->
+    build_originate_req(Contact, Context).
+
 -spec build_originate_req(kz_term:ne_binary(), cb_context:context()) -> kz_term:proplist().
 build_originate_req(Contact, Context) ->
     AccountId = cb_context:account_id(Context),
     C2CDoc = cb_context:doc(Context),
+
+
     Exten = knm_converters:normalize(kzd_clicktocall:extension(C2CDoc)),
     CalleeName = kzd_clicktocall:outbound_callee_id_name(C2CDoc, Exten),
     CalleeNumber = knm_converters:normalize(kzd_clicktocall:outbound_callee_id_number(C2CDoc, Exten)),
 
     FriendlyName = kzd_clicktocall:name(C2CDoc, <<>>),
     OutboundNumber = kzd_clicktocall:caller_id_number(C2CDoc, Contact),
-    AutoAnswer = kz_json:is_true(<<"auto_answer">>, cb_context:query_string(Context), 'true'),
+    AutoAnswer = should_auto_answer(Context),
 
     DialFirst = kzd_clicktocall:dial_first(C2CDoc, <<"extension">>),
+
+    CAVs = cb_context:fetch(Context, 'cavs'),
 
     {Caller, Callee} = get_caller_callee(DialFirst
                                         ,#contact{number = OutboundNumber
@@ -445,7 +526,6 @@ build_originate_req(Contact, Context) ->
            ,{<<"Inherit-Codec">>, 'false'}
            ,{<<"Retain-CID">>, 'true'}
            ],
-    CAVs = cb_modules_util:cavs_from_context(Context),
 
     Endpoint = [{<<"Invite-Format">>, <<"loopback">>}
                ,{<<"Route">>,  Callee#contact.route}
@@ -454,7 +534,13 @@ build_originate_req(Contact, Context) ->
                ],
 
     MsgId = kz_binary:rand_hex(8),
-    CallId = kz_binary:join([<<"c2c">>, kz_doc:id(C2CDoc), kz_binary:rand_hex(5)], <<"-">>),
+    CallId = kz_binary:join([<<"c2c">>
+                            ,kz_binary:truncate(cb_context:req_id(Context), 16)
+                            ,kz_binary:truncate(kz_doc:id(C2CDoc), 12)
+                            ,kz_binary:rand_hex(4)
+                            ]
+                           ,<<"-">>
+                           ),
 
     props:filter_undefined(
       [{<<"Application-Name">>, <<"transfer">>}
@@ -478,7 +564,7 @@ build_originate_req(Contact, Context) ->
       ,{<<"Continue-On-Fail">>, 'true'}
       ,{<<"Custom-SIP-Headers">>, kzd_clicktocall:custom_sip_headers(C2CDoc)}
       ,{<<"Custom-Channel-Vars">>, kz_json:from_list(CCVs)}
-      ,{<<"Custom-Application-Vars">>, kz_json:from_list(CAVs)}
+      ,{<<"Custom-Application-Vars">>, CAVs}
       ,{<<"Export-Custom-Channel-Vars">>, [<<"Account-ID">>, <<"Authorizing-ID">>, <<"Authorizing-Type">>
                                           ,<<"Loopback-Request-URI">>
                                           ,<<"From-URI">>, <<"Request-URI">>
@@ -489,6 +575,66 @@ build_originate_req(Contact, Context) ->
       ,{<<"Start-Control-Process">>, 'false'}
       | kz_api:default_headers(<<"resource">>, <<"originate_req">>, ?APP_NAME, ?APP_VERSION)
       ]).
+
+
+-spec get_custom_application_vars(cb_context:context()) ->
+          {'ok', kz_json:object()} |
+          {'error', cb_context:context()}.
+get_custom_application_vars(Context) ->
+    case cb_context:fetch(Context, 'cavs') of
+        'undefined' ->
+            DocCAVs = kzd_clicktocall:custom_application_vars(cb_context:doc(Context)),
+            CAVs = kz_json:merge(DocCAVs, kz_json:from_list(cb_modules_util:cavs_from_context(Context))),
+            maybe_flow_id(Context, CAVs, kz_json:get_ne_binary_value(<<"flow_id">>, CAVs));
+        CAVs ->
+            {'ok', CAVs}
+    end.
+
+-spec maybe_flow_id(cb_context:context(), kz_json:object(), kz_term:api_ne_binary()) ->
+          {'ok', kz_json:object()} |
+          {'error', cb_context:context()}.
+maybe_flow_id(Context, CAVs, 'undefined') ->
+    FlowDoc = kz_json:get_value(<<"flow_doc">>, CAVs),
+    case kz_json:is_json_object(FlowDoc)
+        andalso kz_json:is_not_empty(FlowDoc)
+    of
+        'true' ->
+            validate_callflow_doc(Context, CAVs, FlowDoc);
+        'false' ->
+            {'ok', kz_json:delete_key(<<"flow_doc">>, CAVs)}
+    end;
+maybe_flow_id(_Context, CAVs, _FlowId) ->
+    {'ok', kz_json:set_value(<<"quicktocall">>, <<"true">>, CAVs)}.
+
+-spec validate_callflow_doc(cb_context:context(), kz_json:object(), kz_json:object()) ->
+          {'ok', kz_json:object()} |
+          {'error', cb_context:context()}.
+validate_callflow_doc(Context, CAVs, FlowDoc) ->
+    C1 = cb_context:validate_request_data(<<"callflows">>, cb_context:set_req_data(Context, FlowDoc)),
+    case cb_context:resp_status(C1) of
+        'success' ->
+            EncodedFlow = base64:encode(kz_json:encode(cb_context:req_data(C1))),
+            {'ok', kz_json:set_values([{<<"flow_doc">>, EncodedFlow}
+                                      ,{<<"quicktocall">>, <<"true">>}
+                                      ]
+                                     ,CAVs
+                                     )
+            };
+        _ ->
+            {'error', C1}
+    end.
+
+-spec is_quicktocall(kz_json:object()) -> boolean().
+is_quicktocall(CAVs) ->
+    kz_json:is_true(<<"quicktocall">>, CAVs, 'false').
+
+-spec should_auto_answer(cb_context:context()) -> boolean().
+should_auto_answer(Context) ->
+    CAVs = cb_context:fetch(Context, 'cavs', kz_json:new()),
+    case is_quicktocall(CAVs) of
+        'true' -> 'true';
+        'false' -> kz_json:is_true(<<"auto_answer">>, cb_context:query_string(Context), 'true')
+    end.
 
 -spec get_caller_callee(kz_term:ne_binary(), #contact{}, #contact{}) -> {#contact{}, #contact{}}.
 get_caller_callee(<<"extension">>, Contact, Extension) -> {Contact, Extension};
@@ -509,18 +655,58 @@ get_c2c_contact('undefined') -> 'undefined';
 get_c2c_contact(Contact) ->
     knm_converters:normalize(kz_http_util:urlencode(Contact)).
 
--spec create_c2c_history_item({'success' | 'error', kz_json:object()}, kz_term:ne_binary(), kz_term:ne_binary()) -> kz_term:proplist().
-create_c2c_history_item({'success', Resp}, C2CId, Contact) ->
+-spec create_c2c_history_item(cb_context:context(), kz_term:ne_binary(), kz_json:object(), {'success' | 'error', kz_json:object()}) -> kz_term:proplist().
+create_c2c_history_item(Context, Contact, _Request, {'success', Resp}) ->
+    C2CDoc = cb_context:doc(Context),
     [{<<"timestamp">>, kz_time:now_s()}
     ,{<<"contact">>, Contact}
     ,{<<"call_id">>, kz_api:call_id(Resp)}
     ,{<<"result">>, <<"success">>}
-    ,{<<"pvt_clicktocall_id">>, C2CId}
+    ,{<<"quicktocall">>, maybe_quicktocall_history(Context)}
+    ,{<<"dynamic_clicktocall">>, maybe_dynamic_c2c_history(Context)}
+    ,{<<"pvt_clicktocall_id">>, kz_doc:id(C2CDoc)}
     ];
-create_c2c_history_item({'error', Error}, C2CId, Contact) ->
+create_c2c_history_item(Context, Contact, Request, {'error', Error}) ->
+    C2CDoc = cb_context:doc(Context),
     [{<<"timestamp">>, kz_time:now_s()}
     ,{<<"contact">>, Contact}
+    ,{<<"call_id">>, kz_api:call_id(Request)}
     ,{<<"result">>, <<"error">>}
     ,{<<"cause">>, Error}
-    ,{<<"pvt_clicktocall_id">>, C2CId}
+    ,{<<"quicktocall">>, maybe_quicktocall_history(Context)}
+    ,{<<"dynamic_clicktocall">>, maybe_dynamic_c2c_history(Context)}
+    ,{<<"pvt_clicktocall_id">>, kz_doc:id(C2CDoc)}
     ].
+
+-spec maybe_quicktocall_history(cb_context:context()) -> kz_term:api_object().
+maybe_quicktocall_history(Context) ->
+    CAVs = cb_context:fetch(Context, 'cavs', kz_json:new()),
+    Q2C = kz_json:from_list(
+            [{<<"flow_doc">>, kz_json:get_value(<<"flow_doc">>, CAVs)}
+            ,{<<"flow_id">>, kz_json:get_value(<<"flow_id">>, CAVs)}
+            ]
+           ),
+    case is_quicktocall(CAVs) of
+        'true' ->
+            kz_json:from_list(
+              [{<<"is_quicktocall">>, 'true'}
+              ,{<<"quicktocall_flow">>, Q2C}
+              ]
+             );
+        'false'->
+            'undefined'
+    end.
+
+-spec maybe_dynamic_c2c_history(cb_context:context()) -> kz_term:api_object().
+maybe_dynamic_c2c_history(Context) ->
+    C2CDoc = cb_context:doc(Context),
+    case cb_context:fetch(Context, 'dynamic_c2c', 'false') of
+        'true' ->
+            kz_json:from_list(
+              [{<<"is_dynamic_clicktocall">>, 'true'}
+              ,{<<"doc">>, kz_doc:public_fields(C2CDoc)}
+              ]
+             );
+        'false' ->
+            'undefined'
+    end.
