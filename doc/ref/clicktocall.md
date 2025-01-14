@@ -108,6 +108,16 @@ curl -v -X DELETE \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/clicktocall/{C2C_ID}
 ```
 
+## Change
+
+> POST /v2/accounts/{ACCOUNT_ID}/clicktocall/connect
+
+```shell
+curl -v -X POST \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/clicktocall/connect
+```
+
 ## Fetch
 
 > GET /v2/accounts/{ACCOUNT_ID}/clicktocall/{C2C_ID}/history
