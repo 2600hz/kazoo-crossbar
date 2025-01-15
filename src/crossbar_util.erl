@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2024, 2600Hz
+%%% @copyright (C) 2010-2025, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
 %%% @author Karl Anderson
@@ -456,6 +456,8 @@ move_account(AccountId, AccountJObj, ToAccount, NewTree) ->
             lager:info("moved descendants of ~s", [AccountId]),
             _Services = kazoo_services_maintenance:update_tree(AccountId, NewTree, NewResellerId),
             lager:info("updating sevices tree for ~s", [AccountId]),
+            _ = descendants_count(lists:last(NewTree)),
+            _ = descendants_count(lists:last(PreviousTree)),
             {'ok', AccountDoc}
     end.
 
