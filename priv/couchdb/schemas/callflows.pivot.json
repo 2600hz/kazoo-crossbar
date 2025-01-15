@@ -2,6 +2,18 @@
     "$schema": "http://json-schema.org/draft-04/schema#",
     "_id": "callflows.pivot",
     "description": "Validator for the Pivot callflow element",
+    "oneOf": [
+        {
+            "required": [
+                "serverless"
+            ]
+        },
+        {
+            "required": [
+                "voice_url"
+            ]
+        }
+    ],
     "properties": {
         "cdr_url": {
             "description": "Optional URL to send the CDR to at the end of the call",
@@ -58,6 +70,37 @@
             "maximum": 5000,
             "type": "integer"
         },
+        "serverless": {
+            "description": "Use provided Pivot flow without requiring an external server to execute",
+            "properties": {
+                "flow_doc": {
+                    "description": "Execute this serverless Pivot flow without making a request to a server. It can be either a valid PivotML or valid Callflow object",
+                    "oneOf": [
+                        {
+                            "minLength": 1,
+                            "type": "string"
+                        },
+                        {
+                            "type": "object"
+                        }
+                    ]
+                },
+                "flow_type": {
+                    "description": "Specifies the type of Pivot flow",
+                    "enum": [
+                        "application/json",
+                        "application/xml",
+                        "text/xml"
+                    ],
+                    "type": "string"
+                }
+            },
+            "required": [
+                "flow_doc",
+                "flow_type"
+            ],
+            "type": "object"
+        },
         "skip_module": {
             "description": "When set to true this callflow action is skipped, advancing to the wildcard branch (if any)",
             "type": "boolean"
@@ -70,8 +113,5 @@
             "type": "string"
         }
     },
-    "required": [
-        "voice_url"
-    ],
     "type": "object"
 }
