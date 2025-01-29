@@ -20261,6 +20261,17 @@
             },
             "type": "object"
         },
+        "system_config.tasks.presence_rollover": {
+            "description": "Schema for tasks.presence_rollover system_config",
+            "properties": {
+                "rollover_in_parallel": {
+                    "default": 10,
+                    "description": "tasks presence_rollover rollover_in_parallel",
+                    "type": "integer"
+                }
+            },
+            "type": "object"
+        },
         "system_config.tasks.services_rollover": {
             "description": "Schema for tasks.services_rollover system_config",
             "properties": {
