@@ -27,6 +27,7 @@ Key | Description | Type | Default | Required | Support Level
 `media.unavailable` | The ID of a media object that should be used as the unavailable greeting | `string(32)` |   | `false` | `supported`
 `media` | The media (prompt) parameters | `object()` | `{}` | `false` | `supported`
 `media_extension` | Voicemail audio format | `string('mp3' \| 'mp4' \| 'wav')` | `mp3` | `false` | `supported`
+`members` | List of the Shared VM Box members | `array()` |   | `false` | `supported`
 `name` | A friendly name for the voicemail box | `string(1..128)` |   | `true` | `supported`
 `not_configurable` | Determines if the user can configure this voicemail. | `boolean()` | `false` | `false` | `supported`
 `notify.callback` | Schema for a callback options | [#/definitions/notify.callback](#notifycallback) |   | `false` |  
@@ -40,6 +41,8 @@ Key | Description | Type | Default | Required | Support Level
 `require_pin` | Determines if a pin is required to check the voicemail from the users devices | `boolean()` | `false` | `false` | `supported`
 `save_after_notify` | Move the voicemail to save folder after the notification has been sent (This setting will override delete_after_notify) | `boolean()` | `false` | `false` | `supported`
 `seek_duration_ms` | callflow fastforward and rewind seek duration | `integer(0..)` | `10000` | `false` |  
+`shared_vmbox` | Determines if the vmbox is used as Shared VM box | `boolean()` | `false` | `false` | `supported`
+`shared_vmbox_notify_owner_email` | Determines if the owner od the shared vmbox should be notified by email | `boolean()` | `false` | `false` | `supported`
 `silence_hits` | The number of consecutive hits to see before the channel is considered silent | `integer(1..)` |   | `false` |  
 `silence_threshold` | Threshold value compared to score - if score drops below threshold, add a hit. Lower threshold means quieter channel before hits start | `integer(1..)` |   | `false` |  
 `skip_envelope` | Determines if the envelope should be skipped | `boolean()` | `false` | `false` | `beta`
