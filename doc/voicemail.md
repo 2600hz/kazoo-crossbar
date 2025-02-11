@@ -38,7 +38,9 @@ Key | Description | Type | Default | Required | Support Level
 `media.unavailable` | The ID of a media object that should be used as the unavailable greeting | `string(32)` |   | `false` | `supported`
 `media` | The media (prompt) parameters | `object()` | `{}` | `false` | `supported`
 `media_extension` | Voicemail audio format | `string('mp3' | 'mp4' | 'wav')` | `mp3` | `false` | `supported`
-`members` | List of the Shared VM Box members | `array()` |   | `false` | `supported`
+`members.[].id` | Id of the member. It can be User Id or Group Id | `string(32)` |   | `true` |  
+`members.[].type` | Type of the member | `string('user' | 'group')` |   | `true` |  
+`members` | List of the Shared VM Box members | `array(object())` |   | `false` | `supported`
 `name` | A friendly name for the voicemail box | `string(1..128)` |   | `true` | `supported`
 `not_configurable` | Determines if the user can configure this voicemail. | `boolean()` | `false` | `false` | `supported`
 `notify.callback` | Schema for a callback options | [#/definitions/notify.callback](#notifycallback) |   | `false` |  
