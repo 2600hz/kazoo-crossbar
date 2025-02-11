@@ -14,12 +14,12 @@ Key | Description | Type | Default | Required | Support Level
 `cnam.display_name` |   | `string(1..15)` |   | `false` |  
 `cnam.inbound_lookup` |   | `boolean()` |   | `false` |  
 `cnam` |   | `object()` |   | `false` |  
-`create_with_state` | The state to create numbers in | `string('aging' | 'available' | 'deleted' | 'discovery' | 'in_service' | 'port_in' | 'port_out' | 'released' | 'reserved')` |   | `false` |  
+`create_with_state` | The state to create numbers in | `string('aging' \| 'available' \| 'deleted' \| 'discovery' \| 'in_service' \| 'port_in' \| 'port_out' \| 'released' \| 'reserved')` |   | `false` |  
 `e911.activated_time` | The time stamp e911 was provisioned | `string()` |   | `false` |  
 `e911.callback_cid_number` | 10-digit DID used as caller ID to PSAP, overrides CID | `string(10)` |   | `false` |  
 `e911.caller_name` | The name that will show to emergency services | `string(3..)` |   | `false` |  
 `e911.country` | The country is identified by the two-letter ISO 3166 code. Example: US | `string(2)` |   | `false` |  
-`e911.delivery_method` | How the emergency call is routed by the destination handler (not applicable to all providers) | `string('direct' | 'three_way' | 'security_desk')` |   | `false` |  
+`e911.delivery_method` | How the emergency call is routed by the destination handler (not applicable to all providers) | `string('direct' \| 'three_way' \| 'security_desk')` |   | `false` |  
 `e911.extended_address` | The suite/floor/apt. address where the number is in service | `string()` |   | `false` |  
 `e911.latitude` | The geo-position of a location, north or south of the equator, using WGS84 formatting | `string(0..11)` |   | `false` |  
 `e911.legacy_data.house_number` | House number, numeric part only. Example: 123 | `string()` |   | `false` |  
@@ -36,7 +36,7 @@ Key | Description | Type | Default | Required | Support Level
 `e911.plus_four` | The extended zip/postal code where the number is in service | `string()` |   | `false` |  
 `e911.postal_code` | The zip/postal code where the number is in service | `string()` |   | `true` |  
 `e911.region` | The region (state) where the number is in service | `string(2)` |   | `true` |  
-`e911.status` | The e911 provisioning system status for this service address | `string('INVALID' | 'GEOCODED' | 'PROVISIONED' | 'REMOVED' | 'ERROR')` |   | `false` |  
+`e911.status` | The e911 provisioning system status for this service address | `string('INVALID' \| 'GEOCODED' \| 'PROVISIONED' \| 'REMOVED' \| 'ERROR')` |   | `false` |  
 `e911.street_address` | The street address where the number is in service | `string()` |   | `true` |  
 `e911` |   | `object()` |   | `false` |  
 `porting.billing_account_id` | The account id the losing carrier has on file | `string()` |   | `false` |  

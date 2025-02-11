@@ -14,8 +14,8 @@ Key | Description | Type | Default | Required | Support Level
 `flags.[]` |   | `string()` |   | `false` | `supported`
 `flags` | Flags set by external applications | `array(string())` |   | `false` | `supported`
 `music_on_hold.media_id` | The ID of a media object that should be used as music on hold | `string(0..128)` |   | `false` |  
-`music_on_hold.options.[]` |   | `string('preserve-position' | 'random-start')` |   | `false` |  
-`music_on_hold.options` | Options for playing music on hold | `array(string('preserve-position' | 'random-start'))` |   | `false` |  
+`music_on_hold.options.[]` |   | `string('preserve-position' \| 'random-start')` |   | `false` |  
+`music_on_hold.options` | Options for playing music on hold | `array(string('preserve-position' \| 'random-start'))` |   | `false` |  
 `music_on_hold` | The music on hold parameters | `object()` | `{}` | `false` | `beta`
 `name` | A friendly name for the group | `string(1..128)` |   | `true` | `supported`
 

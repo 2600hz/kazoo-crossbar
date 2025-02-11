@@ -13,7 +13,7 @@ Key | Description | Type | Default | Required | Support Level
 `app_name` | The Kazoo application that issued the CDR | `string()` |   | `false` |  
 `app_version` | The internal Kazoo version number of the application that issued the CDR | `string()` |   | `false` |  
 `billing_seconds` | The number of seconds the call leg can be billed for (typically from when the call leg is answered | `integer()` |   | `false` |  
-`call_direction` | Direction of the call, relative to the media switch | `string('inbound' | 'outbound')` |   | `false` |  
+`call_direction` | Direction of the call, relative to the media switch | `string('inbound' \| 'outbound')` |   | `false` |  
 `call_id` | Unique identifier of the call leg | `string()` |   | `true` |  
 `callee_id_name` | The indicated name of the callee | `string()` |   | `false` |  
 `callee_id_number` | The indicated number of the callee | `string()` |   | `false` |  
