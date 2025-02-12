@@ -22774,22 +22774,30 @@
                 },
                 "members": {
                     "description": "List of the Shared VM Box members",
-                    "properties": {
-                        "id": {
-                            "description": "Id of the member. It can be User Id or Group Id",
-                            "maxLength": 32,
-                            "minLength": 32,
-                            "type": "string"
+                    "items": {
+                        "properties": {
+                            "id": {
+                                "description": "Id of the member. It can be User Id or Group Id",
+                                "maxLength": 32,
+                                "minLength": 32,
+                                "type": "string"
+                            },
+                            "type": {
+                                "description": "Type of the member",
+                                "enum": [
+                                    "user",
+                                    "group"
+                                ],
+                                "type": "string"
+                            }
                         },
-                        "type": {
-                            "description": "Type of the member",
-                            "enum": [
-                                "user",
-                                "group"
-                            ],
-                            "type": "string"
-                        }
+                        "required": [
+                            "id",
+                            "type"
+                        ],
+                        "type": "object"
                     },
+                    "support_level": "supported",
                     "type": "array"
                 },
                 "name": {
