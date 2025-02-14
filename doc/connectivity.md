@@ -64,7 +64,7 @@ Key | Description | Type | Default | Required | Support Level
 `servers.[].options.sip_headers` | List of arbitrary SIP headers to add to the INVITE | `array(object())` |   | `false` |  
 `servers.[].options.timeout` | The time, in seconds, to wait for an answer from the server | `integer()` |   | `false` |  
 `servers.[].options` |   | `object()` |   | `false` |  
-`servers.[].server_id` | Unique Identifier for the Server | `string(32..)` |   | `false` |  
+`servers.[].server_id` | Unique Identifier for the Server | `string(32)` |   | `false` |  
 `servers` | What servers will be allowed to make/receive calls via this account | `array(object())` | `[]` | `false` |  
 
 

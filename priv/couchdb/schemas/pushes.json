@@ -116,29 +116,31 @@
             "type": "object"
         },
         "fcm": {
-            "android": {
-                "description": "FCM Android parameters",
-                "properties": {
-                    "channel_id": {
-                        "description": "The pre-registered notification channel to associate the notification with",
-                        "type": "string"
-                    },
-                    "color": {
-                        "description": "The color, expressed in `#rrggbb` format, of the notification",
-                        "type": "string"
-                    },
-                    "icon": {
-                        "description": "The name of a drawable resource to use as the notification's icon",
-                        "type": "string"
-                    },
-                    "tag": {
-                        "description": "Replace existing notifications in the notification drawer that have the same tag",
-                        "type": "string"
-                    }
-                },
-                "type": "object"
-            },
             "description": "FCM parameters",
+            "properties": {
+                "android": {
+                    "description": "FCM Android parameters",
+                    "properties": {
+                        "channel_id": {
+                            "description": "The pre-registered notification channel to associate the notification with",
+                            "type": "string"
+                        },
+                        "color": {
+                            "description": "The color, expressed in `#rrggbb` format, of the notification",
+                            "type": "string"
+                        },
+                        "icon": {
+                            "description": "The name of a drawable resource to use as the notification's icon",
+                            "type": "string"
+                        },
+                        "tag": {
+                            "description": "Replace existing notifications in the notification drawer that have the same tag",
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                }
+            },
             "type": "object"
         },
         "priority": {

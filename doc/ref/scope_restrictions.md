@@ -13,6 +13,13 @@ Key | Description | Type | Default | Required | Support Level
 `id` | Scope Restriction unique identifier | `string()` |   | `false` |  
 `scopes.[]` |   | `string()` |   | `false` |  
 `scopes` | List of enforced scopes | `array(string())` | `[]` | `false` |  
+`token_restrictions./^\w+$/.[].allowed_accounts.[]` |   | `string()` |   | `false` |  
+`token_restrictions./^\w+$/.[].allowed_accounts` | Account allowed to match this item | `array(string())` |   | `false` |  
+`token_restrictions./^\w+$/.[].rules./^[\w/#*]+$/.[]` |   | `string('GET' \| 'PUT' \| 'POST' \| 'PATCH' \| 'DELETE' \| '_')` |   | `false` |  
+`token_restrictions./^\w+$/.[].rules./^[\w/#*]+$/` | verbs | `array(string('GET' \| 'PUT' \| 'POST' \| 'PATCH' \| 'DELETE' \| '_'))` |   | `false` |  
+`token_restrictions./^\w+$/.[].rules` | Rules applied to endpoint parameters | `object()` |   | `false` |  
+`token_restrictions./^\w+$/` |   | `array(object())` |   | `false` |  
+`token_restrictions` | Token Restrictions to enforce for these scopes | `object()` |   | `false` |  
 
 
 

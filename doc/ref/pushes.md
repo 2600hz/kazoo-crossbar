@@ -35,6 +35,11 @@ Key | Description | Type | Default | Required | Support Level
 `content_available` | Specify `true` to deliver the notification as a silent background update on iOS | `boolean()` |   | `false` |  
 `content_mutable` | Specify `true` to allow a notification service app extension on iOS to modify the notification's content before delivery | `boolean()` |   | `false` |  
 `data` | The custom data to include in the notification | `object()` |   | `false` |  
+`fcm.android.channel_id` | The pre-registered notification channel to associate the notification with | `string()` |   | `false` |  
+`fcm.android.color` | The color, expressed in `#rrggbb` format, of the notification | `string()` |   | `false` |  
+`fcm.android.icon` | The name of a drawable resource to use as the notification's icon | `string()` |   | `false` |  
+`fcm.android.tag` | Replace existing notifications in the notification drawer that have the same tag | `string()` |   | `false` |  
+`fcm.android` | FCM Android parameters | `object()` |   | `false` |  
 `fcm` | FCM parameters | `object()` |   | `false` |  
 `priority` | The priority of the notification | `string('low' \| 'normal' \| 'high')` | `high` | `false` |  
 `sound` | The name of a sound file to play when the device receives the notification | `string()` |   | `false` |  
