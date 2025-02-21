@@ -9,6 +9,8 @@
             "enum": [
                 "mask",
                 "unmask",
+                "pause",
+                "resume",
                 "start",
                 "stop",
                 "toggle"

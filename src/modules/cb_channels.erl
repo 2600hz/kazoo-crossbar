@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2024, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -219,7 +219,7 @@ find_channel(AccountId, CallId, [StatusJObj|JObjs]) ->
     Channel = kz_json:get_value([<<"Channels">>, CallId], StatusJObj),
     case kz_json:get_value(<<"Account-ID">>, Channel) of
         AccountId -> Channel;
-        _AccountId -> find_channel(AccountId, CallId, JObjs)
+        _OtherAccountId -> find_channel(AccountId, CallId, JObjs)
     end.
 
 %%------------------------------------------------------------------------------
@@ -253,6 +253,10 @@ maybe_execute_command(Context, CallId, <<"intercept">>) ->
     maybe_intercept(Context, CallId);
 maybe_execute_command(Context, CallId, <<"move">>) ->
     maybe_move(Context, CallId);
+maybe_execute_command(Context, CallId, <<"start_record">>) ->
+    maybe_start_record(Context, CallId);
+maybe_execute_command(Context, CallId, <<"stop_record">>) ->
+    maybe_stop_record(Context, CallId);
 maybe_execute_command(Context, _CallId, _Command) ->
     lager:debug("unknown command: ~s", [_Command]),
     crossbar_util:response_invalid_data(cb_context:doc(Context), Context).
@@ -418,9 +422,9 @@ merge_user_channels_jobj(JObj, Dict) ->
     lists:foldl(fun merge_user_channels_fold/2, Dict, kz_json:get_value(<<"Channels">>, JObj, [])).
 
 -spec merge_user_channels_fold(kz_json:object(), dict:dict()) -> dict:dict().
-merge_user_channels_fold(Channel, D) ->
-    UUID = kz_json:get_value(<<"uuid">>, Channel),
-    dict:store(UUID, Channel, D).
+merge_user_channels_fold(Channel, Dict) ->
+    UUID = kz_json:get_ne_binary_value(<<"uuid">>, Channel),
+    dict:store(UUID, kz_json:set_value(<<"call_id">>, UUID, Channel), Dict).
 
 -spec delete_keys(kz_json:object()) -> kz_json:object().
 delete_keys(JObj) ->
@@ -611,3 +615,36 @@ get_account_id(Context) ->
             end;
         AccountId -> AccountId
     end.
+
+%%------------------------------------------------------------------------------
+%% @doc API action for starting or stopping call recording for a channel.
+%% For now, I do not check whether the call recording is enabled or not.
+%% @end
+%%------------------------------------------------------------------------------
+-spec maybe_start_record(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+maybe_start_record(Context, CallID) ->
+    API = [{<<"Action">>, <<"record_call">>}
+          ,{<<"Call-ID">>, CallID}
+          ,{<<"Data">>, kz_json:from_list([{<<"action">>, <<"start">>},
+                                           {<<"record_on_bridge">>, <<"false">>},
+                                           {<<"record_on_answer">>, <<"false">>}
+                                          ])}
+          | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+          ],
+
+    lager:notice("attempting to start the call recording~s", [CallID]),
+    kz_amqp_worker:cast(API, fun kapi_metaflow:publish_action/1),
+    crossbar_util:response_202(<<"recording started">>, Context).
+
+-spec maybe_stop_record(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
+maybe_stop_record(Context, CallID) ->
+    API = [{<<"Action">>, <<"record_call">>}
+          ,{<<"Call-ID">>, CallID}
+          ,{<<"Data">>, kz_json:from_list([{<<"action">>, <<"stop">>}
+                                          ])}
+          | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+          ],
+
+    lager:notice("attempting to stop the call recording ~s", [CallID]),
+    kz_amqp_worker:cast(API, fun kapi_metaflow:publish_action/1),
+    crossbar_util:response_202(<<"recording stopped">>, Context).

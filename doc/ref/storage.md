@@ -24,13 +24,13 @@ Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `handler` | What AWS service to use | `string('s3')` |   | `true` |  
 `settings.bucket` | Bucket name to store data to | `string(6..63)` |   | `true` |  
-`settings.bucket_access_method` | how to access the host. | `string('auto' | 'vhost' | 'path')` |   | `false` |  
+`settings.bucket_access_method` | how to access the host. | `string('auto' \| 'vhost' \| 'path')` |   | `false` |  
 `settings.bucket_after_host` | use bucket after host as part of url | `boolean()` |   | `false` |  
 `settings.host` | the s3 host, leave empty for default | `string(1..)` |   | `false` |  
 `settings.key` | AWS Key to use | `string(1..128)` |   | `false` |  
 `settings.port` | port to use | `integer()` |   | `false` |  
 `settings.region` | the region where the bucket is located | `string(1..)` |   | `false` |  
-`settings.scheme` | scheme to use to access host | `string('http' | 'https')` |   | `false` |  
+`settings.scheme` | scheme to use to access host | `string('http' \| 'https')` |   | `false` |  
 `settings.secret` | AWS Secret to use | `string(1..128)` |   | `false` |  
 `settings.tags_key_path.[]` |   | `string()` |   | `false` |  
 `settings.tags_key_path` | The key path to an array of values in the document to use as S3 object tags | `array(string())` |   | `false` |  
@@ -93,7 +93,7 @@ Key | Description | Type | Default | Required | Support Level
 `settings.base64_encode_data` | Toggles whether to base64-encode the attachment data | `boolean()` | `false` | `false` |  
 `settings.send_multipart` | Toggle whether to send multipart payload when storing attachment - will include metadata JSON if true | `boolean()` |   | `false` |  
 `settings.url` | The base HTTP(s) URL to use when creating the request | `string(7..)` |   | `true` |  
-`settings.verb` | The HTTP verb to use when sending the data | `string('post' | 'put')` | `put` | `false` |  
+`settings.verb` | The HTTP verb to use when sending the data | `string('post' \| 'put')` | `put` | `false` |  
 `settings` | HTTP server settings | `object()` |   | `true` |  
 
 ### storage.attachment.onedrive

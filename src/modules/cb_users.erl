@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc Users module
 %%% Handle client requests for user documents
 %%%
@@ -299,7 +299,7 @@ post(Context, _UserId) ->
         'success' ->
             _ = maybe_update_devices_presence(Context2),
             _ = maybe_send_desktop_welcome_email(Context1),
-            Context2;
+            cb_context:add_metadata_values(Context2, user_metadata(cb_context:doc(Context)));
         _ -> Context2
     end.
 
@@ -681,8 +681,8 @@ maybe_send_desktop_welcome_email(Context, 'false', 'true') ->
           ],
     kapps_notify_publisher:cast(Req, fun kapi_notifications:publish_desktop_app_welcome/1);
 maybe_send_desktop_welcome_email(Context, 'true', 'true') ->
-    WasEnabled = kz_term:is_not_empty(kz_json:get_ne_binary_value([<<"webphone">>, <<"device_id">>], cb_context:fetch(Context, 'db_doc'))),
-    NowEnabled = kz_term:is_not_empty(kz_json:get_ne_binary_value([<<"webphone">>, <<"device_id">>], cb_context:doc(Context))),
+    WasEnabled = kz_json:get_ne_binary_value([<<"webphone">>, <<"device_id">>], cb_context:fetch(Context, 'db_doc')),
+    NowEnabled = kz_json:get_ne_binary_value([<<"webphone">>, <<"device_id">>], cb_context:doc(Context)),
 
     maybe_send_webphone_enabled_email(Context, WasEnabled, NowEnabled);
 maybe_send_desktop_welcome_email(_Context, _WasEnabled, _NowEnabled) ->
@@ -692,8 +692,20 @@ maybe_send_desktop_welcome_email(_Context, _WasEnabled, _NowEnabled) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec maybe_send_webphone_enabled_email(cb_context:context(), boolean(), boolean()) -> 'ok'.
-maybe_send_webphone_enabled_email(Context, 'false', 'true') ->
+-spec maybe_send_webphone_enabled_email(cb_context:context(), kz_term:api_ne_binary(), kz_term:api_ne_binary()) -> 'ok'.
+maybe_send_webphone_enabled_email(_Context, 'undefined', 'undefined') ->
+    'ok';
+maybe_send_webphone_enabled_email(_Context, DeviceId, DeviceId) ->
+    'ok';
+maybe_send_webphone_enabled_email(Context, <<_/binary>>, <<_/binary>>) ->
+    send_webphone_enabled_email(Context);
+maybe_send_webphone_enabled_email(Context, 'undefined', <<_/binary>>) ->
+    send_webphone_enabled_email(Context);
+maybe_send_webphone_enabled_email(_Context, _, _) ->
+    'ok'.
+
+-spec send_webphone_enabled_email(cb_context:context()) -> 'ok'.
+send_webphone_enabled_email(Context) ->
     lager:debug("publishing desktop app welcome notification"),
     Doc = cb_context:doc(Context),
 
@@ -701,9 +713,7 @@ maybe_send_webphone_enabled_email(Context, 'false', 'true') ->
           ,{<<"User-ID">>, kz_doc:id(Doc)}
           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
-    kapps_notify_publisher:cast(Req, fun kapi_notifications:publish_desktop_webphone_enabled/1);
-maybe_send_webphone_enabled_email(_Context, _WasEnabled, _NowEnabled) ->
-    'ok'.
+    kapps_notify_publisher:cast(Req, fun kapi_notifications:publish_desktop_webphone_enabled/1).
 
 %%------------------------------------------------------------------------------
 %% @doc Attempt to load list of accounts, each summarized. Or a specific
@@ -725,21 +735,27 @@ load_users_summary(Context) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec load_user(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
-load_user(UserId, Context) ->
-    Context1 = crossbar_doc:load(UserId, Context, ?TYPE_CHECK_OPTION(kzd_users:type())),
-    case cb_context:resp_status(Context1) of
-        'success' ->
+load_user(UserId, Context0) ->
+    case kzd_users:fetch(cb_context:account_id(Context0), UserId) of
+        {'ok', UserJObj0} ->
+            lager:info("fetched user ~s", [UserId]),
             %% Migrate old-format vcard addresses (pre KZOO-310) to new format addresses object
-            UserJObj = kzd_users:maybe_migrate_user_addresses(cb_context:doc(Context1)),
-            Context2 = cb_context:setters(Context1
-                                         ,[{fun cb_context:set_doc/2, UserJObj}
-                                          ,{fun cb_context:set_resp_data/2, kz_doc:public_fields(UserJObj)}
+            UserJObj1 = kzd_users:maybe_migrate_user_addresses(UserJObj0),
+
+            Context1 = cb_context:setters(crossbar_doc:handle_json_success(UserJObj1, Context0)
+                                         ,[{fun cb_context:add_metadata_values/2, user_metadata(UserJObj1)}
+                                          ,{fun cb_context:store/3, 'db_doc', UserJObj0}
                                           ]
                                          ),
-            add_has_avatar(Context2);
-        _ -> Context1
+            add_has_avatar(Context1);
+        {'error', Error} ->
+            crossbar_doc:handle_datamgr_errors(Error, UserId, Context0)
     end.
 
+user_metadata(UserJObj) ->
+    [{<<"password_expiration_timestamp">>, kzd_users:password_expiration_timestamp(UserJObj)}
+    ,{<<"is_password_expired">>, kzd_users:is_password_expired(UserJObj)}
+    ].
 
 %%------------------------------------------------------------------------------
 %% @doc This function tries to load the user's document and all the object_types' documents listed
@@ -884,7 +900,7 @@ set_org(JObj, Context) ->
     case kz_json:get_value(<<"org">>
                           ,cb_context:doc(crossbar_doc:load(cb_context:account_id(Context)
                                                            ,Context
-                                                           ,?TYPE_CHECK_OPTION(kzd_users:type())
+                                                           ,?TYPE_CHECK_OPTION(kzd_accounts:type())
                                                            )
                                          )
                           )

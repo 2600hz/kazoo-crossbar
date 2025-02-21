@@ -21,7 +21,7 @@ Action to be executed on this request
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`action` | Action to be executed on this request | `string('set' | 'reset')` | `reset` | `true` | `supported`
+`action` | Action to be executed on this request | `string('set' \| 'reset')` | `reset` | `true` | `supported`
 
 ### presence.state
 
@@ -30,7 +30,7 @@ Desired state to be set on this request
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`state` | Desired state to be set on this request | `string('early' | 'confirmed' | 'terminated')` |   | `true` | `supported`
+`state` | Desired state to be set on this request | `string('early' \| 'confirmed' \| 'terminated')` |   | `true` | `supported`
 
 
 

@@ -57,10 +57,10 @@ Key | Description | Type | Default | Required | Support Level
 `formatters` | Schema for request formatters | `object()` |   | `false` |  
 `from_account_realm` | When formatting SIP From on outbound requests, use the calling account's SIP realm | `boolean()` | `false` | `false` |  
 `from_uri_realm` | When formatting SIP From on outbound requests this can be used to override the realm | `string()` |   | `false` |  
-`gateway_strategy` | The strategy of choosing gateways from list: sequential or random | `string('sequential' | 'random')` |   | `false` |  
+`gateway_strategy` | The strategy of choosing gateways from list: sequential or random | `string('sequential' \| 'random')` |   | `false` |  
 `gateways.[].bypass_media` | The resource gateway bypass media mode | `boolean()` |   | `false` |  
-`gateways.[].caller_id_type` | The type of caller id to use | `string('internal' | 'external' | 'emergency')` |   | `false` |  
-`gateways.[].channel_selection` | Automatic selection of the channel within the span: ascending starts at 1 and moves up; descending is the opposite | `string('ascending' | 'descending')` | `ascending` | `false` |  
+`gateways.[].caller_id_type` | The type of caller id to use | `string('internal' \| 'external' \| 'emergency')` |   | `false` |  
+`gateways.[].channel_selection` | Automatic selection of the channel within the span: ascending starts at 1 and moves up; descending is the opposite | `string('ascending' \| 'descending')` | `ascending` | `false` |  
 `gateways.[].codecs` | A list of single list codecs supported by this gateway (to support backward compatibility) | [#/definitions/codecs](#codecs) |   | `false` |  
 `gateways.[].custom_channel_vars.in` | Custom Channel Vars to be applied to calls inbound to Kazoo from the endpoint | [#/definitions/custom_channel_vars](#custom_channel_vars) |   | `false` |  
 `gateways.[].custom_channel_vars.out` | Custom Channel Vars to be applied to calls outbound from Kazoo to the endpoint | [#/definitions/custom_channel_vars](#custom_channel_vars) |   | `false` |  
@@ -72,11 +72,11 @@ Key | Description | Type | Default | Required | Support Level
 `gateways.[].custom_sip_headers` | A property list of SIP headers | `object()` |   | `false` |  
 `gateways.[].custom_sip_interface` | The name of a custom SIP interface | `string()` |   | `false` |  
 `gateways.[].enabled` | Determines if the resource gateway is currently enabled | `boolean()` | `true` | `false` |  
-`gateways.[].endpoint_type` | What type of endpoint is this gateway | `string('sip' | 'freetdm' | 'skype' | 'amqp')` | `sip` | `false` |  
+`gateways.[].endpoint_type` | What type of endpoint is this gateway | `string('sip' \| 'freetdm' \| 'skype' \| 'amqp')` | `sip` | `false` |  
 `gateways.[].force_port` | Allow request only from this port | `boolean()` | `false` | `false` |  
 `gateways.[].format_from_uri` | When set to true requests to this resource gateway will have a reformatted SIP From Header | `boolean()` |   | `false` |  
 `gateways.[].from_uri_realm` | When formatting SIP From on outbound requests this can be used to override the realm | `string()` |   | `false` |  
-`gateways.[].invite_format` | The format of the DID needed by the underlying hardware/gateway | `string('route' | 'username' | 'e164' | 'npan' | '1npan' | 'strip_plus')` | `route` | `false` |  
+`gateways.[].invite_format` | The format of the DID needed by the underlying hardware/gateway | `string('route' \| 'username' \| 'e164' \| 'npan' \| '1npan' \| 'strip_plus')` | `route` | `false` |  
 `gateways.[].invite_parameters.dynamic.[]` |   | `string()|string()|string('zone')|object()` |   |   |  
 `gateways.[].invite_parameters.dynamic` | A list of properties that, if found on the inbound call, should be added as an INVITE parameter | `array()` |   | `false` |  
 `gateways.[].invite_parameters.static.[]` |   | `string()` |   | `false` |  
@@ -89,9 +89,9 @@ Key | Description | Type | Default | Required | Support Level
 `gateways.[].port` | This resource gateway port | `integer()` | `5060` | `false` |  
 `gateways.[].prefix` | A string to prepend to the dialed number or capture group of the matching rule | `string(0..64)` |   | `false` |  
 `gateways.[].progress_timeout` | The progress timeout to apply to the resource gateway | `integer()` |   | `false` |  
-`gateways.[].realm` | This resource gateway authentication realm | `string()` |   | `false` |  
+`gateways.[].realm` | This resource gateway authentication realm | `string(1..128)` |   | `false` |  
 `gateways.[].route` | A statically configured SIP URI to route all call to | `string()` |   | `false` |  
-`gateways.[].server` | This resource gateway server | `string()` |   | `true` |  
+`gateways.[].server` | This resource gateway server | `string(1..128)` |   | `true` |  
 `gateways.[].skype_interface` | The name of the Skype interface to route the call over | `string()` |   | `false` |  
 `gateways.[].skype_rr` | Determines whether to round-robin calls amongst all interfaces (overrides "skype_interface" setting) | `boolean()` | `true` | `false` |  
 `gateways.[].span` | The identity of the hardware on the media server | `string()` |   | `false` |  
@@ -127,10 +127,10 @@ Key | Description | Type | Default | Required | Support Level
 `format.all` | Format to use for all CID formatting needs (vs per-classifier) | `object()` |   | `false` |  
 `format` | Object for CID formatters based on number classifiers | `object()` |   | `false` |  
 `ignore_completed_elsewhere` | Suppress the completed elsewhere cause | `boolean()` |   | `false` |  
-`outbound_privacy` | Determines what appears as caller id for offnet outbound calls. Values: full - hides name and number; name - hides only name; number - hides only number; none - hides nothing | `string('full' | 'name' | 'number' | 'none')` |   | `false` |  
-`privacy_method` | Method to use for anonymizing CID | `string('sip' | 'none' | 'kazoo')` |   | `false` |  
+`outbound_privacy` | Determines what appears as caller id for offnet outbound calls. Values: full - hides name and number; name - hides only name; number - hides only number; none - hides nothing | `string('full' \| 'name' \| 'number' \| 'none')` |   | `false` |  
+`privacy_method` | Method to use for anonymizing CID | `string('sip' \| 'none' \| 'kazoo')` |   | `false` |  
 `show_rate` | Whether to show the rate | `boolean()` |   | `false` |  
-`type` | Caller ID on endpoint to choose | `string('internal' | 'external' | 'emergency')` |   | `false` |  
+`type` | Caller ID on endpoint to choose | `string('internal' \| 'external' \| 'emergency')` |   | `false` |  
 
 ### codecs
 
@@ -183,10 +183,10 @@ Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `audio.codecs` | A list of audio codecs the endpoint supports | [#/definitions/codecs.audio](#codecsaudio) |   | `false` |  
 `audio` | The audio media parameters | `object()` | `{}` | `false` |  
-`bypass_media` | Default bypass media mode (The string type is deprecated, please use this as a boolean) | `boolean() | string('auto' | 'false' | 'true')` |   | `false` |  
+`bypass_media` | Default bypass media mode (The string type is deprecated, please use this as a boolean) | `boolean() | string('auto' \| 'false' \| 'true')` |   | `false` |  
 `encryption.enforce_security` | Is Encryption Enabled? | `boolean()` | `false` | `false` |  
-`encryption.methods.[]` |   | `string('zrtp' | 'srtp')` |   | `false` |  
-`encryption.methods` | Supported Encryption Types | `array(string('zrtp' | 'srtp'))` | `[]` | `false` |  
+`encryption.methods.[]` |   | `string('zrtp' \| 'srtp')` |   | `false` |  
+`encryption.methods` | Supported Encryption Types | `array(string('zrtp' \| 'srtp'))` | `[]` | `false` |  
 `encryption` | Encryption Parameters | `object()` | `{}` | `false` |  
 `fax_option` | Is T.38 Supported? | `boolean()` |   | `false` |  
 `ignore_early_media` | The option to determine if early media from the endpoint should always be ignored | `boolean()` |   | `false` |  
@@ -211,7 +211,7 @@ Schema for formatter options
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`direction` | Only apply the formatter on the relevant request direction | `string('inbound' | 'outbound' | 'both')` |   | `false` |  
+`direction` | Only apply the formatter on the relevant request direction | `string('inbound' \| 'outbound' \| 'both')` |   | `false` |  
 `match_invite_format` | Applicable on fields with SIP URIs. Will format the username portion to match the invite format of the outbound request. | `boolean()` |   | `false` |  
 `prefix` | Prepends value against the result of a successful regex match | `string()` |   | `false` |  
 `regex` | Matches against the value, with optional capture group | `string()` |   | `false` |  
@@ -260,7 +260,6 @@ Some upstream carriers require the From address' realm to be formatted. There ar
 2. Set `"from_account_realm":true` to use the calling account's realm
 3. Set `"realm":"{CUSTOM_REALM}"` on a per-gateway basis (not on the top-level resource)
 
-
 ## rules_test.[]
 
 The `rules_test` object defines an array of regular expressions for test patterns of the given resource.
@@ -276,7 +275,7 @@ For example, if the resource handles emergency routes in North America:
 defining `933` as a test route, will inform teletype this emergency call is a test and will be reflected as such in the notification.
 
 
-## Fetch
+## List the account's resources
 
 > GET /v2/accounts/{ACCOUNT_ID}/resources
 
@@ -752,3 +751,32 @@ curl -v -X POST \
     }
 }
 ```
+
+## Server hostname validation
+
+KAZOO clusters may restrict what hostnames can be put in the `server` portion of a gateway.
+
+For SIP hostnames, the following process is followed to validate the value of `server`:
+
+1. Is the `server` value an IP address
+  a. If yes, go to 2
+  b. If no, go to 3
+2. For IP addresses, compare against a system-configured deny list of CIDRs and a system-configured restricted IP list.
+3. For `server` value `sip.example.com`, lookup SRV records for `_sip._udp.sip.example.com`
+  a. If no results, go to 4
+  b. For each hostname found, go to 1
+4. Lookup A record of `sip.example.com`
+  a. If no results, go to 5
+  b. For each result, go to 1
+5. Lookup in local (node) file (/etc/hosts for instance)
+
+### Restricted IP space
+
+CIDRs and IPs that qualify as "restricted" include (but aren't limited to):
+ - [RFC1918 IPs](https://www.rfc-editor.org/rfc/rfc1918)
+ - IPv6 unique local addresses: `fc00::/7`
+ - IPv4 unspecified address: `0.0.0.0/32`
+ - IPv4 loopback address: `127.0.0.0/8`
+ - IPv6 loopback address: `::1/128`
+ - IPv4 auto-config address: `169.254.0.0/16`
+ - IPv6 link-local prefix: `fe80::/10`

@@ -6467,6 +6467,11 @@
                     "description": "domain",
                     "type": "string"
                 },
+                "endconf_grace_time": {
+                    "description": "Defines how much time all members have before the conference is terminated when the last member with endconf leaves in seconds",
+                    "minimum": 0,
+                    "type": "integer"
+                },
                 "flags": {
                     "description": "Flags set by external applications",
                     "items": {
@@ -8058,6 +8063,39 @@
                 }
             }
         },
+        "emails": {
+            "description": "Schema for an email address",
+            "properties": {
+                "dkim_selector": {
+                    "description": "This is the selector that the receiving server should use to look up the DNS record",
+                    "type": "string"
+                },
+                "email": {
+                    "description": "The email address of the user",
+                    "format": "email",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "email"
+            ],
+            "type": "object"
+        },
+        "emails_claim": {
+            "description": "Schema to request verification of an email address",
+            "properties": {
+                "code": {
+                    "description": "The verification code number sent to the email address",
+                    "maxLength": 4,
+                    "minLength": 4,
+                    "type": "string"
+                }
+            },
+            "required": [
+                "code"
+            ],
+            "type": "object"
+        },
         "endpoint.media": {
             "description": "Schema for endpoint media options",
             "properties": {
@@ -9052,6 +9090,10 @@
                 "description": {
                     "description": "Useful description for ledger",
                     "type": "string"
+                },
+                "draft": {
+                    "description": "Should the ledger be created as a draft",
+                    "type": "boolean"
                 },
                 "metadata": {
                     "description": "Metadata for ledger document",
@@ -10162,6 +10204,8 @@
                     "enum": [
                         "mask",
                         "unmask",
+                        "pause",
+                        "resume",
                         "start",
                         "stop",
                         "toggle"
@@ -22750,6 +22794,26 @@
                     ],
                     "type": "string"
                 },
+                "members": {
+                    "description": "List of the Shared VM Box members",
+                    "properties": {
+                        "id": {
+                            "description": "Id of the member. It can be User Id or Group Id",
+                            "maxLength": 32,
+                            "minLength": 32,
+                            "type": "string"
+                        },
+                        "type": {
+                            "description": "Type of the member",
+                            "enum": [
+                                "user",
+                                "group"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    "type": "array"
+                },
                 "name": {
                     "description": "A friendly name for the voicemail box",
                     "maxLength": 128,
@@ -22821,6 +22885,16 @@
                     "description": "callflow fastforward and rewind seek duration",
                     "minimum": 0,
                     "type": "integer"
+                },
+                "shared_vmbox": {
+                    "default": false,
+                    "description": "Determines if the vmbox is used as Shared VM box",
+                    "type": "boolean"
+                },
+                "shared_vmbox_notify_owner_email": {
+                    "default": false,
+                    "description": "Determines if the owner od the shared vmbox should be notified by email",
+                    "type": "boolean"
                 },
                 "silence_hits": {
                     "description": "The number of consecutive hits to see before the channel is considered silent",
@@ -23194,10 +23268,6 @@
                     "format": "uri",
                     "type": "string"
                 },
-                "dkim_selector": {
-                    "description": "This is the selector that the receiving server should use to look up the DNS record",
-                    "type": "string"
-                },
                 "domain": {
                     "description": "This is the whitelabeled domain that users will be entering to reach the UI",
                     "format": "uri",
@@ -23513,6 +23583,16 @@
             "maxLength": 32,
             "minLength": 32,
             "name": "DIRECTORY_ID",
+            "pattern": "^[0-9a-f]+$",
+            "required": true,
+            "type": "string"
+        },
+        "EMAIL_ID": {
+            "description": "request EMAIL_ID parameter",
+            "in": "path",
+            "maxLength": 32,
+            "minLength": 32,
+            "name": "EMAIL_ID",
             "pattern": "^[0-9a-f]+$",
             "required": true,
             "type": "string"
@@ -34891,22 +34971,7 @@
                 }
             }
         },
-        "/accounts/{ACCOUNT_ID}/whitelabel/dkim_key": {
-            "delete": {
-                "parameters": [
-                    {
-                        "$ref": "#/parameters/auth_token_header"
-                    },
-                    {
-                        "$ref": "#/parameters/ACCOUNT_ID"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "request succeeded"
-                    }
-                }
-            },
+        "/accounts/{ACCOUNT_ID}/whitelabel/domains": {
             "get": {
                 "parameters": [
                     {
@@ -34946,7 +35011,7 @@
                 }
             }
         },
-        "/accounts/{ACCOUNT_ID}/whitelabel/domains": {
+        "/accounts/{ACCOUNT_ID}/whitelabel/emails": {
             "get": {
                 "parameters": [
                     {
@@ -34954,6 +35019,67 @@
                     },
                     {
                         "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "put": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "whitelabel",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/whitelabel"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/whitelabel/emails/{EMAIL_ID}": {
+            "delete": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/EMAIL_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            },
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/EMAIL_ID"
                     }
                 ],
                 "responses": {
@@ -34977,6 +35103,37 @@
                     },
                     {
                         "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/EMAIL_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/whitelabel/emails/{EMAIL_ID}/verify": {
+            "post": {
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "whitelabel",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/whitelabel"
+                        }
+                    },
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/EMAIL_ID"
                     }
                 ],
                 "responses": {

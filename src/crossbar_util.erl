@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2024, 2600Hz
+%%% @copyright (C) 2010-2025, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
 %%% @author Karl Anderson
@@ -435,9 +435,9 @@ move_account(?MATCH_ACCOUNT_RAW(AccountId), ToAccount=?NE_BINARY) ->
           {'error', any()}.
 move_account(AccountId, AccountJObj, ToAccount, NewTree) ->
     PreviousTree = kzd_accounts:tree(AccountJObj),
-    Updates = [{[?SERVICES_PVT_TREE], NewTree}
-              ,{[?SERVICES_PVT_TREE_PREVIOUSLY], PreviousTree}
-              ,{[?SERVICES_PVT_MODIFIED], kz_time:now_s()}
+    Updates = [{[kzd_services:path_tree()], NewTree}
+              ,{[kzd_services:path_tree_previously()], PreviousTree}
+              ,{kz_doc:path_modified(), kz_time:now_s()}
               ],
 
     %%FIXME: do something about setting pvt_auth_*_id
@@ -456,6 +456,8 @@ move_account(AccountId, AccountJObj, ToAccount, NewTree) ->
             lager:info("moved descendants of ~s", [AccountId]),
             _Services = kazoo_services_maintenance:update_tree(AccountId, NewTree, NewResellerId),
             lager:info("updating sevices tree for ~s", [AccountId]),
+            _ = descendants_count(lists:last(NewTree)),
+            _ = descendants_count(lists:last(PreviousTree)),
             {'ok', AccountDoc}
     end.
 
@@ -526,9 +528,9 @@ update_descendants_tree([Descendant|Descendants], Tree, NewResellerId, MovedAcco
             %% Preserve tree below and including common ancestor
             {_, Tail} = lists:splitwith(fun(X) -> X =/= MovedAccountId end, PreviousTree),
             ToTree = Tree ++ Tail,
-            Updates = [{[?SERVICES_PVT_TREE], ToTree}
-                      ,{[?SERVICES_PVT_TREE_PREVIOUSLY], PreviousTree}
-                      ,{[?SERVICES_PVT_MODIFIED], kz_time:now_s()}
+            Updates = [{[kzd_services:path_tree()], ToTree}
+                      ,{[kzd_services:path_tree_previously()], PreviousTree}
+                      ,{[kz_doc:path_modified()], kz_time:now_s()}
                       ],
             %%FIXME: do something about setting pvt_auth_*_id
             case kzd_accounts:update(Descendant, Updates) of

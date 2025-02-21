@@ -11,6 +11,19 @@
 -export([main/1]).
 
 main([DepsListTxt, DepsDirs]) ->
+    maybe_dep_depies(DepsListTxt, DepsDirs, os:getenv("REBAR_DEPS_DIR") =:= false).
+
+maybe_dep_depies(DepsListTxt, DepsDirs, true) ->
+    dep_depies(DepsListTxt, DepsDirs);
+maybe_dep_depies(DepsListTxt, _, false) ->
+    case filelib:is_regular(DepsListTxt) of
+        true ->
+            ok;
+        false ->
+            dep_depies(DepsListTxt, rebar)
+    end.
+
+dep_depies(DepsListTxt, DepsDirs) ->
     {'ok', IODevice} = file:open(DepsListTxt, ['write']),
     Header = unicode:characters_to_binary(io_lib:format("KAZOO ~tss these Erlang dependencies: \n\n", [[129505]])),
     'ok' = file:write(IODevice, Header),
@@ -18,11 +31,32 @@ main([DepsListTxt, DepsDirs]) ->
     TableHeader = io_lib:format("| ~-23s | ~s |~n", ["Dependency", "License"]),
     'ok' = file:write(IODevice, TableHeader),
 
-    Deps = lists:usort(filelib:wildcard(filename:join([DepsDirs, "*"]))),
-    _ = lists:foreach(fun(Dep) -> list_dep(Dep, IODevice) end, Deps),
+    Deps = find_deps(DepsDirs),
+    _ = lists:foreach(fun(Dep) -> find_dep_license(Dep, IODevice) end, Deps),
     'ok' = file:close(IODevice).
 
-list_dep(DepDir, IODevice) ->
+find_deps(rebar) ->
+    RootDir = filename:absname(filename:join([filename:dirname(escript:script_name()), "..", "..", ".."])),
+    RebarLibDir = os:getenv("REBAR_DEPS_DIR"),
+    [_|_] = CoreApps = scna_apps(filename:join([RootDir, "core", "*"])),
+    [_|_] = KApps = scna_apps(filename:join([RootDir, "applications", "*"])),
+    [_|_] = RebarApps = scna_apps(filename:join(RebarLibDir, "*")),
+    [filename:join(RebarLibDir, App) || App <- RebarApps -- lists:append(CoreApps, KApps)];
+find_deps(DepsDirs) ->
+    lists:usort(filelib:wildcard(filename:join([DepsDirs, "*"]))).
+
+scna_apps(Wilcard) ->
+    [App || Path <- filelib:wildcard(Wilcard),
+            filelib:is_dir(Path),
+            App <- [filename:basename(Path)],
+            not badies(App)
+    ].
+
+badies("."++_) -> true;
+badies("Makefile") -> true;
+badies(_) -> false.
+
+find_dep_license(DepDir, IODevice) ->
     DepName = filename:basename(DepDir),
     case find_license(DepDir) of
         'undefined' -> 'ok';

@@ -43,10 +43,43 @@
             "description": "braintree minimum amount",
             "type": "number"
         },
+        "require_surcharge_accepted": {
+            "default": false,
+            "description": "braintree require_surcharge_accepted",
+            "type": "boolean"
+        },
         "should_prorate": {
             "default": true,
             "description": "braintree should prorate",
             "type": "boolean"
+        },
+        "surcharge": {
+            "default": true,
+            "description": "braintree surcharge",
+            "type": "boolean"
+        },
+        "surcharge_cards": {
+            "default": [
+                "visa",
+                "mastercard"
+            ],
+            "description": "braintree surcharge_cards",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "surcharge_regions": {
+            "default": {
+                "_": 2.6,
+                "co": 2.0,
+                "ct": false,
+                "ma": false,
+                "me": false,
+                "ny": false
+            },
+            "description": "braintree surcharge_regions",
+            "type": "object"
         }
     },
     "type": "object"

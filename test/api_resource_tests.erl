@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2024, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -15,6 +15,15 @@
 
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("kazoo_stdlib/include/kz_types.hrl").
+
+%% examples from https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For
+forwarded_for_test_() ->
+    Forwards = [{<<"2001:db8:85a3:8d3:1319:8a2e:370:7348">>, <<"2001:db8:85a3:8d3:1319:8a2e:370:7348">>}
+               ,{<<"203.0.113.195">>, <<"203.0.113.195">>}
+               ,{<<"203.0.113.195">>, <<"203.0.113.195, 2001:db8:85a3:8d3:1319:8a2e:370:7348">>}
+               ,{<<"203.0.113.195">>, <<"203.0.113.195,2001:db8:85a3:8d3:1319:8a2e:370:7348,198.51.100.178">>}
+               ],
+    [?_assertEqual(Expected, api_resource:forwarded_for(Test)) || {Expected, Test} <- Forwards].
 
 get_range_test_() ->
     FullBinary = <<"abcdefg">>,

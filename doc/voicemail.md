@@ -21,13 +21,13 @@ Schema for a voicemail box
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`after_forward_action` | Action to perform after forwarding a voicemail message | `string('prompt' | 'save')` | `save` | `false` |  
+`after_forward_action` | Action to perform after forwarding a voicemail message | `string('prompt' \| 'save')` | `save` | `false` |  
 `aliases.[]` |   | `string(1..36)` |   | `false` |  
 `aliases` | The voicemail box aliases string list | `array(string(1..36))` | `[]` | `false` |  
 `announcement_only` | Determine if the mailbox should only play announcements | `boolean()` | `false` | `false` | `unsupported`
 `check_if_owner` | Determines if when the user calls their own voicemail they should be prompted to sign in | `boolean()` | `true` | `false` | `supported`
 `delete_after_notify` | Move the voicemail to delete folder after the notification has been sent | `boolean()` | `false` | `false` | `supported`
-`envelope_type` | The voicemail envelope type to determine the envelope format | `string('default' | 'caller_and_time')` | `default` | `false` |  
+`envelope_type` | The voicemail envelope type to determine the envelope format | `string('default' \| 'caller_and_time')` | `default` | `false` |  
 `flags.[]` |   | `string()` |   | `false` | `supported`
 `flags` | Flags set by external applications | `array(string())` |   | `false` | `supported`
 `include_message_on_notify` | Whether or not to include the attachment when sending a new voicemail to email notification | `boolean()` | `true` | `false` | `supported`
@@ -37,7 +37,8 @@ Key | Description | Type | Default | Required | Support Level
 `mailbox` | The voicemail box number | `string(1..30)` |   | `true` | `supported`
 `media.unavailable` | The ID of a media object that should be used as the unavailable greeting | `string(32)` |   | `false` | `supported`
 `media` | The media (prompt) parameters | `object()` | `{}` | `false` | `supported`
-`media_extension` | Voicemail audio format | `string('mp3' | 'mp4' | 'wav')` | `mp3` | `false` | `supported`
+`media_extension` | Voicemail audio format | `string('mp3' \| 'mp4' \| 'wav')` | `mp3` | `false` | `supported`
+`members` | List of the Shared VM Box members | `array()` |   | `false` | `supported`
 `name` | A friendly name for the voicemail box | `string(1..128)` |   | `true` | `supported`
 `not_configurable` | Determines if the user can configure this voicemail. | `boolean()` | `false` | `false` | `supported`
 `notify.callback` | Schema for a callback options | [#/definitions/notify.callback](#notifycallback) |   | `false` |  
@@ -51,6 +52,8 @@ Key | Description | Type | Default | Required | Support Level
 `require_pin` | Determines if a pin is required to check the voicemail from the users devices | `boolean()` | `false` | `false` | `supported`
 `save_after_notify` | Move the voicemail to save folder after the notification has been sent (This setting will override delete_after_notify) | `boolean()` | `false` | `false` | `supported`
 `seek_duration_ms` | callflow fastforward and rewind seek duration | `integer(0..)` | `10000` | `false` |  
+`shared_vmbox` | Determines if the vmbox is used as Shared VM box | `boolean()` | `false` | `false` | `supported`
+`shared_vmbox_notify_owner_email` | Determines if the owner od the shared vmbox should be notified by email | `boolean()` | `false` | `false` | `supported`
 `silence_hits` | The number of consecutive hits to see before the channel is considered silent | `integer(1..)` |   | `false` |  
 `silence_threshold` | Threshold value compared to score - if score drops below threshold, add a hit. Lower threshold means quieter channel before hits start | `integer(1..)` |   | `false` |  
 `skip_envelope` | Determines if the envelope should be skipped | `boolean()` | `false` | `false` | `beta`
@@ -58,7 +61,7 @@ Key | Description | Type | Default | Required | Support Level
 `skip_instructions` | Determines if the instructions after the greeting and prior to composing a message should be played | `boolean()` | `false` | `false` | `supported`
 `timezone` | The default timezone | [#/definitions/timezone](#timezone) |   | `false` | `supported`
 `transcribe` | Transcribe voicemail using ASR engine | `boolean()` | `false` | `false` | `alpha`
-`vm_message_forward_type` | Enable or disable the ability to prepend a message when forwarding a voicemail message | `string('only_forward' | 'prepend_forward')` | `only_forward` | `false` | `supported`
+`vm_message_forward_type` | Enable or disable the ability to prepend a message when forwarding a voicemail message | `string('only_forward' \| 'prepend_forward')` | `only_forward` | `false` | `supported`
 
 ### notify.callback
 

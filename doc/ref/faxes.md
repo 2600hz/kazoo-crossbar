@@ -14,7 +14,7 @@ Key | Description | Type | Default | Required | Support Level
 `document.content` | The content provided in the body when fetching for transmission as a post | `string(0..256)` |   | `false` |  
 `document.content_type` | The content type header to be used when fetching for transmission as a post | `string()` |   | `false` |  
 `document.host` | The host header to be used when fetching for transmission | `string()` |   | `false` |  
-`document.method` | The method that should be used to retrieve the document | `string('get' | 'post')` | `get` | `false` |  
+`document.method` | The method that should be used to retrieve the document | `string('get' \| 'post')` | `get` | `false` |  
 `document.referer` | The referer header to be used when fetching for transmission | `string()` |   | `false` |  
 `document.url` | The url of the fax document | `string(7..)` |   | `true` |  
 `document` | Parameters related to the storage of a fax document | `object()` |   | `false` |  

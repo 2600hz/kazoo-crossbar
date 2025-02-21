@@ -8,6 +8,11 @@
             "description": "Indicates if the conference is reachable using a public link",
             "type": "boolean"
         },
+        "auto_record": {
+            "default": false,
+            "description": "when the number of participants meet the required configuration, conference will be recorded",
+            "type": "boolean"
+        },
         "base_profile_name": {
             "description": "name of base profile",
             "type": "string"
@@ -41,6 +46,11 @@
         "domain": {
             "description": "domain",
             "type": "string"
+        },
+        "endconf_grace_time": {
+            "description": "Defines how much time all members have before the conference is terminated when the last member with endconf leaves in seconds",
+            "minimum": 0,
+            "type": "integer"
         },
         "flags": {
             "description": "Flags set by external applications",

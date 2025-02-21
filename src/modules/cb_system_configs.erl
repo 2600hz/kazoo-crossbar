@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2024, 2600Hz
 %%% @doc Crossbar API for system configs.
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -161,8 +161,8 @@ validate_document_request(Context, Id, FullConfig) ->
     cb_context:validate_request_data(kapps_config_util:system_config_document_schema(Id)
                                     ,cb_context:set_req_data(Context, FullConfig)
                                     ,fun(Ctx) ->
-                                             Diff = kapps_config_doc:diff_from_default(Id, FullConfig),
-                                             Doc = maybe_set_private_fields(Id, Diff),
+                                             Doc = maybe_set_private_fields(Id, cb_context:req_data(Ctx)),
+                                             lager:info("setting doc into ctx: ~p", [Doc]),
                                              cb_context:set_doc(Ctx, Doc)
                                      end
                                     ).
@@ -305,7 +305,7 @@ set_db_to_system(Context) ->
 -spec maybe_set_private_fields(kz_term:ne_binary(), kz_json:object()) -> kz_json:object().
 maybe_set_private_fields(ConfigId, JObj) ->
     case kapps_config:fetch_category(ConfigId) of
-        {ok, Doc} -> update_pvt_fields(ConfigId, kz_json:merge(JObj, kz_doc:private_fields(Doc)));
+        {'ok', Doc} -> update_pvt_fields(ConfigId, kz_json:merge(JObj, kz_doc:private_fields(Doc)));
         _ -> update_pvt_fields(ConfigId, JObj)
     end.
 

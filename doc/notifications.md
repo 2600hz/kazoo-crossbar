@@ -74,12 +74,12 @@ Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `bcc.email_addresses.[]` |   | `string()` |   | `false` |  
 `bcc.email_addresses` | BCC Email Addresses | `array(string())` |   | `false` |  
-`bcc.type` |   | `string('original' | 'specified' | 'admins')` |   | `false` |  
+`bcc.type` |   | `string('original' \| 'specified' \| 'admins')` |   | `false` |  
 `bcc` | Bcc email field | `object()` |   | `false` |  
 `category` | Category of the template, for grouping purposes | `string(1..)` |   | `false` |  
 `cc.email_addresses.[]` |   | `string()` |   | `false` |  
 `cc.email_addresses` | CC Email Addresses | `array(string())` |   | `false` |  
-`cc.type` |   | `string('original' | 'specified' | 'admins')` |   | `false` |  
+`cc.type` |   | `string('original' \| 'specified' \| 'admins')` |   | `false` |  
 `cc` | CC email field | `object()` |   | `false` |  
 `enabled` | Enable notification | `boolean()` | `true` | `false` |  
 `friendly_name` | Friendly name of the template | `string(1..)` |   | `false` |  
@@ -90,7 +90,7 @@ Key | Description | Type | Default | Required | Support Level
 `template_charset` |   | `string(1..)` | `utf-8` | `false` |  
 `to.email_addresses.[]` |   | `string()` |   | `false` |  
 `to.email_addresses` |   | `array(string())` |   | `false` |  
-`to.type` |   | `string('original' | 'specified' | 'admins')` |   | `false` |  
+`to.type` |   | `string('original' \| 'specified' \| 'admins')` |   | `false` |  
 `to` | To email field | `object()` |   | `true` |  
 
 
@@ -800,10 +800,11 @@ build_customer_update_payload(AccountId) ->
 ```
 ## Configuring DKIM Signing for Email Notifications
 
-To enable DKIM signing for outgoing email notifications from your Kazoo application, you should configure below DKIM parameters on the whitelabel.
-  1. upload the PEM file (plain private key generated with RSA) using specific whitelabel API for dkim_key
-  2. configure Domain and DKIM selector on general whitelabel API
+To enable DKIM signing for outgoing email notifications from your Kazoo application, you should configure below DKIM parameters on the whitelabel along with your email address.
+  1. configure and verify your email address using whitelabel APIs for email
+  2. configure DKIM selector and upload the PEM file (plain private key generated with RSA) for your email address
+  4. configure Domain on general whitelabel API
 
 You can refer whitelabel document for API information.
 
-When Kazoo lookus up the email notification template, it looks for the DKIM information related to the account which the template belongs. Therefore when an email template is found in an account, Kazoo attempts to fetch the whitelabel document and extract DKIM parameters from that. If there are no DKIM parameters or the whitelabel document is not present for that account, then the email notification is sent without DKIM signing option. If DKIM parameters are available, email notification is sent with DKIM signing option.
+When Kazoo lookus up the email notification template, it looks for the DKIM information related to the account which the template belongs. Therefore when an email template is found in an account, Kazoo attempts to fetch the whitelabel document and email document of `from` email address to extract DKIM parameters from that. If there are no DKIM parameters or the whitelabel document is not present for that account, then the email notification is sent without DKIM signing option. If DKIM parameters are available, email notification is sent with DKIM signing option.

@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2023, 2600Hz
+%%% @copyright (C) 2012-2024, 2600Hz
 %%% @doc Helpers for manipulating the `#cb_context{}' record.
 %%% @author James Aimonetti
 %%%
@@ -1117,7 +1117,19 @@ failed_error(Error, Context) ->
                                    ,{'error_code', resp_error_code(Context)}
                                    ,{'error_message', resp_error_msg(Context)}
                                    ]),
-    {ErrorCode, ErrorMessage, ErrorJObj} = kz_json_schema:error_to_jobj(Error, Props),
+    case kz_json_schema:error_to_jobj(Error, Props) of
+        {ErrorCode, ErrorMessage, ErrorJObj} ->
+            add_error_to_context(Context, ErrorCode, ErrorMessage, ErrorJObj);
+        [{_, _, _} | _] = Errors ->
+            lists:foldl(fun({EC, EM, EJ}, C) ->
+                                add_error_to_context(C, EC, EM, EJ)
+                        end
+                       ,Context
+                       ,Errors
+                       )
+    end.
+
+add_error_to_context(Context, ErrorCode, ErrorMessage, ErrorJObj) ->
     JObj = validation_errors(Context),
 
     Context#cb_context{validation_errors = kz_json:merge(ErrorJObj, JObj)
