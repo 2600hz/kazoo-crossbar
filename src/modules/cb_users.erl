@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2024, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc Users module
 %%% Handle client requests for user documents
 %%%
@@ -681,8 +681,8 @@ maybe_send_desktop_welcome_email(Context, 'false', 'true') ->
           ],
     kapps_notify_publisher:cast(Req, fun kapi_notifications:publish_desktop_app_welcome/1);
 maybe_send_desktop_welcome_email(Context, 'true', 'true') ->
-    WasEnabled = kz_term:is_not_empty(kz_json:get_ne_binary_value([<<"webphone">>, <<"device_id">>], cb_context:fetch(Context, 'db_doc'))),
-    NowEnabled = kz_term:is_not_empty(kz_json:get_ne_binary_value([<<"webphone">>, <<"device_id">>], cb_context:doc(Context))),
+    WasEnabled = kz_json:get_ne_binary_value([<<"webphone">>, <<"device_id">>], cb_context:fetch(Context, 'db_doc')),
+    NowEnabled = kz_json:get_ne_binary_value([<<"webphone">>, <<"device_id">>], cb_context:doc(Context)),
 
     maybe_send_webphone_enabled_email(Context, WasEnabled, NowEnabled);
 maybe_send_desktop_welcome_email(_Context, _WasEnabled, _NowEnabled) ->
@@ -692,8 +692,20 @@ maybe_send_desktop_welcome_email(_Context, _WasEnabled, _NowEnabled) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec maybe_send_webphone_enabled_email(cb_context:context(), boolean(), boolean()) -> 'ok'.
-maybe_send_webphone_enabled_email(Context, 'false', 'true') ->
+-spec maybe_send_webphone_enabled_email(cb_context:context(), kz_term:api_ne_binary(), kz_term:api_ne_binary()) -> 'ok'.
+maybe_send_webphone_enabled_email(_Context, 'undefined', 'undefined') ->
+    'ok';
+maybe_send_webphone_enabled_email(_Context, DeviceId, DeviceId) ->
+    'ok';
+maybe_send_webphone_enabled_email(Context, <<_/binary>>, <<_/binary>>) ->
+    send_webphone_enabled_email(Context);
+maybe_send_webphone_enabled_email(Context, 'undefined', <<_/binary>>) ->
+    send_webphone_enabled_email(Context);
+maybe_send_webphone_enabled_email(_Context, _, _) ->
+    'ok'.
+
+-spec send_webphone_enabled_email(cb_context:context()) -> 'ok'.
+send_webphone_enabled_email(Context) ->
     lager:debug("publishing desktop app welcome notification"),
     Doc = cb_context:doc(Context),
 
@@ -701,9 +713,7 @@ maybe_send_webphone_enabled_email(Context, 'false', 'true') ->
           ,{<<"User-ID">>, kz_doc:id(Doc)}
           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
-    kapps_notify_publisher:cast(Req, fun kapi_notifications:publish_desktop_webphone_enabled/1);
-maybe_send_webphone_enabled_email(_Context, _WasEnabled, _NowEnabled) ->
-    'ok'.
+    kapps_notify_publisher:cast(Req, fun kapi_notifications:publish_desktop_webphone_enabled/1).
 
 %%------------------------------------------------------------------------------
 %% @doc Attempt to load list of accounts, each summarized. Or a specific
@@ -733,7 +743,9 @@ load_user(UserId, Context0) ->
             UserJObj1 = kzd_users:maybe_migrate_user_addresses(UserJObj0),
 
             Context1 = cb_context:setters(crossbar_doc:handle_json_success(UserJObj1, Context0)
-                                         ,[{fun cb_context:add_metadata_values/2, user_metadata(UserJObj1)}]
+                                         ,[{fun cb_context:add_metadata_values/2, user_metadata(UserJObj1)}
+                                          ,{fun cb_context:store/3, 'db_doc', UserJObj0}
+                                          ]
                                          ),
             add_has_avatar(Context1);
         {'error', Error} ->
