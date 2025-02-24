@@ -869,51 +869,19 @@ curl -v -X GET \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/qrcode
 ```
 
-## User Password Strength Compliance (Admins)
+## User's Password Strength Compliance
 
-By default, KAZOO is not enforcing a secure password is used. This can be changed on a per-system configuration or per-account basis.
+Your system adminstrator may enforce the password strength across the entire system. If enabled when users attempted to update their password,
+their new password is checked against a set of rules set by the system adminstator.
 
-Enforcement is implemented as a list of regular expressions.
+If the any rule reject the new password API response will include a list of failed rules.
 
-Each regular expression should use a capture group to return a match.
-
-Failure of the regex to match against the password indicates the password will be rejected.
-
-### Password strength configuration
-
-There are a few places to configure to control the password strength enforcer:
-
-- Enabling password strength enforcer:
-    - Enabling globally:
-        - `sup kapps_config set_boolean auth.password should_enforce_strength true`
-    - Enabling per reseller/account:
-        - `sup kapps_account_config set {RESELLER_OR_ACCOUNT_ID} auth.password should_enforce_strength true`
-    - To disable use same command but set it to `false`
-- Preventing setting the same old password:
-    - If you need to force users to not use the same password again
-    - Enabling globally:
-        - `sup kapps_config set_boolean auth.password should_prevent_reuse true`
-    - Enabling per reseller/account:
-        - `sup kapps_account_config set {RESELLER_OR_ACCOUNT_ID} auth.password should_prevent_reuse true`
-    - To disable use same command but set it to `false`
-- Password strength regular expressions
-    - This setting is JSON object you need to set this setting directly in CouchDB or use
-      Erlang shell.     - Config key: `strength_regexes`
-    - Config doc id:
-        - For global: database `system_config` and doc id is `auth.password`
-        - For per reseller/account: database is the reseller/account database and doc id
-          is `configs_auth.password`
-
-If you change the CouchDB doc directly don't forget to flush the cache or if you changed an account directly:
-
-```
-sup kapps_config flush auth.password
-sup kapps_account_config flush {ACCOUNT_ID} auth.password
-```
-
-For more info please refer to [Kazoo Auth Password](../../../core/kazoo_auth/doc/password.md) documentation.
+System adminstator can refer to [Kazoo Auth Password](../../../core/kazoo_auth/doc/password.md) documentation on how enable and configure their password
+compliance rules.
 
 ### Example of password enforcement API rejects insecure password
+
+In this example a user attempts to update their password with an insecure password while password strength is enabled in the system:
 
 > POST /v2/accounts/{ACCOUNT_ID}/users/{USER_ID}
 
@@ -925,7 +893,7 @@ curl -v -X PATCH \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}
 ```
 
-Failed response:
+The request will result and error with a payload similar to below with some details:
 
 ```json
 {
@@ -933,14 +901,14 @@ Failed response:
     "data": {
       "password": {
         "insecure": {
-          "message": "The provided password is non-compliant with your account's security level",
+          "message": "The provided password is non-compliant with security level",
           "cause": "password",
           "details": [
              "at least one special character is required",
              "at least one digit is required",
              "at least one upper case character is required",
              "minimum password length is 10 characters"
-                                                                          ]
+          ]
         }
       }
     },
