@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2024, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc User auth module
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -419,7 +419,8 @@ maybe_authenticate_user(Context, Credentials, <<"md5">>, ?NE_BINARY=Account) ->
         _Status ->
             Reason = <<"md5 credentials do not belong to any user">>,
             lager:debug("~s: ~s: ~p"
-                       ,[Reason, _Status, cb_context:doc(Context1)]),
+                       ,[Reason, _Status, cb_context:doc(Context1)]
+                       ),
             crossbar_auth:log_failed_auth(?MODULE, <<"credentials">>, Reason, Context, Account),
             cb_context:add_system_error('invalid_credentials', Context1)
     end;
@@ -530,6 +531,7 @@ load_md5_results(Context, JObj, _Account) ->
 
 -spec set_credentials_doc(cb_context:context(), kz_json:object()) -> cb_context:context().
 set_credentials_doc(Context, JObj) ->
+    lager:info("set creds for ~p", [JObj]),
     Ctx = cb_context:store(Context, 'auth_type', <<"credentials">>),
     cb_context:set_doc(Ctx, kz_json:set_value(<<"Claims">>, base_claims(JObj), JObj)).
 

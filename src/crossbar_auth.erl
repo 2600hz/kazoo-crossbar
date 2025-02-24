@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2024, 2600Hz
+%%% @copyright (C) 2010-2025, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -91,8 +91,30 @@ create_auth_token(Context, <<Method/binary>>, TokenOptions, JObj, AccountId) ->
     end.
 
 create_auth_token(Context, Method, TokenOptions, JObj, AccountId, AuthConfig) ->
-    Data = cb_context:req_data(Context),
     OwnerId = kz_json:get_first_defined([<<"owner_id">>, [<<"Claims">>, <<"owner_id">>]], JObj),
+    case is_owner_password_expired(AccountId, OwnerId) of
+        'true' -> error_password_expired(Context, AccountId, OwnerId);
+        'false' ->
+            lager:info("password for ~s / ~s is not expired", [OwnerId, AccountId]),
+            create_auth_token(Context, Method, TokenOptions, JObj, AccountId, AuthConfig, OwnerId)
+    end.
+
+error_password_expired(Context, AccountId, OwnerId) ->
+    lager:info("password for user ~s in ~s has expired", [OwnerId, AccountId]),
+    crossbar_util:response('error', <<"password expired">>, 401, Context).
+
+is_owner_password_expired(_AccountId, 'undefined') -> 'false';
+is_owner_password_expired(AccountId, OwnerId) ->
+    case kzd_users:fetch(AccountId, OwnerId) of
+        {'error', _E} ->
+            lager:info("failed to fetch owner ~s from account ~s: ~p", [OwnerId, AccountId, _E]),
+            'false';
+        {'ok', UserJObj} ->
+            kzd_users:is_password_expired(UserJObj)
+    end.
+
+create_auth_token(Context, Method, TokenOptions, JObj, AccountId, AuthConfig, OwnerId) ->
+    Data = cb_context:req_data(Context),
 
     Expiration = token_auth_expiry(Method, TokenOptions, AuthConfig),
 
