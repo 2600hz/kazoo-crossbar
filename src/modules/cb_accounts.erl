@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc Account module
 %%% Handle client requests for account documents
 %%%
@@ -286,6 +286,15 @@ post(Context, AccountId) ->
             crossbar_doc:handle_datamgr_errors(Error, AccountId, Context)
     end.
 
+-spec update_provisioner_account(cb_context:context(), kz_term:ne_binary()) -> 'ok'.
+update_provisioner_account(Context, AccountId) ->
+    _ = kz_process:spawn(fun provisioner_util:maybe_update_account/3
+                        ,[AccountId
+                         ,cb_context:auth_token(Context)
+                         ,cb_context:doc(Context)
+                         ]),
+    'ok'.
+
 -spec update_provisioner_account(cb_context:context()) -> 'ok'.
 update_provisioner_account(Context) ->
     _ = kz_process:spawn(fun provisioner_util:maybe_update_account/3
@@ -331,6 +340,7 @@ put(Context, PathAccountId) ->
             Tree = kzd_accounts:tree(ReqJObj),
             _ = maybe_update_descendants_count(Tree),
             _ = create_apps_store_doc(NewAccountId),
+            _ = update_provisioner_account(Context, NewAccountId),
             add_metadata_fields(PathAccountId, Context2)
     catch
         'throw':'datastore_fault' ->
