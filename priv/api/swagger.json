@@ -10204,6 +10204,7 @@
                 },
                 "media_name": {
                     "description": "Name of the recording file",
+                    "pattern": "^[a-zA-Z0-9_]+$",
                     "type": "string"
                 },
                 "method": {
