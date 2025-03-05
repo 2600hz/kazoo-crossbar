@@ -23,8 +23,7 @@
     },
     "required": [
         "client_id",
-        "provider",
-        "secret"
+        "provider"
     ],
     "type": "object"
 }
