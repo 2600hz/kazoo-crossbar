@@ -7921,6 +7921,8 @@
       'type': string
     'media_name':
       'description': Name of the recording file
+      'x-kazoo-validation': true
+      'pattern': '^[a-zA-Z0-9_]+$'
       'type': string
     'method':
       'description': HTTP method if using an HTTP destination
