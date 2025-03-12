@@ -15,7 +15,6 @@ Schema for conferences
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `allow_shareable_link` | Indicates if the conference is reachable using a public link | `boolean()` | `false` | `false` |  
-`auto_record` | when the number of participants meet the required configuration, conference will be recorded | `boolean()` | `false` | `false` |  
 `base_profile_name` | name of base profile | `string()` |   | `false` |  
 `bridge_password` | the password used for a conference bridge | `string()` |   | `false` |  
 `bridge_username` | the username used for a conference bridge | `string()` |   | `false` |  
@@ -68,6 +67,7 @@ Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `alone-sound` | Audio that plays while you are alone in the conference | `string()` |   | `false` |  
 `announce-count` | Play member count to conference when above this threshold | `integer()` |   | `false` |  
+`auto-record` | Enables automatic session recording when participant count equals 2 | `boolean()` | `false` | `false` |  
 `caller-controls` | Name of the caller control group | `string()` |   | `false` |  
 `comfort-noise` | The volume level of background white noise | `integer(0..10000)` |   | `false` |  
 `energy-level` | Energy level required for audio to be sent to other users | `integer(0..1800)` |   | `false` |  
