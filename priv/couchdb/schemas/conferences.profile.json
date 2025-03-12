@@ -11,6 +11,11 @@
             "description": "Play member count to conference when above this threshold",
             "type": "integer"
         },
+        "auto-record": {
+            "default": false,
+            "description": "Enables automatic session recording when participant count equals 2",
+            "type": "boolean"
+        },
         "caller-controls": {
             "description": "Name of the caller control group",
             "type": "string"
