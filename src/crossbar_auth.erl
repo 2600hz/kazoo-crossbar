@@ -214,7 +214,8 @@ validate_auth_token(Token) ->
     validate_auth_token(Token, []).
 
 -spec validate_auth_token(map() | kz_term:ne_binary(), kz_term:proplist()) ->
-          {'ok', kz_json:object()} | {'error', any()}.
+          {'ok', kz_json:object()} |
+          kz_datamgr:data_error().
 validate_auth_token(Token, Options) ->
     case kz_auth:validate_token(Token, Options) of
         {'error', 'no_jwt_signed_token'} -> maybe_db_token(Token);
@@ -227,7 +228,8 @@ authorize_auth_token(Token) ->
     kz_auth:authorize_token(Token).
 
 -spec maybe_db_token(map() | kz_term:ne_binary()) ->
-          {'ok', kz_json:object()} | {'error', any()}.
+          {'ok', kz_json:object()} |
+          kz_datamgr:data_error().
 maybe_db_token(AuthToken) ->
     kz_datamgr:open_cache_doc(?KZ_TOKEN_DB, AuthToken).
 

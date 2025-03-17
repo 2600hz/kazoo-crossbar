@@ -119,5 +119,7 @@
 
 -define(JSONP_CONTENT_TYPE, <<"application/javascript">>).
 
+-type auth_token_type() :: 'basic' | 'bearer' | 'unknown' | 'x-auth-token'.
+
 -define(CROSSBAR_TYPES_INCLUDED, 'true').
 -endif.
