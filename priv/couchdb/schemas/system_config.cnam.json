@@ -3,6 +3,11 @@
     "_id": "system_config.cnam",
     "description": "Schema for cnam system_config",
     "properties": {
+        "cache_mode": {
+            "default": "peek",
+            "description": "cnam cache_mode",
+            "type": "string"
+        },
         "cnam_expires": {
             "default": 900,
             "description": "cnam cnam_expires",
