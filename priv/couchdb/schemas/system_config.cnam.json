@@ -4,7 +4,7 @@
     "description": "Schema for cnam system_config",
     "properties": {
         "cache_mode": {
-            "default": "peek",
+            "default": "fetch",
             "description": "cnam cache_mode",
             "type": "string"
         },
