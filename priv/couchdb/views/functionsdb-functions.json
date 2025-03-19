@@ -8,6 +8,7 @@
         ]
     },
     "language": "javascript",
+    "autoupdate": false,
     "shows": {
         "print_doc": [
             "function(doc, req) {",
