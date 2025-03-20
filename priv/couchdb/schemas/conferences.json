@@ -8,11 +8,6 @@
             "description": "Indicates if the conference is reachable using a public link",
             "type": "boolean"
         },
-        "auto_record": {
-            "default": false,
-            "description": "when the number of participants meet the required configuration, conference will be recorded",
-            "type": "boolean"
-        },
         "base_profile_name": {
             "description": "name of base profile",
             "type": "string"
