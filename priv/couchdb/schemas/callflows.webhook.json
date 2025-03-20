@@ -7,6 +7,10 @@
             "description": "JSON object of custom data included on the HTTP request",
             "type": "object"
         },
+        "custom_http_headers": {
+            "description": "Custom HTTP headers to include when sending the webhook request",
+            "type": "object"
+        },
         "http_verb": {
             "description": "What HTTP verb to use when sending the request",
             "enum": [
