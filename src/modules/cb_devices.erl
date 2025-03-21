@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc Devices module
 %%% Handle client requests for device documents
 %%%
@@ -549,6 +549,7 @@ maybe_prepare_provisioner_fields(Context, ReqData, _Provision) ->
     Funs = [{fun kzd_devices:provision_combo_keys/1, fun kzd_devices:set_provision_combo_keys/2}
            ,{fun kzd_devices:provision_feature_keys/1, fun kzd_devices:set_provision_feature_keys/2}
            ,{fun kzd_devices:provision_endpoint_brand/1, fun kzd_devices:set_provision_endpoint_brand/2}
+           ,{fun kzd_devices:provision_id/1, fun kzd_devices:set_provision_id/2}
            ],
     JObj = lists:foldl(fun prune_null_provisioner_field/2, ReqData, Funs),
     update_req_with_provisioner_fields(Context, ReqData, JObj).
