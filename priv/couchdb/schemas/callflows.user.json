@@ -43,6 +43,11 @@
             "description": "Override the SIP Username",
             "type": "string"
         },
+        "stop_on_failed_forwarded_call": {
+            "default": false,
+            "description": "should stop on fail when the user callflow is invoked from a forwarded call",
+            "type": "boolean"
+        },
         "strategy": {
             "default": "simultaneous",
             "description": "Ringing strategy for the endpoint(s)",
