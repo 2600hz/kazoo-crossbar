@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc Token auth module
 %%% This is a simple auth mechanism, once the user has acquired an
 %%% auth token this module will allow access.  This module should be
@@ -114,7 +114,6 @@ authorize(Context) ->
 authenticate(Context) ->
     authenticate(Context, cb_context:auth_account_id(Context), cb_context:auth_token_type(Context)).
 
--type auth_token_type() :: 'basic' | 'bearer' | 'unknown' | 'x-auth-token'.
 -spec authenticate(cb_context:context(), kz_term:api_ne_binary(), auth_token_type()) ->
           {'true' | 'stop', cb_context:context()} | 'false'.
 authenticate(Context, <<_AccountId/binary>>, 'x-auth-token') ->

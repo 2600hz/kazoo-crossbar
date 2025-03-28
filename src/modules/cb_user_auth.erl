@@ -148,10 +148,10 @@ maybe_authorize_impersonation(Context, RequestAccountId, RequestUserId, RequestA
         andalso (Method =:= <<"cb_api_auth">>)
     of
         'false' ->
-            lager:info("auth token's account id matches request's account id ~s, not allowed", [RequestAccountId]),
+            lager:info("request token's account id ~s doesn't match root account id ~s, not allowed", [RequestAccountId, RootAccountId]),
             forbidden(Context);
         'true' ->
-            lager:info("auth token's account id matches root account id ~s, auth method ~s", [RequestAccountId, Method]),
+            lager:info("request token's account id matches root account id ~s, auth method ~s", [RequestAccountId, Method]),
             maybe_authorize_impersonation(Context, RequestAccountId, RequestUserId, RequestAccountId, cb_context:auth_user_id(Context))
     end;
 maybe_authorize_impersonation(Context, RequestAccountId, RequestUserId, AuthAccountId) ->

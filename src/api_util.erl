@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2023, 2600Hz
+%%% @copyright (C) 2012-2025, 2600Hz
 %%% @doc Crossbar REST-related functions.
 %%% @author James Aimonetti
 %%% @author Karl Anderson
@@ -1108,14 +1108,14 @@ get_authorization_token(Req, Context) ->
             {Req, set_auth_context(Context, Authorization)}
     end.
 
--spec set_auth_context(cb_context:context(), kz_term:ne_binary() | {kz_term:ne_binary(), atom()}) ->
+-spec set_auth_context(cb_context:context(), kz_term:ne_binary() | {kz_term:ne_binary(), auth_token_type()}) ->
           cb_context:context().
 set_auth_context(Context, {Token, TokenType}) ->
     set_auth_context(Context, Token, TokenType);
 set_auth_context(Context, Authorization) ->
     set_auth_context(Context, get_authorization_token_type(Authorization)).
 
--spec set_auth_context(cb_context:context(), kz_term:ne_binary(), atom()) ->
+-spec set_auth_context(cb_context:context(), kz_term:ne_binary(), auth_token_type()) ->
           cb_context:context().
 set_auth_context(Context, Token, TokenType) ->
     cb_context:setters(Context, [{fun cb_context:set_auth_token/2, Token}
@@ -1123,7 +1123,7 @@ set_auth_context(Context, Token, TokenType) ->
                                 ]
                       ).
 
--spec get_authorization_token_type(kz_term:ne_binary()) -> {kz_term:ne_binary(), atom()}.
+-spec get_authorization_token_type(kz_term:ne_binary()) -> {kz_term:ne_binary(), auth_token_type()}.
 get_authorization_token_type(<<"Basic ", Token/binary>>) -> {Token, 'basic'};
 get_authorization_token_type(<<"Bearer ", Token/binary>>) -> {Token, 'bearer'};
 get_authorization_token_type(Token) -> {Token, 'unknown'}.
@@ -1995,7 +1995,7 @@ maybe_add_version(Context, Acc) ->
 
 -spec should_include_auth_token(cb_context:context()) -> boolean().
 should_include_auth_token(Context) ->
-    kz_app_config:is_true({?APP, cb_context:auth_account_id(Context)}, <<"include_auth_token">>, true).
+    kz_app_config:is_true({?APP, cb_context:auth_account_id(Context)}, <<"include_auth_token">>, 'true').
 
 maybe_add_auth_token(Context, Acc) ->
     maybe_add_auth_token(Context, Acc, should_include_auth_token(Context)).
@@ -2014,15 +2014,14 @@ close_chunk_json_envelope(Req, Context) ->
                                                         ,cb_context:should_paginate(Context)
                                                         )
                                 ),
-    Trailer =
-        Paging ++
-        [{<<"status">>, <<"success">>}
-        ,{<<"request_id">>, cb_context:req_id(Context)}
-        ,{<<"node">>, kz_nodes:node_encoded()}
-        ,{<<"version">>, kapps_util:kazoo_version()}
-        ,{<<"timestamp">>, kz_time:iso8601(kz_time:now_s())}
-        ,{<<"revision">>, kz_term:to_api_binary(cb_context:resp_etag(Context))}
-        ],
+    Trailer = [{<<"status">>, <<"success">>}
+              ,{<<"request_id">>, cb_context:req_id(Context)}
+              ,{<<"node">>, kz_nodes:node_encoded()}
+              ,{<<"version">>, kapps_util:kazoo_version()}
+              ,{<<"timestamp">>, kz_time:iso8601(kz_time:now_s())}
+              ,{<<"revision">>, kz_term:to_api_binary(cb_context:resp_etag(Context))}
+              | Paging
+              ],
     Encoded = encode_trailer(maybe_add_auth_token(Context, Trailer)),
     'ok' = cowboy_req:stream_body(<<"], ", (kz_binary:join(Encoded))/binary, "}">>, 'fin', Req).
 
@@ -2147,7 +2146,7 @@ exec_req_fold(F, Req) when is_function(F, 1) -> F(Req).
           stop_return().
 maybe_enforce_scopes(Req, Context) ->
     TokenType = cb_context:auth_token_type(Context),
-    lager:debug("token type is : ~p~n", [cb_context:auth_token_type(Context)]),
+    lager:debug("token type is : ~p~n", [TokenType]),
     maybe_enforce_scopes(Req, Context, TokenType).
 
 -spec maybe_enforce_scopes(cowboy_req:req(), cb_context:context(), atom()) ->
