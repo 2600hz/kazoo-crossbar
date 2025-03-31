@@ -992,15 +992,8 @@ after_create(Context, AccountDoc) ->
 
     _ = crossbar_bindings:map(<<"account.created">>, Context1),
     lager:debug("alerted listeners of new account"),
-    maybe_notify_new_account(Context1),
+    notify_new_account(Context1),
     Context1.
-
--spec maybe_notify_new_account(cb_context:context()) -> 'ok'.
-maybe_notify_new_account(Context) ->
-    case kz_term:is_true(cb_context:req_value(Context, <<"send_email_on_creation">>, 'true')) of
-        'false' -> 'ok';
-        'true' -> notify_new_account(Context)
-    end.
 
 %%------------------------------------------------------------------------------
 %% @doc Send a notification that the account has been created.
@@ -1014,11 +1007,14 @@ notify_new_account(_Context, 'undefined') -> 'ok';
 notify_new_account(Context, _AuthDoc) ->
     _ = cb_context:put_reqid(Context),
     JObj = cb_context:doc(Context),
+    NoEmail = not kz_term:is_true(cb_context:req_value(Context, <<"send_email_on_creation">>, 'true')),
+
     lager:debug("triggering new account notification for ~s", [cb_context:account_id(Context)]),
     Notify = [{<<"Account-Name">>, kzd_accounts:name(JObj)}
              ,{<<"Account-Realm">>, kzd_accounts:realm(JObj)}
              ,{<<"Account-API-Key">>, kzd_accounts:api_key(JObj)}
              ,{<<"Account-ID">>, cb_context:account_id(Context)}
+             ,{<<"No-Email">>, NoEmail}
              | kz_api:default_headers(?APP_VERSION, ?APP_NAME)
              ],
     kapps_notify_publisher:cast(Notify, fun kapi_notifications:publish_new_account/1).
