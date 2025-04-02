@@ -441,6 +441,7 @@ delete(Context, AccountId) ->
                                                      ,cb_context:auth_token(Context)
                                                      ),
             _ = cb_mobile_manager:delete_account(Context1),
+            _ = notify_deleted_account(Context1),
             Context1;
         {'error', Errors} when is_list(Errors) ->
             lager:info("errors deleting account: ~p", [Errors]),
@@ -1018,3 +1019,24 @@ notify_new_account(Context, _AuthDoc) ->
              | kz_api:default_headers(?APP_VERSION, ?APP_NAME)
              ],
     kapps_notify_publisher:cast(Notify, fun kapi_notifications:publish_new_account/1).
+
+
+-spec notify_deleted_account(cb_context:context()) -> 'ok'.
+notify_deleted_account(Context) ->
+    notify_deleted_account(Context, cb_context:auth_doc(Context)).
+
+
+-spec notify_deleted_account(cb_context:context(), kz_term:api_object()) -> 'ok'.
+notify_deleted_account(_Context, 'undefined') -> 'ok';
+notify_deleted_account(Context, _AuthDoc) ->
+    _ = cb_context:put_reqid(Context),
+    JObj = cb_context:doc(Context),
+
+    lager:debug("triggering new account notification for ~s", [cb_context:account_id(Context)]),
+    Notify = [{<<"Account-Name">>, kzd_accounts:name(JObj)}
+             ,{<<"Account-Realm">>, kzd_accounts:realm(JObj)}
+             ,{<<"Account-API-Key">>, kzd_accounts:api_key(JObj)}
+             ,{<<"Account-ID">>, cb_context:account_id(Context)}
+             | kz_api:default_headers(?APP_VERSION, ?APP_NAME)
+             ],
+    kapps_notify_publisher:cast(Notify, fun kapi_notifications:publish_account_deleted/1).
