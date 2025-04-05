@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc Crossbar API for pivot.
 %%% @author James Aimonetti
 %%%
@@ -87,17 +87,18 @@ validate(Context, ?DEBUG_PATH_TOKEN, CallId) ->
     debug_read(Context, CallId).
 
 %%------------------------------------------------------------------------------
-%% @doc Load an instance from the database
-%% Proper pagination is merely impossible for this API since we debugs
-%% are in two documents, setting limit to 2 * PageSize is a bad choice.
-%% What if the response or even the request debug document is not exists?
+%% @doc Load instances from the modb database
+%% Supports filtering all calls within created_from and created_to
+%% The merge action request and response is handled by couchdb map/reduce
 %% @end
 %%------------------------------------------------------------------------------
 -spec debug_summary(cb_context:context()) -> cb_context:context().
 debug_summary(Context) ->
     ViewOptions = [{'mapper', crossbar_view:get_value_fun()}
-                  ,{'range_keymap', 'nil'}
                   ,{'limit', limit_by_page_size(Context)}
+                  ,{'reduce', 'true'}
+                  ,{'group_level', 1}
+                  | maybe_add_range_keymap_nil(Context)
                   ],
     maybe_normalize_debug_results(crossbar_view:load_modb(Context, ?CB_FIRST_ITERATION, ViewOptions)).
 
@@ -110,8 +111,7 @@ debug_summary(Context) ->
 -spec limit_by_page_size(cb_context:context()) -> kz_term:api_pos_integer().
 limit_by_page_size(Context) ->
     case cb_context:pagination_page_size(Context) of
-        Size when is_integer(Size), Size > 0 ->
-            Size * 2;
+        Size when is_integer(Size), Size > 0 -> Size;
         _ -> 'undefined'
     end.
 
@@ -169,33 +169,15 @@ maybe_normalize_debug_results(Context) ->
 -spec normalize_debug_results(cb_context:context()) -> cb_context:context().
 normalize_debug_results(Context) ->
     Dir = crossbar_view:direction(Context),
-    {_, RespData} = lists:foldl(fun normalize_debug_results_fold/2, {sets:new(), []}, cb_context:resp_data(Context)),
+    RespData = lists:map(fun(JObj) ->
+                                 kz_json:set_value(<<"debug_id">>, debug_id(JObj), JObj)
+                         end, cb_context:resp_data(Context)
+                        ),
     cb_context:setters(Context
                       ,[{fun cb_context:set_resp_data/2, lists:sort(fun(A, B) -> sort_by_created(A, B, Dir) end, RespData)}
                        ,fun fix_page_size/1
                        ]
                       ).
-
-%%------------------------------------------------------------------------------
-%% @doc Since view key is Call-ID, we're sure debug docs for the same Call-ID
-%% are adjacent to each other. If we previously visited the Call-ID
-%% the next doc with the same Call-ID are merged with list's head.
-%% @end
-%%------------------------------------------------------------------------------
--spec normalize_debug_results_fold(kz_json:object(), {sets:set(), kz_json:objects()}) -> {sets:set(), kz_json:objects()}.
-normalize_debug_results_fold(JObj, {Set, []}) ->
-    CallId = kz_json:get_value(<<"call_id">>, JObj),
-    NewJObj = kz_json:set_value(<<"debug_id">>, debug_id(JObj), JObj),
-
-    {sets:add_element(CallId, Set), [NewJObj]};
-normalize_debug_results_fold(JObj, {Set, [H|Rest]=JObjAcc}) ->
-    CallId = kz_json:get_value(<<"call_id">>, JObj),
-    NewJObj = kz_json:set_value(<<"debug_id">>, debug_id(JObj), JObj),
-
-    case sets:is_element(CallId, Set) of
-        'false' -> {sets:add_element(CallId, Set), [NewJObj|JObjAcc]};
-        'true' -> {Set, [kz_json:merge_jobjs(H, NewJObj)|Rest]}
-    end.
 
 -spec sort_by_created(kz_json:object(), kz_json:object(), kz_view:direction()) -> boolean().
 sort_by_created(A, B, 'ascending') ->
@@ -223,6 +205,20 @@ fix_page_size(Context) ->
 -spec normalize_debug_read(kz_json:object(), kz_json:objects()) -> kz_json:objects().
 normalize_debug_read(JObj, Acc) ->
     [add_metadata_fields(kz_json:get_json_value(<<"doc">>, JObj)) | Acc].
+
+%%%%------------------------------------------------------------------------------
+%%%% @doc
+%%%% @end
+%%%%------------------------------------------------------------------------------
+-spec maybe_add_range_keymap_nil(cb_context:context()) -> [] | [{'range_keymap', 'nil'}].
+maybe_add_range_keymap_nil(Context) ->
+    Queries = cb_context:query_string(Context),
+    Keys = kz_json:get_keys(Queries),
+    case not lists:member(<<"created_from">>, Keys)
+        andalso not lists:member(<<"created_to">>, Keys) of
+        'true' -> [{'range_keymap', 'nil'}];
+        'false' -> []
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc
