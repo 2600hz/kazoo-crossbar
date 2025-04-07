@@ -998,6 +998,7 @@ notify_deleted_account(Context, _AuthDoc) ->
              ,{<<"Account-Realm">>, kzd_accounts:realm(JObj)}
              ,{<<"Account-API-Key">>, kzd_accounts:api_key(JObj)}
              ,{<<"Account-ID">>, cb_context:account_id(Context)}
+             ,{<<"Parent-ID">>, kzd_accounts:parent_account_id(JObj)}
              | kz_api:default_headers(?APP_VERSION, ?APP_NAME)
              ],
     kapps_notify_publisher:cast(Notify, fun kapi_notifications:publish_account_deleted/1).
