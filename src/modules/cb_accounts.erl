@@ -1032,7 +1032,7 @@ notify_deleted_account(Context, _AuthDoc) ->
     _ = cb_context:put_reqid(Context),
     JObj = cb_context:doc(Context),
 
-    lager:debug("triggering new account notification for ~s", [cb_context:account_id(Context)]),
+    lager:debug("triggering account_deleted notification for ~s", [cb_context:account_id(Context)]),
     Notify = [{<<"Account-Name">>, kzd_accounts:name(JObj)}
              ,{<<"Account-Realm">>, kzd_accounts:realm(JObj)}
              ,{<<"Account-API-Key">>, kzd_accounts:api_key(JObj)}
