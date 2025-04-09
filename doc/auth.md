@@ -143,6 +143,7 @@ Returns an empty success response.
 !!! note
     This will fail if your password or User Signature Secret was reset.
 
+This will only works if the system_config/crossbar.auth has the action set enabled "renew" as true to default/auth_modules/cb_user_auth.
 > PUT /v2/auth
 
 ```shell
