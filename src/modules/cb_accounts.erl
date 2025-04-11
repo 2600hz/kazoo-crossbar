@@ -1008,14 +1008,14 @@ notify_new_account(_Context, 'undefined') -> 'ok';
 notify_new_account(Context, _AuthDoc) ->
     _ = cb_context:put_reqid(Context),
     JObj = cb_context:doc(Context),
-    NoEmail = not kz_term:is_true(cb_context:req_value(Context, <<"send_email_on_creation">>, 'true')),
+    ShouldNotify = kz_term:is_true(cb_context:req_value(Context, <<"send_email_on_creation">>, 'true')),
 
     lager:debug("triggering new account notification for ~s", [cb_context:account_id(Context)]),
     Notify = [{<<"Account-Name">>, kzd_accounts:name(JObj)}
              ,{<<"Account-Realm">>, kzd_accounts:realm(JObj)}
              ,{<<"Account-API-Key">>, kzd_accounts:api_key(JObj)}
              ,{<<"Account-ID">>, cb_context:account_id(Context)}
-             ,{<<"No-Email">>, NoEmail}
+             ,{<<"Should-Notify">>, ShouldNotify}
              | kz_api:default_headers(?APP_VERSION, ?APP_NAME)
              ],
     kapps_notify_publisher:cast(Notify, fun kapi_notifications:publish_new_account/1).
