@@ -8,6 +8,9 @@
             "type": "object"
         },
         "options": {
+            "default": {
+                "autoupdate": false
+            },
             "description": "design_docs options default",
             "type": "object"
         },
