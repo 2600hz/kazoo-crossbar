@@ -2,20 +2,16 @@
     "type": "object",
     "properties": {
       "options": {
-        "properties": {
-          "default": {
-            "type": "object",
-            "description": "design_docs options default"
-          },
-          "classifications": {
-            "type": "object",
-            "description": "design_docs options default"
-          },
-          "views": {
-            "type": "object",
-            "description": "design_docs options default"
-          }
-        }
+        "type": "object",
+        "description": "design_docs options default"
+      },
+      "classifications": {
+        "type": "object",
+        "description": "classifications options"
+      },
+      "views": {
+        "type": "object",
+        "description": "views options"
       }
     },
     "description": "Schema for design_docs system_config",
