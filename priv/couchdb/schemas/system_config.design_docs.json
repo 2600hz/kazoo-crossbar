@@ -9,12 +9,6 @@
         },
         "options": {
             "description": "design_docs options default",
-            "properties": {
-                "default": {
-                    "description": "design_docs options default",
-                    "type": "object"
-                }
-            },
             "type": "object"
         },
         "views": {
