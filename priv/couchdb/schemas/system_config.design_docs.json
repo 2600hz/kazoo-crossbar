@@ -1,20 +1,26 @@
 {
-    "type": "object",
-    "properties": {
-      "options": {
-        "type": "object",
-        "description": "design_docs options default"
-      },
-      "classifications": {
-        "type": "object",
-        "description": "classifications options"
-      },
-      "views": {
-        "type": "object",
-        "description": "views options"
-      }
-    },
-    "description": "Schema for design_docs system_config",
+    "$schema": "http://json-schema.org/draft-04/schema#",
     "_id": "system_config.design_docs",
-    "$schema": "http://json-schema.org/draft-04/schema#"
+    "description": "Schema for design_docs system_config",
+    "properties": {
+        "classifications": {
+            "description": "classifications options",
+            "type": "object"
+        },
+        "options": {
+            "description": "design_docs options default",
+            "properties": {
+                "default": {
+                    "description": "design_docs options default",
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        },
+        "views": {
+            "description": "views options",
+            "type": "object"
+        }
+    },
+    "type": "object"
 }
