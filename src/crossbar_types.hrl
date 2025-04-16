@@ -50,6 +50,8 @@
 %% `{handler_fun, {type, sub_type}} => {to_json, [{<<"application">>, <<"json">>}]}'
 -type crossbar_content_handlers() :: [crossbar_content_handler()].
 
+-type http_headers() :: #{binary() => iodata()}.
+-type http_status() :: non_neg_integer() | binary().
 -type http_method() :: binary(). %% HTTP Verbs in UPPERCASE
 -type http_methods() :: [binary()].
 -type req_verb() :: http_method().

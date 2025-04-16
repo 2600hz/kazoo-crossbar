@@ -60,6 +60,9 @@
 
         ,exec_req/2
         ,get_request_body/1
+
+        ,inform/3
+        ,progress/2
         ]).
 
 -include_lib("kernel/include/file.hrl").
@@ -2180,4 +2183,21 @@ enforce_scopes(Req, Context, [RequiredScopes|_]) ->
         'false' ->
             lager:debug("all scopes match failed"),
             {'stop', Req, Context}
+    end.
+
+-spec inform(cowboy:http_status(), cowboy:http_headers(), cowboy_req:req()) -> ok.
+inform(StatusCode, Headers, Req) ->
+    try
+        cowboy_req:inform(StatusCode, Headers, Req)
+    catch
+        _C:_E:ST ->
+            lager:error("error sending inform ~p/~p", [_C,_E]),
+            kz_log:log_stacktrace(ST)
+    end.
+
+-spec progress(cb_context:context(), kz_term:ne_binary()) -> ok.
+progress(Context, Msg) ->
+    case cb_context:fetch(Context, req) of
+        undefined -> ok;
+        Req -> inform(102, #{<<"x-kazoo-progress">> => Msg}, Req)
     end.
