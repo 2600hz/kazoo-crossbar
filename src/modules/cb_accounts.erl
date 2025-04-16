@@ -389,11 +389,15 @@ put(Context, AccountId, ?RESELLER) ->
 delete_account(AccountId) ->
     kzdb_account:delete(AccountId).
 
--spec delete(cb_context:context(), path_token()) -> cb_context:context().
-delete(Context, Account) ->
-    AccountId = kzs_util:format_account_id(Account),
+delete_callback_fun(Context) ->
+    fun(Msg) ->
+            cb_context:progress(Context, Msg)
+    end.
 
-    case kzdb_account:delete(AccountId) of
+-spec delete(cb_context:context(), path_token()) -> cb_context:context().
+delete(Context, AccountId) ->
+    Options = #{progress_callback => delete_callback_fun(Context)},
+    case kzdb_account:delete(AccountId, Options) of
         {'ok', AccountJObj} ->
             Context1 = crossbar_doc:handle_datamgr_success(AccountJObj, Context),
             _ = maybe_update_descendants_count(kzd_accounts:tree(AccountJObj)),
@@ -417,7 +421,7 @@ delete(Context, Account) ->
             cb_context:add_system_error(403, 'forbidden', Msg, Context);
         {'error', Error} ->
             lager:info("error deleting account: ~p", [Error]),
-            crossbar_doc:handle_datamgr_errors(Error, Account, Context)
+            crossbar_doc:handle_datamgr_errors(Error, AccountId, Context)
     end.
 
 -spec delete(cb_context:context(), path_token(), path_token()) -> cb_context:context().
