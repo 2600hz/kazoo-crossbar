@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2024, 2600Hz
+%%% @copyright (C) 2012-2025, 2600Hz
 %%% @doc Helpers for manipulating the `#cb_context{}' record.
 %%% @author James Aimonetti
 %%%
@@ -120,6 +120,8 @@
         ,req_param/2, req_param/3
         ,add_metadata_value/3, add_metadata_values/2
         ,get_metadata/1, get_metadata/2
+
+        ,progress/2, inform/3
         ]).
 
 -include("crossbar.hrl").
@@ -1424,3 +1426,14 @@ add_metadata_value(#cb_context{metadata=Metadata}=Context, Key, 'null') ->
 add_metadata_value(#cb_context{metadata=Metadata}=Context, Key, Value) ->
     lager:info("setting meta ~p: ~p", [Key, Value]),
     Context#cb_context{metadata = props:set_value(Key, Value, Metadata)}.
+
+-spec inform(context(), http_status(), http_headers()) -> ok.
+inform(Context, StatusCode, Headers) ->
+    case fetch(Context, req) of
+        undefined -> ok;
+        Req -> api_util:inform(StatusCode, Headers, Req)
+    end.
+
+-spec progress(context(), kz_term:ne_binary()) -> ok.
+progress(Context, Msg) ->
+    inform(Context, 102, #{<<"x-kazoo-progress">> => Msg}).
