@@ -12134,6 +12134,21 @@
       'description': maximum smpt message size (mega byte)
       'type': integer
   'type': object
+'system_config.design_docs':
+  'description': Schema for design_docs system_config
+  'properties':
+    'classifications':
+      'description': classifications options
+      'type': object
+    'options':
+      'default':
+        'autoupdate': false
+      'description': design_docs options default
+      'type': object
+    'views':
+      'description': views options
+      'type': object
+  'type': object
 'system_config.doodle':
   'description': Schema for doodle system_config
   'properties':
