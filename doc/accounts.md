@@ -870,3 +870,83 @@ curl -v -X POST \
 For instance, Alice places a call from her device to KAZOO - `inbound` call to KAZOO.
 
 Bob receives a call from KAZOO on his device - `outbound` call from KAZOO.
+
+
+## Sign up parameters
+
+Account doc responses by this endpoint may include some additional parameters if the account is created by a Sign up
+method. These parameters are added under `signup` field in response envelope `metadata` field.
+
+By default, only important parameters are added, if any. For more Sign up parameters you can include `include_signup`
+query string to request all Sign up parameters to be included in metadata.
+
+Default Sign up parameters:
+
+| Key                 | Type       | Description                                                                                                                     |
+|---------------------|------------|---------------------------------------------------------------------------------------------------------------------------------|
+| `method`            | `string()` | The method or service used for Sign up, you can check existence of this field to know if account is create as result of Sign up |
+| `email_is_verified` | `bolean()` | Indicates if the Email used during Sign up is verified or not                                                                   |
+
+If `include_signup` query string is to `true`, response will include these fields in addition to above fields:
+
+| Key                    | Type        | Description                                                                                                                     |
+|------------------------|-------------|---------------------------------------------------------------------------------------------------------------------------------|
+| `method`               | `string()`  | The method or service used for Sign up, you can check existence of this field to know if account is create as result of Sign up |
+| `email_is_verified`    | `bolean()`  | Indicates if the Email used during Sign up is verified or not                                                                   |
+| `email_is_verified_at` | `integer()` | The Gregorian timestamp of when the Email used for Sign up is verified                                                          |
+| `user`                 | `object()`  | An object with some parameters of the user or person that Sign up                                                               |
+| `metadata`             | `object()`  | An object with some metadata from the method or service that processed the Sign up                                              |
+
+For example:
+
+```json
+{
+    "metadata": {
+        "signup": {
+            "method": "hello",
+            "email": "cool@beans.com",
+            "email_is_verified": false,
+            "user": {
+                "id": "sdsdsddssdsdsdsdsdsd",
+                "first_name": "John",
+                "last_name": "Due"
+            },
+            "metadata": {
+                "uuid": "dkdld"
+            }
+        }
+    },
+    "data": {
+        "enabled": true,
+        "id": "{ACCOUNT_ID}",
+        // ...
+    },
+    "status": "success"
+}
+```
+
+## Trial account
+
+If the account is in trial, there maybe extra fields added to `metadata` on response envelope:
+
+
+| Key               | Type        | Description                                                                                                        |
+|-------------------|-------------|--------------------------------------------------------------------------------------------------------------------|
+| `is_trial`        | `boolean()` | Indicates if the account is trial or not                                                                           |
+| `trial_time_left` | `integer()` | If the account is on trial and the trial has an expiration, this indicates how much left time off trial in seconds |
+
+For example:
+
+```json
+{
+    "metadata": {
+        "is_trial": true
+    },
+    "data": {
+        "enabled": true,
+        "id": "{ACCOUNT_ID}",
+        // ...
+    },
+    "status": "success"
+}
+```

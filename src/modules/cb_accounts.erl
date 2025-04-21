@@ -673,7 +673,9 @@ add_metadata_fields(AccountId, Context, 'success') ->
                ,fun add_metadata_is_reseller/1
                ,{fun add_metadata_billing_mode/2, AccountId}
                ,fun add_metadata_notification_preference/1
+               ,fun add_metadata_is_trial/1
                ,fun add_metadata_trial_time_left/1
+               ,fun add_metadata_signup/1
                ],
     cb_context:setters(Context, Routines);
 add_metadata_fields(_AccountId, Context, _Status) -> Context.
@@ -699,48 +701,30 @@ add_metadata_api_key(Context) ->
     of
         'false' -> Context;
         'true' ->
-            cb_context:add_metadata_value(Context
-                                         ,<<"api_key">>
-                                         ,kzd_accounts:api_key(cb_context:doc(Context))
-                                         )
+            cb_context:add_metadata_value(Context, <<"api_key">>, kzd_accounts:api_key(cb_context:doc(Context)))
     end.
 
 -spec add_metadata_created(cb_context:context()) -> cb_context:context().
 add_metadata_created(Context) ->
-    cb_context:add_metadata_value(Context
-                                 ,<<"created">>
-                                 ,kz_doc:created(cb_context:doc(Context))
-                                 ).
+    cb_context:add_metadata_value(Context, <<"created">>, kz_doc:created(cb_context:doc(Context))).
 
 -spec add_metadata_enabled(cb_context:context()) -> cb_context:context().
 add_metadata_enabled(Context) ->
     case kzd_accounts:is_enabled(cb_context:doc(Context)) of
         'true' ->
-            cb_context:add_metadata_value(Context
-                                         ,<<"enabled">>
-                                         ,'true'
-                                         );
+            cb_context:add_metadata_value(Context, <<"enabled">>, 'true');
         'false' ->
-            cb_context:add_metadata_value(Context
-                                         ,<<"enabled">>
-                                         ,'false'
-                                         )
+            cb_context:add_metadata_value(Context, <<"enabled">>, 'false')
     end.
 
 -spec add_metadata_reseller_id(cb_context:context(), kz_term:api_binary()) -> cb_context:context().
 add_metadata_reseller_id(Context, PathAccountId) ->
-    cb_context:add_metadata_value(Context
-                                 ,<<"reseller_id">>
-                                 ,find_reseller_id(Context, PathAccountId)
-                                 ).
+    cb_context:add_metadata_value(Context, <<"reseller_id">>, find_reseller_id(Context, PathAccountId)).
 
 -spec add_metadata_is_reseller(cb_context:context()) -> cb_context:context().
 add_metadata_is_reseller(Context) ->
     IsReseller = kz_services_reseller:is_reseller(cb_context:account_id(Context)),
-    cb_context:add_metadata_value(Context
-                                 ,<<"is_reseller">>
-                                 ,IsReseller
-                                 ).
+    cb_context:add_metadata_value(Context,<<"is_reseller">>, IsReseller).
 
 -spec add_metadata_billing_mode(cb_context:context(), kz_term:api_binary()) -> cb_context:context().
 add_metadata_billing_mode(Context, PathAccountId) ->
@@ -748,20 +732,11 @@ add_metadata_billing_mode(Context, PathAccountId) ->
     AuthAccountId = cb_context:auth_account_id(Context),
     case find_reseller_id(Context, PathAccountId) of
         AuthAccountId ->
-            cb_context:add_metadata_value(Context
-                                         ,<<"billing_mode">>
-                                         ,<<"limits_only">>
-                                         );
+            cb_context:add_metadata_value(Context, <<"billing_mode">>, <<"limits_only">>);
         MasterAccountId ->
-            cb_context:add_metadata_value(Context
-                                         ,<<"billing_mode">>
-                                         ,<<"normal">>
-                                         );
+            cb_context:add_metadata_value(Context, <<"billing_mode">>, <<"normal">>);
         _AccountId ->
-            cb_context:add_metadata_value(Context
-                                         ,<<"billing_mode">>
-                                         ,<<"manual">>
-                                         )
+            cb_context:add_metadata_value(Context, <<"billing_mode">>, <<"manual">>)
     end.
 
 -spec find_reseller_id(cb_context:context(), kz_term:api_binary()) -> kz_term:api_binary().
@@ -778,34 +753,58 @@ find_reseller_id(Context, PathAccountId) ->
 
 -spec add_metadata_notification_preference(cb_context:context()) -> cb_context:context().
 add_metadata_notification_preference(Context) ->
-    add_metadata_notification_preference(Context, kzd_accounts:notification_preference(cb_context:doc(Context))).
+    case kzd_accounts:notification_preference(cb_context:doc(Context)) of
+        'undefined' ->
+            Context;
+        Pref ->
+            RespData = kz_json:set_value(<<"notification_preference">>, Pref, cb_context:resp_data(Context)),
+            cb_context:setters(Context
+                              ,[{fun cb_context:set_resp_data/2, RespData}
+                               ,{fun cb_context:add_metadata_value/3, <<"notification_preference">>, Pref}
+                               ]
+                              )
+    end.
 
--spec add_metadata_notification_preference(cb_context:context(), kz_term:api_binary()) -> cb_context:context().
-add_metadata_notification_preference(Context, 'undefined') ->
-    Context;
-add_metadata_notification_preference(Context, Pref) ->
-    UpdatedRespJObj = kz_json:set_value(<<"notification_preference">>, Pref, cb_context:resp_data(Context)),
-    cb_context:set_resp_data(Context, UpdatedRespJObj).
+-spec add_metadata_is_trial(cb_context:context()) -> cb_context:context().
+add_metadata_is_trial(Context) ->
+    JObj = cb_context:doc(Context),
+    cb_context:add_metadata_value(Context, <<"is_trial">>, kzd_accounts:pvt_is_trial(JObj)).
 
--spec add_metadata_trial_time_left(cb_context:context()) ->
-          cb_context:context().
+-spec add_metadata_trial_time_left(cb_context:context()) -> cb_context:context().
 add_metadata_trial_time_left(Context) ->
     JObj = cb_context:doc(Context),
-    add_metadata_trial_time_left(Context, JObj, kzd_accounts:trial_expiration(JObj)).
+    case kzd_accounts:trial_expiration(JObj) of
+        'undefined' ->
+            RespData = kz_json:delete_key(<<"trial_time_left">>, cb_context:resp_data(Context)),
+            cb_context:set_resp_data(Context, RespData);
+        Expiration ->
+            RespData = kz_json:set_value(<<"trial_time_left">>, kzd_accounts:trial_time_left(JObj), cb_context:resp_data(Context)
+                                        ),
+            cb_context:setters(Context
+                              ,[{fun cb_context:set_resp_data/2, RespData}
+                               ,{fun cb_context:add_metadata_value/3, <<"trial_time_left">>, Expiration}
+                               ]
+                              )
+    end.
 
--spec add_metadata_trial_time_left(cb_context:context(), kz_json:object(), kz_term:api_integer()) ->
-          cb_context:context().
-add_metadata_trial_time_left(Context, _JObj, 'undefined') ->
-    RespData = kz_json:delete_key(<<"trial_time_left">>
-                                 ,cb_context:resp_data(Context)
-                                 ),
-    cb_context:set_resp_data(Context, RespData);
-add_metadata_trial_time_left(Context, JObj, _Expiration) ->
-    RespData = kz_json:set_value(<<"trial_time_left">>
-                                ,kzd_accounts:trial_time_left(JObj)
-                                ,cb_context:resp_data(Context)
-                                ),
-    cb_context:set_resp_data(Context, RespData).
+-spec add_metadata_signup(cb_context:context()) -> cb_context:context().
+add_metadata_signup(Context) ->
+    JObj = cb_context:doc(Context),
+    %% don't include full signup if not requested
+    case kz_term:is_true(cb_context:req_value(Context, <<"include_signup">>, 'false')) of
+        'true' ->
+            cb_context:add_metadata_value(Context, <<"signup">>, kzd_accounts:pvt_signup(JObj));
+        'false' ->
+            case kzd_accounts:pvt_signup_method(JObj) of
+                'undefined' ->
+                    Context;
+                Method ->
+                    Signup = [{<<"method">>, Method}
+                             ,{<<"email_is_verified">>, kzd_accounts:pvt_signup_email_is_verified(JObj)}
+                             ],
+                    cb_context:add_metadata_value(Context, <<"signup">>, kz_json:from_list(Signup))
+            end
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc Load a summary of the children of this account
