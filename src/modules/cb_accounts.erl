@@ -389,15 +389,51 @@ put(Context, AccountId, ?RESELLER) ->
 delete_account(AccountId) ->
     kzdb_account:delete(AccountId).
 
-delete_callback_fun(Context) ->
+delete_callback_fun(Parent) ->
     fun(Msg) ->
-            cb_context:progress(Context, Msg)
+            Parent ! {self(), progress, Msg}
     end.
+
+delete_set_progress_msg(Context, Msg) ->
+    Setters = [{fun cb_context:store/3, progress_msg, Msg}
+              ,{fun cb_context:store/3, progress_count, null}
+              ],
+    cb_context:setters(Context, Setters).
+
+delete_wait_for_result(Context, Pid, Ref) ->
+    receive
+        {Pid, progress, Msg} ->
+            cb_context:progress(Context, Msg),
+            delete_wait_for_result(delete_set_progress_msg(Context, Msg), Pid, Ref);
+
+        {Pid, result, Result} ->
+            delete_wait_for_result(cb_context:store(Context, delete_result, Result), Pid, Ref);
+
+        {'DOWN', Ref, process, Pid, normal} ->
+            cb_context:fetch(Context, delete_result, undefined);
+
+        {'DOWN', Ref, process, Pid, Reason} ->
+            {error, Reason}
+
+    after 20000 ->
+            Count = cb_context:fetch(Context, progress_count, 0) + 1,
+            LastMsg = cb_context:fetch(Context, progress_msg, <<"running action">>),
+            Msg = list_to_binary([LastMsg, " ", string:copies("...", Count)]),
+            cb_context:progress(Context, Msg),
+            delete_wait_for_result(cb_context:store(Context,progress_count, Count), Pid, Ref)
+    end.
+
+
+delete_progress(AccountId, Parent) ->
+    Options = #{progress_callback => delete_callback_fun(Parent)},
+    Result = kzdb_account:delete(AccountId, Options),
+    Parent ! {self(), result, Result}.
 
 -spec delete(cb_context:context(), path_token()) -> cb_context:context().
 delete(Context, AccountId) ->
-    Options = #{progress_callback => delete_callback_fun(Context)},
-    case kzdb_account:delete(AccountId, Options) of
+    Self = self(),
+    {Pid, Ref} = kz_process:spawn_monitor(fun delete_progress/2, [AccountId, Self]),
+    case delete_wait_for_result(Context, Pid, Ref) of
         {'ok', AccountJObj} ->
             Context1 = crossbar_doc:handle_datamgr_success(AccountJObj, Context),
             _ = maybe_update_descendants_count(kzd_accounts:tree(AccountJObj)),
