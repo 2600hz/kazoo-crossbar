@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2024, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc API resource
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -85,6 +85,7 @@ init(Req, Opts) ->
 -spec rest_init(cowboy_req:req(), kz_term:proplist()) ->
           {'cowboy_rest', cowboy_req:req(), cb_context:context()}.
 rest_init(Req, Opts) ->
+    erlang:put(kz_application, ?APP),
     maybe_trace(Req),
 
     Path = find_path(Req, Opts),
