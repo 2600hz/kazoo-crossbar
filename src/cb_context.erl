@@ -943,6 +943,10 @@ maybe_add_content_type_provided(Context, AttachmentId) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec store(context(), any(), any()) -> context().
+store(#cb_context{storage=Storage}=Context, Key, undefined) ->
+    Context#cb_context{storage=props:delete(Key, Storage)};
+store(#cb_context{storage=Storage}=Context, Key, null) ->
+    Context#cb_context{storage=props:delete(Key, Storage)};
 store(#cb_context{storage=Storage}=Context, Key, Data) ->
     Context#cb_context{storage=[{Key, Data} | props:delete(Key, Storage)]}.
 
