@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2024, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -254,6 +254,7 @@ maybe_start_plaintext(Dispatch, IP) ->
                                     ,'stream_handlers' => maybe_add_compression_handler()
                                     ,'shutdown_timeout' => ReqTimeout
                                     ,'idle_timeout' => IdleTimeout
+                                    ,reset_idle_timeout_on_send => true
                                     }
                                   )
             of
@@ -294,11 +295,11 @@ start_ssl(Dispatch, IP) ->
                                 ,#{'socket_opts' => [{'ip', IP} | SSLOpts]
                                   ,'num_acceptors' => Workers
                                   }
-                                ,#{'env' => #{'dispatch' => Dispatch
-                                             }
+                                ,#{'env' => #{'dispatch' => Dispatch}
                                   ,'stream_handlers' => maybe_add_compression_handler()
                                   ,'shutdown_timeout' => ReqTimeout
                                   ,'idle_timeout' => 120 * ?MILLISECONDS_IN_SECOND
+                                  ,reset_idle_timeout_on_send => true
                                   }
                                 )
             of
