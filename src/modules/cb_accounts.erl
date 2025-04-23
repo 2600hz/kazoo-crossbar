@@ -996,7 +996,6 @@ notify_deleted_account(Context, _AuthDoc) ->
     lager:debug("triggering account_deleted notification for ~s with parent ~s", [cb_context:account_id(Context), kzd_accounts:parent_account_id(JObj)]),
     Notify = [{<<"Account-Name">>, kzd_accounts:name(JObj)}
              ,{<<"Account-Realm">>, kzd_accounts:realm(JObj)}
-             ,{<<"Account-API-Key">>, kzd_accounts:api_key(JObj)}
              ,{<<"Account-ID">>, cb_context:account_id(Context)}
              ,{<<"Parent-ID">>, kzd_accounts:parent_account_id(JObj)}
              | kz_api:default_headers(?APP_VERSION, ?APP_NAME)
