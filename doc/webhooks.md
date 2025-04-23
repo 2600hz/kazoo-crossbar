@@ -13,6 +13,7 @@ Web Hooks are subscriptions to allowed events that, when the event occurs, the e
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `custom_data` | These properties will be added to the event and will overwrite existing values. | `object()` |   | `false` |  
+`custom_request_headers` | Custom HTTP request headers to be included when sending the webhook request | `object()` |   | `false` |  
 `enabled` | Is the webhook enabled and running | `boolean()` | `true` | `false` |  
 `format` | What Body format to use when sending the webhook. only valid for 'post' & 'put' verbs | `string('form-data' \| 'json')` | `form-data` | `false` | `supported`
 `hook` | The trigger event for a request being made to 'callback_uri'. | `string()` |   | `true` | `supported`
