@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc Crossbar API for pivot.
 %%% @author James Aimonetti
 %%%
@@ -12,9 +12,13 @@
 -module(cb_pivot).
 
 -export([init/0
-        ,allowed_methods/1, allowed_methods/2
-        ,resource_exists/1, resource_exists/2
-        ,validate/2, validate/3
+        ,allowed_methods/0, allowed_methods/1, allowed_methods/2
+        ,resource_exists/0, resource_exists/1, resource_exists/2
+        ,validate/1, validate/2, validate/3
+        ,put/1
+        ,post/2
+        ,patch/2
+        ,delete/2
         ]).
 
 -include("crossbar.hrl").
@@ -34,19 +38,30 @@
 %%------------------------------------------------------------------------------
 -spec init() -> 'ok'.
 init() ->
-    _ = crossbar_bindings:bind(<<"*.allowed_methods.pivot">>, ?MODULE, 'allowed_methods'),
-    _ = crossbar_bindings:bind(<<"*.resource_exists.pivot">>, ?MODULE, 'resource_exists'),
-    _ = crossbar_bindings:bind(<<"*.validate.pivot">>, ?MODULE, 'validate').
+    _ = cb_modules_util:bind(?MODULE, [{<<"*.allowed_methods.pivot">>, 'allowed_methods'}
+                                      ,{<<"*.resource_exists.pivot">>, 'resource_exists'}
+                                      ,{<<"*.validate.pivot">>, 'validate'}
+                                      ,{<<"*.execute.put.pivot">>, 'put'}
+                                      ,{<<"*.execute.post.pivot">>, 'post'}
+                                      ,{<<"*.execute.patch.pivot">>, 'patch'}
+                                      ,{<<"*.execute.delete.pivot">>, 'delete'}
+                                      ]),
+    'ok'.
 
 %%------------------------------------------------------------------------------
 %% @doc Given the path tokens related to this module, what HTTP methods are
 %% going to be responded to.
 %% @end
 %%------------------------------------------------------------------------------
+-spec allowed_methods() -> http_methods().
+allowed_methods() ->
+    [?HTTP_GET, ?HTTP_PUT].
 
 -spec allowed_methods(path_token()) -> http_methods().
 allowed_methods(?DEBUG_PATH_TOKEN) ->
-    [?HTTP_GET].
+    [?HTTP_GET];
+allowed_methods(_PivotId) ->
+    [?HTTP_GET, ?HTTP_POST, ?HTTP_PATCH, ?HTTP_DELETE].
 
 -spec allowed_methods(path_token(), path_token()) -> http_methods().
 allowed_methods(?DEBUG_PATH_TOKEN, _UUID) ->
@@ -64,8 +79,12 @@ allowed_methods(?DEBUG_PATH_TOKEN, _UUID) ->
 %% @end
 %%------------------------------------------------------------------------------
 
+-spec resource_exists() -> 'true'.
+resource_exists() -> 'true'.
+
 -spec resource_exists(path_token()) -> 'true'.
-resource_exists(?DEBUG_PATH_TOKEN) -> 'true'.
+resource_exists(?DEBUG_PATH_TOKEN) -> 'true';
+resource_exists(_PivotId) -> 'true'.
 
 -spec resource_exists(path_token(), path_token()) -> 'true'.
 resource_exists(?DEBUG_PATH_TOKEN, _) -> 'true'.
@@ -78,13 +97,100 @@ resource_exists(?DEBUG_PATH_TOKEN, _) -> 'true'.
 %% Generally, use crossbar_doc to manipulate the cb_context{} record
 %% @end
 %%------------------------------------------------------------------------------
+
+-spec validate(cb_context:context()) -> cb_context:context().
+validate(Context) ->
+    validate_pivot(Context, cb_context:req_verb(Context)).
+
 -spec validate(cb_context:context(), path_token()) -> cb_context:context().
 validate(Context, ?DEBUG_PATH_TOKEN) ->
-    debug_summary(Context).
+    debug_summary(Context);
+validate(Context, PivotId) ->
+    validate_pivot(Context, PivotId, cb_context:req_verb(Context)).
 
 -spec validate(cb_context:context(), path_token(), path_token()) ->cb_context:context().
 validate(Context, ?DEBUG_PATH_TOKEN, CallId) ->
     debug_read(Context, CallId).
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec validate_pivot(cb_context:context(), path_token()) -> cb_context:context().
+validate_pivot(Context, ?HTTP_GET) ->
+    load_pivot_summary(Context);
+validate_pivot(Context, ?HTTP_PUT) ->
+    validate_request('undefined', Context).
+
+-spec validate_pivot(cb_context:context(), kz_term:ne_binary(), path_token()) -> cb_context:context().
+validate_pivot(Context, DocId, ?HTTP_GET) ->
+    load_pivot(DocId, Context);
+validate_pivot(Context, DocId, ?HTTP_POST) ->
+    validate_request(DocId, Context);
+validate_pivot(Context, DocId, ?HTTP_PATCH) ->
+    validate_patch(DocId, Context);
+validate_pivot(Context, DocId, ?HTTP_DELETE) ->
+    load_pivot(DocId, Context).
+
+%%------------------------------------------------------------------------------
+%% @doc If the HTTP verb is PUT, execute the actual action, usually a db save.
+%% @end
+%%------------------------------------------------------------------------------
+-spec put(cb_context:context()) -> cb_context:context().
+put(Context) ->
+    crossbar_doc:save(Context).
+
+-spec post(cb_context:context(), path_token()) -> cb_context:context().
+post(Context, _CallflowId) ->
+    crossbar_doc:save(Context).
+
+-spec patch(cb_context:context(), path_token()) -> cb_context:context().
+patch(Context, _CallflowId) ->
+    crossbar_doc:save(Context).
+
+-spec delete(cb_context:context(), path_token()) -> cb_context:context().
+delete(Context, _PivotId) ->
+    crossbar_doc:delete(Context).
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec validate_patch(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
+validate_patch(PivotId, Context) ->
+    crossbar_doc:patch_and_validate(PivotId, Context, fun validate_request/2).
+
+%%------------------------------------------------------------------------------
+%% @doc Attempt to load list of accounts, each summarized. Or a specific
+%% account summary.
+%% @end
+%%------------------------------------------------------------------------------
+-spec load_pivot_summary(cb_context:context()) -> cb_context:context().
+load_pivot_summary(Context) ->
+    Options = [{'doc_type', kzd_pivot:pvt_type()}
+              ,{'mapper', crossbar_view:get_value_fun()}
+              ],
+    Selector = [{'start', [{<<"doc_type">>, kzd_pivot:pvt_type()}]}
+               ,{'end', [{<<"doc_type">>, kzd_pivot:pvt_type()}]}
+               ],
+    crossbar_view:find(Context, <<"crossbar_listings/by_type_id">>, Selector, Options).
+
+%%------------------------------------------------------------------------------
+%% @doc Load a pivot document from the database
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec load_pivot(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
+load_pivot(PivotId, Context) ->
+    crossbar_doc:load(PivotId, Context, ?TYPE_CHECK_OPTION(kzd_pivot:pvt_type())).
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec validate_request(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
+validate_request(PivotId, Context) ->
+    check_pivot_schema(PivotId, Context).
 
 %%------------------------------------------------------------------------------
 %% @doc Load an instance from the database
@@ -258,3 +364,26 @@ debug_id(JObj) ->
     CallId = kz_json:get_value(<<"call_id">>, JObj),
     {{Year, Month, _}, _} = calendar:gregorian_seconds_to_datetime(Created),
     ?MATCH_MODB_PREFIX(kz_term:to_binary(Year), kz_date:pad_month(Month), CallId).
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec check_pivot_schema(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
+check_pivot_schema(PivotId, Context) ->
+    OnSuccess = fun(C) -> on_successful_validation(PivotId, C) end,
+    cb_context:validate_request_data(<<"pivot">>, Context, OnSuccess).
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec on_successful_validation(kz_term:api_binary(), cb_context:context()) ->
+          cb_context:context().
+on_successful_validation('undefined', Context) ->
+    Props = [{<<"pvt_type">>, kzd_pivot:pvt_type()}],
+    cb_context:set_doc(Context, kz_json:set_values(Props, cb_context:doc(Context)));
+on_successful_validation(PivotId, Context) ->
+    crossbar_doc:load_merge(PivotId, Context, ?TYPE_CHECK_OPTION(kzd_pivot:pvt_type())).
