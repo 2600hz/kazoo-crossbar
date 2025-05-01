@@ -3,6 +3,11 @@
     "_id": "system_config.telemetry",
     "description": "Schema for telemetry system_config",
     "properties": {
+        "enabled": {
+            "default": false,
+            "description": "telemetry enabled",
+            "type": "boolean"
+        },
         "cluster_id_anonymized": {
             "default": true,
             "description": "telemetry cluster_id_anonymized",
