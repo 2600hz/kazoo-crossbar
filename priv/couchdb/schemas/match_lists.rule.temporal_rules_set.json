@@ -1,0 +1,11 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "_id": "match_lists.rule.temporal_rules_set",
+    "description": "Temporal rules set match list rule definition",
+    "properties": {
+        "temporal_rules_set_id": {
+            "description": "When type=temporal_rules_set, set this to the ID of the temporal set to use",
+            "type": "string"
+        }
+    }
+}

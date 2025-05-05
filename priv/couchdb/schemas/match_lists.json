@@ -21,7 +21,8 @@
         }
     },
     "required": [
-        "rules"
+        "rules",
+        "name"
     ],
     "type": "object"
 }

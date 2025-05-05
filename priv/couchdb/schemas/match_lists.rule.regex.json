@@ -1,0 +1,15 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "_id": "match_lists.rule.regex",
+    "description": "Regex match list rule definition",
+    "properties": {
+        "regex": {
+            "description": "Regular expression to match with when type=regex",
+            "type": "string"
+        },
+        "target": {
+            "description": "The target field to match against - context-dependent",
+            "type": "string"
+        }
+    }
+}

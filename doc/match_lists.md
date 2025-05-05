@@ -17,7 +17,7 @@ Match lists - define a set of rules for matching against call properties, callfl
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`name` | Friendly name for the match list | `string()` |   | `false` |  
+`name` | Friendly name for the match list | `string()` |   | `true` |  
 `owner_id` | KAZOO User ID of the owner of this match list | `string()` |   | `false` |  
 `rules` | Evaluated rules to determine if the match list has matched | `array([#/definitions/match_lists.rule](#match_listsrule))` |   | `true` |  
 
@@ -28,12 +28,68 @@ Match list rule - express the logic of a match
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`name` | Friendly name of the rule | `string(3..255)` |   | `true` |  
-`regex` | Regular expression to match with when type=regex | `string()` |   | `false` |  
-`target` | The target field to match against - context-dependent | `string()` |   | `false` |  
-`temporal_route_id` | When type=temporal_route, set this to the ID of the temporal route (or route set) to use | `string()` |   | `false` |  
-`type` |   | `string('regex' \| 'temporal_route')` |   | `true` |  
+`name` | Friendly name of the rule | `string(3..255)` |   | `false` |  
+`type` |   | `string('regex' \| 'and' \| 'not' \| 'temporal_rules_set' \| 'temporal_route')` |   | `true` |  
 
+
+
+### match_lists.rule.and
+
+AND route match list rule definition
+
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`rules` | Nested rules to determine if the parent rule matches ('and' and 'not') | `array([#/definitions/match_lists.rule](#match_listsrule))` |   | `false` |
+`type` |   | `string('and')` |   | `false` |
+
+### match_lists.rule.not
+
+NOT route match list rule definition
+
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`rules` | Nested rules to determine if the parent rule matches ('and' and 'not') | `array([#/definitions/match_lists.rule](#match_listsrule))` |   | `false` |
+`type` |   | `string('not')` |   | `false` |
+
+
+### match_lists.rule.regex
+
+Regex match list rule definition
+
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`regex` | Regular expression to match with when type=regex | `string()` |   | `false` |
+`target` | The target field to match against - context-dependent | `string()` |   | `false` |
+`type` |   | `string('regex')` |   | `false` |
+
+### match_lists.rule.temporal_route
+
+Temporal route match list rule definition
+
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`temporal_route` | Temporal route config to execute when type=temporal_route | `object()` |   | `false` |
+`temporal_route_id` | When type=temporal_route, set this to the ID of the temporal route to use | `string()` |   | `false` |
+`type` |   | `string('temporal_route')` |   | `false` |
+
+### match_lists.rule.temporal_rule_set
+
+Temporal rule set match list rule definition
+
+
+
+Key | Description | Type | Default | Required | Support Level
+--- | ----------- | ---- | ------- | -------- | -------------
+`temporal_rules_set_id` | When type=temporal_set, set this to the ID of the temporal set to use | `string()` |   | `false` |
+`type` |   | `string('temporal_rules_set')` |   | `false` |
 
 
 ## Fetch the listing of created match lists

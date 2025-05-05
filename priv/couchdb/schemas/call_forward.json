@@ -42,26 +42,32 @@
             "properties": {
                 "direct_calls_only": {
                     "default": false,
+                    "description": "Toggle whether to send only direct calls to the device to the forwarded number",
                     "type": "boolean"
                 },
                 "enabled": {
                     "default": false,
+                    "description": "Toggle whether these call forward settings should be used",
                     "type": "boolean"
                 },
                 "ignore_early_media": {
                     "default": true,
+                    "description": "Toggle whether to ignore early media from the called device",
                     "type": "boolean"
                 },
                 "keep_caller_id": {
                     "default": true,
+                    "description": "Toggle whether to present the caller ID to the call (false passes the called device CID)",
                     "type": "boolean"
                 },
                 "number": {
+                    "description": "Phone number to forward calls to",
                     "maxLength": 35,
                     "type": "string"
                 },
                 "require_keypress": {
                     "default": true,
+                    "description": "Require the callee to press any key to accept the call",
                     "type": "boolean"
                 },
                 "rules": {

@@ -1,0 +1,17 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "_id": "match_lists.rule.not",
+    "description": "NOT route match list rule definition",
+    "properties": {
+        "rules": {
+            "description": "Nested rules to determine if the parent rule matches ('and' and 'not')",
+            "items": {
+                "$ref": "match_lists.rule",
+                "type": "object"
+            },
+            "maxItems": 1,
+            "minItems": 1,
+            "type": "array"
+        }
+    }
+}

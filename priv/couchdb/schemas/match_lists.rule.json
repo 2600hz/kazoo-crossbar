@@ -9,28 +9,19 @@
             "minLength": 3,
             "type": "string"
         },
-        "regex": {
-            "description": "Regular expression to match with when type=regex",
-            "type": "string"
-        },
-        "target": {
-            "description": "The target field to match against - context-dependent",
-            "type": "string"
-        },
-        "temporal_route_id": {
-            "description": "When type=temporal_route, set this to the ID of the temporal route (or route set) to use",
-            "type": "string"
-        },
         "type": {
             "enum": [
                 "regex",
+                "and",
+                "not",
+                "temporal_rules_set",
                 "temporal_route"
             ],
+            "kazoo-validation": true,
             "type": "string"
         }
     },
     "required": [
-        "name",
         "type"
     ],
     "type": "object"

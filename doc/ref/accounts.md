@@ -123,12 +123,12 @@ Key | Description | Type | Default | Required | Support Level
 `no_answer` | Call Forward Properties | `object()` |   | `false` |  
 `number` |   | `string(0..35)` |   | `false` |  
 `require_keypress` |   | `boolean()` | `true` | `false` |  
-`selective.direct_calls_only` |   | `boolean()` | `false` | `false` |  
-`selective.enabled` |   | `boolean()` | `false` | `false` |  
-`selective.ignore_early_media` |   | `boolean()` | `true` | `false` |  
-`selective.keep_caller_id` |   | `boolean()` | `true` | `false` |  
-`selective.number` |   | `string(0..35)` |   | `false` |  
-`selective.require_keypress` |   | `boolean()` | `true` | `false` |  
+`selective.direct_calls_only` | Toggle whether to send only direct calls to the device to the forwarded number | `boolean()` | `false` | `false` |  
+`selective.enabled` | Toggle whether these call forward settings should be used | `boolean()` | `false` | `false` |  
+`selective.ignore_early_media` | Toggle whether to ignore early media from the called device | `boolean()` | `true` | `false` |  
+`selective.keep_caller_id` | Toggle whether to present the caller ID to the call (false passes the called device CID) | `boolean()` | `true` | `false` |  
+`selective.number` | Phone number to forward calls to | `string(0..35)` |   | `false` |  
+`selective.require_keypress` | Require the callee to press any key to accept the call | `boolean()` | `true` | `false` |  
 `selective.rules.[].direct_calls_only` |   | `boolean()` | `false` | `false` |  
 `selective.rules.[].enabled` |   | `boolean()` | `false` | `false` |  
 `selective.rules.[].ignore_early_media` |   | `boolean()` | `true` | `false` |  

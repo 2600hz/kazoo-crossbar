@@ -1,0 +1,16 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "_id": "match_lists.rule.temporal_route",
+    "description": "Temporal route match list rule definition",
+    "properties": {
+        "temporal_route": {
+            "$ref": "temporal_rules",
+            "description": "Temporal route config to execute when type=temporal_route",
+            "type": "object"
+        },
+        "temporal_route_id": {
+            "description": "When type=temporal_route, set this to the ID of the temporal route to use",
+            "type": "string"
+        }
+    }
+}
