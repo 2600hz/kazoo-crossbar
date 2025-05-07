@@ -42,6 +42,14 @@
             "description": "use an enhanced model for speech recognition",
             "type": "boolean"
         },
+        "model": {
+            "patternProperties": {
+                ".+": {
+                    "description": "speech google model  +",
+                    "type": "string"
+                }
+            }
+        },
         "tts_api_key": {
             "default": "",
             "description": "speech google tts_api_key",
