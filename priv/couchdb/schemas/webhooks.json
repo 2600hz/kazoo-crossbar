@@ -10,6 +10,10 @@
             "description": "These properties will be added to the event and will overwrite existing values.",
             "type": "object"
         },
+        "custom_request_headers": {
+            "description": "Custom HTTP request headers to be included when sending the webhook request",
+            "type": "object"
+        },
         "enabled": {
             "default": true,
             "description": "Is the webhook enabled and running",
