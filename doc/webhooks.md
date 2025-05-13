@@ -595,7 +595,7 @@ Both `type` and `action` will accept `"all"` to avoid needing to create a hook p
 For hooks using the "version 2" payload format, it is possible to include more information on the webhook payload to ensure the webhook event arrives from the cluster, timestamps to prevent replay attacks, etc.
 
 !!! warning
-    Please ensure the webhook also sets `"format":"json"` as "form-data" (the default) will result in integers (like timestamps) being encoded as strings. It is still possible to use hmac validation, but the payload will need to be translated to [rfc-8785 canonical JSON](https://www.rfc-editor.org/rfc/rfc8785).
+    Please ensure the webhook also sets `"format":"json"` as "form-data" (the default) will result in integers (like timestamps) being encoded as strings. It is still possible to use HMAC validation, but the payload will need to be translated to [RFC-8785 canonical JSON](https://www.rfc-editor.org/rfc/rfc8785).
 
 Timestamps will be included on all payloads:
 
