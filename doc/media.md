@@ -30,6 +30,54 @@ The comparison is case-insensitive, but `en` and `en-US` are treated separately.
 
 Once you've assigned languages, you can use the [`language` callflow action](../../callflow/doc/language.md) to set the language for that call.
 
+### TTS Languages
+
+TTS support any other languages we support using `$gender/$langcode-$countrycode`
+e.g.
+
+female/en-us
+male/en-us
+female/en-gb
+female/fr-ca
+female/fr-fr
+female/nl-be
+female/nl-nl
+
+Right now we support following TTS engines
+1. Google TTS for most languages
+2. Voicefabric for RU
+3. ISpeech
+
+These languages can be mapped to different google TTS models e.g.
+
+in `system_config->speech.google`
+
+```json
+  "default": {
+    "tts_api_key": "AIza.........",
+    "tts_url": "https://texttospeech.googleapis.com/v1/text:synthesize",
+    "model": {
+      "female/en-us": "en-US-Chirp3-HD-Achernar",
+      "female/fr-ca": "fr-CA-Chirp3-HD-Achernar",
+      "en-US-Wavenet-C": "en-US-Chirp3-HD-Achernar",
+      "female/nl-be": "nl-BE-Wavenet-C"
+    }
+  }
+```
+
+Even models e.g. `en-US-Wavenet-C` can be mapped to newer models.
+The values for models will self populate once language is used to create media,
+after that they can be modified to suit system needs.
+
+For models available please refer to google TTS, voicefabric or ISpeech
+Google TTS
+
+```bash
+curl -s -S  -H "X-Goog-Api-Key: YOUR-TOKEN-HERE" \
+            -H "Content-Type: application/json; charset=utf-8" \
+            "https://texttospeech.googleapis.com/v1/voices"
+```
+
 ### Normalize Media Files
 
 Kazoo can be configured to normalize uploaded media files. This can fix things like:
@@ -92,7 +140,7 @@ Key | Description | Type | Default | Required | Support Level
 `source_type` | If the media was generated from a callflow module, this is the module name | `string()` |   | `false` | `beta`
 `streamable` | Determines if the media can be streamed | `boolean()` | `true` | `false` | `supported`
 `tts.text` | The text to be converted into audio | `string(1..)` |   | `false` | `supported`
-`tts.voice` | The voice to be used during the conversion | `string('female/en-US' \| 'male/en-US' \| 'female/en-CA' \| 'female/en-AU' \| 'female/en-GB' \| 'male/en-GB' \| 'female/es-US' \| 'male/es-US' \| 'female/us-US' \| 'female/zh-CN' \| 'male/zh-CN' \| 'female/zh-HK' \| 'female/zh-TW' \| 'female/ja-JP' \| 'male/ja-JP' \| 'female/ko-KR' \| 'male/ko-KR' \| 'female/da-DK' \| 'female/de-DE' \| 'male/de-DE' \| 'female/ca-ES' \| 'female/es-ES' \| 'male/es-ES' \| 'female/fi-FI' \| 'female/fr-CA' \| 'male/fr-CA' \| 'female/fr-FR' \| 'male/fr-FR' \| 'female/it-IT' \| 'male/it-IT' \| 'female/nb-NO' \| 'female/nl-NL' \| 'female/pl-PL' \| 'female/pt-BR' \| 'female/pt-PT' \| 'male/pt-PT' \| 'female/ru-RU' \| 'male/ru-RU' \| 'female/sv-SE' \| 'female/hu-HU' \| 'female/cs-CZ' \| 'female/tr-TR' \| 'male/tr-TR' \| 'male/ru-RU/Vladimir' \| 'female/ru-RU/Julia' \| 'female/ru-RU/Anna' \| 'female/ru-RU/Viktoria' \| 'male/ru-RU/Alexander' \| 'female/ru-RU/Maria' \| 'female/ru-RU/Lidia' \| 'es-ES-Standard-A' \| 'it-IT-Standard-A' \| 'ja-JP-Standard-A' \| 'ko-KR-Standard-A' \| 'pt-BR-Standard-A' \| 'tr-TR-Standard-A' \| 'sv-SE-Standard-A' \| 'nl-NL-Standard-A' \| 'en-US-Wavenet-D' \| 'de-DE-Wavenet-A' \| 'de-DE-Wavenet-B' \| 'de-DE-Wavenet-C' \| 'de-DE-Wavenet-D' \| 'en-AU-Wavenet-A' \| 'en-AU-Wavenet-B' \| 'en-AU-Wavenet-C' \| 'en-AU-Wavenet-D' \| 'en-GB-Wavenet-A' \| 'en-GB-Wavenet-B' \| 'en-GB-Wavenet-C' \| 'en-GB-Wavenet-D' \| 'en-US-Wavenet-A' \| 'en-US-Wavenet-B' \| 'en-US-Wavenet-C' \| 'en-US-Wavenet-E' \| 'en-US-Wavenet-F' \| 'fr-FR-Wavenet-A' \| 'fr-FR-Wavenet-B' \| 'fr-FR-Wavenet-C' \| 'fr-FR-Wavenet-D' \| 'it-IT-Wavenet-A' \| 'ja-JP-Wavenet-A' \| 'nl-NL-Wavenet-A' \| 'en-GB-Standard-A' \| 'en-GB-Standard-B' \| 'en-GB-Standard-C' \| 'en-GB-Standard-D' \| 'en-US-Standard-B' \| 'en-US-Standard-C' \| 'en-US-Standard-D' \| 'en-US-Standard-E' \| 'de-DE-Standard-A' \| 'de-DE-Standard-B' \| 'en-AU-Standard-A' \| 'en-AU-Standard-B' \| 'en-AU-Standard-C' \| 'en-AU-Standard-D' \| 'fr-CA-Standard-A' \| 'fr-CA-Standard-B' \| 'fr-CA-Standard-C' \| 'fr-CA-Standard-D' \| 'fr-FR-Standard-A' \| 'fr-FR-Standard-B' \| 'fr-FR-Standard-C' \| 'fr-FR-Standard-D')` | `female/en-US` | `false` | `supported`
+`tts.voice` | The voice to be used during the conversion | `string(1..)` | `female/en-US` | `false` | `supported`
 `tts` | Text-to-speech options used to create audio files from text | `object()` | `{}` | `false` | `supported`
 
 
