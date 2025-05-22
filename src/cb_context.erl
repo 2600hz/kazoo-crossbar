@@ -943,9 +943,9 @@ maybe_add_content_type_provided(Context, AttachmentId) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec store(context(), any(), any()) -> context().
-store(#cb_context{storage=Storage}=Context, Key, undefined) ->
+store(#cb_context{storage=Storage}=Context, Key, 'undefined') ->
     Context#cb_context{storage=props:delete(Key, Storage)};
-store(#cb_context{storage=Storage}=Context, Key, null) ->
+store(#cb_context{storage=Storage}=Context, Key, 'null') ->
     Context#cb_context{storage=props:delete(Key, Storage)};
 store(#cb_context{storage=Storage}=Context, Key, Data) ->
     Context#cb_context{storage=[{Key, Data} | props:delete(Key, Storage)]}.
@@ -1063,7 +1063,10 @@ validate_request_data(SchemaJObj, Context, OnSuccess, OnFailure, _SchemaRequired
     Strict = fetch(Context, 'schema_strict_validation', ?SHOULD_FAIL_ON_INVALID_DATA),
     SystemSL = kapps_config:get_binary(<<"crossbar">>, <<"stability_level">>),
     Options = [{'extra_validator_options', [{'stability_level', SystemSL}]}],
-    try kz_json_schema:validate(SchemaJObj, kz_doc:public_fields(req_data(Context)), Options) of
+
+    Doc = kz_doc:public_fields(req_data(Context)),
+
+    try kz_json_schema:validate(SchemaJObj, Doc, Options) of
         {'ok', JObj} ->
             lager:debug("validation passed"),
             validate_passed(set_req_data(Context, JObj), OnSuccess);
@@ -1431,13 +1434,13 @@ add_metadata_value(#cb_context{metadata=Metadata}=Context, Key, Value) ->
     lager:info("setting meta ~p: ~p", [Key, Value]),
     Context#cb_context{metadata = props:set_value(Key, Value, Metadata)}.
 
--spec inform(context(), http_status(), http_headers()) -> ok.
+-spec inform(context(), http_status(), http_headers()) -> 'ok'.
 inform(Context, StatusCode, Headers) ->
-    case fetch(Context, req) of
-        undefined -> ok;
+    case fetch(Context, 'req') of
+        'undefined' -> 'ok';
         Req -> api_util:inform(StatusCode, Headers, Req)
     end.
 
--spec progress(context(), kz_term:ne_binary()) -> ok.
+-spec progress(context(), kz_term:ne_binary()) -> 'ok'.
 progress(Context, Msg) ->
     inform(Context, 102, #{<<"x-kazoo-progress">> => Msg}).
