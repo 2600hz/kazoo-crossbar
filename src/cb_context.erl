@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2024, 2600Hz
+%%% @copyright (C) 2012-2025, 2600Hz
 %%% @doc Helpers for manipulating the `#cb_context{}' record.
 %%% @author James Aimonetti
 %%%
@@ -941,6 +941,10 @@ maybe_add_content_type_provided(Context, AttachmentId) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec store(context(), any(), any()) -> context().
+store(#cb_context{storage=Storage}=Context, Key, 'undefined') ->
+    Context#cb_context{storage=props:delete(Key, Storage)};
+store(#cb_context{storage=Storage}=Context, Key, 'null') ->
+    Context#cb_context{storage=props:delete(Key, Storage)};
 store(#cb_context{storage=Storage}=Context, Key, Data) ->
     Context#cb_context{storage=[{Key, Data} | props:delete(Key, Storage)]}.
 
@@ -1057,7 +1061,10 @@ validate_request_data(SchemaJObj, Context, OnSuccess, OnFailure, _SchemaRequired
     Strict = fetch(Context, 'schema_strict_validation', ?SHOULD_FAIL_ON_INVALID_DATA),
     SystemSL = kapps_config:get_binary(<<"crossbar">>, <<"stability_level">>),
     Options = [{'extra_validator_options', [{'stability_level', SystemSL}]}],
-    try kz_json_schema:validate(SchemaJObj, kz_doc:public_fields(req_data(Context)), Options) of
+
+    Doc = kz_doc:public_fields(req_data(Context)),
+
+    try kz_json_schema:validate(SchemaJObj, Doc, Options) of
         {'ok', JObj} ->
             lager:debug("validation passed"),
             validate_passed(set_req_data(Context, JObj), OnSuccess);

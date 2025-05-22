@@ -11,7 +11,7 @@ Key | Description | Type | Default | Required | Support Level
 `^_` | Ignores CouchDB fields prefixed by underscores | `boolean() | integer() | object() | string()` |   | `false` |  
 `^pvt_` | Ignores Kazoo private fields prefixed by pvt_ | `boolean() | integer() | string()` |   | `false` |  
 `attachments` | Defines where and how to store attachments. Keys are 32-character identifiers to be used in storage plans | [#/definitions/storage.attachments](#storageattachments) |   | `false` |  
-`connections` | Describes alternative connections to use (such as alternative CouchDB instances | [#/definitions/storage.connections](#storageconnections) |   | `false` |  
+`connections` | Describes alternative connections to use (such as alternative CouchDB instances) | [#/definitions/storage.connections](#storageconnections) |   | `false` |  
 `id` | ID of the storage document | `string()` |   | `false` |  
 `plan` | Describes how to store documents depending on the database or document type | [#/definitions/storage.plan](#storageplan) |   | `false` |  
 
@@ -136,26 +136,26 @@ schema for CouchDB connection entry
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`driver` |   | `string('kazoo_couch')` |   | `true` |  
-`name` |   | `string()` |   | `false` |  
-`settings.connect_options.keepalive` |   | `boolean()` |   | `false` |  
+`driver` | Which KAZOO database driver to use | `string('kazoo_couch')` | `kazoo_couch` | `true` |  
+`name` | Friendly name for the connection | `string()` |   | `false` |  
+`settings.connect_options.keepalive` | Whether to keep the connection alive between requests or not | `boolean()` |   | `false` |  
 `settings.connect_options` |   | `object()` |   | `false` |  
-`settings.connect_timeout` |   | `integer()` |   | `false` |  
-`settings.credentials.password` |   | `integer()` |   | `true` |  
-`settings.credentials.username` |   | `string()` |   | `true` |  
+`settings.connect_timeout` | How long to wait, in milliseconds, for the TCP connection to establish | `integer()` |   | `false` |  
+`settings.credentials.password` | Database Auth Password | `string()` |   | `true` |  
+`settings.credentials.username` | Database Auth Username | `string()` |   | `true` |  
 `settings.credentials` |   | `object()` |   | `false` |  
-`settings.ip` |   | `string()` |   | `true` |  
+`settings.ip` | Database IP address (or proxy IP address fronting the database) | `string()` |   | `true` |  
 `settings.max_pipeline_size` |   | `integer()` |   | `false` |  
 `settings.max_sessions` |   | `integer()` |   | `false` |  
 `settings.pool.name` |   | `string()` |   | `true` |  
 `settings.pool.size` |   | `integer()` |   | `true` |  
 `settings.pool` |   | `object()` |   | `false` |  
-`settings.port` |   | `integer()` |   | `true` |  
+`settings.port` | The port to use when connecting to the database (or proxy) | `integer()` |   | `true` |  
 `settings` |   | `object()` |   | `true` |  
 
 ### storage.connections
 
-Describes alternative connections to use (such as alternative CouchDB instances
+Describes alternative connections to use (such as alternative CouchDB instances)
 
 
 Key | Description | Type | Default | Required | Support Level
@@ -174,6 +174,7 @@ Key | Description | Type | Default | Required | Support Level
 `aggregate` | schema for database storage plan | [#/definitions/storage.plan.database](#storageplan.database) |   | `false` |  
 `modb` | schema for database storage plan | [#/definitions/storage.plan.database](#storageplan.database) |   | `false` |  
 `system` | schema for database storage plan | [#/definitions/storage.plan.database](#storageplan.database) |   | `false` |  
+`yodb` | schema for database storage plan | [#/definitions/storage.plan.database](#storageplan.database) |   | `false` |  
 
 ### storage.plan.database
 
@@ -190,6 +191,8 @@ Key | Description | Type | Default | Required | Support Level
 `database` |   | `object()` |   | `false` |  
 `range` |   |   |   | `false` |  
 `regex` |   |   |   | `false` |  
+`secondary_connections.[]` |   | `string()` |   | `false` |  
+`secondary_connections` | Save changes to additional connections asynchronously | `array(string())` |   | `false` |  
 `types./[a-z_]+/` | schema for document type storage plan | [#/definitions/storage.plan.database.document](#storageplan.database.document) |   | `false` |  
 `types` | The document types to store with this plan | `object()` |   | `false` |  
 
@@ -216,6 +219,8 @@ Key | Description | Type | Default | Required | Support Level
 `connection` |   | `string()` |   | `false` |  
 `range` |   |   |   | `false` |  
 `regex` |   |   |   | `false` |  
+`secondary_connections.[]` |   | `string()` |   | `false` |  
+`secondary_connections` | Save changes to additional connections asynchronously | `array(string())` |   | `false` |  
 
 
 
