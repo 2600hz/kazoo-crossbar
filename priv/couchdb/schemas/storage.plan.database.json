@@ -36,8 +36,18 @@
                             "$ref": "storage.plan.database.attachment"
                         },
                         "connection": {
+                            "description": "Connection UUID to use",
                             "kazoo-validation": true,
                             "type": "string"
+                        },
+                        "secondary_connections": {
+                            "description": "Additional connection UUIDs to use asynchronously",
+                            "items": {
+                                "description": "Connection UUID to use",
+                                "kazoo-validation": true,
+                                "type": "string"
+                            },
+                            "type": "array"
                         }
                     },
                     "type": "object"
@@ -54,11 +64,29 @@
                         "connection": {
                             "kazoo-validation": true,
                             "type": "string"
+                        },
+                        "secondary_connections": {
+                            "description": "Save changes to additional connections asynchronously",
+                            "items": {
+                                "description": "Connection UUID to use",
+                                "kazoo-validation": true,
+                                "type": "string"
+                            },
+                            "type": "array"
                         }
                     },
                     "type": "object"
                 }
             }
+        },
+        "secondary_connections": {
+            "description": "Save changes to additional connections asynchronously",
+            "items": {
+                "description": "Connection UUID to use",
+                "kazoo-validation": true,
+                "type": "string"
+            },
+            "type": "array"
         },
         "types": {
             "description": "The document types to store with this plan",

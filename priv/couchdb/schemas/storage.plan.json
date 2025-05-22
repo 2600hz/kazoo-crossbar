@@ -15,6 +15,9 @@
         },
         "system": {
             "$ref": "storage.plan.database"
+        },
+        "yodb": {
+            "$ref": "storage.plan.database"
         }
     },
     "type": "object"
