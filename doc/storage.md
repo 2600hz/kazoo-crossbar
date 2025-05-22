@@ -47,7 +47,7 @@ Key | Description | Type | Default | Required | Support Level
 `^_` | Ignores CouchDB fields prefixed by underscores | `boolean() | integer() | object() | string()` |   | `false` |  
 `^pvt_` | Ignores Kazoo private fields prefixed by pvt_ | `boolean() | integer() | string()` |   | `false` |  
 `attachments` | Defines where and how to store attachments. Keys are 32-character identifiers to be used in storage plans | [#/definitions/storage.attachments](#storageattachments) |   | `false` |  
-`connections` | Describes alternative connections to use (such as alternative CouchDB instances | [#/definitions/storage.connections](#storageconnections) |   | `false` |  
+`connections` | Describes alternative connections to use (such as alternative CouchDB instances) | [#/definitions/storage.connections](#storageconnections) |   | `false` |  
 `id` | ID of the storage document | `string()` |   | `false` |  
 `plan` | Describes how to store documents depending on the database or document type | [#/definitions/storage.plan](#storageplan) |   | `false` |  
 
@@ -172,26 +172,26 @@ schema for CouchDB connection entry
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`driver` |   | `string('kazoo_couch')` |   | `true` |  
-`name` |   | `string()` |   | `false` |  
-`settings.connect_options.keepalive` |   | `boolean()` |   | `false` |  
+`driver` | Which KAZOO database driver to use | `string('kazoo_couch')` | `kazoo_couch` | `true` |  
+`name` | Friendly name for the connection | `string()` |   | `false` |  
+`settings.connect_options.keepalive` | Whether to keep the connection alive between requests or not | `boolean()` |   | `false` |  
 `settings.connect_options` |   | `object()` |   | `false` |  
-`settings.connect_timeout` |   | `integer()` |   | `false` |  
-`settings.credentials.password` |   | `integer()` |   | `true` |  
-`settings.credentials.username` |   | `string()` |   | `true` |  
+`settings.connect_timeout` | How long to wait, in milliseconds, for the TCP connection to establish | `integer()` |   | `false` |  
+`settings.credentials.password` | Database Auth Password | `string()` |   | `true` |  
+`settings.credentials.username` | Database Auth Username | `string()` |   | `true` |  
 `settings.credentials` |   | `object()` |   | `false` |  
-`settings.ip` |   | `string()` |   | `true` |  
+`settings.ip` | Database IP address (or proxy IP address fronting the database) | `string()` |   | `true` |  
 `settings.max_pipeline_size` |   | `integer()` |   | `false` |  
 `settings.max_sessions` |   | `integer()` |   | `false` |  
 `settings.pool.name` |   | `string()` |   | `true` |  
 `settings.pool.size` |   | `integer()` |   | `true` |  
 `settings.pool` |   | `object()` |   | `false` |  
-`settings.port` |   | `integer()` |   | `true` |  
+`settings.port` | The port to use when connecting to the database (or proxy) | `integer()` |   | `true` |  
 `settings` |   | `object()` |   | `true` |  
 
 ### storage.connections
 
-Describes alternative connections to use (such as alternative CouchDB instances
+Describes alternative connections to use (such as alternative CouchDB instances)
 
 
 Key | Description | Type | Default | Required | Support Level
@@ -210,6 +210,7 @@ Key | Description | Type | Default | Required | Support Level
 `aggregate` | schema for database storage plan | [#/definitions/storage.plan.database](#storageplan.database) |   | `false` |  
 `modb` | schema for database storage plan | [#/definitions/storage.plan.database](#storageplan.database) |   | `false` |  
 `system` | schema for database storage plan | [#/definitions/storage.plan.database](#storageplan.database) |   | `false` |  
+`yodb` | schema for database storage plan | [#/definitions/storage.plan.database](#storageplan.database) |   | `false` |  
 
 ### storage.plan.database
 
@@ -226,6 +227,8 @@ Key | Description | Type | Default | Required | Support Level
 `database` |   | `object()` |   | `false` |  
 `range` |   |   |   | `false` |  
 `regex` |   |   |   | `false` |  
+`secondary_connections.[]` |   | `string()` |   | `false` |  
+`secondary_connections` | Save changes to additional connections asynchronously | `array(string())` |   | `false` |  
 `types./[a-z_]+/` | schema for document type storage plan | [#/definitions/storage.plan.database.document](#storageplan.database.document) |   | `false` |  
 `types` | The document types to store with this plan | `object()` |   | `false` |  
 
@@ -252,6 +255,8 @@ Key | Description | Type | Default | Required | Support Level
 `connection` |   | `string()` |   | `false` |  
 `range` |   |   |   | `false` |  
 `regex` |   |   |   | `false` |  
+`secondary_connections.[]` |   | `string()` |   | `false` |  
+`secondary_connections` | Save changes to additional connections asynchronously | `array(string())` |   | `false` |  
 
 
 
@@ -518,3 +523,252 @@ If you are the super-duper admin you can setup storage policy across your cluste
 The validation request will arrive with `/system_data/{DOC_ID}/{ANAME}` on the end of the URL.
 
 If you need to revert back to the standard settings you can run `sup kzs_plan reset_system_dataplan`; and changes will be removed and the initial version reinstalled.
+
+## Multi-cluster replication
+
+It is possible to replicate data being saved in the current cluster to a separate cluster via additional `connections`. The particular use case is for setting up a warm standby cluster for disaster recovery.
+
+### Fetch the system plan
+
+This requires a superduper admin auth token!
+
+```bash
+curl -H "x-auth-token: $AUTH_TOKEN" http://crossbar.dev:8000/v2/storage
+```
+
+```json
+{
+  "auth_token": "{AUTH_TOKEN}",
+  "data": {
+    "attachments": {},
+    "connections": {
+      "local": {}
+    },
+    "id": "system",
+    "plan": {
+      "account": {
+        "attachments": {},
+        "connection": "local",
+        "types": {}
+      },
+      "modb": {
+        "attachments": {},
+        "connection": "local",
+        "types": {}
+      },
+      "system": {
+        "attachments": {},
+        "connection": "local",
+        "types": {}
+      },
+      "yodb": {
+        "attachments": {},
+        "connection": "local",
+        "types": {}
+      }
+    }
+  },
+  "metadata": {
+    "id": "system"
+  },
+  "node": "{NODE}",
+  "request_id": "{REQUEST_ID}",
+  "status": "success",
+  "timestamp": "{TIMESTAMP}",
+  "version": "5.5.0"
+}
+
+```
+
+Here `"local"` will refer to the connection defined in `/etc/kazoo/core/config.ini` file, `[bigcouch]` section but may not be included in the response here.
+
+### Add the connection
+
+We want to PATCH the system data plan to add a secondary CouchDB cluster.
+
+If you're running Couch from source in a dev environment, you can start a new "cluster" with
+
+```
+./dev/run --admin "second:server" -n1 --node-number-seed 4 --no-join
+[ * ] Setup log dir: /home/james/local/git/apache/couchdb/dev/logs ... ok
+[ * ] Ensure CouchDB is built ... ok
+[ * ] Ensure Erlang boot script exists ... ok
+[ * ] Prepare configuration files ... ok
+[ * ] Start node node4 ... ok
+[ * ] Check node at http://127.0.0.1:45984/ ... ok
+[ * ] Developers cluster is set up at http://127.0.0.1:45984.
+Admin username: second
+Password: server
+Time to hack! ...
+```
+
+Our connection to PATCH will look like:
+
+Create a 32 character UUID - in this example we will use `73021090575190780bdd6a3fd9f571b2`.
+
+```json
+{
+  "data": {
+    "connections": {
+      "{UUID}": {
+        "driver": "kazoo_couch",
+        "name": "Second cluster CouchDB",
+        "settings": {
+          "credentials": {
+            "password": "server",
+            "username": "second"
+          },
+          "ip": "127.0.0.1",
+          "port": 45984
+        }
+      }
+    }
+  }
+}
+
+```
+
+It is advised that you direct this connection's IP/port to an proxy (such as HAProxy) for that secondary cluster. If the proxy is configured correctly, database creation requests will be spread out among the available servers in the secondary cluster.
+
+Let's add the connection!
+
+```bash
+curl -X PATCH -H "x-auth-token: {AUTH_TOKEN}" http://crossbar.dev:8000/v2/storage \
+-d '{"data":{"connections":{"{UUID}":{"driver":"kazoo_couch","name":"Second cluster CouchDB","settings":{"credentials":{"username":"second","password":"server"},"ip":"127.0.0.1","port":45984}}}}}'
+```
+
+```json
+{
+  "data": {
+    "attachments": {},
+    "connections": {
+      "{UUID}": {
+        "driver": "kazoo_couch",
+        "name": "Second cluster CouchDB",
+        "settings": {
+          "credentials": {
+            "password": "server",
+            "username": "second"
+          },
+          "ip": "127.0.0.1",
+          "port": 45984
+        }
+      },
+      "local": {}
+    },
+    "id": "system",
+    "plan": {
+      "account": {
+        "attachments": {},
+        "connection": "local",
+        "types": {}
+      },
+      "modb": {
+        "attachments": {},
+        "connection": "local",
+        "types": {}
+      },
+      "system": {
+        "attachments": {},
+        "connection": "local",
+        "types": {}
+      },
+      "yodb": {
+        "attachments": {},
+        "connection": "local",
+        "types": {}
+      }
+    }
+  },
+  "revision": "1-1d80cea1302f4addcaf4241686cb9b12",
+  "status": "success"
+}
+```
+
+### Add secondary connections to the plan
+
+Let's say we want to replicate all saves to account databases. The `secondary_connections` array defines what connections to use after the save to the primary connection has completed (note: only successful saves will be replicated).
+
+```json
+{
+  "plan": {
+    "account": {
+      "secondary_connections": [
+        "{UUID}"
+      ]
+    },
+    "aggregate": {
+      "secondary_connections": [
+        "{UUID}"
+      ],
+      "databases":["accounts", "sip_auth"]
+    }
+  }
+}
+```
+
+PATCH that into the storage plan:
+
+```bash
+curl -X PATCH -H "x-auth-token: {AUTH_TOKEN}" http://crossbar.dev:8000/v2/storage \
+-d '{"data":{"plan":{"account":{"secondary_connections":["{UUID}"]}, "aggregate": {"databases": ["accounts","sip_auth"],"secondary_connections": ["{UUID}"]}}}}'
+```
+```json
+{
+  "data": {
+    "attachments": {},
+    "connections": {
+      "local": {},
+      "{UUID}": {
+        "driver": "kazoo_couch",
+        "name": "Second cluster CouchDB",
+        "settings": {
+          "credentials": {
+            "password": "server",
+            "username": "second"
+          },
+          "ip": "127.0.0.1",
+          "port": 45984
+        }
+      }
+    },
+    "id": "system",
+    "plan": {
+      "account": {
+        "attachments": {},
+        "connection": "local",
+        "secondary_connections": [
+          "{UUID}"
+        ],
+        "types": {}
+      },
+      "aggregate": {
+        "databases": [
+          "accounts",
+          "sip_auth"
+        ],
+        "secondary_connections": [
+          "{UUID}"
+        ]
+      },
+      "modb": {
+        "attachments": {},
+        "connection": "local",
+        "types": {}
+      },
+      "system": {
+        "attachments": {},
+        "connection": "local",
+        "types": {}
+      },
+      "yodb": {
+        "attachments": {},
+        "connection": "local",
+        "types": {}
+      }
+    }
+  }
+}
+```
+
+Now saves to any account should trigger a save to the secondary connection, and saves to the `accounts` and `sip_auth` aggregate DBs should as well.
