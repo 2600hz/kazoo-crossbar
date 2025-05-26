@@ -323,7 +323,7 @@ put(Context, ?JOBS) ->
 -spec delete(cb_context:context(), path_token()) -> cb_context:context().
 delete(Context, ResourceId) ->
     Context1 = crossbar_doc:delete(Context),
-    maybe_remove_aggregate(Context1, ResourceId, cb_context:db_name(Context), cb_context:resp_status(Context)).
+    maybe_remove_aggregate(Context1, ResourceId, cb_context:db_name(Context1), cb_context:resp_status(Context1)).
 
 %%%=============================================================================
 %%% Internal functions
