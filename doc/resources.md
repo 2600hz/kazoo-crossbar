@@ -252,6 +252,38 @@ and assuming the requesting call has pass-through (with value `pass-through=0288
 INVITE sip:+14158867900@10.26.0.88;npid;id=XXXX;pass-through=0288 SIP/2.0
 ```
 
+## custom_sip_headers Values Configured with Expandable Macros
+
+When adding your custom SIP headers using `custom_sip_headers`, their values can be configured using macros. Kazoo will then automatically replace these macros with their corresponding actual values.
+
+Available macros:
+
+* {caller_id_name}
+* {caller_id_number}
+* {account_id}
+* {reseller_id}
+* {billing_id}
+* {cluster_id}
+* {direct_reseller_id}
+
+```
+    Configure custom SIP header names and set their values using macro format:
+    
+    "custom_sip_headers": {
+      "X-Kazoo-Cluster-ID": "{cluster_id}",
+      "X-Kazoo-Reseller-ID": "{reseller_id}",
+      "X-Kazoo-Account-ID": "{account_id}",
+      "X-Direct-Reseller-ID": "{direct_reseller_id}"
+    }
+    
+    Resulting SIP INVITE headers
+    
+    "X-Kazoo-Cluster-ID": "6ac2ac577a5c35ff58ba6313f64c0f32",
+    "X-Kazoo-Reseller-ID": "7d038fac4a49d76d9bf4b07350a3dbc5",
+    "X-Kazoo-Account-ID": "4c3bfc9ee957b3b7e656b4efa297fdd4",
+    "X-Direct-Reseller-ID": "b06712c3f8c07e6088b1be11fa56ead1"
+```
+
 ## Formatting the From
 
 Some upstream carriers require the From address' realm to be formatted. There are a couple toggles you have to control this realm. First, you will need to configure `"format_from_uri":true` to enable this formatting functionality. Then you have 3 options, evaluated in this order:
