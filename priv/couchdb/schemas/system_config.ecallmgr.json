@@ -217,6 +217,7 @@
                 "{billing_id}": "${ecallmgr_Billing-ID}",
                 "{caller_id_name}": "${caller_id_name}",
                 "{caller_id_number}": "${caller_id_number}",
+                "{cluster_id}": "${ecallmgr_Cluster-ID}",
                 "{reseller_id}": "${ecallmgr_Reseller-ID}"
             },
             "description": "macros that will be expanded at call-time, for use in custom SIP headers",
