@@ -2,7 +2,6 @@
     "$schema": "http://json-schema.org/draft-04/schema#",
     "_id": "timezone",
     "description": "The default timezone",
-    "enum": [],
     "support_level": "supported",
     "type": "string"
 }
