@@ -107,6 +107,51 @@
             "description": "media proxy store authenticate",
             "type": "boolean"
         },
+        "proxy_store_retry_attempts": {
+            "default": 1,
+            "description": "media proxy_store_retry_attempts",
+            "type": "integer"
+        },
+        "proxy_store_retry_enabled": {
+            "default": false,
+            "description": "media proxy_store_retry_enabled",
+            "type": "boolean"
+        },
+        "proxy_store_retry_job_interval_s": {
+            "default": 10,
+            "description": "media proxy_store_retry_job_interval_s",
+            "type": "integer"
+        },
+        "proxy_store_retry_max_parallel": {
+            "default": 10,
+            "description": "media proxy_store_retry_max_parallel",
+            "type": "integer"
+        },
+        "proxy_store_retry_method": {
+            "default": "local file",
+            "description": "media proxy_store_retry_method",
+            "type": "string"
+        },
+        "proxy_store_retry_period_s": {
+            "default": 86400,
+            "description": "media proxy_store_retry_period_s",
+            "type": "integer"
+        },
+        "proxy_store_retry_scan_period_s": {
+            "default": 600,
+            "description": "media proxy_store_retry_scan_period_s",
+            "type": "integer"
+        },
+        "proxy_store_retry_tmp_dir": {
+            "default": "/tmp",
+            "description": "media proxy_store_retry_tmp_dir",
+            "type": "string"
+        },
+        "proxy_store_status_update_enabled": {
+            "default": false,
+            "description": "media proxy_store_status_update_enabled",
+            "type": "boolean"
+        },
         "proxy_username": {
             "default": "",
             "description": "media proxy username",
