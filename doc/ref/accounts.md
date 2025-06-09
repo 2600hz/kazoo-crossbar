@@ -46,6 +46,9 @@ Key | Description | Type | Default | Required | Support Level
 `notifications.low_balance.sent_low_balance` | has the alert been sent (avoids duplication/spamming) | `boolean()` |   | `false` |  
 `notifications.low_balance.threshold` | account balance to send alert on | `number()` |   | `false` |  
 `notifications.low_balance` | Low balance settings | `object()` |   | `false` |  
+`notifications.media_proxy.fail_alert_enabled` | should the account produce system alert when media failed to be uploaded | `boolean()` | `true` | `false` |  
+`notifications.media_proxy.last_notification` | Timestamp, in Gregorian seconds, of when the last media upload fail alert was sent | `integer()` |   | `false` |  
+`notifications.media_proxy` | Media proxy settings | `object()` |   | `false` |  
 `notifications` | account notification settings | `object()` |   | `false` |  
 `org` | Full legal name of the organization | `string()` |   | `false` |  
 `preflow.always` | The ID of a callflow to always execute prior to processing the callflow with numbers/patterns matching the request | `string()` |   | `false` |  
