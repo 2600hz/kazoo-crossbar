@@ -1,0 +1,22 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "_id": "system_config.speech.groq",
+    "description": "Schema for speech.groq system_config",
+    "properties": {
+        "tts_api_key": {
+            "description": "speech groq tts_api_key",
+            "type": "string"
+        },
+        "tts_model": {
+            "default": "playai-tts",
+            "description": "speech groq tts_model",
+            "type": "string"
+        },
+        "tts_url": {
+            "default": "https://api.groq.com/openai/v1/audio/speech",
+            "description": "speech groq tts_url",
+            "type": "string"
+        }
+    },
+    "type": "object"
+}
