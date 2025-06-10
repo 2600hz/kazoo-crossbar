@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc Handle client requests for phone_number documents
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -660,6 +660,8 @@ find_numbers(Context, AccountId, ResellerId) ->
                 ,{'offset', Offset}
                 ,{'account_id', AccountId}
                 ,{'reseller_id', ResellerId}
+                ,{'is_reseller', cb_context:is_reseller(Context)}
+                ,{'auth_token', cb_context:auth_token(Context)}
                 ,{'query_id', QueryId}
                 ]),
     OnSuccess =
@@ -1015,6 +1017,8 @@ default_knm_options(Context) ->
     [{'crossbar', [{'services', kz_services:fetch(AuthAccountId)}
                   ,{'account_id', cb_context:account_id(Context)}
                   ,{'reseller_id', cb_context:reseller_id(Context)}
+                  ,{'is_reseller', cb_context:is_reseller(Context)}
+                  ,{'auth_token', cb_context:auth_token(Context)}
                   ]
      }
     ,{'auth_by', AuthAccountId}
