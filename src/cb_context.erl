@@ -68,6 +68,7 @@
         ,req_nouns/1, set_req_nouns/2
         ,req_verb/1, set_req_verb/2
         ,reseller_id/1, set_reseller_id/2
+        ,is_reseller/1, set_is_reseller/2
         ,resp_data/1, set_resp_data/2
         ,resp_envelope/1, set_resp_envelope/2
         ,resp_etag/1, set_resp_etag/2
@@ -153,6 +154,7 @@
                     ,token_bucket_names = [] :: kz_term:ne_binaries()
 
                     ,reseller_id :: kz_term:api_ne_binary()
+                    ,is_reseller :: kz_term:api_boolean()
                     ,db_name :: kz_term:api_binary() | kz_term:ne_binaries()
                     ,doc :: kz_json:api_json_term()
                     ,metadata = [] :: kz_term:proplist()
@@ -290,6 +292,9 @@ device_id(#cb_context{device_id=DeviceId}) -> DeviceId.
 
 -spec reseller_id(context()) -> kz_term:api_ne_binary().
 reseller_id(#cb_context{reseller_id=AcctId}) -> AcctId.
+
+-spec is_reseller(context()) -> kz_term:api_boolean().
+is_reseller(#cb_context{is_reseller=IsReseller}) -> IsReseller.
 
 -spec profile_id(context()) -> kz_term:api_ne_binary().
 profile_id(#cb_context{profile_id = Value}) -> Value.
@@ -640,6 +645,10 @@ set_device_id(#cb_context{}=Context, DeviceId) ->
 -spec set_reseller_id(context(), kz_term:api_ne_binary()) -> context().
 set_reseller_id(#cb_context{}=Context, AcctId) ->
     Context#cb_context{reseller_id=AcctId}.
+
+-spec set_is_reseller(context(), boolean()) -> context().
+set_is_reseller(#cb_context{}=Context, IsReseller) ->
+    Context#cb_context{is_reseller=IsReseller}.
 
 -spec set_auth_token_type(context(), 'x-auth-token' | 'basic' | 'bearer' | 'unknown') -> context().
 set_auth_token_type(#cb_context{}=Context, AuthTokenType) ->

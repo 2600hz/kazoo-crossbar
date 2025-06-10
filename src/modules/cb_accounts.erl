@@ -391,43 +391,42 @@ delete_account(AccountId) ->
 
 delete_callback_fun(Parent) ->
     fun(Msg) ->
-            Parent ! {self(), progress, Msg}
+            Parent ! {self(), 'progress', Msg}
     end.
 
 delete_set_progress_msg(Context, Msg) ->
-    Setters = [{fun cb_context:store/3, progress_msg, Msg}
-              ,{fun cb_context:store/3, progress_count, null}
+    Setters = [{fun cb_context:store/3, 'progress_msg', Msg}
+              ,{fun cb_context:store/3, 'progress_count', 'null'}
               ],
     cb_context:setters(Context, Setters).
 
 delete_wait_for_result(Context, Pid, Ref) ->
     receive
-        {Pid, progress, Msg} ->
+        {Pid, 'progress', Msg} ->
             cb_context:progress(Context, Msg),
             delete_wait_for_result(delete_set_progress_msg(Context, Msg), Pid, Ref);
 
-        {Pid, result, Result} ->
-            delete_wait_for_result(cb_context:store(Context, delete_result, Result), Pid, Ref);
+        {Pid, 'result', Result} ->
+            delete_wait_for_result(cb_context:store(Context, 'delete_result', Result), Pid, Ref);
 
-        {'DOWN', Ref, process, Pid, normal} ->
-            cb_context:fetch(Context, delete_result, undefined);
+        {'DOWN', Ref, 'process', Pid, 'normal'} ->
+            cb_context:fetch(Context, 'delete_result', 'undefined');
 
-        {'DOWN', Ref, process, Pid, Reason} ->
-            {error, Reason}
+        {'DOWN', Ref, 'process', Pid, Reason} ->
+            {'error', Reason}
 
-    after 20000 ->
-            Count = cb_context:fetch(Context, progress_count, 0) + 1,
-            LastMsg = cb_context:fetch(Context, progress_msg, <<"running action">>),
+    after 20 * ?MILLISECONDS_IN_SECOND ->
+            Count = cb_context:fetch(Context, 'progress_count', 0) + 1,
+            LastMsg = cb_context:fetch(Context, 'progress_msg', <<"running action">>),
             Msg = list_to_binary([LastMsg, " ", string:copies("...", Count)]),
             cb_context:progress(Context, Msg),
-            delete_wait_for_result(cb_context:store(Context,progress_count, Count), Pid, Ref)
+            delete_wait_for_result(cb_context:store(Context, 'progress_count', Count), Pid, Ref)
     end.
-
 
 delete_progress(AccountId, Parent) ->
     Options = #{progress_callback => delete_callback_fun(Parent)},
     Result = kzdb_account:delete(AccountId, Options),
-    Parent ! {self(), result, Result}.
+    Parent ! {self(), 'result', Result}.
 
 -spec delete(cb_context:context(), path_token()) -> cb_context:context().
 delete(Context, AccountId) ->
@@ -961,11 +960,13 @@ load_account_db(Context, <<AccountId/binary>>) ->
         {'ok', JObj} ->
             lager:debug("account ~s db exists", [AccountId]),
             ResellerId = kz_services_reseller:find_id(AccountId),
+            IsReseller = kz_services_reseller:is_reseller(AccountId),
             cb_context:setters(Context
                               ,[{fun cb_context:set_resp_status/2, 'success'}
                                ,{fun cb_context:set_account_id/2, AccountId}
                                ,{fun cb_context:set_account_name/2, kzd_accounts:name(JObj)}
                                ,{fun cb_context:set_reseller_id/2, ResellerId}
+                               ,{fun cb_context:set_is_reseller/2, IsReseller}
                                ]);
         {'error', 'not_found'} ->
             Msg = kz_json:from_list([{<<"cause">>, AccountId}]),
