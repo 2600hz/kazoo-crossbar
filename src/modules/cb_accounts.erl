@@ -911,11 +911,13 @@ load_account_db(Context, <<AccountId/binary>>) ->
         {'ok', JObj} ->
             lager:debug("account ~s db exists", [AccountId]),
             ResellerId = kz_services_reseller:find_id(AccountId),
+            IsReseller = kz_services_reseller:is_reseller(AccountId),
             cb_context:setters(Context
                               ,[{fun cb_context:set_resp_status/2, 'success'}
                                ,{fun cb_context:set_account_id/2, AccountId}
                                ,{fun cb_context:set_account_name/2, kzd_accounts:name(JObj)}
                                ,{fun cb_context:set_reseller_id/2, ResellerId}
+                               ,{fun cb_context:set_is_reseller/2, IsReseller}
                                ]);
         {'error', 'not_found'} ->
             Msg = kz_json:from_list([{<<"cause">>, AccountId}]),
