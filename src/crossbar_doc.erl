@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -28,7 +28,8 @@
         ]).
 
 -export([handle_json_success/2, handle_json_success/3]).
--export([handle_datamgr_success/2
+-export([handle_successful_load/2, handle_successful_load/3, handle_successful_load/4
+        ,handle_datamgr_success/2
         ,handle_datamgr_errors/3
         ]).
 
@@ -216,6 +217,10 @@ depluralize_resource_name(Name) ->
         <<Bin:Size/binary, "s">> -> Bin;
         Bin -> Bin
     end.
+
+-spec handle_successful_load(cb_context:context(), kz_json:object()) -> cb_context:context().
+handle_successful_load(Context, JObj) ->
+    handle_successful_load(Context, JObj, []).
 
 -spec handle_successful_load(cb_context:context(), kz_json:object(), kz_term:proplist()) -> cb_context:context().
 handle_successful_load(Context, JObj, Options) ->

@@ -435,9 +435,9 @@ move_account(?MATCH_ACCOUNT_RAW(AccountId), ToAccount=?NE_BINARY) ->
           {'error', any()}.
 move_account(AccountId, AccountJObj, ToAccount, NewTree) ->
     PreviousTree = kzd_accounts:tree(AccountJObj),
-    Updates = [{[?SERVICES_PVT_TREE], NewTree}
-              ,{[?SERVICES_PVT_TREE_PREVIOUSLY], PreviousTree}
-              ,{[?SERVICES_PVT_MODIFIED], kz_time:now_s()}
+    Updates = [{[<<"pvt_tree">>], NewTree}
+              ,{[<<"pvt_previous_tree">>], PreviousTree}
+              ,{[<<"pvt_modified">>], kz_time:now_s()}
               ],
 
     %%FIXME: do something about setting pvt_auth_*_id
@@ -526,9 +526,9 @@ update_descendants_tree([Descendant|Descendants], Tree, NewResellerId, MovedAcco
             %% Preserve tree below and including common ancestor
             {_, Tail} = lists:splitwith(fun(X) -> X =/= MovedAccountId end, PreviousTree),
             ToTree = Tree ++ Tail,
-            Updates = [{[?SERVICES_PVT_TREE], ToTree}
-                      ,{[?SERVICES_PVT_TREE_PREVIOUSLY], PreviousTree}
-                      ,{[?SERVICES_PVT_MODIFIED], kz_time:now_s()}
+            Updates = [{[<<"pvt_tree">>], ToTree}
+                      ,{[<<"pvt_previous_tree">>], PreviousTree}
+                      ,{[<<"pvt_modified">>], kz_time:now_s()}
                       ],
             %%FIXME: do something about setting pvt_auth_*_id
             case kzd_accounts:update(Descendant, Updates) of
