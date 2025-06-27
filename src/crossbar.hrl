@@ -78,6 +78,7 @@
                          ,'cb_media'
                          ,'cb_menus'
                          ,'cb_metaflows'
+                         ,'cb_inbound_messaging'
                          ,'cb_multi_factor'
                          ,'cb_notifications'
                          ,'cb_parked_calls'
