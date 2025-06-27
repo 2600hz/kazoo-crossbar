@@ -181,6 +181,21 @@
                         }
                     },
                     "type": "object"
+                },
+                "media_proxy": {
+                    "description": "Media proxy settings",
+                    "properties": {
+                        "fail_alert_enabled": {
+                            "default": true,
+                            "description": "should the account produce system alert when media failed to be uploaded",
+                            "type": "boolean"
+                        },
+                        "last_notification": {
+                            "description": "Timestamp, in Gregorian seconds, of when the last media upload fail alert was sent",
+                            "type": "integer"
+                        }
+                    },
+                    "type": "object"
                 }
             },
             "type": "object"
