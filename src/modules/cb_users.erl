@@ -40,6 +40,9 @@
 -define(PHOTO, <<"photo">>).
 -define(QRCODE, <<"qrcode">>).
 
+-define(DEFAULT_USER_PASSWORD_URL, kapps_config:get_ne_binary(?AUTH_CONFIG_CAT, <<"user_password_url">>)).
+-define(DEFAULT_PASSWORD_URL, kapps_config:get_ne_binary(?AUTH_CONFIG_CAT, <<"password_url">>)).
+
 %%%=============================================================================
 %%% API
 %%%=============================================================================
@@ -637,25 +640,80 @@ update_device_presence(Context, DeviceDoc) ->
 %%------------------------------------------------------------------------------
 -spec maybe_send_email(cb_context:context()) -> 'ok'.
 maybe_send_email(Context) ->
+    case kz_term:is_true(cb_context:req_value(Context, <<"send_password_reset_on_creation">>, 'true')) of
+        'false' -> maybe_send_password(Context);
+        'true' -> send_password_reset_email(Context)
+    end.
+
+-spec maybe_send_password(cb_context:context()) -> 'ok'.
+maybe_send_password(Context) ->
     case kz_term:is_true(cb_context:req_value(Context, <<"send_email_on_creation">>, 'true')) of
         'false' -> 'ok';
-        'true' -> send_email(Context)
+        'true' -> send_password_email(Context)
     end.
 
 %%------------------------------------------------------------------------------
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec send_email(cb_context:context()) -> 'ok'.
-send_email(Context) ->
-    lager:debug("trying to publish new user notification"),
-    Doc = cb_context:doc(Context),
+-spec send_password_reset_email(cb_context:context()) -> 'ok'.
+send_password_reset_email(Context) ->
     Req = [{<<"Account-ID">>, cb_context:account_id(Context)}
-          ,{<<"User-ID">>, kz_doc:id(Doc)}
+          ,{<<"User-ID">>, kz_doc:id(cb_context:doc(Context))}
+          ,{<<"Password-Reset-Link">>, reset_link(Context)}
+          | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
+          ],
+    send_email(Req).
+
+-spec send_password_email(cb_context:context()) -> 'ok'.
+send_password_email(Context) ->
+    Req = [{<<"Account-ID">>, cb_context:account_id(Context)}
+          ,{<<"User-ID">>, kz_doc:id(cb_context:doc(Context))}
           ,{<<"Password">>, cb_context:fetch(Context, <<"req_password">>)}
           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
+    send_email(Req).
+
+send_email(Req) ->
+    lager:debug("trying to publish new user notification"),
     kapps_notify_publisher:cast(Req, fun kapi_notifications:publish_new_user/1).
+
+-spec reset_link(cb_context:context()) -> kz_term:ne_binary().
+reset_link(Context) ->
+    Doc = cb_context:doc(Context),
+    PrivLevel = kzd_users:priv_level(Doc),
+    get_priv_url(Context, kz_term:to_atom(PrivLevel)).
+
+get_priv_url(Context, 'user') ->
+    get_user_whitelabel_url(Context);
+get_priv_url(Context, 'admin') ->
+    case kz_json:get_ne_binary_value(<<"ui_url">>, cb_context:req_data(Context)) of
+        'undefined' -> get_admin_whitelabel_url(Context);
+        Url -> Url
+    end.
+
+get_user_whitelabel_url(Context) ->
+    case get_whitelabel_doc(Context) of
+        {'ok', WhitelabelDoc} -> 
+            Domain = kz_json:get_ne_binary_value(<<"user_domain">>, WhitelabelDoc),
+            <<"https://", Domain/binary>>;
+        _ ->
+            ?DEFAULT_USER_PASSWORD_URL
+    end.
+
+get_admin_whitelabel_url(Context) ->
+    case get_whitelabel_doc(Context) of
+        {'ok', WhitelabelDoc} -> 
+            Domain = kz_json:get_ne_binary_value(<<"domain">>, WhitelabelDoc),
+            <<"https://", Domain/binary>>;
+        _ ->
+            ?DEFAULT_PASSWORD_URL
+    end.
+
+get_whitelabel_doc(Context) ->
+    AccountId = cb_context:account_id(Context),
+    ResellerId = kz_services_reseller:get_id(AccountId),
+    kz_datamgr:open_cache_doc(ResellerId, <<"whitelabel">>).
 
 %%------------------------------------------------------------------------------
 %% @doc
