@@ -16,6 +16,7 @@ Key | Description | Type | Default | Required | Support Level
 `flags` | Flags set by external applications | `array(string())` |   | `false` | `supported`
 `name` | A friendly name for the temporal rule set | `string(1..128)` |   | `true` | `supported`
 `numbers` | Map of caller id number to block | `object()` | `{}` | `false` | `supported`
+`prefixes` | Map of caller id prefixes to block | `object()` | `{}` | `false` | `supported`
 `should_block_anonymous` | Should block Anonymous call | `boolean()` |   | `false` | `supported`
 
 

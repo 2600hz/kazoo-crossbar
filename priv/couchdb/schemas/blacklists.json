@@ -25,6 +25,13 @@
             "support_level": "supported",
             "type": "object"
         },
+        "prefixes": {
+            "default": {},
+            "description": "Map of caller id prefixes to block",
+            "properties": {},
+            "support_level": "supported",
+            "type": "object"
+        },
         "should_block_anonymous": {
             "description": "Should block Anonymous call",
             "support_level": "supported",
