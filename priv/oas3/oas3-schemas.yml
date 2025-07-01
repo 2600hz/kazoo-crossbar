@@ -13146,6 +13146,14 @@
       'description': kazoo.pdf html2pdf
       'type': string
   'type': object
+'system_config.kazoo_apps':
+  'description': Schema for kazoo_apps system_config
+  'properties':
+    'dns_cache_size':
+      'default': 10000
+      'description': kazoo_apps dns_cache_size
+      'type': integer
+  'type': object
 'system_config.kazoo_convert':
   'description': Schema for kazoo_convert system_config
   'properties':
