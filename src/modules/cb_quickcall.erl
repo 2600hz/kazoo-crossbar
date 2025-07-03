@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc Devices module
 %%% Handle client requests for device documents
 %%%
@@ -270,6 +270,7 @@ originate_quickcall(Endpoints, Call, Context) ->
           ,{<<"Outbound-Caller-ID-Name">>, get_uri_decoded_value(<<"caller-id-name">>, Context, <<"Device QuickCall">>)}
           ,{<<"Outbound-Caller-ID-Number">>, get_uri_decoded_value(<<"caller-id-number">>, Context, kapps_call:request_user(Call))}
           ,{<<"Timeout">>, CallTimeoutS}
+          ,{<<"Start-Control-Process">>, false}
           | kz_api:default_headers(<<"resource">>, <<"originate_req">>, ?APP_NAME, ?APP_VERSION)
            ++ maybe_add_existing_call_information(Context)
           ]),
