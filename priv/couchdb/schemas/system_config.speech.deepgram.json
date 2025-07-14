@@ -1,0 +1,17 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "_id": "system_config.speech.deepgram",
+    "description": "Schema for speech.deepgram system_config",
+    "properties": {
+        "tts_api_key": {
+            "description": "speech deepgram tts_api_key",
+            "type": "string"
+        },
+        "tts_url": {
+            "default": "https://api.deepgram.com/v1/speak",
+            "description": "speech deepgram tts_url",
+            "type": "string"
+        }
+    },
+    "type": "object"
+}

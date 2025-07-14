@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc CDR
 %%% Read only access to CDR docs
 %%%
@@ -335,9 +335,12 @@ get_view_options([{<<"cdrs">>, [?PATH_INTERACTION]}, {<<"users">>, [OwnerId]}|_]
 get_view_options(_) ->
     {'undefined', []}.
 
--spec maybe_add_stale_to_options(boolean()) -> [{'stale', 'ok'}] | [].
-maybe_add_stale_to_options('true') -> [{'stale', 'ok'}];
-maybe_add_stale_to_options('false') ->[].
+-spec maybe_add_stale_to_options(boolean()) -> [{'stable', boolean()} | {'update', boolean()}] | [].
+maybe_add_stale_to_options('true') ->
+    [{'stable', 'true'} % use stable view already generated
+    ,{'update', 'false'} % don't update view on request
+    ];
+maybe_add_stale_to_options('false') -> [].
 
 -spec cdrs_listing_mapper(cb_context:context(), kz_json:object(), kz_json:objects()) -> kz_json:objects().
 cdrs_listing_mapper(Context, JObj, Acc) ->

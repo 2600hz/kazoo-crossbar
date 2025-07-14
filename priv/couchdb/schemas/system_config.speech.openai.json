@@ -1,0 +1,42 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "_id": "system_config.speech.openai",
+    "description": "Schema for speech.openai system_config",
+    "properties": {
+        "asr_api_key": {
+            "default": "",
+            "description": "speech openai asr_api_key",
+            "type": "string"
+        },
+        "asr_model": {
+            "default": "gpt-4o-transcribe",
+            "description": "speech openai asr_model",
+            "type": "string"
+        },
+        "asr_url": {
+            "default": "https://api.openai.com/v1/audio/transcriptions",
+            "description": "speech openai asr_url",
+            "type": "string"
+        },
+        "tts_api_key": {
+            "description": "speech openai tts_api_key",
+            "type": "string"
+        },
+        "tts_model": {
+            "default": "tts-1-hd",
+            "description": "speech openai tts_model",
+            "type": "string"
+        },
+        "tts_speed": {
+            "default": "1.0",
+            "description": "speech openai tts_speed",
+            "type": "string"
+        },
+        "tts_url": {
+            "default": "https://api.openai.com/v1/audio/speech",
+            "description": "speech openai tts_url",
+            "type": "string"
+        }
+    },
+    "type": "object"
+}
