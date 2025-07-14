@@ -110,7 +110,7 @@ authenticate(Context, Carrier) ->
     AccountId = cb_context:account_id(Context),
     Payload = cb_context:req_json(Context),
     CarrierMod = to_carrier_mod(Carrier),
-    case kz_module:is_exported(CarrierMod, 'authenticate_req', 3) of
+    case is_carrier_mod(CarrierMod) of
         'true' ->
             Module = kz_term:to_atom(CarrierMod),
             case Module:authenticate_req(Payload, cb_context:req_headers(Context), cb_context:account_id(Context)) of
@@ -120,6 +120,15 @@ authenticate(Context, Carrier) ->
                 'false' -> {'stop', cb_context:add_system_error('invalid_credentials', Context)}
             end;
         _ -> {'stop', cb_context:add_system_error('invalid_credentials', Context)}
+    end.
+
+is_carrier_mod(Mod) ->
+    case kz_module:is_exported(Mod, 'authenticate_req', 3) of
+        'true' ->
+            Module = kz_term:to_atom(Mod),
+            kz_module:has_behaviour(Module, 'knm_gen_carrier');
+        'false' ->
+            'false'
     end.
 
 to_carrier_mod(Carrier) -> <<"knm_", Carrier/binary>>.
