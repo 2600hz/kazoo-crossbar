@@ -38,6 +38,8 @@ Key | Description | Type | Default | Required | Support Level
 `music_on_hold.options` | Options for playing music on hold | `array(string('preserve-position' \| 'random-start'))` |   | `false` |  
 `music_on_hold` | The default music on hold parameters | `object()` | `{}` | `false` |  
 `name` | A friendly name for the account | `string(1..128)` |   | `true` | `supported`
+`notifications.emergency.enabled` | has the account placed an emergency call | `boolean()` | `true` | `false` |  
+`notifications.emergency` | send emails on emergency calls | `object()` |   | `false` |  
 `notifications.first_occurrence.sent_initial_call` | has the account made their first call | `boolean()` | `false` | `false` |  
 `notifications.first_occurrence.sent_initial_registration` | has the account registered their first device | `boolean()` | `false` | `false` |  
 `notifications.first_occurrence` | send emails on these account-firsts | `object()` |   | `false` |  

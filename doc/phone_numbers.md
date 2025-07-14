@@ -39,17 +39,17 @@ Key | Description | Type | Default | Required | Support Level
 `e911.legacy_data.streetname` | The name that will show to emergency services | `string()` |   | `false` |  
 `e911.legacy_data.suite` | The name that will show to emergency services | `string()` |   | `false` |  
 `e911.legacy_data` | Legacy E911 information | `object()` |   | `false` |  
-`e911.locality` | The locality (city) where the number is in service | `string()` |   | `true` |  
+`e911.locality` | The locality (city) where the number is in service | `string()` |   | `false` |  
 `e911.location_id` | The e911 provisioning system internal id for this service address | `string()` |   | `false` |  
 `e911.location_identifier` | United States unique 10-digit number known as an E911 location identifier (ELIN) | `integer()` |   | `false` |  
 `e911.longitude` | The geo-position of a location, east or west of the prime meridian, using WGS84 formatting | `string(0..11)` |   | `false` |  
 `e911.notification_contact_emails.[]` |   | `string()` |   | `false` |  
 `e911.notification_contact_emails` | A list of email addresses to receive notification when this number places an emergency call | `array(string())` | `[]` | `false` |  
 `e911.plus_four` | The extended zip/postal code where the number is in service | `string()` |   | `false` |  
-`e911.postal_code` | The zip/postal code where the number is in service | `string()` |   | `true` |  
-`e911.region` | The region (state) where the number is in service | `string(2)` |   | `true` |  
+`e911.postal_code` | The zip/postal code where the number is in service | `string()` |   | `false` |  
+`e911.region` | The region (state) where the number is in service | `string(2)` |   | `false` |  
 `e911.status` | The e911 provisioning system status for this service address | `string('INVALID' \| 'GEOCODED' \| 'PROVISIONED' \| 'REMOVED' \| 'ERROR')` |   | `false` |  
-`e911.street_address` | The street address where the number is in service | `string()` |   | `true` |  
+`e911.street_address` | The street address where the number is in service | `string()` |   | `false` |  
 `e911` |   | `object()` |   | `false` |  
 `porting.billing_account_id` | The account id the losing carrier has on file | `string()` |   | `false` |  
 `porting.billing_extended_address` | The suit/floor/apt. address the losing carrier has on file | `string()` |   | `false` |  

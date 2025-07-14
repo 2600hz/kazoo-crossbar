@@ -155,12 +155,6 @@
                     "type": "string"
                 }
             },
-            "required": [
-                "locality",
-                "postal_code",
-                "region",
-                "street_address"
-            ],
             "type": "object"
         },
         "porting": {

@@ -144,6 +144,17 @@
         "notifications": {
             "description": "account notification settings",
             "properties": {
+                "emergency": {
+                    "description": "send emails on emergency calls",
+                    "properties": {
+                        "enabled": {
+                            "default": true,
+                            "description": "has the account placed an emergency call",
+                            "type": "boolean"
+                        }
+                    },
+                    "type": "object"
+                },
                 "first_occurrence": {
                     "description": "send emails on these account-firsts",
                     "properties": {
