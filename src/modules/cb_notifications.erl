@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -585,10 +585,13 @@ maybe_find_publisher(TemplateId) ->
             lager:warning("failed to find publisher for notification ~s", [TemplateId]),
             fun(_Id) -> 'ok' end;
         [{Module, Function}] ->
-            lager:info("found publisher ~s:~p/1 for ~s (~s)", [Module, Function, TemplateId]),
+            lager:info("found publisher ~s:~s/1 for ~s", [Module, Function, TemplateId]),
             fun Module:Function/1;
         [Function] when is_function(Function, 1) ->
-            lager:info("found publisher function ~p for ~s (~s)", [Function, TemplateId]),
+            lager:info("found publisher function ~p for ~s", [Function, TemplateId]),
+            Function;
+        Function when is_function(Function, 1) ->
+            lager:info("found publisher function ~p for ~s", [Function, TemplateId]),
             Function
     end.
 
