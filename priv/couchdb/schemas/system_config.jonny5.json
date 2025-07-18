@@ -50,6 +50,14 @@
             "description": "jonny5 flat rate whitelist",
             "type": "string"
         },
+        "no_authz_carrier_modules": {
+            "default": [],
+            "description": "jonny5 no_authz_carrier_modules",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
         "resource_flat_rate_lookup": {
             "default": false,
             "description": "lookup flat rate regexps per resource",
