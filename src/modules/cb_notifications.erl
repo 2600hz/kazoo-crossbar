@@ -581,15 +581,12 @@ publish_fun(TemplateId) ->
 
 maybe_find_publisher(TemplateId) ->
     case kapi_notifications:find_publisher(TemplateId) of
-        [] ->
+        'undefined' ->
             lager:warning("failed to find publisher for notification ~s", [TemplateId]),
             fun(_Id) -> 'ok' end;
-        [{Module, Function}] ->
+        {Module, Function} ->
             lager:info("found publisher ~s:~s/1 for ~s", [Module, Function, TemplateId]),
             fun Module:Function/1;
-        [Function] when is_function(Function, 1) ->
-            lager:info("found publisher function ~p for ~s", [Function, TemplateId]),
-            Function;
         Function when is_function(Function, 1) ->
             lager:info("found publisher function ~p for ~s", [Function, TemplateId]),
             Function
