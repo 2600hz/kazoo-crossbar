@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -581,14 +581,14 @@ publish_fun(TemplateId) ->
 
 maybe_find_publisher(TemplateId) ->
     case kapi_notifications:find_publisher(TemplateId) of
-        [] ->
+        'undefined' ->
             lager:warning("failed to find publisher for notification ~s", [TemplateId]),
             fun(_Id) -> 'ok' end;
-        [{Module, Function}] ->
-            lager:info("found publisher ~s:~p/1 for ~s (~s)", [Module, Function, TemplateId]),
+        {Module, Function} ->
+            lager:info("found publisher ~s:~s/1 for ~s", [Module, Function, TemplateId]),
             fun Module:Function/1;
-        [Function] when is_function(Function, 1) ->
-            lager:info("found publisher function ~p for ~s (~s)", [Function, TemplateId]),
+        Function when is_function(Function, 1) ->
+            lager:info("found publisher function ~p for ~s", [Function, TemplateId]),
             Function
     end.
 
