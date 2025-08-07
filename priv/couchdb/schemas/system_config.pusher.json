@@ -34,6 +34,11 @@
                     "default": "api.push.apple.com",
                     "description": "APNs server host",
                     "type": "string"
+                },
+                "keepalive_m": {
+                    "default": 15,
+                    "description": "Keepalive timeout",
+                    "type": "integer"
                 }
             },
             "type": "object"
