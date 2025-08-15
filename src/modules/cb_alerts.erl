@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc Crossbar API for alerts.
 %%% @author Peter Defebvre
 %%%
@@ -443,6 +443,31 @@ check_financials(Context) ->
                        )
     end.
 
+-spec account_is_in_good_standing(cb_context:context()) -> cb_context:context().
+account_is_in_good_standing(Context) ->
+    case kz_services_standing:acceptable(cb_context:account_id(Context)) of
+        {'true', _} -> Context;
+        {'false', #{message := Msg}} -> good_standing_alert(Context, Msg)
+    end.
+
+good_standing_alert(Context, Message) ->
+    AccountId = cb_context:account_id(Context),
+    From = kz_json:from_list(
+             [{<<"type">>, <<"account">>}
+             ,{<<"value">>, AccountId}
+             ]
+            ),
+    StandingAlert = kz_json:from_list(
+                      [{<<"id">>, AccountId}
+                      ,{<<"title">>, <<"Account not in good standing">>}
+                      ,{<<"message">>, Message}
+                      ,{<<"category">>, <<"not_good_standing">>}
+                      ,{<<"from">>, [From]}
+                      ,{<<"clearable">>, 'false'}
+                      ]
+                     ),
+    append_alert(Context, StandingAlert).
+
 %%------------------------------------------------------------------------------
 %% @doc Return a low_balance alert when any of the following scenarios is met:
 %% - If threshold is configured then create an alert if their balance is below that amount.
@@ -530,7 +555,7 @@ low_balance_alert(Context, AvailableDollars, ThresholdDollars) ->
 maybe_check_payment_token(Context) ->
     case kapps_config:get_is_true(?MOD_CONFIG_CAT, <<"check_payment_token">>, 'true') of
         'false' -> Context;
-        'true' -> check_payment_token(Context)
+        'true' -> check_payment_token(account_is_in_good_standing(Context))
     end.
 
 -spec check_payment_token(cb_context:context()) -> cb_context:context().
