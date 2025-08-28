@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc Crossbar API for external numbers.
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -466,6 +466,8 @@ place_call(Context) ->
                 ,{<<"Application-Name">>, <<"park">>}
                 ,{<<"Originate-Immediate">>, 'true'}
                 ,{<<"Timeout">>, 30}
+                ,{<<"Hunt-Account-ID">>, get_hunt_account_id(AccountId)}
+                ,{<<"Flags">>, get_flags(AccountId)}
                 | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
                 ]),
     kz_amqp_worker:call(Request
@@ -473,6 +475,20 @@ place_call(Context) ->
                        ,fun kapi_offnet_resource:resp_v/1
                        ,30 * ?MILLISECONDS_IN_SECOND
                        ).
+
+-spec get_flags(kz_term:ne_binary()) -> kz_term:ne_binaries().
+get_flags(AccountId) ->
+    Funs = [{fun kapps_call:set_account_id/2, AccountId}
+           ,{fun kapps_call:set_account_db/2, kzs_util:format_account_db(AccountId)}
+           ],
+    kz_attributes:get_flags(?APP_NAME, kapps_call:exec(Funs, kapps_call:new())).
+
+-spec get_hunt_account_id(kz_term:ne_binary()) -> kz_term:api_ne_binary().
+get_hunt_account_id(AccountId) ->
+    case kapps_call:should_use_local_resources(AccountId) of
+        'false' -> 'undefined';
+        'true' -> kapps_call:hunt_account_id(AccountId)
+    end.
 
 -spec caller_id(cb_context:context()) -> {kz_term:ne_binary(), kz_term:ne_binary()}.
 caller_id(Context) ->

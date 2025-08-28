@@ -61,6 +61,10 @@
             },
             "type": "array"
         },
+        "offnet_hunt_account_id": {
+            "description": "When using local resources, use this account instead of the account making the call (useful for resellers)",
+            "type": "string"
+        },
         "reserved_ccv_keys": {
             "default": [
                 "Account-ID",
@@ -93,6 +97,11 @@
                 "type": "string"
             },
             "type": "array"
+        },
+        "should_use_local_resources": {
+            "default": false,
+            "description": "Toggle whether to use the hunt_account_id's (or account's) resources vs the system resources",
+            "type": "boolean"
         },
         "unknown_cid_name": {
             "default": "unknown",
