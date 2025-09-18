@@ -3,6 +3,18 @@
     "_id": "system_config.crossbar.phone_numbers",
     "description": "Schema for crossbar.phone_numbers system_config",
     "properties": {
+        "collection_batch_run_threshold": {
+            "default": "infinity",
+            "description": "crossbar phone_numbers collection_batch_run_threshold",
+            "oneOf": [
+                {
+                    "type": "integer"
+                },
+                {
+                    "type": "string"
+                }
+            ]
+        },
         "default_country": {
             "default": "US",
             "description": "crossbar.phone_numbers default country",

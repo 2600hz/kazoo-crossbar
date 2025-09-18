@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc Functions shared between crossbar modules
 %%% @author James Aimonetti
 %%%
@@ -307,9 +307,9 @@ validate_number_ownership(Numbers, Context) ->
             cb_context:add_system_error(403, 'forbidden', Message, Context)
     end.
 
--type assignment_to_apply() :: {kz_term:ne_binary(), kz_term:api_binary()}.
+-type assignment_to_apply() :: {kz_term:ne_binary(), kz_term:api_ne_binary()}.
 -type assignments_to_apply() :: [assignment_to_apply()].
--type port_req_assignment() :: {kz_term:ne_binary(), kz_term:api_binary(), kz_json:object()}.
+-type port_req_assignment() :: {kz_term:ne_binary(), kz_term:api_ne_binary(), kz_json:object()}.
 -type port_req_assignments() :: [port_req_assignment()].
 -type assignment_update() :: {kz_term:ne_binary(), knm_numbers:return()} |
                              {kz_term:ne_binary(), {'ok', kz_json:object()}} |
@@ -319,69 +319,110 @@ validate_number_ownership(Numbers, Context) ->
 -spec apply_assignment_updates(assignments_to_apply(), cb_context:context()) ->
           assignment_updates().
 apply_assignment_updates(Updates, Context) ->
+    Breaked = kz_term:break_list(lists:ukeysort(1, Updates), 100),
+    PidRefs = [kz_process:spawn_monitor(fun do_apply_assignment_updates/3
+                                       ,[self(), List, Context]
+                                       )
+               || List <- Breaked
+              ],
+    wait_for_pid_refs(PidRefs).
+
+-spec do_apply_assignment_updates(pid(), assignments_to_apply(), cb_context:context()) -> 'ok'.
+do_apply_assignment_updates(Collector, Updates, Context) ->
     AccountId = cb_context:account_id(Context),
-    AccountUpdates = lists:foldl(fun({Num, App}, X) -> [{Num, App, AccountId} | X] end, [], Updates),
-    {PRUpdates, NumUpdates} = lists:foldl(fun split_port_requests/2, {[], []}, AccountUpdates),
-    PortAssignResults = assign_to_port_number(PRUpdates),
-    AssignResults = maybe_assign_to_app(NumUpdates, AccountId),
-    PortAssignResults ++ AssignResults.
+    %% first try numbers,
+    %% if any number not_found try ports
+    MaybePorts = maybe_assign_to_app(Collector, Updates, AccountId),
+    _ = maybe_assign_to_port_number(Collector, Updates, AccountId, MaybePorts),
+    'ok'.
 
 %%------------------------------------------------------------------------------
-%% @doc Split a list of assignment updates into a 2-element tuple; element
-%% 1 is a list of port requests, element 2 is a list of numbers that
-%% are already active.
-%%
+%% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec split_port_requests({kz_term:ne_binary(), kz_term:api_binary(), kz_term:ne_binary()}, {port_req_assignments(), assignments_to_apply()}) ->
-          {port_req_assignments(), assignments_to_apply()}.
-split_port_requests({DID, Assign, AccountId}, {PRUpdates, NumUpdates}) ->
-    Num = knm_converters:normalize(DID),
-    case knm_port_request:get_portin_number(AccountId, Num) of
-        {'ok', []} ->
-            %% case of number not_found
-            {PRUpdates, [{DID, Assign}|NumUpdates]};
-        {'ok', [JObj|_]} ->
-            {[{Num, Assign, JObj}|PRUpdates], NumUpdates};
-        {'error', _} ->
-            {PRUpdates, [{DID, Assign}|NumUpdates]}
+-spec wait_for_pid_refs(kz_term:pid_refs()) -> assignment_updates().
+wait_for_pid_refs([]) ->
+    [];
+wait_for_pid_refs([_|_]=PidRefs) ->
+    wait_for_pid_refs(PidRefs, [], 0).
+
+-spec wait_for_pid_refs(kz_term:pid_refs(), assignment_updates(), non_neg_integer()) -> assignment_updates().
+wait_for_pid_refs([], Results, Total) ->
+    lager:info("processed ~p workers",[Total]),
+    Results;
+wait_for_pid_refs(PidRefs, Results, Total) ->
+    receive
+        {'results', Result1} ->
+            wait_for_pid_refs(PidRefs, Results ++ Result1, Total);
+        {'DOWN', Ref, 'process', Pid, Reason} ->
+            handle_down_pid_ref(Pid, Ref, PidRefs, Results, Total, Reason)
     end.
 
--spec assign_to_port_number(port_req_assignments()) ->
-          assignment_updates().
-assign_to_port_number(PRUpdates) ->
-    [{Num, knm_port_request:assign_to_app(Num, Assign, JObj)}
-     || {Num, Assign, JObj} <- PRUpdates
-    ].
+handle_down_pid_ref(Pid, Ref, PidRefs, Results, Total, Reason) ->
+    case lists:keytake(Pid, 1, PidRefs) of
+        'false' ->
+            wait_for_pid_refs(PidRefs, Results, Total);
+        {'value', {Pid, Ref}, NewPidRefs} ->
+            maybe_log_down_reason(Pid, Reason),
+            wait_for_pid_refs(NewPidRefs, Results, Total+1)
+    end.
 
--spec maybe_assign_to_app(assignments_to_apply(), kz_term:ne_binary()) ->
-          assignment_updates().
-maybe_assign_to_app(NumUpdates, AccountId) ->
-    Options = [{'auth_by', AccountId}],
-    Groups = group_by_assign_to(NumUpdates),
-    maps:fold(fun(Assign, Nums, Acc) ->
-                      Results = knm_ops:assign_to_app(Nums, Assign, Options),
-                      format_assignment_results(Results) ++ Acc
-              end, [], Groups).
+maybe_log_down_reason(_Pid, 'normal') -> 'ok';
+maybe_log_down_reason(Pid, Reason) -> lager:info("worker pid ~p died: ~p", [Pid, Reason]).
 
--type assign_to_groups() :: #{kz_term:api_binary() => kz_term:ne_binaries()}.
+-spec maybe_assign_to_port_number(pid(), assignments_to_apply(), kz_term:ne_binary(), kz_term:ne_binaries()) -> 'ok'.
+maybe_assign_to_port_number(Collector, Updates, AccountId, ToCheck) ->
+    case get_portin_numbers(AccountId, Updates, ToCheck) of
+        {'ok', {PortUpdates, NotFounds}} ->
+            assign_to_port_number(Collector, PortUpdates, NotFounds);
+        {'error', Reason} ->
+            [{N, {'error', Reason}} || N <- ToCheck]
+    end.
 
--spec group_by_assign_to(assignments_to_apply()) -> assign_to_groups().
-group_by_assign_to(NumUpdates) ->
-    group_by_assign_to(NumUpdates, #{}).
+-spec get_portin_numbers(kz_term:ne_binary(), assignments_to_apply(), kz_term:ne_binaries()) ->
+          {'ok', {port_req_assignments(), assignment_updates()}} | {'error', any()}.
+get_portin_numbers(AccountId, Up, ToCheck) ->
+    Updates = maps:from_list(Up),
+    case knm_port_request:get_portin_numbers(AccountId, ToCheck) of
+        {'ok', JObjs} ->
+            PortUpdates = maps:from_list(
+                            [{Number, {Number, App, JObj}}
+                             || JObj <- JObjs,
+                                {Number, _} <- kz_json:to_proplist(kzd_port_requests:numbers(JObj, kz_json:new())),
+                                App <- [maps:get(Number, Updates, 'no_assign')],
+                                App =/= 'no_assign'
+                            ]
+                           ),
+            {'ok', {maps:values(PortUpdates), [{N, 'not_found'} || N <- ToCheck -- maps:keys(PortUpdates)]}};
+        {'error', _}=Error ->
+            Error
+    end.
 
-group_by_assign_to([], Groups) -> Groups;
-group_by_assign_to([{DID, Assign}|NumUpdates], Groups) ->
-    DIDs = maps:get(Assign, Groups, []),
-    Groups1 = Groups#{Assign => [DID|DIDs]},
-    group_by_assign_to(NumUpdates, Groups1).
+-spec assign_to_port_number(pid(), port_req_assignments(), assignment_updates()) -> 'ok'.
+assign_to_port_number(Collector, PRUpdates, NotFounds) ->
+    {'ok', Success, Failed} = knm_port_request:assign_to_app_bulk(PRUpdates),
+    Result = [{'ok', Ok} || Ok <- Success] ++ [{'error', F} || F <- Failed] ++ NotFounds,
+    Collector ! {'results', Result},
+    'ok'.
 
--spec format_assignment_results(knm_pipe:collection()) -> assignment_updates().
-%% FIXME: opaque
-format_assignment_results(#{'succeeded' := PNs
-                           ,'failed' := Failed
-                           }) ->
-    format_assignment_succeeded(PNs) ++ format_assignment_failure(Failed).
+-spec maybe_assign_to_app(pid(), assignments_to_apply(), kz_term:ne_binary()) -> kz_term:ne_binaries().
+maybe_assign_to_app(Collector, NumUpdates, AccountId) ->
+    Options = [{'auth_by', AccountId}
+              ,{'batch_run', 'true'}
+              ,{'dry_run', 'false'}
+              ],
+    Groups = maps:groups_from_list(fun({_DID, Assign}) -> Assign end
+                                  ,fun({DID, _Assign}) -> DID end
+                                  ,NumUpdates
+                                  ),
+    {ToReport, NotFounds} = maps:fold(fun(Assign, Nums, {Result, NotFoundAcc}) ->
+                                              Collection = knm_ops:assign_to_app(Nums, Assign, Options),
+                                              Good = format_assignment_succeeded(knm_pipe:succeeded(Collection)),
+                                              {Bad, NotfoundInner} = format_assignment_failure(knm_pipe:failed(Collection)),
+                                              {Result ++ Good ++ Bad,  NotFoundAcc ++ NotfoundInner}
+                                      end, {[], []}, Groups),
+    Collector ! {'results', ToReport},
+    NotFounds.
 
 -spec format_assignment_succeeded(knm_phone_number:pn_records()) -> assignment_updates().
 format_assignment_succeeded(PhoneNumbers) ->
@@ -389,18 +430,20 @@ format_assignment_succeeded(PhoneNumbers) ->
      || PN <- PhoneNumbers
     ].
 
--spec format_assignment_failure(knm_errors:failed()) -> assignment_updates().
+-spec format_assignment_failure(knm_errors:failed()) -> {assignment_updates(), kz_term:ne_binaries()}.
 format_assignment_failure(Failed) ->
-    maps:fold(fun format_assignment_failure_fold/3, [], Failed).
+    maps:fold(fun format_assignment_failure_fold/3, {[], []}, Failed).
 
--spec format_assignment_failure_fold(kz_term:ne_binary(), knm_errors:reason(), assignment_updates()) ->
-          assignment_updates().
-format_assignment_failure_fold(Number, Reason, Updates) when is_atom(Reason) ->
-    [{Number, {'error', Reason}} | Updates];
-format_assignment_failure_fold(Number, ReasonJObj, Updates) ->
-    [{Number, {'error', ReasonJObj}} | Updates].
+-spec format_assignment_failure_fold(kz_term:ne_binary(), knm_errors:reason(), {assignment_updates(), kz_term:ne_binaries()}) ->
+          {assignment_updates(), kz_term:ne_binaries()}.
+format_assignment_failure_fold(Number, 'not_found', {Failed, NotFound}) ->
+    {Failed, [Number, NotFound]};
+format_assignment_failure_fold(Number, Reason, {Failed, NotFound}) ->
+    {[{Number, {'error', Reason}} | Failed], NotFound}.
 
 -spec log_assignment_updates(assignment_updates()) -> 'ok'.
+log_assignment_updates(Updates) when length(Updates) > 50 ->
+    lager:debug("made a giant request and expect logs in a tight loop? figure it out yourself then!");
 log_assignment_updates(Updates) ->
     lists:foreach(fun log_assignment_update/1, Updates).
 

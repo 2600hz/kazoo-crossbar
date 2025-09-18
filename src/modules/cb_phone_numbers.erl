@@ -344,12 +344,13 @@ post(Context, ?CHECK) ->
     crossbar_util:response(knm_carriers:check(Numbers), Context);
 post(Context, ?COLLECTION) ->
     {Numbers, ReqData} = take_collection_numbers(Context),
-    Options = [{'assign_to', cb_context:account_id(Context)}
-              | default_knm_options(Context)
-              ],
+    Opts = [{'assign_to', cb_context:account_id(Context)}
+           | default_knm_options(Context)
+           ],
+    Options = force_collection_threshold(Context, Opts, Numbers),
     Results = knm_numbers:update(Numbers, [{fun knm_phone_number:reset_doc/2, ReqData}], Options),
     CB = fun() -> ?MODULE:post(cb_context:set_accepting_charges(Context), ?COLLECTION) end,
-    set_response(Results, Context, CB, ?COLLECTION);
+    set_response(Results, Context, CB, props:is_true('batch_run', Options, 'false'));
 post(Context, ?LOCALITY) ->
     fetch_locality(Context);
 post(Context, Number) ->
@@ -364,15 +365,16 @@ post(Context, Number) ->
 -spec put(cb_context:context(), path_token()) -> cb_context:context().
 put(Context, ?COLLECTION) ->
     {Numbers, ReqData} = take_collection_numbers(Context),
-    Options = props:set_values([{'assign_to', cb_context:account_id(Context)}
-                               ,{'public_fields', kz_json:delete_key(?PUBLIC_FIELDS_STATE, ReqData)}
-                               | maybe_ask_for_state(kz_json:get_ne_binary_value(?PUBLIC_FIELDS_STATE, ReqData))
-                               ]
-                              ,default_knm_options(Context)
-                              ),
+    Opts = props:set_values([{'assign_to', cb_context:account_id(Context)}
+                            ,{'public_fields', kz_json:delete_key(?PUBLIC_FIELDS_STATE, ReqData)}
+                            | maybe_ask_for_state(kz_json:get_ne_binary_value(?PUBLIC_FIELDS_STATE, ReqData))
+                            ]
+                           ,default_knm_options(Context)
+                           ),
+    Options = force_collection_threshold(Context, Opts, Numbers),
     Results = knm_numbers:create(Numbers, Options),
     CB = fun() -> ?MODULE:put(cb_context:set_accepting_charges(Context), ?COLLECTION) end,
-    set_response(Results, Context, CB, ?COLLECTION);
+    set_response(Results, Context, CB, props:is_true('batch_run', Options, 'false'));
 put(Context, Number) ->
     Doc = cb_context:doc(Context),
     Options = props:set_values([{'assign_to', cb_context:account_id(Context)}
@@ -388,12 +390,13 @@ put(Context, Number) ->
 -spec put(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 put(Context, ?COLLECTION, ?ACTIVATE) ->
     {Numbers, ReqData} = take_collection_numbers(Context),
-    Options = [{'public_fields', ReqData}
-              | default_knm_options(Context)
-              ],
+    Opts = [{'public_fields', ReqData}
+           | default_knm_options(Context)
+           ],
+    Options = force_collection_threshold(Context, Opts, Numbers),
     Results = knm_numbers:move(Numbers, cb_context:account_id(Context), Options),
     CB = fun() -> ?MODULE:put(cb_context:set_accepting_charges(Context), ?COLLECTION, ?ACTIVATE) end,
-    set_response(Results, Context, CB, ?COLLECTION);
+    set_response(Results, Context, CB, props:is_true('batch_run', Options, 'false'));
 put(Context, <<Number/binary>>, ?ACTIVATE) ->
     Options = [{'public_fields', cb_context:doc(Context)}
               | default_knm_options(Context)
@@ -422,12 +425,13 @@ put(Context, Number, ?PORT) ->
 -spec patch(cb_context:context(), path_token()) -> cb_context:context().
 patch(Context, ?COLLECTION) ->
     {Numbers, ReqData} = take_collection_numbers(Context),
-    Options = [{'assign_to', cb_context:account_id(Context)}
-              | default_knm_options(Context)
-              ],
+    Opts = [{'assign_to', cb_context:account_id(Context)}
+           | default_knm_options(Context)
+           ],
+    Options = force_collection_threshold(Context, Opts, Numbers),
     Results = knm_numbers:update(Numbers, [{fun knm_phone_number:update_doc/2, ReqData}], Options),
     CB = fun() -> ?MODULE:patch(cb_context:set_accepting_charges(Context), ?COLLECTION) end,
-    set_response(Results, Context, CB, ?COLLECTION);
+    set_response(Results, Context, CB, props:is_true('batch_run', Options, 'false'));
 patch(Context, Number) ->
     Options = [{'assign_to', cb_context:account_id(Context)}
               | default_knm_options(Context)
@@ -440,9 +444,10 @@ patch(Context, Number) ->
 -spec delete(cb_context:context(), path_token()) -> cb_context:context().
 delete(Context, ?COLLECTION) ->
     {Numbers, _} = take_collection_numbers(Context),
-    Options = default_knm_options(Context),
+    Opts = default_knm_options(Context),
+    Options = force_collection_threshold(Context, Opts, Numbers),
     CB = fun() -> ?MODULE:delete(cb_context:set_accepting_charges(Context), ?COLLECTION) end,
-    set_response(release_or_delete(Context, Numbers, Options), Context, CB, ?COLLECTION);
+    set_response(release_or_delete(Context, Numbers, Options), Context, CB, props:is_true('batch_run', Options, 'false'));
 delete(Context, Number) ->
     Options = default_knm_options(Context),
 
@@ -904,32 +909,42 @@ validate_delete(Context) ->
 set_response(Result, Context, CB) ->
     set_response(Result, Context, CB, 'undefined').
 
--spec set_response(knm_numbers:return(), cb_context:context(), cb(), kz_term:api_ne_binary()) -> cb_context:context().
+-spec set_response(knm_numbers:return(), cb_context:context(), cb(), kz_term:api_boolean()) -> cb_context:context().
 set_response({'ok', [JObj]}, Context, _, 'undefined') ->
     %% single number operation
     crossbar_doc:handle_datamgr_success(JObj, Context);
-set_response({'ok', JObjs}, Context, _, _Collection) ->
+set_response({'ok', JObjs}, Context, _, BatchRun) ->
     %% collection operation (multi numbers)
     Resp = kz_json:from_list(
              [{<<"success">>, kz_json:from_list([{kz_doc:id(JObj), JObj} || JObj <- JObjs])}
              ,{<<"error">>, []}
              ]),
+    maybe_reconcile(Context, BatchRun),
     crossbar_util:response(Resp, Context);
 set_response({'ok', [], [{Number, Failed}]}, Context, _, 'undefined') ->
     %% single number operation
     set_error(Number, Failed, Context);
-set_response({'ok', Success, FailedProp}, Context, _, _Collection) ->
+set_response({'ok', Success, FailedProp}, Context, _, BatchRun) ->
     %% collection operation (multi numbers)
     Resp = kz_json:from_list(
              [{<<"success">>, kz_json:from_list([{kz_doc:id(JObj), JObj} || JObj <- Success])}
              ,{<<"error">>, normalize_knm_error(FailedProp)}
              ]),
+    maybe_reconcile(Context, BatchRun),
     crossbar_util:response(Resp, Context);
-set_response({'dry_run', Quotes}, Context, CB, _Collection) ->
+set_response({'dry_run', Quotes}, Context, CB, _BatchRun) ->
     case kz_term:is_empty(Quotes) of
         'false' -> crossbar_util:response_402(Quotes, Context);
         'true' -> CB()
     end.
+
+maybe_reconcile(Context, 'true') ->
+    %% batch_run was true, so knm was ignoring services, reconciling it now
+    _ = kz_process:spawn(fun crossbar_services:reconcile/1, [Context]),
+    lager:debug("executing service reconcilating update in the background");
+maybe_reconcile(_Context, _) ->
+    %% false or undefined
+    'ok'.
 
 -spec normalize_knm_error(knm_errors:proplist()) -> kz_json:object().
 normalize_knm_error(FailedProp) ->
@@ -1024,3 +1039,34 @@ default_knm_options(Context) ->
     ,{'auth_by', AuthAccountId}
     ,{'dry_run', not cb_context:accepting_charges(Context)}
     ].
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec force_collection_threshold(cb_context:context(), knm_options:options(), kz_term:ne_binaries()) -> knm_options:options().
+force_collection_threshold(_Context, Options, Numbers) when is_list(Numbers) ->
+    case collection_threshold() of
+        'infinity' ->
+            Options;
+        Threshold ->
+            case length(Numbers) >= Threshold of
+                'true' ->
+                    lager:info("collection length is bigger than threshold ~b, forcing 'batch_run' and 'dry_run'", [Threshold]),
+                    Force = [{'dry_run', 'false'} %% avoid crossbar repeating the request with setting accept_charging again
+                            ,{'batch_run', 'true'} %% skip cache reads and directly fetch from db
+                            ],
+                    props:set_values(Force, Options);
+                'false' ->
+                    Options
+            end
+    end.
+
+-spec collection_threshold() -> timeout().
+collection_threshold() ->
+    case kapps_config:get(?PHONE_NUMBERS_CONFIG_CAT, <<"collection_batch_run_threshold">>) of
+        'undefined' -> 'infinity';
+        'infinity' -> 'infinity';
+        <<"infinity">> -> 'infinity';
+        IntegerIHope -> kz_term:safe_cast(IntegerIHope, 'infinity', fun kz_term:to_integer/1)
+    end.
