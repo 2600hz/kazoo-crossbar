@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc
 %%% @author Daniel Finke
 %%%
@@ -356,8 +356,10 @@ validate_path(Context, ?KEYS_PATH, Id, ?HTTP_GET) ->
 
 -spec validate_token_info(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 validate_token_info(Context, Token) ->
-    Options = [{'force_profile_update', 'true'}],
-    case crossbar_auth:validate_auth_token(Token, Options) of
+    Options = [{'force_profile_update', 'true'}
+              ,{<<"proxy_ips">>, cb_context:proxy_ips(Context)}
+              ],
+    case crossbar_auth:validate_auth_token(Token, props:filter_undefined(Options)) of
         {'error', {Code, Error}} when is_integer(Code) ->
             lager:debug("validate token info error ~p : ~p", [Code, Error]),
             crossbar_util:response('error', Error, Code, Context);

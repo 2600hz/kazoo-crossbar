@@ -11,6 +11,8 @@ Accounts represent tenants or customers on the system. Each account represents a
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
 `addresses` | Account addresses | [#/definitions/addresses](#addresses) |   | `false` |  
+`allowed_proxy_ips.[]` |   | `string()` |   | `false` |  
+`allowed_proxy_ips` | Allowed proxy ips from which user can authenticate | `array(string())` |   | `false` |  
 `announcement` | The announcement will be pop up when use log in to this account | `string()` |   | `false` |  
 `blacklists.[]` |   | `string()` |   | `false` |  
 `blacklists` | A list blacklist ids that apply to the account | `array(string())` |   | `false` |  

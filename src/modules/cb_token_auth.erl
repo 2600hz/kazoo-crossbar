@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc Token auth module
 %%% This is a simple auth mechanism, once the user has acquired an
 %%% auth token this module will allow access.  This module should be
@@ -208,7 +208,9 @@ validate_auth_token(Context, <<>>) ->
     lager:debug("no auth token supplied"),
     {'false', Context};
 validate_auth_token(Context, <<AuthToken/binary>>) ->
-    Options = [{<<"account_id">>, cb_context:req_header(Context, <<"x-auth-account-id">>)}],
+    Options = [{<<"account_id">>, cb_context:req_header(Context, <<"x-auth-account-id">>)}
+              ,{<<"proxy_ips">>, cb_context:proxy_ips(Context)}
+              ],
     lager:debug("checking auth token"),
     case crossbar_auth:validate_auth_token(AuthToken, props:filter_undefined(Options)) of
         {'ok', JObj} ->
@@ -217,6 +219,9 @@ validate_auth_token(Context, <<AuthToken/binary>>) ->
                               orelse Error =:= <<"token expired">> ->
             lager:info("provided auth token has expired"),
             {'stop', crossbar_util:response_401(Context)};
+        {'error', 'forbidden'} ->
+            lager:info("provided auth token validation failed"),
+            {'stop', crossbar_util:response('error', <<"forbidden">>, 403, Context)};
         {'error', 'not_found'} ->
             lager:info("provided auth token was not found"),
             {'stop', crossbar_util:response_401(Context)};

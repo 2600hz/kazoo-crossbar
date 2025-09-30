@@ -232,3 +232,35 @@ A standard Crossbar authentication token.
     "status": "success"
 }
 ```
+
+## User authentication combined with proxy server based authorization
+
+In certain cases it may be necessary to only have user requests coming from certain proxy servers, for this we can use `allowed_proxy_ips` in either user or account doc. 
+
+e.g. we have proxy server with ip of 10.2.11.11 and we only want to allow requests coming from that proxy server to be authorized
+
+For this we can patch either account or user doc with `"allowed_proxy_ips": ["10.2.11.11"]`
+
+> PATCH /v2/accounts/{ACCOUNT_ID}/users/{USER_ID}
+
+```shell
+curl -v -X PATCH \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d '{"data":{"allowed_proxy_ips": ["10.2.11.11"]}}' \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}
+```
+
+After patching we can validate the feature to be working by sending api request from trusted proxy ip and it should resolve.
+
+Sending request from untrusted proxy ip e.g. 10.2.11.12 will results in 403 forbidden.
+
+Getting any request from untrusted proxy after token being generated from trusted proxy server will also results in 403.
+
+In case of user impersonation we transfer the claims to new token so still keeping proxy based authentication intact.
+
+### Potential Issues
+
+There could be a potential issue if a malicious person gets hold of credentials and proxy list they can spoof proxy and use `X-Forwarded-For` header to send correct credentials with proxy list. This can be resolved by using auth mechanism for proxies where proxy-id is sent with request coming from authorized proxies.
+
+Potetial issue was discovered where checking only Account Token can lead to user bypassing impersonation proxy restrictions, change was made to make sure both Account Id and User Id tokens are considered. The code for impersonation does not go into logic for user based authorized ip checking.

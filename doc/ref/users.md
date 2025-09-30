@@ -15,6 +15,8 @@ Key | Description | Type | Default | Required | Support Level
 `addresses.vcard.[].types` |   | `array(string())` |   | `false` |  
 `addresses.vcard` | Addresses list to build user's vcard | `array(object())` |   | `false` |  
 `addresses` | User addresses | `object()` |   | `false` |  
+`allowed_proxy_ips.[]` |   | `string()` |   | `false` |  
+`allowed_proxy_ips` | Allowed proxy ips from which user can authenticate | `array(string())` |   | `false` |  
 `call_failover` | The device call failover parameters, to replace the device with an extension/phone number when device is offline. | [#/definitions/call_failover](#call_failover) |   | `false` |  
 `call_forward` | Call forward settings | [#/definitions/call_forward](#call_forward) |   | `false` |  
 `call_limits` | Schema for call limits | [#/definitions/call_limits](#call_limits) |   | `false` |  

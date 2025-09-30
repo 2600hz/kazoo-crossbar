@@ -52,6 +52,7 @@
         ,auth_token/1, set_auth_token/2
         ,auth_token_type/1, set_auth_token_type/2
         ,client_ip/1, port/1, set_client_ip/2
+        ,proxy_ips/1, set_proxy_ips/2
         ,db_name/1, set_db_name/2
         ,device_id/1, set_device_id/2
         ,doc/1, set_doc/2, update_doc/2
@@ -175,6 +176,7 @@
                     ,method = ?HTTP_GET :: http_method()
                     ,validation_errors = kz_json:new() :: kz_json:object()
                     ,client_ip = <<"127.0.0.1">> :: kz_term:api_ne_binary()
+                    ,proxy_ips = [] :: kz_term:api_ne_binaries()
                     ,load_merge_bypass :: kz_term:api_object()
                     ,profile_id :: kz_term:api_ne_binary()
                     ,api_version = ?VERSION_2 :: kz_term:ne_binary()
@@ -458,6 +460,9 @@ req_param(#cb_context{query_json=JObj}, K, Default) -> kz_json:get_value(K, JObj
 
 -spec client_ip(context()) -> kz_term:api_ne_binary().
 client_ip(#cb_context{client_ip=IP}) -> IP.
+
+-spec proxy_ips(context()) -> kz_term:api_ne_binaries().
+proxy_ips(#cb_context{proxy_ips=IPs}) -> IPs.
 
 -spec port(context()) -> integer().
 port(#cb_context{port=Port}) -> Port.
@@ -876,6 +881,10 @@ set_raw_qs(#cb_context{}=Context, Value) ->
 -spec set_client_ip(context(), kz_term:ne_binary()) -> context().
 set_client_ip(#cb_context{}=Context, Value) ->
     Context#cb_context{client_ip = Value}.
+
+-spec set_proxy_ips(context(), kz_term:ne_binaries()) -> context().
+set_proxy_ips(#cb_context{}=Context, Value) ->
+    Context#cb_context{proxy_ips = Value}.
 
 -spec set_profile_id(context(), kz_term:ne_binary()) -> context().
 set_profile_id(#cb_context{}=Context, Value) ->

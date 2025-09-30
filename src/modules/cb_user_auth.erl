@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2024, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc User auth module
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -243,17 +243,17 @@ maybe_validate_auth_attempts(Context, TokenCost) ->
 validate_action(Context, 'undefined') ->
     cb_context:validate_request_data(<<"user_auth">>, Context, fun maybe_authenticate_user/1);
 validate_action(Context, ?SWITCH_USER) ->
+    {'ok', _, TokenClaims} = kz_auth_jwt:decode(cb_context:auth_token(Context)),
+    ClaimsProp = props:filter_undefined([{<<"original_account_id">>, cb_context:auth_account_id(Context)}
+                                        ,{<<"original_owner_id">>, cb_context:auth_user_id(Context)}
+                                        ,{<<"owner_id">>, cb_context:user_id(Context)}
+                                        ,{<<"account_id">>, cb_context:account_id(Context)}
+                                        ,{<<"should_check_originating_proxy">>, props:get_value(<<"should_check_originating_proxy">>, TokenClaims)}
+                                        ]),
     Claims = kz_json:from_list(
                [{<<"account_id">>, cb_context:account_id(Context)}
                ,{<<"owner_id">>, cb_context:user_id(Context)}
-               ,{<<"Claims">>
-                ,kz_json:from_list(
-                   [{<<"original_account_id">>, cb_context:auth_account_id(Context)}
-                   ,{<<"original_owner_id">>, cb_context:auth_user_id(Context)}
-                   ,{<<"owner_id">>, cb_context:user_id(Context)}
-                   ,{<<"account_id">>, cb_context:account_id(Context)}
-                   ])
-                }
+               ,{<<"Claims">>, kz_json:from_list(ClaimsProp)}
                ]
               ),
     Setters = [{fun cb_context:set_resp_status/2, 'success'}
@@ -522,7 +522,8 @@ resp_account_expired(Context, Account, Expired) ->
 -spec maybe_account_is_enabled(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 maybe_account_is_enabled(Context, Account) ->
     case kzd_accounts:is_enabled(Account) of
-        'true' -> Context;
+        'true' ->
+            maybe_authorized_proxy(Context, Account, cb_context:req_value(Context, <<"action">>));
         'false' ->
             Reason = kz_term:to_binary(io_lib:format("account ~p is disabled", [Account])),
             lager:debug("~s", [Reason]),
@@ -536,40 +537,83 @@ maybe_account_is_enabled(Context, Account) ->
 
 -spec load_sha1_results(cb_context:context(), kz_json:objects() | kz_json:object(), kz_term:ne_binary())->
           cb_context:context().
-load_sha1_results(Context, [JObj|_], _Account)->
+load_sha1_results(Context, [JObj], Account)->
+    lager:debug("found SHA1 credentials belong to user ~s", [kz_doc:id(JObj)]),
+    maybe_from_allowed_proxy(Context, JObj, Account);
+load_sha1_results(Context, [JObj|_], Account)->
     lager:debug("found more that one user with SHA1 creds, using ~s", [kz_doc:id(JObj)]),
-    set_credentials_doc(Context, kz_json:get_value(<<"value">>, JObj));
+    maybe_from_allowed_proxy(Context, JObj, Account);
 load_sha1_results(Context, [], Account)->
     Reason = io_lib:format("failed to find a user with SHA1 creds, request from IP address: ~s", [cb_context:client_ip(Context)]),
     lager:warning("~s", [Reason]),
     crossbar_auth:log_failed_auth(?MODULE, <<"credentials">>, kz_term:to_binary(Reason), Context, Account),
-    cb_context:add_system_error('invalid_credentials', Context);
-load_sha1_results(Context, JObj, _Account)->
-    lager:debug("found SHA1 credentials belong to user ~s", [kz_doc:id(JObj)]),
-    set_credentials_doc(Context, kz_json:get_value(<<"value">>, JObj)).
+    cb_context:add_system_error('invalid_credentials', Context).
 
 -spec load_md5_results(cb_context:context(), kz_json:objects() | kz_json:object(), kz_term:ne_binary()) ->
           cb_context:context().
-load_md5_results(Context, [JObj|_], _Account) ->
+load_md5_results(Context, [JObj], Account) ->
+    lager:debug("found MD5 credentials belong to user ~s", [kz_doc:id(JObj)]),
+    maybe_from_allowed_proxy(Context, JObj, Account);
+load_md5_results(Context, [JObj|_], Account) ->
     lager:debug("found more that one user with MD5 creds, using ~s", [kz_doc:id(JObj)]),
-    set_credentials_doc(Context, kz_json:get_value(<<"value">>, JObj));
+    maybe_from_allowed_proxy(Context, JObj, Account);
 load_md5_results(Context, [], Account) ->
     Reason = io_lib:format("failed to find a user with MD5 creds, request from IP address: ~s", [cb_context:client_ip(Context)]),
     lager:warning("~s", [Reason]),
     crossbar_auth:log_failed_auth(?MODULE, <<"credentials">>, kz_term:to_binary(Reason), Context, Account),
-    cb_context:add_system_error('invalid_credentials', Context);
-load_md5_results(Context, JObj, _Account) ->
-    lager:debug("found MD5 credentials belong to user ~s", [kz_doc:id(JObj)]),
-    set_credentials_doc(Context, kz_json:get_value(<<"value">>, JObj)).
+    cb_context:add_system_error('invalid_credentials', Context).
 
--spec set_credentials_doc(cb_context:context(), kz_json:object()) -> cb_context:context().
-set_credentials_doc(Context, JObj) ->
+-spec maybe_from_allowed_proxy(cb_context:context(), kz_json:object(), kz_term:api_binary()) -> cb_context:context().
+maybe_from_allowed_proxy(Context, JObj, Account) ->
+    AllowedProxies = kzd_users:allowed_proxy_ips(kzs_util:format_account_id(Account), kz_doc:id(JObj)),
+    ProxyIPs = cb_context:proxy_ips(Context),
+    case maybe_proxy_auth(ProxyIPs, AllowedProxies) of
+        'true' -> set_credentials_doc(Context, kz_json:get_value(<<"value">>, JObj), AllowedProxies);
+        'false' ->
+            lager:info("user doc proxies ~p are not on allowed proxy list ~p", [ProxyIPs, AllowedProxies]),
+            cb_context:add_system_error('forbidden', Context)
+    end.
+
+-spec maybe_authorized_proxy(cb_context:context(), kz_term:ne_binary(), kz_json:api_json_term()) -> cb_context:context().
+maybe_authorized_proxy(Context, _, ?SWITCH_USER) -> Context;
+maybe_authorized_proxy(Context, Account, _) ->
+    AllowedProxies = kzd_accounts:allowed_proxy_ips(Account),
+    ProxyIPs = cb_context:proxy_ips(Context),
+    case maybe_proxy_auth(ProxyIPs, AllowedProxies) of
+        'true' -> maybe_update_claims(Context, AllowedProxies);
+        'false' ->
+            lager:info("account doc proxies ~p are not on allowed proxy list ~p", [ProxyIPs, AllowedProxies]),
+            cb_context:add_system_error('forbidden', Context)
+    end.
+
+maybe_proxy_auth(_, []) -> 'true';
+maybe_proxy_auth(ProxyIPs, AllowedProxies) ->
+    kz_term:list_contains(ProxyIPs, AllowedProxies).
+
+-spec set_credentials_doc(cb_context:context(), kz_json:object(), kz_term:api_list()) -> cb_context:context().
+set_credentials_doc(Context, JObj, AllowedProxies) ->
+    lager:info("set creds for ~p", [JObj]),
     Ctx = cb_context:store(Context, 'auth_type', <<"credentials">>),
-    cb_context:set_doc(Ctx, kz_json:set_value(<<"Claims">>, base_claims(JObj), JObj)).
+    cb_context:set_doc(Ctx, kz_json:set_value(<<"Claims">>, base_claims(JObj, AllowedProxies), JObj)).
 
-base_claims(JObj) ->
+base_claims(JObj, []) ->
     Keys = [<<"account_id">>, <<"owner_id">>],
-    kz_json:filter(fun({K, _V}) -> lists:member(K, Keys) end, JObj).
+    kz_json:filter(fun({K, _V}) -> lists:member(K, Keys) end, JObj);
+base_claims(JObj, _AllowedProxies) ->
+    Keys = [<<"account_id">>, <<"owner_id">>],
+    JObj1 = kz_json:filter(fun({K, _V}) -> lists:member(K, Keys) end, JObj),
+    kz_json:set_value(<<"should_check_originating_proxy">>, <<"true">>, JObj1).
+
+maybe_update_claims(Context, []) ->
+    Context;
+maybe_update_claims(Context, _AllowedProxies) ->
+    Claims = kz_json:get_value(<<"Claims">>, cb_context:doc(Context)),
+    case kz_json:get_value(<<"should_check_originating_proxy">>, Claims, 'undefined') of
+        'undefined' ->
+            NewClaims = kz_json:set_value(<<"should_check_originating_proxy">>, <<"true">>, Claims),
+            cb_context:set_doc(Context, kz_json:set_value(<<"Claims">>, NewClaims, cb_context:doc(Context)));
+        _ -> Context
+    end.
 
 -spec find_user_for_password_recovery(cb_context:context()) -> cb_context:context().
 find_user_for_password_recovery(Context) ->

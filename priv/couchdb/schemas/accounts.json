@@ -7,6 +7,14 @@
             "$ref": "addresses",
             "description": "Account addresses"
         },
+        "allowed_proxy_ips": {
+            "description": "Allowed proxy ips from which user can authenticate",
+            "items": {
+                "description": "CIDR IP to use on proxy lists",
+                "type": "string"
+            },
+            "type": "array"
+        },
         "announcement": {
             "description": "The announcement will be pop up when use log in to this account",
             "kazoo-validation": true,

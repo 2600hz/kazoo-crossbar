@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2024, 2600Hz
+%%% @copyright (C) 2010-2025, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -196,7 +196,38 @@ validate_auth_token(Token) ->
 validate_auth_token(Token, Options) ->
     case kz_auth:validate_token(Token, Options) of
         {'error', 'no_jwt_signed_token'} -> maybe_db_token(Token);
-        Other -> Other
+        {'ok', Claims} ->
+            ProxyIPs = props:get_value(<<"proxy_ips">>, Options),
+            maybe_check_proxy(Claims, ProxyIPs)
+    end.
+
+maybe_check_proxy(Claims, 'undefined') ->
+    {'ok', Claims};
+maybe_check_proxy(Claims, ProxyIPs) ->
+    case kz_json:is_true(<<"should_check_originating_proxy">>, Claims, 'false') of
+        'true' -> check_proxy(Claims, ProxyIPs);
+        'false' -> {'ok', Claims}
+    end.
+
+check_proxy(Claims, ProxyIPs) ->
+    AccountId = kz_json:get_first_defined([<<"original_account_id">>, <<"account_id">>], Claims),
+    UserId = kz_json:get_first_defined([<<"original_owner_id">>, <<"owner_id">>], Claims),
+    UserProxies = kzd_users:allowed_proxy_ips(AccountId, UserId),
+    AccountProxies = kzd_accounts:allowed_proxy_ips(AccountId),
+    validate_proxy_ips(Claims, ProxyIPs, UserProxies, AccountProxies).
+
+validate_proxy_ips(Claims, _, [], []) -> {'ok', Claims};
+validate_proxy_ips(Claims, ProxyIPs, [], AccountProxies) ->
+    validate_proxy_ips(Claims, ProxyIPs, AccountProxies);
+validate_proxy_ips(Claims, ProxyIPs, UserProxies, _) ->
+    validate_proxy_ips(Claims, ProxyIPs, UserProxies).
+
+validate_proxy_ips(Claims, ProxyIPs, AllowedProxies) ->
+    case kz_term:list_contains(ProxyIPs, AllowedProxies) of
+        'true' -> {'ok', Claims};
+        'false' ->
+            lager:info("proxies ~p are not on allowed proxy list ~p", [ProxyIPs, AllowedProxies]),
+            {'error', 'forbidden'}
     end.
 
 -spec authorize_auth_token(map() | kz_term:ne_binary()) ->

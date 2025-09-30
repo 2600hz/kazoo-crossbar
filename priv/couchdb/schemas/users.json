@@ -35,6 +35,14 @@
             },
             "type": "object"
         },
+        "allowed_proxy_ips": {
+            "description": "Allowed proxy ips from which user can authenticate",
+            "items": {
+                "description": "CIDR IP to use on proxy lists",
+                "type": "string"
+            },
+            "type": "array"
+        },
         "call_failover": {
             "$ref": "call_failover"
         },

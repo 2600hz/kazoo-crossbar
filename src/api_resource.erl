@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc API resource
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -102,6 +102,7 @@ rest_init(Req, Opts) ->
               ,{fun cb_context:set_resp_error_msg/2, <<"init failed">>}
               ,{fun cb_context:set_resp_error_code/2, ?DEFAULT_RESP_ERROR_CODE}
               ,{fun cb_context:set_client_ip/2, get_client_ip(Req)}
+              ,{fun cb_context:set_proxy_ips/2, get_proxy_ips(Req)}
               ,{fun cb_context:set_profile_id/2, get_profile_id(Req)}
               ,{fun cb_context:set_api_version/2, find_version(Path, Req)}
               ,{fun cb_context:set_magic_pathed/2, props:is_defined('magic_path', Opts)}
@@ -187,6 +188,18 @@ get_client_ip(Req) ->
         'undefined' -> kz_network_utils:iptuple_to_binary(Peer);
         ForwardIP -> maybe_allow_proxy_req(kz_network_utils:iptuple_to_binary(Peer), ForwardIP)
     end.
+
+-spec get_proxy_ips(cowboy_req:req()) -> kz_term:ne_binaries().
+get_proxy_ips(Req) ->
+    {PeerVal, _PeerPort} = cowboy_req:peer(Req),
+    Peer = kz_network_utils:iptuple_to_binary(PeerVal),
+    Forwarded = get_forwarded_proxies(cowboy_req:header(<<"x-forwarded-for">>, Req)),
+    [Peer| Forwarded].
+
+get_forwarded_proxies('undefined') -> [];
+get_forwarded_proxies(ForwardedFor) ->
+    [_ClientIP | Forwarded] = binary:split(ForwardedFor, <<$,>>, ['global']),
+    [kz_binary:strip(Forward) || Forward <- Forwarded].
 
 -spec maybe_trace(cowboy_req:req()) -> 'ok'.
 maybe_trace(Req) ->
