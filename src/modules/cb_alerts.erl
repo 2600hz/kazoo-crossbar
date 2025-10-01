@@ -445,7 +445,7 @@ check_financials(Context) ->
 
 -spec account_is_in_good_standing(cb_context:context()) -> cb_context:context().
 account_is_in_good_standing(Context) ->
-    case kz_services_standing:acceptable(cb_context:account_id(Context)) of
+    case kz_services_standing:call_good_standing(cb_context:account_id(Context)) of
         {'true', _} -> Context;
         {'false', #{message := Msg}} -> good_standing_alert(Context, Msg)
     end.
