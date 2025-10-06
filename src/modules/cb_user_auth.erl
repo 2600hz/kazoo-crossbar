@@ -244,11 +244,14 @@ validate_action(Context, 'undefined') ->
     cb_context:validate_request_data(<<"user_auth">>, Context, fun maybe_authenticate_user/1);
 validate_action(Context, ?SWITCH_USER) ->
     {'ok', _, TokenClaims} = kz_auth_jwt:decode(cb_context:auth_token(Context)),
+    ShouldCheck = should_check_originating_proxy(props:get_is_true(<<"should_check_originating_proxy">>, TokenClaims)
+                                                ,kz_term:is_true(cb_context:req_value(Context, <<"should_check_originating_proxy">>))
+                                                ),
     ClaimsProp = props:filter_undefined([{<<"original_account_id">>, cb_context:auth_account_id(Context)}
                                         ,{<<"original_owner_id">>, cb_context:auth_user_id(Context)}
                                         ,{<<"owner_id">>, cb_context:user_id(Context)}
                                         ,{<<"account_id">>, cb_context:account_id(Context)}
-                                        ,{<<"should_check_originating_proxy">>, props:get_value(<<"should_check_originating_proxy">>, TokenClaims)}
+                                        ,{<<"should_check_originating_proxy">>, ShouldCheck}
                                         ]),
     Claims = kz_json:from_list(
                [{<<"account_id">>, cb_context:account_id(Context)}
@@ -871,3 +874,7 @@ error_no_account_name(Context, AccountName) ->
 reset_id_size() ->
     Size = kapps_config:get_integer(?CONFIG_CAT, <<"reset_id_size">>, ?RESET_ID_SIZE_DEFAULT),
     kz_math:clamp(180, 42, Size).
+
+should_check_originating_proxy('true', _) -> <<"true">>;
+should_check_originating_proxy(_, 'true') -> <<"true">>;
+should_check_originating_proxy(_, _) -> 'undefined'.

@@ -212,6 +212,20 @@ curl -v -X PUT \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/user_auth
 ```
 
+### Impersonate user while using proxy based auth
+
+If using api token based authentication it is not possible to do proxy based auth. To combat scenario where child account access needs proxy based auth, the request can include the following data to create auth token which utilizes proxy based auth and uses account's allowed proxy list.
+
+> PUT /v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/user_auth
+
+```shell
+curl -v -X PUT \
+    -H "Content-Type: application/json" \
+    -d '{ "action": "impersonate_user", "should_check_originating_proxy":"true", "data": {} }' \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/users/{USER_ID}/user_auth
+```
+
+
 **Responses**
 
 A standard Crossbar authentication token.
