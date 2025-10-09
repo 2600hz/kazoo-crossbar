@@ -40,12 +40,20 @@
             "description": "webhooks log successful attempts",
             "type": "boolean"
         },
+        "mms_number_format_regex": {
+            "description": "mms regex format for isolating capture group and stripping +1",
+            "type": "string"
+        },
         "object_types": {
             "description": "webhooks object types",
             "items": {
                 "type": "string"
             },
             "type": "array"
+        },
+        "sms_number_format_regex": {
+            "description": "sms regex format for isolating capture group and stripping +1",
+            "type": "string"
         }
     },
     "type": "object"
