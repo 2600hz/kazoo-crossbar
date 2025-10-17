@@ -393,7 +393,7 @@ get_portin_numbers(AccountId, Up, ToCheck) ->
                                 App =/= 'no_assign'
                             ]
                            ),
-            {'ok', {maps:values(PortUpdates), [{N, 'not_found'} || N <- ToCheck -- maps:keys(PortUpdates)]}};
+            {'ok', {maps:values(PortUpdates), [{N, {'error', 'not_found'}} || N <- ToCheck -- maps:keys(PortUpdates)]}};
         {'error', _}=Error ->
             Error
     end.
@@ -437,7 +437,7 @@ format_assignment_failure(Failed) ->
 -spec format_assignment_failure_fold(kz_term:ne_binary(), knm_errors:reason(), {assignment_updates(), kz_term:ne_binaries()}) ->
           {assignment_updates(), kz_term:ne_binaries()}.
 format_assignment_failure_fold(Number, 'not_found', {Failed, NotFound}) ->
-    {Failed, [Number, NotFound]};
+    {Failed, [Number | NotFound]};
 format_assignment_failure_fold(Number, Reason, {Failed, NotFound}) ->
     {[{Number, {'error', Reason}} | Failed], NotFound}.
 
