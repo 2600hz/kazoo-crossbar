@@ -30,6 +30,7 @@
 -define(ACCT_MD5_LIST, <<"users/creds_by_md5">>).
 -define(ACCT_SHA1_LIST, <<"users/creds_by_sha">>).
 -define(USER_AUTH_TOKENS, kapps_config:get_integer(?CONFIG_CAT, <<"user_auth_tokens">>, 35)).
+-define(RESET_ID_EXPIRY, kapps_config:get_integer(?CONFIG_CAT, <<"reset_id_expiry_s">>, ?SECONDS_IN_HOUR)).
 
 -define(SWITCH_USER, <<"impersonate_user">>).
 -define(RECOVERY, <<"recovery">>).
@@ -717,7 +718,12 @@ maybe_load_user_doc_via_reset_id(Context) ->
                                         ,cb_context:set_db_name(Context, AccountId)
                                         ,?TYPE_CHECK_OPTION(kzd_users:type())
                                         ),
-            maybe_load_user_doc_via_reset_id(Context1, AccountId, ResetId, cb_context:resp_status(Context1));
+            maybe_load_user_doc_via_reset_id(Context1
+                                            ,AccountId
+                                            ,ResetId
+                                            ,cb_context:resp_status(Context1)
+                                            ,is_resetid_expired(ResetIdDoc)
+                                            );
         {'error', _Reason} ->
             lager:debug("failed to find password recovery with reset_id ~s: ~p", [ResetId, _Reason]),
             Reason = <<"The provided reset_id did not resolve to any user">>,
@@ -729,13 +735,26 @@ maybe_load_user_doc_via_reset_id(Context) ->
             cb_context:add_validation_error(<<"user">>, <<"not_found">>, Msg, Context)
     end.
 
-maybe_load_user_doc_via_reset_id(Context, AccountId, _ResetId, 'success') ->
+is_resetid_expired(Doc) ->
+    Now = kz_time:now_s(),
+    CreateTime = kz_doc:created(Doc, Now),
+    0 =:= kz_time:decr_timeout(?RESET_ID_EXPIRY, CreateTime, Now).
+
+maybe_load_user_doc_via_reset_id(Context, _, ResetId, 'success', 'true') ->
+    Reason = <<"The provided reset_id is expired">>,
+    Msg = kz_json:from_list(
+            [{<<"reason">>, Reason}
+            ,{<<"cause">>, ResetId}
+            ]),
+    crossbar_auth:log_failed_auth(?MODULE, <<"user_auth_recovery_reset">>, Reason, Context),
+    cb_context:add_system_error('forbidden', Msg, Context);
+maybe_load_user_doc_via_reset_id(Context, AccountId, _ResetId, 'success', _) ->
     NewUserDoc = kz_json:set_value(<<"require_password_update">>, 'true', cb_context:doc(Context)),
     cb_context:setters(Context, [{fun cb_context:set_doc/2, NewUserDoc}
                                 ,{fun cb_context:store/3, 'auth_type', <<"user_auth_recovery_reset">>}
                                 ,{fun cb_context:set_account_id/2, AccountId}
                                 ]);
-maybe_load_user_doc_via_reset_id(Context, _, ResetId, _) ->
+maybe_load_user_doc_via_reset_id(Context, _, ResetId, _, _) ->
     Reason = <<"The provided reset_id did not resolve to any user">>,
     Msg = kz_json:from_list(
             [{<<"message">>, Reason}

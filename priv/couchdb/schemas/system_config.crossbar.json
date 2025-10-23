@@ -198,6 +198,11 @@
             "description": "crossbar request timeout in milliseconds",
             "type": "integer"
         },
+        "reset_id_expiry_s": {
+            "default": 3600,
+            "description": "crossbar reset_id expiry in seconds",
+            "type": "integer"
+        },
         "reset_id_size": {
             "default": 137,
             "description": "crossbar reset id size",
