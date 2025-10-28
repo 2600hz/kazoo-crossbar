@@ -28,6 +28,10 @@
             "description": "services enforce_good_standing",
             "type": "boolean"
         },
+        "entitlements": {
+            "description": "services entitlements",
+            "type": "object"
+        },
         "get_items_from_quantities": {
             "description": "services get_items_from_quantities",
             "type": "boolean"

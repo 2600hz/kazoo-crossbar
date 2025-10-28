@@ -43,7 +43,7 @@ Note the response's ID, as this is the `{DUO_PROVIDER_ID}` used in later steps.
 
 Since different accounts (typically resellers) will have their own DUO accounts, the cluster operator can create multiple "providers" where the `settings` key contains the DUO configs to use:
 
-> PUT http://{SERVER}:8000/v2/multi_factor -d '{"data":{"enabled":true,"name":"Duo Universal for Account {ACCOUNT_ID}","provider_name":"duo_universal","settings": {"client_id":"{DUO_CLIENT_ID"}, "client_secret":"{CLIENT_SECRET}", "api_hostname":"https://{api_hostname}", "redirect_uri":"https://back.to.UI"}}}'
+> PUT http://{SERVER}:8000/v2/multi_factor -d '{"data":{"enabled":true,"name":"Duo Universal for Account {ACCOUNT_ID}","provider_name":"duo_universal","settings": {"client_id":"{DUO_CLIENT_ID}"}, "client_secret":"{CLIENT_SECRET}", "api_hostname":"https://{api_hostname}", "redirect_uri":"https://back.to.UI"}}}'
 
 `provider_name` still must be `duo_universal` but `name` and `settings` should be per-account.
 

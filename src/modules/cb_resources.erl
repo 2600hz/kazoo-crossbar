@@ -55,9 +55,6 @@ init() ->
                           ,{<<"*.authorize.resources">>, 'authorize'}
                           ]).
 
--spec authorize(cb_context:context()) -> boolean() | {'stop', cb_context:context()}.
-authorize(Context) ->
-    authorize_nouns(Context, cb_context:req_nouns(Context)).
 -spec maybe_start_jobs_listener() -> pid().
 maybe_start_jobs_listener() ->
     case jobs_listener_pid() of
@@ -67,12 +64,17 @@ maybe_start_jobs_listener() ->
         Pid -> Pid
     end.
 
--spec authorize(cb_context:context(), path_token()) -> boolean() | {'stop', cb_context:context()}.
-authorize(Context, _) ->
-    authorize_nouns(Context, cb_context:req_nouns(Context)).
 -spec jobs_listener_pid() -> kz_term:api_pid().
 jobs_listener_pid() ->
     whereis('crossbar_jobs_listener').
+
+-spec authorize(cb_context:context()) -> boolean() | {'stop', cb_context:context()}.
+authorize(Context) ->
+    authorize_nouns(Context, cb_context:req_nouns(Context)).
+
+-spec authorize(cb_context:context(), path_token()) -> boolean() | {'stop', cb_context:context()}.
+authorize(Context, _) ->
+    authorize_nouns(Context, cb_context:req_nouns(Context)).
 
 -spec authorize(cb_context:context(), path_token(), path_token()) -> boolean() | {'stop', cb_context:context()}.
 authorize(Context, _, _) ->

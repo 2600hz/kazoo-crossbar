@@ -18,6 +18,7 @@
 
 -export([init/0
         ,authorize/1
+        ,is_account_descendant/1, is_account_descendant/2
         ]).
 
 -include("crossbar.hrl").
@@ -125,33 +126,38 @@ account_is_descendant('false', Context, AuthAccountId) ->
         [ReqAccountId|_Params] ->
             %% the request that this module process the first element of after 'accounts'
             %% in the URL has to be the requested account id
+            is_account_descendant(AuthAccountId, ReqAccountId)
+    end.
 
-            %% we will get the requested account definition from accounts using a view
-            %% with a complex key (whose alternate value is useful to use on retrieval)
-            lager:debug("checking if account ~s is a descendant of ~s", [ReqAccountId, AuthAccountId]),
-            case ReqAccountId =:= AuthAccountId
-                orelse kzd_accounts:fetch(ReqAccountId)
-            of
-                'true' ->
-                    lager:debug("authorizing, requested account is the same as the auth token account"),
-                    'true';
-                %% if the requested account exists, the second component of the key
-                %% is the parent tree, make sure the authorized account id is in that tree
-                {'ok', JObj} ->
-                    Tree = kzd_accounts:tree(JObj),
-                    case lists:member(AuthAccountId, Tree) of
-                        'true' ->
-                            lager:debug("authorizing requested account is a descendant of the auth token"),
-                            'true';
-                        'false' ->
-                            lager:info("not authorizing, requested account is not a descendant of the auth token"),
-                            'stop'
-                    end;
-                %% anything else and they are not allowed
-                {'error', _E} ->
-                    lager:warning("not authorizing, error during lookup account ~s doc: ~p", [ReqAccountId, _E]),
-                    'stop'
-            end
+%% @ returns whether the auth account ID is ancestor to the URL
+%% account ID (or auth token is for superduper admin)
+-spec is_account_descendant(cb_context:context()) -> boolean().
+is_account_descendant(Context) ->
+    case cb_context:is_superduper_admin(Context) of
+        'true' -> 'true';
+        'false' ->
+            is_account_descendant(cb_context:auth_account_id(Context)
+                                 ,cb_context:account_id(Context)
+                                 )
+    end.
+
+-spec is_account_descendant(kz_term:ne_binary(), kz_term:ne_binary()) -> boolean().
+is_account_descendant('undefined', _) -> 'false';
+is_account_descendant(_, 'undefined') -> 'false';
+is_account_descendant(<<AuthAccountId/binary>>, <<AuthAccountId/binary>>) ->
+    'true';
+is_account_descendant(<<AuthAccountId/binary>>, <<ReqAccountId/binary>>) ->
+    %% we will get the requested account definition from accounts using a view
+    %% with a complex key (whose alternate value is useful to use on retrieval)
+    lager:debug("checking if account ~s is a descendant of ~s", [ReqAccountId, AuthAccountId]),
+    Tree = kzd_accounts:tree(ReqAccountId),
+    case lists:member(AuthAccountId, Tree) of
+        'true' ->
+            lager:debug("authorizing requested account is a descendant of the auth token"),
+            'true';
+        'false' ->
+            lager:debug("not authorizing, requested account is not a descendant of the auth token"),
+            'false'
     end.
 
 %%------------------------------------------------------------------------------
