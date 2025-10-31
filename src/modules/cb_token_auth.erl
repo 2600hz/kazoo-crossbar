@@ -209,7 +209,7 @@ validate_auth_token(Context, <<>>) ->
     {'false', Context};
 validate_auth_token(Context, <<AuthToken/binary>>) ->
     Options = [{<<"account_id">>, cb_context:req_header(Context, <<"x-auth-account-id">>)}
-              ,{<<"proxy_ips">>, cb_context:proxy_ips(Context)}
+              ,{<<"proxy_ips">>, get_proxy_ip(Context)}
               ],
     lager:debug("checking auth token"),
     case crossbar_auth:validate_auth_token(AuthToken, props:filter_undefined(Options)) of
@@ -228,6 +228,12 @@ validate_auth_token(Context, <<AuthToken/binary>>) ->
         {'error', R} ->
             lager:debug("failed to authenticate token auth, ~p", [R]),
             {'false', Context}
+    end.
+
+get_proxy_ip(Context) ->
+    case cb_context:req_nouns(Context) of
+        [{<<"apps_link">>, [<<"authorize">>]} | _] -> 'undefined';
+        _ -> cb_context:proxy_ips(Context)
     end.
 
 -spec is_account_expired(cb_context:context(), kz_json:object()) ->
