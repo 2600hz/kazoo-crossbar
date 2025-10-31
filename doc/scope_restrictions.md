@@ -6,13 +6,27 @@ Scope Restrictions provide a mechanism to create an alias for a scope of scopes 
 
 A scope restriction is assigned by setting it in the `scope_restrictions` array on the user object.
 
+The id chosen for scope restriction will be used as the scope of scopes. So choose one careful and make it standardized so each account will use the same id. For this example we are choosing `api:read_only` as the scope, this will be scope which enforces read allow access to api, linked document for the scope below.
+
+The user documents also need to be patched with `"scope_restrictions":["api:read_only"]` This will add the scope to user and make each login to be restricted to scope
+
+```bash
+curl -v -X PATCH \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d '{"data":{"scope_restrictions":["api:read_only"]}}' \
+    http://{URL}/v2/accounts/{ACCOUNT_ID}
+```
+
+This will also add `"scope":"api:read_only"` to jwt claims for the user so it may be read by other applications which use scope.
+
+If we have another scope named `api:support` where support has more permissions then we will need to create a scope named `api:support` and patch the user doc with two scopes `"scope_restrictions":["api:read_only", "api:support"]` and the claims will be `"scope":"api:read_only api:support"`
+
 ##### Example Scope Restriction Document
 This 
 ```json
 {
-  "_id": "support",
-  "_rev": "15-2a48ea5cca7783dde1518f95a250a704",
-  "pvt_type": "scope_restriction",
+  "id": "api:read_only",
   "scopes": [
     "crossbar:read_only"
   ],

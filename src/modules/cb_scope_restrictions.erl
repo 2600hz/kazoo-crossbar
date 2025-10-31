@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2025, 2600Hz
 %%% @doc Manage scope restrictions
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -134,7 +134,11 @@ validate_request(Context, ScopeRestriction) ->
 %%------------------------------------------------------------------------------
 -spec on_successful_validation(cb_context:context(), api_path_token()) -> cb_context:context().
 on_successful_validation(Context, 'undefined') ->
-    cb_context:set_doc(Context, kz_doc:set_type(cb_context:doc(Context), ?PVT_TYPE));
+    JObj = cb_context:doc(Context),
+    Doc = kz_json:set_values([{kz_doc:path_type(), ?PVT_TYPE}
+                             ,{kz_doc:path_id(), scope_id(kz_doc:id(JObj))}
+                             ], JObj),
+    cb_context:set_doc(Context, Doc);
 on_successful_validation(Context, ScopeRestriction) ->
     crossbar_doc:load_merge(ScopeRestriction, Context, ?TYPE_CHECK_OPTION(?PVT_TYPE)).
 
@@ -157,3 +161,11 @@ put(Context) ->
 -spec delete(cb_context:context(), path_token()) -> cb_context:context().
 delete(Context, _) ->
     crossbar_doc:delete(Context).
+
+-spec scope_id(kz_term:api_ne_binary()) -> kz_term:ne_binary().
+scope_id('undefined') ->
+    kz_term:to_binary([<<"api:">>, kz_binary:rand_hex(4)]);
+scope_id(<<"api:", _/binary>>=Id) ->
+    Id;
+scope_id(Id) ->
+    kz_term:to_binary([<<"api:">>, Id]).
