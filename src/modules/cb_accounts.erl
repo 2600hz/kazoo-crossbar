@@ -278,6 +278,7 @@ post(Context, AccountId) ->
         {'ok', SavedAccount} ->
             Context1 = crossbar_doc:handle_datamgr_success(SavedAccount, Context),
             _ = kz_process:spawn(fun crossbar_notify_util:maybe_notify_account_change/2, [Existing, Context]),
+            _ = kz_process:spawn(fun crossbar_notify_util:maybe_notify_users_features_enabled/1, [Context1]),
             update_provisioner_account(Context1),
 
             add_metadata_fields(AccountId, Context1);

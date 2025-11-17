@@ -40,8 +40,6 @@
 -define(PHOTO, <<"photo">>).
 -define(QRCODE, <<"qrcode">>).
 
--define(TELETYPE_GENERIC_FEATURES_ENABLED, <<"generic_features_enabled">>).
-
 %%%=============================================================================
 %%% API
 %%%=============================================================================
@@ -301,7 +299,7 @@ post(Context, UserId) ->
         'success' ->
             _ = maybe_update_devices_presence(Context2),
             _ = maybe_send_desktop_welcome_email(Context2),
-            _ = maybe_send_features_enabled_email(Context2, UserId),
+            _ = crossbar_notify_util:maybe_notify_user_features_enabled(Context2, UserId),
             cb_context:add_metadata_values(Context2, user_metadata(cb_context:doc(Context)));
         _ -> Context2
     end.
@@ -717,48 +715,6 @@ send_webphone_enabled_email(Context) ->
           | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
     kapps_notify_publisher:cast(Req, fun kapi_notifications:publish_desktop_webphone_enabled/1).
-
-%%------------------------------------------------------------------------------
-%% @doc
-%% @end
-%%------------------------------------------------------------------------------
--spec maybe_send_features_enabled_email(cb_context:context(), kz_term:ne_binary()) -> 'ok'.
-maybe_send_features_enabled_email(Context, UserId) ->
-    case kz_json:get_json_value(<<"enablements">>, cb_context:req_data(Context)) of
-        'undefined' -> 'ok';
-        EnablementsJObj ->
-            has_features_enabled_notification(Context, UserId, EnablementsJObj)
-    end.
-
--spec has_features_enabled_notification(cb_context:context(), kz_term:ne_binary(), kz_json:object()) -> 'ok'.
-has_features_enabled_notification(Context, UserId, EnablementsJObj) ->
-    case kapi_notifications:find_publisher(?TELETYPE_GENERIC_FEATURES_ENABLED) of
-        'undefined' -> 'ok';
-        PublishFun when is_function(PublishFun, 1) ->
-            Features = get_enabled_features(EnablementsJObj),
-            publish_features_enabled_notification(PublishFun, cb_context:account_id(Context), UserId, Features)
-    end.
-
--spec publish_features_enabled_notification(kapi_definition:publish_fun(), kz_term:ne_binary(), kz_term:ne_binary(), [] | kz_term:ne_binaries()) -> 'ok'.
-publish_features_enabled_notification(_PublishFun, _AccountId, _UserId, []) -> 'ok';
-publish_features_enabled_notification(PublishFun, AccountId, UserId, Features) ->
-    lager:info("publishing features enablements notification for user ~s", [UserId]),
-    Props = [{<<"Account-ID">>, AccountId}
-            ,{<<"User-ID">>, UserId}
-            ,{<<"Features">>, Features}
-            | kz_api:default_headers(?APP_VERSION, ?APP_NAME)
-            ],
-    kapps_notify_publisher:cast(Props, PublishFun).
-
--spec get_enabled_features(kz_json:object()) -> [] | kz_term:ne_binaries().
-get_enabled_features(JObj) ->
-    Fun = fun(Key, Value, Acc) ->
-                  case kz_json:is_true(<<"enabled">>, Value, 'false') of
-                      'true' -> [Key|Acc];
-                      'false' -> Acc
-                  end
-          end,
-    kz_json:foldl(Fun, [], JObj).
 
 %%------------------------------------------------------------------------------
 %% @doc Attempt to load list of accounts, each summarized. Or a specific
