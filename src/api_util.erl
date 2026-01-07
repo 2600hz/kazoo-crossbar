@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2012-2023, 2600Hz
+%%% @copyright (C) 2012-2026, 2600Hz
 %%% @doc Crossbar REST-related functions.
 %%% @author James Aimonetti
 %%% @author Karl Anderson
@@ -2147,7 +2147,7 @@ exec_req_fold(F, Req) when is_function(F, 1) -> F(Req).
           stop_return().
 maybe_enforce_scopes(Req, Context) ->
     TokenType = cb_context:auth_token_type(Context),
-    lager:debug("token type is : ~p~n", [cb_context:auth_token_type(Context)]),
+    lager:debug("token type is: ~p~n", [TokenType]),
     maybe_enforce_scopes(Req, Context, TokenType).
 
 -spec maybe_enforce_scopes(cowboy_req:req(), cb_context:context(), atom()) ->

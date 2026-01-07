@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2026, 2600Hz
 %%% @doc Manage system_auth scopes
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -53,7 +53,8 @@ init() ->
 -spec authorize(cb_context:context()) -> boolean() | {'stop', cb_context:context()}.
 authorize(Context) ->
     case cb_context:is_superduper_admin(Context)
-        andalso cb_context:req_nouns(Context) of
+        andalso cb_context:req_nouns(Context)
+    of
         [{?SCOPES_KEY, _}] -> 'true';
         'false' ->
             {'stop', cb_context:add_system_error('forbidden', Context)};

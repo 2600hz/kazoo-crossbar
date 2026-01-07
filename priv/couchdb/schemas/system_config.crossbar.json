@@ -223,6 +223,14 @@
             "description": "crossbar schema strict validation",
             "type": "boolean"
         },
+        "simple_authz_ignored_modules": {
+            "default": [],
+            "description": "crossbar simple_authz_ignored_modules",
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
         "ssl_ca_cert": {
             "description": "crossbar ssl ca cert",
             "type": "string"
