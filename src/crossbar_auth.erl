@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2025, 2600Hz
+%%% @copyright (C) 2010-2026, 2600Hz
 %%% @doc
 %%% This Source Code Form is subject to the terms of the Mozilla Public
 %%% License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -47,6 +47,7 @@
         kz_json:from_list(
           [{<<"cb_user_auth">>, ?DEFAULT_METHOD_CONFIG('true')}
           ,{<<"cb_api_auth">>, ?DEFAULT_METHOD_CONFIG('false')}
+          ,{<<"cb_desktop_auth">>, ?DEFAULT_METHOD_CONFIG('false')}
           ,{<<"cb_auth">>, ?DEFAULT_METHOD_CONFIG('false')}
           ,{<<"cb_ip_auth">>, ?DEFAULT_METHOD_CONFIG('false')}
           ,{<<"cb_conference_auth">>, ?DEFAULT_METHOD_CONFIG('false', <<"infinity">>)}
@@ -585,7 +586,7 @@ is_account_locked([]) ->
 is_account_locked([BucketName|BucketNames]) ->
     case kz_buckets:tokens_remaining(?CROSSBAR_AUTH_BUCKET, BucketName) of
         0 -> 'true';
-        _Reamining ->
+        _Remaining ->
             is_account_locked(BucketNames)
     end.
 

@@ -33,6 +33,15 @@
                     ],
                     "token_auth_expiry_s": "infinity"
                 },
+                "cb_desktop_auth": {
+                    "enabled": true,
+                    "log_failed_attempts": true,
+                    "log_successful_attempts": true,
+                    "scopes": [
+                        "crossbar"
+                    ],
+                    "token_auth_expiry_s": 3600
+                },
                 "cb_ip_auth": {
                     "enabled": true,
                     "log_failed_attempts": true,
@@ -58,6 +67,12 @@
                     "$ref": "auth_module_config"
                 },
                 "cb_auth": {
+                    "$ref": "auth_module_config"
+                },
+                "cb_conference_auth": {
+                    "$ref": "auth_module_config"
+                },
+                "cb_desktop_auth": {
                     "$ref": "auth_module_config"
                 },
                 "cb_ip_auth": {

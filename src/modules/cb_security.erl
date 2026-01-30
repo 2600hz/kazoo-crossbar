@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2024, 2600Hz
+%%% @copyright (C) 2010-2026, 2600Hz
 %%% @doc Kazoo authentication configuration API endpoint
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -26,6 +26,7 @@
                               ,<<"cb_auth">>
                               ,<<"cb_ip_auth">>
                               ,<<"cb_user_auth">>
+                              ,<<"cb_desktop_auth">>
                               ]).
 
 -define(SYSTEM_AUTH_METHODS
