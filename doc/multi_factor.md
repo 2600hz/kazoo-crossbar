@@ -739,3 +739,47 @@ curl -v -X PATCH \
   "auth_token": "{AUTH_TOKEN}"
 }
 ```
+
+## Generate MFA QR Code
+
+Generates a Multi-Factor Authentication (MFA) QR code based on the provided credentials and account name.
+The response format depends on the Accept header:
+
+Accept: application/json → Returns QR code URL
+Accept: image/png → Returns QR code image
+
+> PUT /v2/multi_factor/qrcode
+
+```shell
+curl -v -X PUT \
+  -H "Accept: image/png" \
+  -H "Content-Type: application/json" \
+    --data '{"data": {"credentials": "{HASH}", "account_name": "{Account_Name}"}}' \
+    http://{SERVER}:8000/v2/multi_factor/qrcode
+```
+
+**Responses**
+!!!Note
+  If the request headers include the Accept: application/json header, the response body will contain the QR code in JSON format. Otherwise, the response will be in image/png format. For a successful response, the status code will be 201 Created; if the request fails, the status code will be 401 along with the reason.
+```json
+{
+    "qr_url": "otpauth://totp/KAZOO:admin?secret=X2TH5HHZRY754FG7FKSOQRQMUNWGIFXR&issuer=KAZOO&period=30"
+}
+```
+
+## MFA Verification
+
+Validate MFA using credentials and multi_factor_response
+
+> PUT /v2/multi_factor/qrcode
+
+```shell
+curl -v -X PUT \
+  -H "Content-Type: application/json" \
+    --data '{"data": {"credentials": "{HASH}", "account_name": "{Account_Name}", "multi_factor_response": "{Totp_Code}"}}' \
+    http://{SERVER}:8000/v2/multi_factor/qrcode
+```
+
+**Responses**
+!!!Note
+  If successful, return the response code 201 Created; otherwise, return the response code 401 with the reason

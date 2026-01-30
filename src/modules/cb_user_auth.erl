@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2025, 2600Hz
+%%% @copyright (C) 2011-2026, 2600Hz
 %%% @doc User auth module
 %%% @author Karl Anderson
 %%% @author James Aimonetti
@@ -22,6 +22,7 @@
         ,put/1, put/2
         ,post/2
         ,find_account/2
+        ,find_user_by_hash/1
         ]).
 
 -include("crossbar.hrl").
@@ -897,3 +898,7 @@ reset_id_size() ->
 should_check_originating_proxy('true', _) -> <<"true">>;
 should_check_originating_proxy(_, 'true') -> <<"true">>;
 should_check_originating_proxy(_, _) -> 'undefined'.
+
+-spec find_user_by_hash(cb_context:context()) -> cb_context:context().
+find_user_by_hash(Context) ->
+    cb_context:validate_request_data(<<"user_auth">>, Context, fun maybe_authenticate_user/1).

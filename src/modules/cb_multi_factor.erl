@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2010-2023, 2600Hz
+%%% @copyright (C) 2010-2026, 2600Hz
 %%% @doc Multi factor authentication configuration API endpoint
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -11,14 +11,17 @@
 -module(cb_multi_factor).
 
 -export([init/0
+        ,authenticate/2
         ,authorize/1, authorize/2, authorize/3
+        ,content_types_provided/3, content_types_provided/2, content_types_provided/1
         ,allowed_methods/0, allowed_methods/1, allowed_methods/2
         ,resource_exists/0, resource_exists/1, resource_exists/2
         ,validate/1, validate/2, validate/3
-        ,put/1
+        ,put/1, put/2
         ,post/2
         ,patch/2
         ,delete/2
+        ,update_pvt_qr_generated/3
         ]).
 
 -include("crossbar.hrl").
@@ -27,7 +30,11 @@
 
 -define(ATTEMPTS, <<"attempts">>).
 -define(ATTEMPTS_TYPE, <<"login_attempt">>).
-
+-define(QRCODE_PATH_TOKEN, <<"qrcode">>).
+-define(EXPORT_TYPE_URL, <<"url">>).
+-define(EXPORT_TYPE_IMAGE, <<"image">>).
+-define(PVT_MFA_QR_GENERATED, <<"pvt_mfa_qr_generated">>).
+-define(AUTH_MODULE, 'cb_user_auth').
 %%%=============================================================================
 %%% API
 %%%=============================================================================
@@ -38,8 +45,10 @@
 %%------------------------------------------------------------------------------
 -spec init() -> 'ok'.
 init() ->
-    Bindings = [{<<"*.authorize.multi_factor">>, 'authorize'}
+    Bindings = [{<<"*.authenticate.multi_factor">>, 'authenticate'}
+               ,{<<"*.authorize.multi_factor">>, 'authorize'}
                ,{<<"*.allowed_methods.multi_factor">>, 'allowed_methods'}
+               ,{<<"*.content_types_provided.multi_factor">>, 'content_types_provided'}
                ,{<<"*.resource_exists.multi_factor">>, 'resource_exists'}
                ,{<<"*.validate.multi_factor">>, 'validate'}
                ,{<<"*.execute.get.multi_factor">>, 'get'}
@@ -50,6 +59,20 @@ init() ->
                ],
     cb_modules_util:bind(?MODULE, Bindings),
     'ok'.
+
+%%------------------------------------------------------------------------------
+%% @doc Authenticate incoming requests bypass x-auth-token validation. returning
+%% true if the requestor is allowed to access the resource without x-auth-token,
+%% or false if not.
+%% @end
+%%------------------------------------------------------------------------------
+-spec authenticate(cb_context:context(), path_token()) -> boolean().
+authenticate(Context, _PathToken) ->
+    authenticate_nouns(cb_context:req_nouns(Context)).
+
+authenticate_nouns([{<<"multi_factor">>, [?QRCODE_PATH_TOKEN]}]) -> 'true';
+authenticate_nouns(_Nouns) -> 'false'.
+
 
 %%------------------------------------------------------------------------------
 %% @doc Authorizes the incoming request, returning true if the requestor is
@@ -67,7 +90,6 @@ authorize(Context) ->
           {'stop', cb_context:context()}.
 authorize(Context, _ProviderId) ->
     authorize_system_multi_factor(Context, cb_context:req_nouns(Context), cb_context:req_verb(Context)).
-
 -spec authorize(cb_context:context(), path_token(), path_token()) -> 'false'.
 authorize(_Context, _, _) -> 'false'.
 
@@ -78,6 +100,8 @@ authorize_system_multi_factor(_, [{<<"multi_factor">>, []}], ?HTTP_GET) ->
     'true';
 authorize_system_multi_factor(C, [{<<"multi_factor">>, []}], ?HTTP_PUT) ->
     cb_context:is_superduper_admin(C);
+authorize_system_multi_factor(_, [{<<"multi_factor">>, [?QRCODE_PATH_TOKEN]}], ?HTTP_PUT) ->
+    'true';
 authorize_system_multi_factor(C, [{<<"multi_factor">>, _}], ?HTTP_GET) ->
     cb_context:is_superduper_admin(C);
 authorize_system_multi_factor(C, [{<<"multi_factor">>, _}], ?HTTP_POST) ->
@@ -102,13 +126,49 @@ allowed_methods() ->
 -spec allowed_methods(path_token()) -> http_methods().
 allowed_methods(?ATTEMPTS) ->
     [?HTTP_GET];
+allowed_methods(?QRCODE_PATH_TOKEN) ->
+    [?HTTP_PUT];
 allowed_methods(_ConfigId) ->
     [?HTTP_GET, ?HTTP_POST, ?HTTP_PATCH, ?HTTP_DELETE].
-
 -spec allowed_methods(path_token(), path_token()) -> http_methods().
 allowed_methods(?ATTEMPTS, _AttemptId) ->
     [?HTTP_GET].
 
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec content_types_provided(cb_context:context()) ->
+          cb_context:context().
+content_types_provided(Context) ->
+    Context.
+
+-spec content_types_provided(cb_context:context(), path_token()) ->
+          cb_context:context().
+content_types_provided(Context, ?QRCODE_PATH_TOKEN) ->
+    case cb_context:method(Context) of
+        ?HTTP_PUT ->
+            cb_context:set_content_types_provided(Context
+                                                 ,[{'to_binary', [{<<"application">>, <<"json">>}
+                                                                 ,{<<"image">>, <<"png">>}
+                                                                 ]}
+                                                  ]);
+        _ -> Context
+    end.
+
+-spec content_types_provided(cb_context:context(), path_token(), path_token()) ->
+          cb_context:context().
+content_types_provided(Context, <<"multi_factor">>, ?QRCODE_PATH_TOKEN) ->
+    case cb_context:method(Context) of
+        ?HTTP_PUT ->
+            cb_context:add_content_types_provided(Context
+                                                 ,[{'to_json', ?JSON_CONTENT_TYPES}
+                                                  ]);
+        _ -> Context
+    end;
+content_types_provided(Context, _PathToken1, _PathToken2) ->
+    Context.
 %%------------------------------------------------------------------------------
 %% @doc Does the path point to a valid resource.
 %% For example:
@@ -125,6 +185,7 @@ resource_exists() -> 'true'.
 
 -spec resource_exists(path_token()) -> 'true'.
 resource_exists(?ATTEMPTS) -> 'true';
+resource_exists(?QRCODE_PATH_TOKEN) -> 'true';
 resource_exists(_ConfigId) -> 'true'.
 
 -spec resource_exists(path_token(), path_token()) -> 'true'.
@@ -148,6 +209,9 @@ validate(Context, ?ATTEMPTS) ->
               ,{'range_keymap', <<"multi_factor">>}
               ],
     crossbar_view:load_modb(Context, ?CB_LIST_ATTEMPT_LOG, Options);
+
+validate(Context, ?QRCODE_PATH_TOKEN) ->
+    validate_mfa_qrcode(Context);
 validate(Context, ConfigId) ->
     case cb_context:req_nouns(Context) of
         [{<<"multi_factor">>, _}] ->
@@ -183,6 +247,10 @@ validate_multi_factor_config(Context, ConfigId, ?HTTP_PATCH) ->
 validate_multi_factor_config(Context, ConfigId, ?HTTP_DELETE) ->
     read(ConfigId, Context).
 
+-spec validate_mfa_qrcode(cb_context:context()) -> cb_context:context().
+validate_mfa_qrcode(Context) ->
+    cb_user_auth:find_user_by_hash(Context).
+
 %%------------------------------------------------------------------------------
 %% @doc If the HTTP verb is PUT, execute the actual action, usually a db save.
 %% @end
@@ -190,6 +258,22 @@ validate_multi_factor_config(Context, ConfigId, ?HTTP_DELETE) ->
 -spec put(cb_context:context()) -> cb_context:context().
 put(Context) ->
     crossbar_doc:save(Context).
+
+-spec put(cb_context:context(), path_token()) -> cb_context:context().
+put(Context, ?QRCODE_PATH_TOKEN) ->
+    AccountId = kz_json:get_value(<<"account_id">>, cb_context:doc(Context)),
+    UserId = kz_json:get_value(<<"owner_id">>, cb_context:doc(Context)),
+
+    case kz_json:get_value(<<"multi_factor_response">>, cb_context:req_data(Context)) of
+        'undefined' ->
+            maybe_generate_qrcode(Context, AccountId, UserId);
+        _ReqTotp ->
+            Context1 = crossbar_auth:create_auth_token(Context, ?AUTH_MODULE),
+            case cb_context:resp_status(Context1) of
+                'success' -> crossbar_doc:handle_datamgr_success([], Context1);
+                _ -> Context1
+            end
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc If the HTTP verb is POST, execute the actual action, usually a db save
@@ -204,6 +288,7 @@ post(Context, _) ->
 %% @doc If the HTTP verb is PATCH, execute the actual action, usually a db save
 %% (after a merge perhaps).
 %% @end
+
 %%------------------------------------------------------------------------------
 -spec patch(cb_context:context(), path_token()) -> cb_context:context().
 patch(Context, _) ->
@@ -314,3 +399,53 @@ on_successful_validation('undefined', Context) ->
     cb_context:set_doc(Context, kz_doc:set_type(Doc, <<"provider">>));
 on_successful_validation(Id, Context) ->
     crossbar_doc:load_merge(Id, Context, ?TYPE_CHECK_OPTION(<<"provider">>)).
+
+-spec maybe_generate_qrcode(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) -> cb_context:context().
+maybe_generate_qrcode(Context, AccountId, UserId) ->
+    {'ok', UserDoc} = kzd_users:fetch(AccountId, UserId),
+    maybe_generate_qrcode(Context, AccountId, UserId, kz_json:get_value(?PVT_MFA_QR_GENERATED, UserDoc, 'false')).
+
+-spec maybe_generate_qrcode(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary(), boolean()) -> cb_context:context().
+maybe_generate_qrcode(Context, AccountId, UserId, 'false') ->
+    generate_qrcode(Context, AccountId, UserId);
+
+maybe_generate_qrcode(Context, AccountId, UserId, 'true') ->
+    lager:debug("QR code alredy generated. AccountId: ~p, UserId : ~p", [AccountId, UserId]),
+    crossbar_util:response('error', <<"QR code already generated.">>, 403, Context).
+
+-spec generate_qrcode(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) -> cb_context:context().
+generate_qrcode(Context, AccountId, UserId) ->
+    case kz_json:get_value(<<"accept">>, kz_json:from_map(cb_context:req_headers(Context))) of
+        Accept when Accept =:= 'undefined'; Accept =:= <<"image/png">> ->
+            Headers =
+                #{<<"content-disposition">> => <<"attachment; filename=qr-", UserId/binary, ".png">>
+                 ,<<"content-type">> => <<"image/png">>
+                 },
+            {'ok', QRCode} = kz_auth_qrcode:create(AccountId, UserId, ?EXPORT_TYPE_IMAGE),
+            {'ok', _Doc} = update_pvt_qr_generated(AccountId, UserId, 'true'),
+            cb_context:setters(Context
+                              ,[{fun cb_context:set_resp_data/2, QRCode}
+                               ,{fun cb_context:set_resp_etag/2, kz_binary:md5(QRCode)}
+                               ,{fun cb_context:add_resp_headers/2, Headers}
+                               ,{fun cb_context:set_resp_status/2, 'success'}
+                               ]);
+        _ ->
+            {'ok', QRCodeRaw} = kz_auth_qrcode:create(AccountId, UserId, ?EXPORT_TYPE_URL),
+            {'ok', _Doc} = update_pvt_qr_generated(AccountId, UserId, 'true'),
+            DataObj = kz_json:from_list([
+                                         {<<"data">>
+                                         ,[kz_json:from_list([{<<"qr_url">>, QRCodeRaw}])]}
+                                        ]),
+            QRCode = kz_json:encode(DataObj),
+            cb_context:setters(Context
+                              ,[{fun cb_context:set_resp_data/2, QRCode}
+                               ,{fun cb_context:set_resp_status/2, 'success'}
+                               ])
+    end.
+
+-spec update_pvt_qr_generated(kz_term:ne_binary(), kz_term:ne_binary(), boolean()) -> {'ok', kz_json:object() | kz_json:objects()}.
+update_pvt_qr_generated(AccountId, UserId, Value) ->
+    {'ok', UserDoc} = kzd_users:fetch(AccountId, UserId),
+    Props = [{?PVT_MFA_QR_GENERATED, Value}],
+    UpdatedUserDoc = kz_json:set_values(Props, UserDoc),
+    kz_datamgr:save_doc(kzs_util:format_account_db(AccountId), UpdatedUserDoc).

@@ -66,6 +66,16 @@ curl -v -X DELETE \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/multi_factor/{CONFIG_ID}
 ```
 
+## Create
+
+> PUT /v2/accounts/{ACCOUNT_ID}/multi_factor/qrcode
+
+```shell
+curl -v -X PUT \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/multi_factor/qrcode
+```
+
 ## Fetch
 
 > GET /v2/accounts/{ACCOUNT_ID}/multi_factor/attempts
