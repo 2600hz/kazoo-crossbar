@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2025, 2600Hz
+%%% @copyright (C) 2011-2026, 2600Hz
 %%% @doc Entitlementeton module for Crossbar API endpoints implementing basic CRUD
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public
@@ -13,6 +13,7 @@
 -export([init/0
         ,allowed_methods/0, allowed_methods/1
         ,resource_exists/0, resource_exists/1
+        ,authorize/1, authorize/2
         ,validate/1, validate/2
         ,post/2
         ]).
@@ -20,6 +21,7 @@
 -include_lib("crossbar/src/crossbar.hrl").
 
 -define(PATH_ENROLLMENT, <<"enrollment">>).
+-define(ENTITLEMENTS, <<"entitlements">>).
 
 %%%=============================================================================
 %%% API
@@ -33,6 +35,7 @@
 init() ->
     Bindings = [{<<"*.allowed_methods.entitlements">>, 'allowed_methods'}
                ,{<<"*.resource_exists.entitlements">>, 'resource_exists'}
+               ,{<<"*.authorize.entitlements">>, 'authorize'}
                ,{<<"*.validate.entitlements">>, 'validate'}
                ,{<<"*.execute.post.entitlements">>, 'post'}
                ],
@@ -50,7 +53,9 @@ allowed_methods() ->
 
 -spec allowed_methods(path_token()) -> http_methods().
 allowed_methods(?PATH_ENROLLMENT) ->
-    [?HTTP_POST].
+    [?HTTP_POST];
+allowed_methods(_) -> [?HTTP_GET]. % GET applications/lol_ui/entitlements
+
 
 %%------------------------------------------------------------------------------
 %% @doc Does the path point to a valid resource.
@@ -70,6 +75,20 @@ resource_exists() -> 'true'.
 resource_exists(?PATH_ENROLLMENT) -> 'true'.
 
 %%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec authorize(cb_context:context()) -> boolean() | {'stop', cb_context:context()}.
+authorize(Context) ->
+    case maybe_reroute_applications_app_entitlements(Context) of
+        {'true', _AppType} -> cb_applications:maybe_admin(Context);
+        'false' -> 'true'
+    end.
+
+-spec authorize(cb_context:context(), path_token()) -> boolean().
+authorize(_Context, ?PATH_ENROLLMENT) -> 'true'.
+
+%%------------------------------------------------------------------------------
 %% @doc Check the request (request body, query string params, path tokens, etc)
 %% and load necessary information.
 %% /entitlements might load a list of entitlement objects
@@ -79,20 +98,11 @@ resource_exists(?PATH_ENROLLMENT) -> 'true'.
 %%------------------------------------------------------------------------------
 -spec validate(cb_context:context()) -> cb_context:context().
 validate(Context) ->
-    case get_account_id(Context) of
-        'undefined' ->
-            {'stop', cb_context:add_system_error('forbidden', Context)};
-        AccountId ->
-            Entitlements = kz_entitlements:entitlements(AccountId
-                                                       ,cb_context:user_id(Context)
-                                                       ),
-
-            lager:info("entitlements found for acct ~s user: ~s: ~p", [AccountId
-                                                                      ,cb_context:user_id(Context)
-                                                                      ,Entitlements
-                                                                      ]),
-
-            crossbar_doc:handle_json_success(Entitlements, Context, ?HTTP_GET)
+    case maybe_reroute_applications_app_entitlements(Context) of
+        {'true', AppType} ->
+            cb_applications:validate(Context, AppType, ?ENTITLEMENTS);
+        'false' ->
+            get_account_entitlements(Context)
     end.
 
 -spec validate(cb_context:context(), path_token()) ->
@@ -202,4 +212,31 @@ get_account_id(AuthAccountId, DataAccountId, URIAccountId) ->
         'true' ->
             lager:debug("using overlay from ~s for req account ~s", [URIAccountId, DataAccountId]),
             {URIAccountId, DataAccountId}
+    end.
+
+-spec get_account_entitlements(cb_context:context()) -> cb_context:context() | {'stop', cb_context:context()}.
+get_account_entitlements(Context) ->
+    case get_account_id(Context) of
+        'undefined' ->
+            {'stop', cb_context:add_system_error('forbidden', Context)};
+        AccountId ->
+            Entitlements = kz_entitlements:entitlements(AccountId
+                                                       ,cb_context:user_id(Context)
+                                                       ),
+
+            lager:info("entitlements found for acct ~s user: ~s: ~p", [AccountId
+                                                                      ,cb_context:user_id(Context)
+                                                                      ,Entitlements
+                                                                      ]),
+
+            crossbar_doc:handle_json_success(Entitlements, Context, ?HTTP_GET)
+    end.
+
+-spec maybe_reroute_applications_app_entitlements(cb_context:context()) ->
+          {'true', kz_term:ne_binary()} | 'false'.
+maybe_reroute_applications_app_entitlements(Context) ->
+    case cb_context:req_nouns(Context) of
+        [{?ENTITLEMENTS, []}, {<<"applications">>, [AppType]}, {<<"accounts">>, [_AccountId]}] ->
+            {'true', AppType};
+        _Other -> 'false'
     end.

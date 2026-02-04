@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2026, 2600Hz
 %%% @doc Endpoint for Applications
 %%% @author Kevin Damas
 %%% @end
@@ -18,6 +18,8 @@
         ,patch/3
         ,delete/3, delete/4, delete/5
         ]).
+
+-export([maybe_admin/1]).
 
 -include("crossbar.hrl").
 
