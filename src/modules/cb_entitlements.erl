@@ -54,8 +54,7 @@ allowed_methods() ->
 -spec allowed_methods(path_token()) -> http_methods().
 allowed_methods(?PATH_ENROLLMENT) ->
     [?HTTP_POST];
-allowed_methods(_) -> [?HTTP_GET]. % GET applications/lol_ui/entitlements
-
+allowed_methods(_AppId) -> [?HTTP_GET]. % GET applications/lol_ui/entitlements
 
 %%------------------------------------------------------------------------------
 %% @doc Does the path point to a valid resource.

@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2025, 2600Hz
+%%% @copyright (C) 2011-2026, 2600Hz
 %%% @doc Capabilityeton module for Crossbar API endpoints implementing basic CRUD
 %%%
 %%% This Source Code Form is subject to the terms of the Mozilla Public

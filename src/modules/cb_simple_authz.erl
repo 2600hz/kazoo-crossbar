@@ -119,14 +119,17 @@ account_is_descendant('false', Context, AuthAccountId) ->
     Nouns = cb_context:req_nouns(Context),
     %% get the accounts/.... component from the URL
     case props:get_value(?KZ_ACCOUNTS_DB, Nouns) of
-        %% if the URL did not have the accounts noun then this module denies access
-        'undefined' ->
-            lager:info("no account id in request path, let other modules decide the fate of authorizing this request"),
-            'false';
         [ReqAccountId|_Params] ->
             %% the request that this module process the first element of after 'accounts'
             %% in the URL has to be the requested account id
-            is_account_descendant(AuthAccountId, ReqAccountId)
+            case is_account_descendant(AuthAccountId, ReqAccountId) of
+                'true' -> 'true';
+                'false' -> 'stop'
+            end;
+        _ ->
+            %% if the URL did not have the accounts noun then this module denies access
+            lager:info("no account id in request path, let other modules decide the fate of authorizing this request"),
+            'false'
     end.
 
 %% @ returns whether the auth account ID is ancestor to the URL
@@ -153,10 +156,10 @@ is_account_descendant(<<AuthAccountId/binary>>, <<ReqAccountId/binary>>) ->
     Tree = kzd_accounts:tree(ReqAccountId),
     case lists:member(AuthAccountId, Tree) of
         'true' ->
-            lager:debug("authorizing requested account is a descendant of the auth token"),
+            lager:info("authorizing requested account is a descendant of the auth token"),
             'true';
         'false' ->
-            lager:debug("not authorizing, requested account is not a descendant of the auth token"),
+            lager:info("not authorizing, requested account is not a descendant of the auth token"),
             'false'
     end.
 
@@ -171,12 +174,12 @@ allowed_if_sys_admin_mod(IsSysAdmin, Context) ->
         %% if this is request is not made to a system admin module then this
         %% function doesn't deny it
         'false' ->
-            lager:debug("authorizing, the request does not contain any system administration modules"),
+            lager:info("authorizing, the request does not contain any system administration modules"),
             'true';
         %% if this request is to a system admin module then check if the
         %% account has the 'pvt_superduper_admin'
         'true' when IsSysAdmin ->
-            lager:debug("authorizing superduper admin access to system administration module"),
+            lager:info("authorizing superduper admin access to system administration module"),
             'true';
         'true' ->
             lager:info("not authorizing, the request contains a system administration module"),

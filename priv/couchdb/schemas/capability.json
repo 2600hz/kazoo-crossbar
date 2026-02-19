@@ -15,5 +15,6 @@
             "description": "ID of the provider of the capability (reseller) or 'system'",
             "type": "string"
         }
-    }
+    },
+    "type": "object"
 }
