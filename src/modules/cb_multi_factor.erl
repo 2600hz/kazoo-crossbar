@@ -21,7 +21,7 @@
         ,post/2
         ,patch/2
         ,delete/2
-        ,update_pvt_qr_generated/3
+        ,update_pvt_qr_activated/3
         ]).
 
 -include("crossbar.hrl").
@@ -33,7 +33,7 @@
 -define(QRCODE_PATH_TOKEN, <<"qrcode">>).
 -define(EXPORT_TYPE_URL, <<"url">>).
 -define(EXPORT_TYPE_IMAGE, <<"image">>).
--define(PVT_MFA_QR_GENERATED, <<"pvt_mfa_qr_generated">>).
+-define(PVT_MFA_QR_ACTIVATED, <<"pvt_mfa_qr_activated">>).
 -define(AUTH_MODULE, 'cb_user_auth').
 %%%=============================================================================
 %%% API
@@ -67,7 +67,7 @@ init() ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec authenticate(cb_context:context(), path_token()) -> boolean().
-authenticate(Context, _PathToken) ->
+authenticate(Context, _) ->
     authenticate_nouns(cb_context:req_nouns(Context)).
 
 authenticate_nouns([{<<"multi_factor">>, [?QRCODE_PATH_TOKEN]}]) -> 'true';
@@ -268,9 +268,11 @@ put(Context, ?QRCODE_PATH_TOKEN) ->
         'undefined' ->
             maybe_generate_qrcode(Context, AccountId, UserId);
         _ReqTotp ->
-            Context1 = crossbar_auth:create_auth_token(Context, ?AUTH_MODULE),
+            Context1 = crossbar_auth:create_auth_token(cb_context:set_content_types_provided(Context, []), ?AUTH_MODULE),
             case cb_context:resp_status(Context1) of
-                'success' -> crossbar_doc:handle_datamgr_success([], Context1);
+                'success' ->
+                    {'ok', _Doc} = update_pvt_qr_activated(AccountId, UserId, 'true'),
+                    crossbar_doc:handle_datamgr_success([], Context1);
                 _ -> Context1
             end
     end.
@@ -403,7 +405,7 @@ on_successful_validation(Id, Context) ->
 -spec maybe_generate_qrcode(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) -> cb_context:context().
 maybe_generate_qrcode(Context, AccountId, UserId) ->
     {'ok', UserDoc} = kzd_users:fetch(AccountId, UserId),
-    maybe_generate_qrcode(Context, AccountId, UserId, kz_json:get_value(?PVT_MFA_QR_GENERATED, UserDoc, 'false')).
+    maybe_generate_qrcode(Context, AccountId, UserId, kz_json:get_value(?PVT_MFA_QR_ACTIVATED, UserDoc, 'false')).
 
 -spec maybe_generate_qrcode(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary(), boolean()) -> cb_context:context().
 maybe_generate_qrcode(Context, AccountId, UserId, 'false') ->
@@ -411,7 +413,7 @@ maybe_generate_qrcode(Context, AccountId, UserId, 'false') ->
 
 maybe_generate_qrcode(Context, AccountId, UserId, 'true') ->
     lager:debug("QR code alredy generated. AccountId: ~p, UserId : ~p", [AccountId, UserId]),
-    crossbar_util:response('error', <<"QR code already generated.">>, 403, Context).
+    crossbar_util:response('error', <<"QR code already verified.">>, 403, Context).
 
 -spec generate_qrcode(cb_context:context(), kz_term:ne_binary(), kz_term:ne_binary()) -> cb_context:context().
 generate_qrcode(Context, AccountId, UserId) ->
@@ -422,7 +424,6 @@ generate_qrcode(Context, AccountId, UserId) ->
                  ,<<"content-type">> => <<"image/png">>
                  },
             {'ok', QRCode} = kz_auth_qrcode:create(AccountId, UserId, ?EXPORT_TYPE_IMAGE),
-            {'ok', _Doc} = update_pvt_qr_generated(AccountId, UserId, 'true'),
             cb_context:setters(Context
                               ,[{fun cb_context:set_resp_data/2, QRCode}
                                ,{fun cb_context:set_resp_etag/2, kz_binary:md5(QRCode)}
@@ -431,7 +432,6 @@ generate_qrcode(Context, AccountId, UserId) ->
                                ]);
         _ ->
             {'ok', QRCodeRaw} = kz_auth_qrcode:create(AccountId, UserId, ?EXPORT_TYPE_URL),
-            {'ok', _Doc} = update_pvt_qr_generated(AccountId, UserId, 'true'),
             DataObj = kz_json:from_list([
                                          {<<"data">>
                                          ,[kz_json:from_list([{<<"qr_url">>, QRCodeRaw}])]}
@@ -443,9 +443,9 @@ generate_qrcode(Context, AccountId, UserId) ->
                                ])
     end.
 
--spec update_pvt_qr_generated(kz_term:ne_binary(), kz_term:ne_binary(), boolean()) -> {'ok', kz_json:object() | kz_json:objects()}.
-update_pvt_qr_generated(AccountId, UserId, Value) ->
+-spec update_pvt_qr_activated(kz_term:ne_binary(), kz_term:ne_binary(), boolean()) -> {'ok', kz_json:object() | kz_json:objects()}.
+update_pvt_qr_activated(AccountId, UserId, Value) ->
     {'ok', UserDoc} = kzd_users:fetch(AccountId, UserId),
-    Props = [{?PVT_MFA_QR_GENERATED, Value}],
+    Props = [{?PVT_MFA_QR_ACTIVATED, Value}],
     UpdatedUserDoc = kz_json:set_values(Props, UserDoc),
     kz_datamgr:save_doc(kzs_util:format_account_db(AccountId), UpdatedUserDoc).
