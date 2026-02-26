@@ -1,5 +1,5 @@
 %%%-----------------------------------------------------------------------------
-%%% @copyright (C) 2011-2023, 2600Hz
+%%% @copyright (C) 2011-2026, 2600Hz
 %%% @doc
 %%% @author James Aimonetti
 %%% @author Karl Anderson
@@ -33,6 +33,7 @@
                   ,?SUPER('crossbar_module_sup')
                   ,?CACHE_ARGS(?CACHE_NAME, ?CACHE_PROPS)
                   ,?WORKER('crossbar_bindings')
+                  ,?WORKER('crossbar_amqp_worker')
                   ]
        ).
 
